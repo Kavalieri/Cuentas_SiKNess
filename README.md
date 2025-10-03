@@ -11,6 +11,8 @@ Aplicación web minimalista para gestionar gastos e ingresos compartidos en pare
 ### Core Features
 - ✅ **Autenticación**: Magic link funcionando
 - ✅ **Creación de Households**: RLS sin recursión (con SECURITY DEFINER)
+- ✅ **Múltiples Hogares**: Los usuarios pueden crear/unirse a ilimitados hogares ⭐ NEW
+- ✅ **Selector de Hogares**: Cambio de contexto con dropdown en header ⭐ NEW
 - ✅ **Gestión de Categorías**: CRUD completo con UI
 - ✅ **Movimientos (Gastos/Ingresos)**: Implementado
 - ✅ **Dashboard**: Vista mensual con resúmenes
@@ -29,6 +31,12 @@ Aplicación web minimalista para gestionar gastos e ingresos compartidos en pare
 - ✅ **Perfil Personal**: Cada usuario puede editar su ingreso
 - ✅ **Gestión de Miembros**: Cambiar roles, eliminar miembros (admin)
 - ✅ **Función Wipe**: Limpiar datos de testing con protección anti-wipe
+
+### Sistema de Invitaciones ⭐ NEW
+- ✅ **Invitaciones Públicas**: Enlaces funcionan sin login (RLS fix)
+- ✅ **Constraint Fix**: Permite recrear invitaciones después de cancelar
+- ✅ **Cookie Cleanup**: Eliminación automática tras aceptar
+- ✅ **Auto-activación**: Hogares nuevos/aceptados se activan automáticamente
 
 ### DevOps
 - ✅ **Supabase CLI**: Workflow de migraciones automatizado
@@ -190,6 +198,10 @@ La aplicación usa **magic links** de Supabase. Los usuarios reciben un enlace p
 - **contribution_adjustments**: Ajustes manuales a contribuciones
 - **pre_payments**: Pre-pagos registrados antes del ciclo de contribución ⭐ NEW
 
+#### Sistema de Múltiples Hogares ⭐ NEW
+- **user_settings**: Configuración del usuario (active_household_id, preferences)
+- **invitations**: Sistema de invitaciones con constraint parcial y RLS público
+
 #### Administración
 - **system_admins**: Super administradores con acceso completo
 - **wipe_protection**: Protección contra wipes accidentales
@@ -198,6 +210,21 @@ La aplicación usa **magic links** de Supabase. Los usuarios reciben un enlace p
 
 - **Row Level Security (RLS)** habilitado en todas las tablas
 - Políticas que verifican `auth.uid()` pertenece al household
+- **Política pública de invitaciones**: Permite acceso sin login (token de 64 caracteres)
+
+### Múltiples Hogares
+
+Los usuarios pueden:
+- Crear ilimitados hogares (como owner)
+- Aceptar invitaciones a otros hogares (como member)
+- Cambiar entre hogares usando el selector en el header
+- Ver solo datos del hogar activo en cada momento
+
+**Funcionalidades**:
+- **Selector de Hogares**: Dropdown con iconos (👑 owner, 👥 member) que aparece con 2+ hogares
+- **Auto-activación**: Nuevos hogares (creados o aceptados) se activan automáticamente
+- **Persistencia**: El hogar activo se guarda en `user_settings.active_household_id`
+- **Cambio de Contexto**: Al cambiar de hogar, toda la UI se actualiza (dashboard, gastos, contribuciones, etc.)
 - Validación con Zod en todas las Server Actions
 - **Sistema de roles**: `owner` (admin completo) y `member` (usuario normal)
 - Protección de rutas admin con `lib/adminCheck.ts`
@@ -318,6 +345,7 @@ Ver [docs/SUPABASE_CLI.md](docs/SUPABASE_CLI.md) para más detalles.
 ### Guías Principales
 - [Instrucciones para AI Agents](.github/copilot-instructions.md) - Guía completa del proyecto
 - [Sistema de Contribuciones](docs/CONTRIBUTIONS_SYSTEM.md) - Cómo funciona el sistema proporcional
+- [Sistema de Múltiples Hogares](docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md) ⭐ NEW - Gestión multi-hogar
 - [Plan de Refactorización](docs/CONTRIBUTIONS_REFACTOR_PLAN.md) ⭐ - Mejoras implementadas
 - [Gestión de Usuarios](docs/USER_MANAGEMENT_IMPLEMENTATION.md) - Roles y permisos
 - [Sistema Anti-Wipe](docs/WIPE_PROTECTION_SYSTEM.md) ⭐ - Protección de datos
@@ -338,6 +366,15 @@ Ver [docs/SUPABASE_CLI.md](docs/SUPABASE_CLI.md) para más detalles.
 - [x] Setup inicial del proyecto
 - [x] Autenticación con magic links
 - [x] Sistema de households con RLS
+- [x] **Sistema de múltiples hogares** ⭐ NEW
+  - [x] Usuarios pueden crear/unirse a ilimitados hogares
+  - [x] Selector de hogares con iconos (👑 owner, 👥 member)
+  - [x] Auto-activación de hogares nuevos/aceptados
+  - [x] Cambio de contexto en tiempo real
+- [x] **Sistema de invitaciones mejorado** ⭐ NEW
+  - [x] Invitaciones públicas (funcionan sin login)
+  - [x] Fix constraint (permite recrear después de cancelar)
+  - [x] Cookie cleanup automático
 - [x] CRUD de categorías y movimientos
 - [x] Dashboard con resumen mensual
 - [x] Modo oscuro con persistencia
@@ -348,20 +385,21 @@ Ver [docs/SUPABASE_CLI.md](docs/SUPABASE_CLI.md) para más detalles.
 - [x] **Pagos flexibles** (parcial, completo, sobrepago) ⭐
 - [x] Supabase CLI workflow
 - [x] Auto-deploy en Vercel
-- [x] Build de producción (20 páginas)
+- [x] Build de producción (23 páginas)
 
 ### 🚧 En Progreso
-- [ ] Testing manual de pre-pagos en producción
-- [ ] Fix bugs reportados (household settings)
+- [ ] Testing manual de múltiples hogares en producción
+- [ ] Verificar flujo de invitaciones sin login
 
 ### 📋 Próximas Features (v0.1.0)
-- [ ] Sistema de invitaciones por email
+- [ ] Sistema de notificaciones
 - [ ] Gráficos con Recharts
 - [ ] Edición de categorías
 - [ ] Filtros avanzados en movimientos
 - [ ] Export/Import CSV
 - [ ] Import desde Excel existente
 - [ ] History tab en contribuciones
+- [ ] Gestión avanzada de múltiples hogares (favoritos, recientes)
 
 ### 🔮 Futuro (v0.2.0+)
 - [ ] Integración con Google Sheets

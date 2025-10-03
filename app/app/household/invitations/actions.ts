@@ -263,6 +263,109 @@ export async function cancelInvitation(invitationId: string): Promise<Result> {
 }
 
 /**
+ * Obtiene las invitaciones pendientes para el usuario actual
+ * Útil para mostrar invitaciones en el dashboard
+ */
+export async function getUserPendingInvitations(): Promise<Result<InvitationDetails[]>> {
+  const user = await getCurrentUser();
+  if (!user || !user.email) {
+    return ok([]);
+  }
+
+  const supabase = await supabaseServer();
+
+  // @ts-ignore - Tipos pendientes
+  const { data, error } = await supabase
+    .from('invitations')
+    .select(
+      `
+      id,
+      type,
+      token,
+      email,
+      household_id,
+      invited_by,
+      status,
+      created_at,
+      expires_at,
+      max_uses,
+      current_uses,
+      metadata,
+      households (
+        name
+      )
+    `
+    )
+    .eq('email', user.email.toLowerCase())
+    .eq('status', 'pending')
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching user invitations:', error);
+    return fail('Error al obtener invitaciones');
+  }
+
+  if (!data || data.length === 0) {
+    return ok([]);
+  }
+
+  // Convertir a InvitationDetails
+  const invitations: InvitationDetails[] = [];
+  
+  for (const invitation of data) {
+    // Obtener email del invitador
+    let invitedByEmail = 'Usuario de CuentasSiK';
+    // @ts-ignore
+    if (invitation.invited_by) {
+      try {
+        // Usar cliente admin para obtener info del usuario invitador
+        const supabaseAdmin = await import('@/lib/supabaseAdmin');
+        // @ts-ignore
+        const { data: userData } = await supabaseAdmin.supabaseAdmin.auth.admin.getUserById(invitation.invited_by);
+        if (userData?.user?.email) {
+          invitedByEmail = userData.user.email;
+        }
+      } catch (err) {
+        console.error('Error fetching inviter email:', err);
+      }
+    }
+
+    // @ts-ignore
+    const householdName = invitation.households?.name || null;
+
+    invitations.push({
+      // @ts-ignore
+      id: invitation.id,
+      // @ts-ignore
+      type: invitation.type,
+      // @ts-ignore
+      token: invitation.token,
+      // @ts-ignore
+      email: invitation.email,
+      // @ts-ignore
+      household_id: invitation.household_id,
+      household_name: householdName,
+      invited_by_email: invitedByEmail,
+      // @ts-ignore
+      status: invitation.status,
+      // @ts-ignore
+      created_at: invitation.created_at,
+      // @ts-ignore
+      expires_at: invitation.expires_at,
+      // @ts-ignore
+      max_uses: invitation.max_uses,
+      // @ts-ignore
+      current_uses: invitation.current_uses,
+      // @ts-ignore
+      metadata: (invitation.metadata as Record<string, unknown>) || {},
+    });
+  }
+
+  return ok(invitations);
+}
+
+/**
  * Obtiene los detalles de una invitación por su token
  * NO requiere autenticación para permitir que nuevos usuarios vean la invitación
  */
@@ -303,6 +406,17 @@ export async function getInvitationDetails(token: string): Promise<Result<Invita
     .eq('token', token)
     .maybeSingle();
 
+  // Obtener el email del usuario invitador
+  let invitedByEmail = 'Usuario de CuentasSiK';
+  // @ts-ignore
+  if (data?.invited_by) {
+    // @ts-ignore
+    const { data: inviterUser } = await supabase.auth.admin.getUserById(data.invited_by);
+    if (inviterUser?.user?.email) {
+      invitedByEmail = inviterUser.user.email;
+    }
+  }
+
   if (error) {
     console.error('Error fetching invitation:', error);
     return fail('Error al obtener la invitación');
@@ -336,7 +450,6 @@ export async function getInvitationDetails(token: string): Promise<Result<Invita
 
   // @ts-ignore - Tipos pendientes
   const householdName = data.households?.name || null;
-  const invitedByEmail = 'Usuario de CuentasSiK';
 
   // @ts-ignore - Todos los accesos a data requieren regenerar tipos
   return ok({
@@ -405,6 +518,13 @@ export async function acceptInvitation(token: string): Promise<Result<{ househol
   const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
   cookieStore.delete('invitation_token');
+
+  // NUEVO: Establecer el nuevo household como activo automáticamente
+  await supabase.from('user_settings').upsert({
+    user_id: user.id,
+    active_household_id: result.household_id!,
+    updated_at: new Date().toISOString(),
+  });
 
   revalidatePath('/app');
   revalidatePath('/app/household');

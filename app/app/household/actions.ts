@@ -43,6 +43,13 @@ export async function createHousehold(formData: FormData): Promise<Result<{ hous
   // @ts-ignore - data es JSON con household_id
   const household_id = data.household_id as string;
 
+  // NUEVO: Establecer el nuevo household como activo automáticamente
+  await supabase.from('user_settings').upsert({
+    user_id: user.id,
+    active_household_id: household_id,
+    updated_at: new Date().toISOString(),
+  });
+
   revalidatePath('/app');
   return ok({ household_id });
 }

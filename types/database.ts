@@ -449,6 +449,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          active_household_id: string | null
+          created_at: string | null
+          preferences: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active_household_id?: string | null
+          created_at?: string | null
+          preferences?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active_household_id?: string | null
+          created_at?: string | null
+          preferences?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_active_household_id_fkey"
+            columns: ["active_household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

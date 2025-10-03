@@ -1,9 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabaseServer, getCurrentUser } from '@/lib/supabaseServer';
-import { getCurrentHouseholdId } from '@/lib/adminCheck';
+import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserHouseholds } from '@/lib/supabaseServer';
 import { redirect } from 'next/navigation';
 import { ProfileForm } from './components/ProfileForm';
 import { IncomeForm } from './components/IncomeForm';
+import { HouseholdsList } from './components/HouseholdsList';
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -11,18 +11,11 @@ export default async function ProfilePage() {
     redirect('/login');
   }
 
-  const householdId = await getCurrentHouseholdId();
+  const householdId = await getUserHouseholdId();
+  const userHouseholds = await getUserHouseholds();
   const supabase = await supabaseServer();
 
-  // Obtener datos del miembro
-  const { data: memberData } = await supabase
-    .from('household_members')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('household_id', householdId || '')
-    .single();
-
-  // Obtener ingreso actual
+  // Obtener ingreso actual (del hogar activo si existe)
   let currentIncome = 0;
   if (householdId) {
     const { data: income } = await supabase.rpc('get_member_income', {
@@ -47,14 +40,29 @@ export default async function ProfilePage() {
         <CardHeader>
           <CardTitle>Información Básica</CardTitle>
           <CardDescription>
-            Tu información de cuenta y rol en el hogar
+            Tu información de cuenta
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ProfileForm
             email={user.email || ''}
-            role={memberData?.role || 'member'}
             userId={user.id}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Hogares */}
+      <Card>
+        <CardHeader>
+          <CardTitle>🏠 Mis Hogares</CardTitle>
+          <CardDescription>
+            Hogares a los que perteneces y tu rol en cada uno
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <HouseholdsList 
+            households={userHouseholds} 
+            activeHouseholdId={householdId}
           />
         </CardContent>
       </Card>

@@ -18,11 +18,11 @@
 
 ### Modelo de Datos (Esquema en `db/schema.sql`)
 
-El sistema se basa en **8 tablas principales** con RLS habilitado:
+El sistema se basa en **10 tablas principales** con RLS habilitado:
 
 **Core**:
-1. **`households`**: Hogar compartido (1 pareja = 1 household)
-2. **`household_members`**: Relación many-to-many entre usuarios y hogares
+1. **`households`**: Hogar compartido. Un usuario puede pertenecer a múltiples hogares.
+2. **`household_members`**: Relación many-to-many entre usuarios y hogares (con role: owner/member)
 3. **`categories`**: Categorías de gastos/ingresos por hogar (tipo: `expense` | `income`)
 4. **`movements`**: Transacciones (gastos/ingresos) con fecha, monto, categoría, nota
 
@@ -31,6 +31,10 @@ El sistema se basa en **8 tablas principales** con RLS habilitado:
 6. **`household_settings`**: Meta de contribución mensual del hogar
 7. **`contributions`**: Contribuciones calculadas y rastreadas por miembro/mes
 8. **`contribution_adjustments`**: Ajustes manuales a contribuciones
+
+**Sistema de Múltiples Hogares** (ver `docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md`):
+9. **`user_settings`**: Configuración del usuario (active_household_id, preferences)
+10. **`invitations`**: Sistema de invitaciones con RLS público para acceso sin login
 
 **Punto crítico**: Row Level Security (RLS) está habilitado desde el día 1. Todas las políticas verifican que `auth.uid()` pertenezca al `household_id` del recurso consultado.
 
@@ -43,6 +47,40 @@ El sistema se basa en **8 tablas principales** con RLS habilitado:
   - `lib/supabaseBrowser.ts`: Para Client Components (si es necesario)
 - **Validación**: Zod schemas en todas las Server Actions antes de mutaciones
 - **No usar**: Redux, Zustand, TRPC, E2E encryption (principio de simplicidad)
+
+### Sistema de Múltiples Hogares
+
+**Concepto**: Un usuario puede crear/unirse a ilimitados hogares. El sistema rastrea qué hogar está "activo" en cada momento.
+
+**Tabla clave**: `user_settings`
+- `active_household_id`: UUID del hogar actualmente activo para el usuario
+- `preferences`: JSONB para futuras configuraciones
+
+**Funciones importantes** (`lib/supabaseServer.ts`):
+- `getUserHouseholdId()`: Retorna el household_id activo del usuario actual
+  * Lógica: Lee `user_settings.active_household_id` → Verifica membresía → Fallback primer hogar → Auto-guarda
+- `getUserHouseholds()`: Retorna TODOS los hogares del usuario con roles
+  * Retorna: `Array<{ id, name, role: 'owner' | 'member', created_at }>`
+
+**Acciones** (`lib/actions/user-settings.ts`):
+- `setActiveHousehold(householdId)`: Cambia el hogar activo del usuario
+  * Verifica membresía → Actualiza user_settings → Revalida layout
+- `getActiveHouseholdId()`: Helper para obtener el hogar activo
+
+**UI** (`components/shared/HouseholdSelector.tsx`):
+- Selector dropdown con iconos (👑 owner, 👥 member)
+- Solo aparece si el usuario tiene 2+ hogares
+- Al cambiar: llama `setActiveHousehold()` → muestra toast → recarga página
+
+**Auto-activación**:
+- Al crear un hogar nuevo → se activa automáticamente
+- Al aceptar una invitación → el hogar aceptado se activa automáticamente
+- Implementado en `createHousehold()` y `acceptInvitation()`
+
+**Reglas**:
+- Siempre usar `getUserHouseholdId()` para obtener el household_id en Server Components/Actions
+- NUNCA asumir que un usuario tiene solo un hogar
+- Toda consulta de datos debe filtrar por `household_id = await getUserHouseholdId()`
 
 ### Estructura de Rutas y Componentes (App Router)
 
@@ -79,15 +117,20 @@ components/
 
 lib/
 ├─ supabaseServer.ts           # Cliente Supabase server-side
+│                                # getUserHouseholdId() - hogar activo del usuario
+│                                # getUserHouseholds() - todos los hogares del usuario
 ├─ supabaseBrowser.ts          # Cliente Supabase client-side
+├─ actions/
+│  └─ user-settings.ts         # setActiveHousehold(), getActiveHouseholdId()
 ├─ result.ts                   # Helper tipos Result
 ├─ format.ts                   # formatCurrency, formatDate
 └─ date.ts                     # getMonthRange, startOfMonth, endOfMonth, toISODate
 
 docs/
-├─ VERCEL_DEPLOY.md            # Guía de despliegue en Vercel
-├─ SUPABASE_CLI.md             # Guía de Supabase CLI y migraciones
-└─ CONTRIBUTIONS_SYSTEM.md     # Sistema de contribuciones proporcionales
+├─ VERCEL_DEPLOY.md                          # Guía de despliegue en Vercel
+├─ SUPABASE_CLI.md                           # Guía de Supabase CLI y migraciones
+├─ CONTRIBUTIONS_SYSTEM.md                   # Sistema de contribuciones proporcionales
+└─ MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md # Sistema de múltiples hogares ⭐ NEW
 ```
 
 **Patrón de colocación**: Componentes locales junto a su ruta. Componentes compartidos en `components/shared`.
@@ -281,9 +324,11 @@ Ejemplo: `feat: add CSV export for movements`
 
 1. **Simplicidad ante todo**: No usar state management complejo. Server Actions + Supabase client es suficiente.
 2. **RLS desde el día 1**: Seguridad en la capa de DB, no solo en el código.
-3. **Hogar compartido**: El primer usuario crea el hogar; el segundo se une por invitación (email).
-4. **Dashboard mensual**: Por defecto muestra el mes actual; selector para navegar entre meses.
-5. **Sin E2E encryption**: Confiar en Supabase para cifrado en reposo.
+3. **Múltiples hogares por usuario**: Un usuario puede crear/unirse a ilimitados hogares. El sistema rastrea cuál está "activo".
+4. **Invitaciones públicas**: Las invitaciones son accesibles sin login (RLS público) - seguro porque el token es secreto (64 chars).
+5. **Auto-activación**: Hogares nuevos (creados o aceptados) se activan automáticamente para mejor UX.
+6. **Dashboard mensual**: Por defecto muestra el mes actual; selector para navegar entre meses.
+7. **Sin E2E encryption**: Confiar en Supabase para cifrado en reposo.
 
 ### Integración con Servicios Externos
 
@@ -341,7 +386,12 @@ Crear estos archivos desde el inicio:
 2. **`lib/format.ts`**: `formatCurrency(amount, currency?, locale?)`
 3. **`lib/date.ts`**: `getMonthRange(date)`, `startOfMonth`, `endOfMonth`, `toISODate`
 4. **`lib/supabaseServer.ts`**: Cliente Supabase para Server Components/Actions
+   - `getUserHouseholdId()`: Obtiene el household_id activo del usuario
+   - `getUserHouseholds()`: Obtiene todos los hogares del usuario
 5. **`lib/supabaseBrowser.ts`**: Cliente Supabase para Client Components
+6. **`lib/actions/user-settings.ts`**: Gestión del hogar activo
+   - `setActiveHousehold(householdId)`: Cambia el hogar activo
+   - `getActiveHouseholdId()`: Obtiene el hogar activo
 
 ### Configuraciones TypeScript/ESLint/Prettier
 
@@ -424,12 +474,15 @@ Ver documentación completa en `docs/CONTRIBUTIONS_SYSTEM.md`.
 - Especificación completa: `prompt_inicial_del_agente_app_gastos_pareja_next_instructions.md`
 - Schema DB: `db/schema.sql`, `db/contributions-schema.sql`
 - Guías: `docs/VERCEL_DEPLOY.md`, `docs/SUPABASE_CLI.md`, `docs/CONTRIBUTIONS_SYSTEM.md`
+- **Sistema de Múltiples Hogares**: `docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md` ⭐ NEW
 - Config: `.env.example`
 
 ## Cuando Implementes Nueva Funcionalidad
 
 1. ✅ Verifica que RLS esté habilitado en tablas nuevas
 2. ✅ Crea/actualiza tipos TypeScript basados en schema Supabase
+3. ✅ Usa `getUserHouseholdId()` para obtener el hogar activo (NO asumir un solo hogar)
+4. ✅ Filtra TODAS las consultas por `household_id = await getUserHouseholdId()`
 3. ✅ Valida input con Zod en Server Actions
 4. ✅ Usa `revalidatePath()` tras mutaciones
 5. ✅ Mantén el código compilando y arrancando

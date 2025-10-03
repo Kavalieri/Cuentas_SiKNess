@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { getUserHouseholdId } from '@/lib/supabaseServer';
 import { getMonthSummary, getMovements } from './expenses/actions';
 import { getCategories } from './categories/actions';
-import { getInvitationDetails } from './household/invitations/actions';
+import { getInvitationDetails, getUserPendingInvitations } from './household/invitations/actions';
 import { formatCurrency } from '@/lib/format';
 import { AddMovementDialog } from './expenses/components/AddMovementDialog';
 import { MovementsList } from './components/MovementsList';
 import { DashboardOnboarding } from './components/DashboardOnboarding';
+import { PendingInvitationsCard } from './components/PendingInvitationsCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default async function DashboardPage() {
@@ -47,6 +48,10 @@ export default async function DashboardPage() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1; // getMonth() devuelve 0-11
 
+  // Obtener invitaciones pendientes del usuario
+  const pendingInvitationsResult = await getUserPendingInvitations();
+  const pendingInvitations = pendingInvitationsResult.ok ? pendingInvitationsResult.data || [] : [];
+
   // Obtener datos en paralelo
   const [summaryResult, movementsResult, categoriesResult] = await Promise.all([
     getMonthSummary(year, month),
@@ -74,6 +79,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Invitaciones Pendientes */}
+      {pendingInvitations.length > 0 && (
+        <PendingInvitationsCard invitations={pendingInvitations} />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>

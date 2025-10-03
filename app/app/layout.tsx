@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getCurrentUser, getUserHouseholdId } from '@/lib/supabaseServer';
+import { getCurrentUser, getUserHouseholdId, getUserHouseholds } from '@/lib/supabaseServer';
 import { signOut } from '@/app/login/actions';
 import { Button } from '@/components/ui/button';
 import { LogOut, Home, User, Users, Shield } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { HouseholdSelector } from '@/components/shared/HouseholdSelector';
 import { isSystemAdmin } from '@/lib/adminCheck';
 
 function SignOutButton() {
@@ -31,6 +32,7 @@ export default async function AppLayout({
 
   const userIsSystemAdmin = await isSystemAdmin();
   const householdId = await getUserHouseholdId();
+  const userHouseholds = await getUserHouseholds();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -72,7 +74,14 @@ export default async function AppLayout({
               )}
             </nav>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            {/* Selector de household (solo si tiene múltiples) */}
+            {userHouseholds.length > 1 && householdId && (
+              <HouseholdSelector
+                households={userHouseholds}
+                activeHouseholdId={householdId}
+              />
+            )}
             <span className="text-sm text-muted-foreground">{user.email}</span>
             <ThemeToggle />
             <SignOutButton />

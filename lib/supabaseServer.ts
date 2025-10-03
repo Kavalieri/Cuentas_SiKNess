@@ -43,19 +43,100 @@ export const getCurrentUser = async () => {
 };
 
 /**
- * Obtiene el household_id del usuario autenticado
+ * Obtiene el household_id activo del usuario autenticado
+ * Si el usuario pertenece a múltiples households, retorna el seleccionado activamente
+ * Si no tiene household activo configurado, retorna el primero disponible y lo guarda
  */
 export const getUserHouseholdId = async (): Promise<string | null> => {
   const user = await getCurrentUser();
   if (!user) return null;
 
   const supabase = await supabaseServer();
-  const { data, error } = await supabase
-    .from('household_members')
-    .select('household_id')
+
+  // 1. Intentar obtener household activo desde user_settings
+  const { data: settings } = await supabase
+    .from('user_settings')
+    .select('active_household_id')
     .eq('user_id', user.id)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return (data as { household_id: string }).household_id;
+  if (settings?.active_household_id) {
+    // Verificar que todavía es miembro de ese household
+    const { data: membership } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', user.id)
+      .eq('household_id', settings.active_household_id)
+      .maybeSingle();
+
+    if (membership) {
+      return settings.active_household_id;
+    }
+  }
+
+  // 2. Fallback: Obtener el primer household disponible
+  const { data: firstHousehold } = await supabase
+    .from('household_members')
+    .select('household_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (firstHousehold) {
+    // Guardar como activo para próxima vez
+    await supabase
+      .from('user_settings')
+      .upsert({
+        user_id: user.id,
+        active_household_id: firstHousehold.household_id,
+      });
+
+    return firstHousehold.household_id;
+  }
+
+  return null;
+};
+
+/**
+ * Obtiene todos los households a los que pertenece el usuario
+ */
+export const getUserHouseholds = async (): Promise<
+  Array<{
+    id: string;
+    name: string;
+    role: 'owner' | 'member';
+    created_at: string | null;
+  }>
+> => {
+  const user = await getCurrentUser();
+  if (!user) return [];
+
+  const supabase = await supabaseServer();
+
+  const { data: memberships, error } = await supabase
+    .from('household_members')
+    .select(`
+      household_id,
+      role,
+      households (
+        id,
+        name,
+        created_at
+      )
+    `)
+    .eq('user_id', user.id);
+
+  if (error || !memberships) {
+    console.error('Error fetching user households:', error);
+    return [];
+  }
+
+  return memberships.map((m) => ({
+    id: m.household_id,
+    // @ts-ignore - Nested select returns object
+    name: m.households.name,
+    role: m.role as 'owner' | 'member',
+    // @ts-ignore - Nested select returns object
+    created_at: m.households.created_at,
+  }));
 };
