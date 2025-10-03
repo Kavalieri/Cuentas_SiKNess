@@ -7,10 +7,9 @@ import { MembersList } from './components/MembersList';
 import { DangerZone } from './components/DangerZone';
 import { OverviewWrapper } from './components/OverviewWrapper';
 import { CategoriesTab } from './components/CategoriesTab';
-import { StatusTab } from '@/app/app/contributions/components/StatusTab';
-import { ConfigurationTab } from '@/app/app/contributions/components/ConfigurationTab';
-import { HistoryTab } from '@/app/app/contributions/components/HistoryTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default async function HouseholdPage() {
   const user = await getCurrentUser();
@@ -93,9 +92,8 @@ export default async function HouseholdPage() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="contributions">Contribuciones</TabsTrigger>
           <TabsTrigger value="categories">Categorías</TabsTrigger>
           <TabsTrigger value="members">Miembros</TabsTrigger>
           <TabsTrigger value="settings">Configuración</TabsTrigger>
@@ -104,6 +102,27 @@ export default async function HouseholdPage() {
 
         {/* Tab 1: Overview / Resumen */}
         <TabsContent value="overview" className="space-y-6 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>💰 Contribuciones del Mes</CardTitle>
+              <CardDescription>
+                Gestiona las contribuciones proporcionales del hogar
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  El sistema de contribuciones ahora tiene su propia página dedicada con todas las funcionalidades.
+                </p>
+                <Link href="/app/contributions">
+                  <Button className="w-full">
+                    Ver Contribuciones Completas →
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
           <OverviewWrapper
             householdId={householdId}
             initialMembers={members}
@@ -113,44 +132,12 @@ export default async function HouseholdPage() {
           />
         </TabsContent>
 
-        {/* Tab 2: Contribuciones (Config + Cálculo) */}
-        <TabsContent value="contributions" className="space-y-6 mt-6">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-2xl font-bold">💰 Configuración de Contribuciones</h2>
-              <p className="text-muted-foreground">
-                Sistema de contribuciones proporcionales basado en ingresos
-              </p>
-            </div>
-            
-            <Tabs defaultValue="config" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="config">Configuración</TabsTrigger>
-                <TabsTrigger value="status">Estado</TabsTrigger>
-                <TabsTrigger value="history">Historial</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="config" className="space-y-6 mt-6">
-                <ConfigurationTab householdId={householdId} />
-              </TabsContent>
-
-              <TabsContent value="status" className="space-y-6 mt-6">
-                <StatusTab householdId={householdId} />
-              </TabsContent>
-
-              <TabsContent value="history" className="space-y-6 mt-6">
-                <HistoryTab householdId={householdId} />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </TabsContent>
-
-        {/* Tab 3: Categorías */}
+        {/* Tab 2: Categorías */}
         <TabsContent value="categories" className="space-y-6 mt-6">
           <CategoriesTab />
         </TabsContent>
 
-        {/* Tab 4: Miembros */}
+        {/* Tab 3: Miembros */}
         <TabsContent value="members" className="space-y-6 mt-6">
           {userIsOwner ? (
             <Card>
@@ -190,7 +177,7 @@ export default async function HouseholdPage() {
           )}
         </TabsContent>
 
-        {/* Tab 5: Configuración del Hogar */}
+        {/* Tab 4: Configuración del Hogar */}
         <TabsContent value="settings" className="space-y-6 mt-6">
           <HouseholdInfo 
             household={{
@@ -202,7 +189,7 @@ export default async function HouseholdPage() {
           />
         </TabsContent>
 
-        {/* Tab 6: Zona Peligrosa (solo owner) */}
+        {/* Tab 5: Zona Peligrosa (solo owner) */}
         {userIsOwner && (
           <TabsContent value="danger" className="space-y-6 mt-6">
             <DangerZone />
