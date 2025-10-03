@@ -79,18 +79,27 @@ export async function middleware(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/app/household/create') &&
     !request.nextUrl.pathname.startsWith('/app/settings')
   ) {
-    // Verificar si el usuario tiene household
-    const { data: household } = await supabase
-      .from('household_members')
-      .select('household_id')
-      .eq('user_id', user.id)
+    // Primero obtener el profile_id del usuario
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
       .maybeSingle();
 
-    // Si no tiene household, redirigir a onboarding
-    if (!household) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/app/onboarding';
-      return NextResponse.redirect(url);
+    if (profile) {
+      // Verificar si el usuario tiene household
+      const { data: household } = await supabase
+        .from('household_members')
+        .select('household_id')
+        .eq('profile_id', profile.id)
+        .maybeSingle();
+
+      // Si no tiene household, redirigir a onboarding
+      if (!household) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/app/onboarding';
+        return NextResponse.redirect(url);
+      }
     }
   }
 
