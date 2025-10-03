@@ -57,23 +57,17 @@ COMMENT ON COLUMN system_admins.user_id IS 'ID del usuario que es administrador 
 COMMENT ON COLUMN system_admins.granted_by IS 'ID del admin que otorgó los permisos';
 COMMENT ON COLUMN system_admins.notes IS 'Notas sobre por qué se otorgó acceso admin';
 
--- Insertar admin permanente del sistema (caballeropomes@gmail.com)
--- Este admin se inserta automáticamente cuando el usuario existe
--- y NO se elimina en el wipe general
-DO $$
-DECLARE
-  admin_user_id UUID;
-BEGIN
-  -- Buscar el usuario por email
-  SELECT id INTO admin_user_id
-  FROM auth.users
-  WHERE email = 'caballeropomes@gmail.com';
-  
-  -- Si el usuario existe, agregarlo como admin (si no existe ya)
-  IF admin_user_id IS NOT NULL THEN
-    INSERT INTO system_admins (user_id, notes)
-    VALUES (admin_user_id, 'Administrador permanente del sistema - Auto-asignado')
-    ON CONFLICT (user_id) DO NOTHING;
-  END IF;
-END $$;
+-- ⚠️  NOTA DE SEGURIDAD:
+-- Esta migración contenía un email hardcodeado para el admin permanente.
+-- Para configurar tu admin permanente:
+-- 1. Añade NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL a tus variables de entorno
+-- 2. Ejecuta manualmente en Supabase SQL Editor:
+--    INSERT INTO system_admins (user_id, notes)
+--    SELECT id, 'Administrador permanente del sistema'
+--    FROM auth.users
+--    WHERE email = 'TU_EMAIL@example.com'
+--    ON CONFLICT (user_id) DO NOTHING;
+
+-- El código original fue removido por razones de seguridad/privacidad.
+-- Ver docs/SYSTEM_ADMIN_SETUP.md para instrucciones completas.
 

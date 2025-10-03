@@ -202,7 +202,7 @@ export async function addSystemAdmin(formData: FormData): Promise<Result> {
 /**
  * Elimina un administrador del sistema
  * SOLO puede ser ejecutado por system admins
- * NO permite eliminar administradores permanentes (caballeropomes@gmail.com)
+ * NO permite eliminar administradores permanentes
  */
 export async function removeSystemAdmin(formData: FormData): Promise<Result> {
   // Verificar permisos de system admin
@@ -222,10 +222,11 @@ export async function removeSystemAdmin(formData: FormData): Promise<Result> {
   const supabase = await supabaseServer();
 
   // Verificar que no sea un admin permanente (protección adicional)
+  const permanentAdminEmail = process.env.NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL;
   const { data: users } = await supabase.auth.admin.listUsers();
   const targetUser = users?.users.find((u) => u.id === user_id);
   
-  if (targetUser?.email === 'caballeropomes@gmail.com') {
+  if (permanentAdminEmail && targetUser?.email === permanentAdminEmail) {
     return fail('No se puede eliminar al administrador permanente del sistema');
   }
 

@@ -39,7 +39,7 @@
    FROM household_members hm
    JOIN households h ON h.id = hm.household_id
    LEFT JOIN auth.users u ON u.id = hm.user_id
-   WHERE u.email = 'caballeropomes@gmail.com'
+   WHERE u.email = 'YOUR_EMAIL@example.com'  -- Reemplazar con tu email
    ORDER BY hm.created_at DESC;
    ```
 

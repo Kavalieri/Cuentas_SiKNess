@@ -57,17 +57,16 @@ DOCUMENTOS/
 - ✅ Creado `docs/ENVIRONMENT_SETUP.md` - Guía genérica de configuración
 - ✅ Creado `db/README.md` - Advertencia sobre información sensible
 
-**Cambios**:
-- `fizxvvtakvmmeflmbwud` → `YOUR_PROJECT_ID`
-- `caballeropomes@gmail.com` → `YOUR_EMAIL@example.com`
+**Cambios aplicados**:
+- Project IDs específicos → `YOUR_PROJECT_ID`
+- Emails personales → `YOUR_EMAIL@example.com`
 
-**Scripts SQL mantenidos** (con advertencia en README):
-- `db/insert_permanent_admin.sql` - Útil para setup
-- `db/fix_missing_member.sql` - Útil para debugging
+**Scripts SQL**: Ahora usan placeholders genéricos y requieren configuración manual.
 
 ---
 
 ### 5. ✅ Verificación de Build
+```
 
 ```bash
 ✔ npm run lint - Sin errores ni warnings

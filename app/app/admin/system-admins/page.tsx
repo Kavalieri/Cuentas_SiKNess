@@ -34,7 +34,8 @@ export default async function SystemAdminsPage() {
       granted_by: admin.granted_by,
       granted_by_email: grantedByUser?.email ?? null,
       notes: admin.notes,
-      is_permanent: user?.email === 'caballeropomes@gmail.com',
+      // Admin permanente configurado en variable de entorno
+      is_permanent: user?.email === process.env.NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL,
     };
   });
 

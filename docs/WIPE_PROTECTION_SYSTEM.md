@@ -224,20 +224,22 @@ if (!result.ok) {
 
 ## 🛡️ Admin Permanente Protegido
 
-### Configuración Actual
+### Configuración
 
-**Email**: `caballeropomes@gmail.com`
+**⚠️ IMPORTANTE**: El email del admin permanente debe configurarse mediante variable de entorno por razones de seguridad.
+
+**Variable de entorno**: `NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL`
 
 **Ubicación**: `supabase/migrations/20251003000000_create_system_admins.sql`
 
-**Código**:
+**Configuración manual requerida**:
 ```sql
-DO $$
-DECLARE admin_user_id UUID;
-BEGIN
-  SELECT id INTO admin_user_id FROM auth.users WHERE email = 'caballeropomes@gmail.com';
-  IF admin_user_id IS NOT NULL THEN
-    INSERT INTO system_admins (user_id, notes)
+-- Ejecutar en Supabase SQL Editor después de configurar la variable de entorno
+INSERT INTO system_admins (user_id, notes)
+SELECT id, 'Administrador permanente del sistema'
+FROM auth.users
+WHERE email = 'YOUR_ADMIN_EMAIL@example.com'  -- Reemplazar con tu email
+ON CONFLICT (user_id) DO NOTHING;
     VALUES (admin_user_id, 'Administrador permanente del sistema - Auto-asignado')
     ON CONFLICT (user_id) DO NOTHING;
   END IF;
@@ -326,8 +328,9 @@ ON CONFLICT (user_id) DO NOTHING;
 
 2. Verificar admin existe:
    ```sql
+   -- Reemplazar con el email de tu admin
    SELECT * FROM system_admins WHERE user_id IN (
-     SELECT id FROM auth.users WHERE email = 'caballeropomes@gmail.com'
+     SELECT id FROM auth.users WHERE email = 'YOUR_ADMIN_EMAIL@example.com'
    );
    ```
 

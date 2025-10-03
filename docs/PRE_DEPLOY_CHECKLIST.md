@@ -88,7 +88,7 @@
 - ✅ Gestión de system admins
 - ✅ Agregar admin por email
 - ✅ Eliminar admin (con protecciones)
-- ✅ Admin permanente protegido (caballeropomes@gmail.com)
+- ✅ Admin permanente protegido (configurado vía variable de entorno)
 - ✅ Wipe de household individual (owners)
 - ✅ Wipe global del sistema (system admins)
 - ✅ Restore to stock con protección de admins
@@ -315,7 +315,7 @@ https://<tu-app>.vercel.app/auth/callback
 - [ ] Ver system admins → Lista admins
 - [ ] Agregar admin → Funciona con email válido
 - [ ] Eliminar admin → Funciona (excepto permanente)
-- [ ] Protección permanente → No se puede eliminar caballeropomes@gmail.com
+- [ ] Protección permanente → No se puede eliminar admin configurado en NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL
 
 #### Seguridad
 - [ ] Usuario sin auth → Redirect a /login
@@ -338,14 +338,16 @@ https://<tu-app>.vercel.app/auth/callback
 **Solución**: Verificar RLS policies en Supabase
 
 ### Problema: Admin permanente no existe
-**Solución**: Ejecutar manualmente:
+**Solución**: Ejecutar manualmente (reemplazar con tu email):
 ```sql
 INSERT INTO system_admins (user_id, notes)
-SELECT id, 'Administrador permanente del sistema - Auto-asignado'
+SELECT id, 'Administrador permanente del sistema'
 FROM auth.users 
-WHERE email = 'caballeropomes@gmail.com'
+WHERE email = 'YOUR_ADMIN_EMAIL@example.com'
 ON CONFLICT (user_id) DO NOTHING;
 ```
+
+Ver `docs/SYSTEM_ADMIN_SETUP.md` para instrucciones completas.
 
 ---
 

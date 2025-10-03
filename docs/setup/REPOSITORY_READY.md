@@ -29,13 +29,13 @@ Protege:
 
 ### ✅ Información Sensible Limpiada
 **Referencias actualizadas en documentación**:
-- `fizxvvtakvmmeflmbwud` → `YOUR_PROJECT_ID`
-- `caballeropomes@gmail.com` → `YOUR_EMAIL@example.com` (en docs públicos)
-- Scripts SQL en `db/` mantienen info real pero están documentados como privados
+- Project IDs específicos → `YOUR_PROJECT_ID`
+- Emails personales → `YOUR_EMAIL@example.com`
+- Scripts SQL usan placeholders genéricos
 
 **Nueva documentación genérica**:
-- `docs/ENVIRONMENT_SETUP.md` - Guía de configuración sin datos sensibles
-- `db/README.md` - Advertencia sobre información sensible en scripts SQL
+- `docs/SYSTEM_ADMIN_SETUP.md` - Guía de configuración segura
+- Migraciones SQL con instrucciones de configuración manual
 
 ### ✅ Build y Lint Verificados
 ```bash

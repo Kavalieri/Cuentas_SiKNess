@@ -27,7 +27,7 @@ CREATE TABLE system_admins (
 
 **Cómo agregar el primer admin**:
 
-✅ **Admin Permanente Protegido**: La migración `20251003000000_create_system_admins.sql` incluye auto-inserción del admin permanente `caballeropomes@gmail.com`. Este admin está protegido contra wipes del sistema.
+✅ **Admin Permanente**: Debe configurarse manualmente mediante variable de entorno `NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL` y ejecutar el SQL de inserción en Supabase SQL Editor. Ver `docs/SYSTEM_ADMIN_SETUP.md` para instrucciones completas.
 
 **Para agregar admins adicionales**:
 ```sql
