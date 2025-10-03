@@ -90,7 +90,7 @@ export default async function ProfilePage() {
           <CardContent>
             <IncomeForm
               householdId={householdId}
-              userId={user.id}
+              profileId={profile.id}
               currentIncome={currentIncome}
             />
           </CardContent>

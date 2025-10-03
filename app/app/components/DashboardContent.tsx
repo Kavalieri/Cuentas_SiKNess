@@ -106,9 +106,10 @@ export function DashboardContent({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Resumen Financiero */}
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Ingresos del Mes
             </CardTitle>
@@ -118,13 +119,13 @@ export function DashboardContent({
               {formatCurrency(summary?.income || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {summary?.income ? 'Total ingresado' : 'Sin movimientos aún'}
+              {incomeMovements.length} {incomeMovements.length === 1 ? 'ingreso' : 'ingresos'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Gastos del Mes
             </CardTitle>
@@ -134,7 +135,23 @@ export function DashboardContent({
               {formatCurrency(summary?.expenses || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {summary?.expenses ? 'Total gastado' : 'Sin movimientos aún'}
+              {expenseMovements.length} {expenseMovements.length === 1 ? 'gasto' : 'gastos'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Balance del Mes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${(summary?.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(summary?.balance || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {(summary?.balance || 0) >= 0 ? 'Superávit' : 'Déficit'}
             </p>
           </CardContent>
         </Card>

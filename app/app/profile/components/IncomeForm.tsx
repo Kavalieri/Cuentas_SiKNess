@@ -11,11 +11,11 @@ import { startOfMonth } from 'date-fns';
 
 interface IncomeFormProps {
   householdId: string;
-  userId: string;
+  profileId: string; // CHANGED: from userId to profileId
   currentIncome: number;
 }
 
-export function IncomeForm({ householdId, userId, currentIncome }: IncomeFormProps) {
+export function IncomeForm({ householdId, profileId, currentIncome }: IncomeFormProps) {
   const [income, setIncome] = useState(currentIncome);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,7 +25,7 @@ export function IncomeForm({ householdId, userId, currentIncome }: IncomeFormPro
 
     const formData = new FormData();
     formData.append('household_id', householdId);
-    formData.append('user_id', userId);
+    formData.append('profile_id', profileId); // CHANGED: from user_id to profile_id
     formData.append('monthly_income', income.toString());
     formData.append('effective_from', startOfMonth(new Date()).toISOString());
 
