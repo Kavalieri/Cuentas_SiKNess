@@ -53,11 +53,20 @@ export const getUserHouseholdId = async (): Promise<string | null> => {
 
   const supabase = await supabaseServer();
 
+  // Obtener el profile_id del usuario autenticado
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return null;
+
   // 1. Intentar obtener household activo desde user_settings
   const { data: settings } = await supabase
     .from('user_settings')
     .select('active_household_id')
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .maybeSingle();
 
   if (settings?.active_household_id) {
@@ -65,7 +74,7 @@ export const getUserHouseholdId = async (): Promise<string | null> => {
     const { data: membership } = await supabase
       .from('household_members')
       .select('household_id')
-      .eq('user_id', user.id)
+      .eq('profile_id', profile.id)
       .eq('household_id', settings.active_household_id)
       .maybeSingle();
 
@@ -78,7 +87,7 @@ export const getUserHouseholdId = async (): Promise<string | null> => {
   const { data: firstHousehold } = await supabase
     .from('household_members')
     .select('household_id')
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .limit(1)
     .maybeSingle();
 
@@ -87,7 +96,7 @@ export const getUserHouseholdId = async (): Promise<string | null> => {
     await supabase
       .from('user_settings')
       .upsert({
-        user_id: user.id,
+        profile_id: profile.id,
         active_household_id: firstHousehold.household_id,
       });
 
@@ -113,6 +122,15 @@ export const getUserHouseholds = async (): Promise<
 
   const supabase = await supabaseServer();
 
+  // Obtener el profile_id del usuario autenticado
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return [];
+
   const { data: memberships, error } = await supabase
     .from('household_members')
     .select(`
@@ -124,7 +142,7 @@ export const getUserHouseholds = async (): Promise<
         created_at
       )
     `)
-    .eq('user_id', user.id);
+    .eq('profile_id', profile.id);
 
   if (error || !memberships) {
     console.error('Error fetching user households:', error);

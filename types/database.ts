@@ -91,9 +91,9 @@ export type Database = {
           paid_amount: number
           paid_at: string | null
           pre_payment_amount: number
+          profile_id: string
           status: string
           updated_at: string
-          user_id: string
           year: number
         }
         Insert: {
@@ -105,9 +105,9 @@ export type Database = {
           paid_amount?: number
           paid_at?: string | null
           pre_payment_amount?: number
+          profile_id: string
           status?: string
           updated_at?: string
-          user_id: string
           year: number
         }
         Update: {
@@ -119,9 +119,9 @@ export type Database = {
           paid_amount?: number
           paid_at?: string | null
           pre_payment_amount?: number
+          profile_id?: string
           status?: string
           updated_at?: string
-          user_id?: string
           year?: number
         }
         Relationships: [
@@ -132,23 +132,30 @@ export type Database = {
             referencedRelation: "households"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contributions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       household_members: {
         Row: {
           household_id: string
+          profile_id: string
           role: string | null
-          user_id: string
         }
         Insert: {
           household_id: string
+          profile_id: string
           role?: string | null
-          user_id: string
         }
         Update: {
           household_id?: string
+          profile_id?: string
           role?: string | null
-          user_id?: string
         }
         Relationships: [
           {
@@ -156,6 +163,13 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -279,7 +293,7 @@ export type Database = {
           household_id: string
           id: string
           monthly_income: number
-          user_id: string
+          profile_id: string
         }
         Insert: {
           created_at?: string
@@ -287,7 +301,7 @@ export type Database = {
           household_id: string
           id?: string
           monthly_income: number
-          user_id: string
+          profile_id: string
         }
         Update: {
           created_at?: string
@@ -295,7 +309,7 @@ export type Database = {
           household_id?: string
           id?: string
           monthly_income?: number
-          user_id?: string
+          profile_id?: string
         }
         Relationships: [
           {
@@ -303,6 +317,13 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_incomes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -366,45 +387,180 @@ export type Database = {
           },
         ]
       }
-      movements: {
+      pre_payments: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string
+          household_id: string
+          id: string
+          month: number
+          movement_id: string | null
+          profile_id: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          household_id: string
+          id?: string
+          month: number
+          movement_id?: string | null
+          profile_id: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          household_id?: string
+          id?: string
+          month?: number
+          movement_id?: string | null
+          profile_id?: string
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pre_payments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_payments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_payments_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_payments_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "v_transactions_with_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_payments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          auth_user_id: string
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          email: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_admins: {
+        Row: {
+          created_at: string | null
+          granted_by: string | null
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          granted_by?: string | null
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          granted_by?: string | null
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
         Row: {
           amount: number
           category_id: string | null
           created_at: string | null
           currency: string
+          description: string | null
           household_id: string
           id: string
-          note: string | null
           occurred_at: string
           period_id: string | null
+          profile_id: string | null
           type: string
-          user_id: string | null
         }
         Insert: {
           amount: number
           category_id?: string | null
           created_at?: string | null
           currency?: string
+          description?: string | null
           household_id: string
           id?: string
-          note?: string | null
           occurred_at: string
           period_id?: string | null
+          profile_id?: string | null
           type: string
-          user_id?: string | null
         }
         Update: {
           amount?: number
           category_id?: string | null
           created_at?: string | null
           currency?: string
+          description?: string | null
           household_id?: string
           id?: string
-          note?: string | null
           occurred_at?: string
           period_id?: string | null
+          profile_id?: string | null
           type?: string
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -435,117 +591,36 @@ export type Database = {
             referencedRelation: "v_period_stats"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      pre_payments: {
-        Row: {
-          amount: number
-          category_id: string | null
-          created_at: string | null
-          created_by: string | null
-          description: string
-          household_id: string
-          id: string
-          month: number
-          movement_id: string | null
-          updated_at: string | null
-          user_id: string
-          year: number
-        }
-        Insert: {
-          amount: number
-          category_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description: string
-          household_id: string
-          id?: string
-          month: number
-          movement_id?: string | null
-          updated_at?: string | null
-          user_id: string
-          year: number
-        }
-        Update: {
-          amount?: number
-          category_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string
-          household_id?: string
-          id?: string
-          month?: number
-          movement_id?: string | null
-          updated_at?: string | null
-          user_id?: string
-          year?: number
-        }
-        Relationships: [
           {
-            foreignKeyName: "pre_payments_category_id_fkey"
-            columns: ["category_id"]
+            foreignKeyName: "transactions_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pre_payments_household_id_fkey"
-            columns: ["household_id"]
-            isOneToOne: false
-            referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pre_payments_movement_id_fkey"
-            columns: ["movement_id"]
-            isOneToOne: false
-            referencedRelation: "movements"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
-      }
-      system_admins: {
-        Row: {
-          created_at: string | null
-          granted_by: string | null
-          notes: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          granted_by?: string | null
-          notes?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          granted_by?: string | null
-          notes?: string | null
-          user_id?: string
-        }
-        Relationships: []
       }
       user_settings: {
         Row: {
           active_household_id: string | null
           created_at: string | null
           preferences: Json | null
+          profile_id: string
           updated_at: string | null
-          user_id: string
         }
         Insert: {
           active_household_id?: string | null
           created_at?: string | null
           preferences?: Json | null
+          profile_id: string
           updated_at?: string | null
-          user_id: string
         }
         Update: {
           active_household_id?: string | null
           created_at?: string | null
           preferences?: Json | null
+          profile_id?: string
           updated_at?: string | null
-          user_id?: string
         }
         Relationships: [
           {
@@ -553,6 +628,13 @@ export type Database = {
             columns: ["active_household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_settings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -633,6 +715,61 @@ export type Database = {
           },
         ]
       }
+      v_transactions_with_profile: {
+        Row: {
+          amount: number | null
+          category_id: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          household_id: string | null
+          id: string | null
+          occurred_at: string | null
+          period_id: string | null
+          profile_avatar: string | null
+          profile_email: string | null
+          profile_id: string | null
+          profile_name: string | null
+          type: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movements_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "v_period_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: {
@@ -656,7 +793,7 @@ export type Database = {
         Args: { p_household_id: string; p_month: number; p_year: number }
         Returns: {
           expected_amount: number
-          user_id: string
+          profile_id: string
         }[]
       }
       calculate_pre_payment_amount: {
@@ -713,18 +850,32 @@ export type Database = {
           year: number
         }
       }
+      get_current_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          bio: string
+          display_name: string
+          email: string
+          id: string
+        }[]
+      }
+      get_current_profile_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_household_members: {
         Args: { p_household_id: string }
         Returns: {
           email: string
           household_id: string
           id: string
+          profile_id: string
           role: string
-          user_id: string
         }[]
       }
       get_member_income: {
-        Args: { p_date?: string; p_household_id: string; p_user_id: string }
+        Args: { p_date?: string; p_household_id: string; p_profile_id: string }
         Returns: number
       }
       is_system_admin: {

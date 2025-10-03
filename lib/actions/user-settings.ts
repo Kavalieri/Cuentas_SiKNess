@@ -17,11 +17,22 @@ export async function setActiveHousehold(householdId: string): Promise<Result> {
 
   const supabase = await supabaseServer();
 
+  // Obtener el profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    return fail('Perfil no encontrado');
+  }
+
   // Verificar que el usuario es miembro de este household
   const { data: membership } = await supabase
     .from('household_members')
     .select('household_id, role')
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .eq('household_id', householdId)
     .maybeSingle();
 
@@ -33,7 +44,7 @@ export async function setActiveHousehold(householdId: string): Promise<Result> {
   const { error } = await supabase
     .from('user_settings')
     .upsert({
-      user_id: user.id,
+      profile_id: profile.id,
       active_household_id: householdId,
       updated_at: new Date().toISOString(),
     });
@@ -58,10 +69,19 @@ export async function getActiveHouseholdId(): Promise<string | undefined> {
 
   const supabase = await supabaseServer();
 
+  // Obtener el profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return undefined;
+
   const { data: settings } = await supabase
     .from('user_settings')
     .select('active_household_id')
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .maybeSingle();
 
   return settings?.active_household_id || undefined;

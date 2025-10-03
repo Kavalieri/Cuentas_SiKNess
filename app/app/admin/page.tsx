@@ -12,7 +12,7 @@ export default async function AdminPage() {
     supabase.from('households').select('id', { count: 'exact', head: true }),
     supabase.from('household_members').select('user_id', { count: 'exact', head: true }),
     supabase.from('categories').select('id', { count: 'exact', head: true }),
-    supabase.from('movements').select('id', { count: 'exact', head: true }),
+    supabase.from('transactions').select('id', { count: 'exact', head: true }),
   ]);
 
   const stats = {

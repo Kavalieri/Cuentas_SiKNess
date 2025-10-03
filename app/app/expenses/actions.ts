@@ -14,7 +14,7 @@ const MovementSchema = z.object({
   type: z.enum(['expense', 'income']),
   amount: z.coerce.number().positive('El monto debe ser mayor a 0'),
   currency: z.string().min(1).default('EUR'),
-  note: z.string().optional(),
+  description: z.string().optional(),
   occurred_at: z.string().min(1, 'La fecha es requerida'),
 });
 
@@ -42,7 +42,7 @@ export async function createMovement(formData: FormData): Promise<Result<{ id: s
 
   // @ts-ignore - Supabase types issue
   const { data, error } = await supabase
-    .from('movements')
+    .from('transactions')
     // @ts-ignore
     .insert({
       household_id: householdId,
@@ -51,7 +51,7 @@ export async function createMovement(formData: FormData): Promise<Result<{ id: s
       type: parsed.data.type,
       amount: parsed.data.amount,
       currency: parsed.data.currency,
-      note: parsed.data.note || null,
+      description: parsed.data.description || null,
       occurred_at: parsed.data.occurred_at,
     })
     .select()
@@ -83,14 +83,14 @@ export async function getMovements(params?: {
   const supabase = await supabaseServer();
 
   let query = supabase
-    .from('movements')
+    .from('transactions')
     .select(
       `
       id,
       type,
       amount,
       currency,
-      note,
+      description,
       occurred_at,
       created_at,
       categories (
@@ -136,7 +136,7 @@ export async function deleteMovement(movementId: string): Promise<Result> {
   const supabase = await supabaseServer();
 
   const { error } = await supabase
-    .from('movements')
+    .from('transactions')
     .delete()
     .eq('id', movementId)
     .eq('household_id', householdId); // Verificar que pertenece al household
@@ -169,7 +169,7 @@ export async function getMonthSummary(
   const supabase = await supabaseServer();
 
   const { data, error } = await supabase
-    .from('movements')
+    .from('transactions')
     .select('type, amount')
     .eq('household_id', householdId)
     .gte('occurred_at', startDate)
@@ -208,7 +208,7 @@ export async function getTotalBalance(): Promise<Result<{ balance: number; incom
   const supabase = await supabaseServer();
 
   const { data, error } = await supabase
-    .from('movements')
+    .from('transactions')
     .select('type, amount')
     .eq('household_id', householdId);
 

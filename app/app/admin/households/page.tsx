@@ -13,7 +13,7 @@ export default async function HouseholdsPage() {
       name,
       created_at,
       household_members (
-        user_id,
+        profile_id,
         role
       )
     `).order('created_at', { ascending: false });
@@ -31,7 +31,7 @@ export default async function HouseholdsPage() {
     (households ?? []).map(async (household) => {
       const [movementsResult, categoriesResult] = await Promise.all([
         supabase
-          .from('movements')
+          .from('transactions')
           .select('id', { count: 'exact', head: true })
           .eq('household_id', household.id),
         supabase

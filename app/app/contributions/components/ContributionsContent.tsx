@@ -14,7 +14,7 @@ type PrePayment = Database['public']['Tables']['pre_payments']['Row'] & {
 };
 
 type Member = {
-  user_id: string;
+  profile_id: string;
   email: string;
   income: number;
   contribution: Contribution | null;
@@ -81,7 +81,7 @@ export function ContributionsContent({
       <PrePaymentsSection
         householdId={householdId}
         members={membersWithIncomes.map((m) => ({
-          user_id: m.user_id,
+          profile_id: m.profile_id,
           email: m.email,
           role: m.role, // Usar el rol real del miembro
         }))}

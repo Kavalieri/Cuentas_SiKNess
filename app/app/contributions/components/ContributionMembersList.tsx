@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/format';
 import { Users, CheckCircle2, Clock, AlertCircle, TrendingDown } from 'lucide-react';
 
 type Member = {
-  user_id: string;
+  profile_id: string;
   email: string;
   income: number;
   contribution: {
@@ -96,7 +96,7 @@ export function ContributionMembersList({
             : 0;
 
           return (
-            <Card key={member.user_id} className="border-muted">
+            <Card key={member.profile_id} className="border-muted">
               <CardContent className="pt-6 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">

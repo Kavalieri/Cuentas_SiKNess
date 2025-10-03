@@ -28,6 +28,17 @@ export async function createHousehold(formData: FormData): Promise<Result<{ hous
 
   const supabase = await supabaseServer();
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    return fail('Perfil no encontrado');
+  }
+
   // Usar función SQL con SECURITY DEFINER para bypasear problemas de RLS
   // @ts-ignore - Supabase types issue con Next.js 15
   const { data, error } = await supabase.rpc('create_household_with_member', {
@@ -45,7 +56,7 @@ export async function createHousehold(formData: FormData): Promise<Result<{ hous
 
   // NUEVO: Establecer el nuevo household como activo automáticamente
   await supabase.from('user_settings').upsert({
-    user_id: user.id,
+    profile_id: profile.id,
     active_household_id: household_id,
     updated_at: new Date().toISOString(),
   });
@@ -155,18 +166,18 @@ export async function removeMember(memberId: string): Promise<Result> {
   // Verificar que no es el último owner
   const { data: owners } = await supabase
     .from('household_members')
-    .select('user_id')
+    .select('profile_id')
     .eq('household_id', householdId)
     .eq('role', 'owner');
 
   if (owners && owners.length === 1) {
     const { data: memberToDelete } = await supabase
       .from('household_members')
-      .select('user_id')
+      .select('profile_id')
       .eq('id', memberId)
       .single();
 
-    if (memberToDelete && owners[0]?.user_id === memberToDelete.user_id) {
+    if (memberToDelete && owners[0]?.profile_id === memberToDelete.profile_id) {
       return fail('No puedes eliminar el último administrador del hogar');
     }
   }

@@ -577,9 +577,20 @@ export async function acceptInvitation(token: string): Promise<Result<{ househol
   const cookieStore = await cookies();
   cookieStore.delete('invitation_token');
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    return fail('Perfil no encontrado');
+  }
+
   // NUEVO: Establecer el nuevo household como activo automáticamente
   await supabase.from('user_settings').upsert({
-    user_id: user.id,
+    profile_id: profile.id,
     active_household_id: result.household_id!,
     updated_at: new Date().toISOString(),
   });

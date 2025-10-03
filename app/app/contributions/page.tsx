@@ -9,7 +9,7 @@ import { CALCULATION_TYPES, type CalculationType } from '@/lib/contributionTypes
 type Contribution = Database['public']['Tables']['contributions']['Row'];
 
 type Member = {
-  user_id: string;
+  profile_id: string;
   email: string;
   income: number;
   contribution: Contribution | null;
@@ -29,6 +29,19 @@ export default async function ContributionsPage() {
   if (!user) {
     redirect('/login');
   }
+
+  // Obtener profile_id del usuario actual
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!currentProfile) {
+    redirect('/login');
+  }
+
+  const currentProfileId = currentProfile.id;
 
   // Obtener configuración del hogar
   const { data: settings } = await supabase
@@ -51,12 +64,12 @@ export default async function ContributionsPage() {
     (membersData || []).map(async (member) => {
       const { data: income } = await supabase.rpc('get_member_income', {
         p_household_id: householdId,
-        p_user_id: member.user_id,
+        p_profile_id: member.profile_id,
         p_date: new Date().toISOString().split('T')[0],
       });
 
       return {
-        user_id: member.user_id,
+        profile_id: member.profile_id,
         email: member.email || 'Sin email',
         income: (income as number) || 0,
         contribution: null,
@@ -82,17 +95,17 @@ export default async function ContributionsPage() {
 
   // Asignar contribuciones a miembros
   const contributionsMap = new Map(
-    (contributions || []).map((c) => [c.user_id, c])
+    (contributions || []).map((c) => [c.profile_id, c])
   );
 
   membersWithIncomes.forEach((member) => {
-    member.contribution = contributionsMap.get(member.user_id) || null;
+    member.contribution = contributionsMap.get(member.profile_id) || null;
   });
 
     // Datos del usuario actual
   const currentUserIncome =
-    membersWithIncomes.find((m) => m.user_id === user.id)?.income || 0;
-  const currentUserContribution = contributionsMap.get(user.id) || null;
+    membersWithIncomes.find((m) => m.profile_id === currentProfileId)?.income || 0;
+  const currentUserContribution = contributionsMap.get(currentProfileId) || null;
 
   // Calcular total pagado
   const totalPaid = (contributions || []).reduce(
@@ -101,7 +114,7 @@ export default async function ContributionsPage() {
   );
 
   // Verificar si el usuario es owner
-  const isOwner = membersWithIncomes.find((m) => m.user_id === user.id)?.role === 'owner';
+  const isOwner = membersWithIncomes.find((m) => m.profile_id === currentProfileId)?.role === 'owner';
 
   // Obtener categorías de gastos para pre-pagos
   const { data: categories } = await supabase

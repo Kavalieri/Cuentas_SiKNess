@@ -9,7 +9,7 @@ type Contribution = Database['public']['Tables']['contributions']['Row'];
 
 interface Member {
   id: string;
-  user_id: string;
+  profile_id: string;
   email: string;
   role: 'owner' | 'member';
   currentIncome: number;

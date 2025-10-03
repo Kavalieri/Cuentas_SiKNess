@@ -233,7 +233,7 @@ export async function getPeriodCategoryStats(
 
   // Obtener movimientos del período agrupados por categoría
   const { data, error } = await supabase
-    .from('movements')
+    .from('transactions')
     .select(
       `
       category_id,

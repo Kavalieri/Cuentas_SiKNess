@@ -12,8 +12,8 @@ import type { Database } from '@/types/database';
 // Type Helpers
 // =====================================================
 
-// Helper type para inserts de movements que evita problemas con tipos opcionales
-type MovementInsert = Database['public']['Tables']['movements']['Insert'];
+// Helper type para inserts de transactions que evita problemas con tipos opcionales
+type MovementInsert = Database['public']['Tables']['transactions']['Insert'];
 
 // =====================================================
 // Schemas de Validación
@@ -21,7 +21,7 @@ type MovementInsert = Database['public']['Tables']['movements']['Insert'];
 
 const MemberIncomeSchema = z.object({
   household_id: z.string().uuid(),
-  user_id: z.string().uuid(),
+  profile_id: z.string().uuid(),
   monthly_income: z.coerce.number().nonnegative(),
   effective_from: z.coerce.date(),
 });
@@ -47,7 +47,7 @@ const ContributionAdjustmentSchema = z.object({
 
 const PrePaymentSchema = z.object({
   household_id: z.string().uuid(),
-  user_id: z.string().uuid(),
+  profile_id: z.string().uuid(),
   month: z.coerce.number().int().min(1).max(12),
   year: z.coerce.number().int().min(2020),
   amount: z.coerce.number().positive(),
@@ -106,14 +106,14 @@ export async function getMemberIncomes(householdId: string) {
 
 export async function getCurrentMemberIncome(
   householdId: string,
-  userId: string
+  profileId: string
 ): Promise<number> {
   const supabase = await supabaseServer();
 
   // @ts-ignore - Supabase type inference issue
   const { data, error } = await supabase.rpc('get_member_income', {
     p_household_id: householdId,
-    p_user_id: userId,
+    p_profile_id: profileId,
     p_date: new Date().toISOString().split('T')[0],
   });
 
@@ -214,7 +214,7 @@ export async function calculateAndCreateContributions(
     // @ts-ignore - Supabase type inference
     const contributions = calculations.map((calc) => ({
       household_id: householdId,
-      user_id: calc.user_id,
+      profile_id: calc.profile_id,
       year,
       month,
       expected_amount: calc.expected_amount,
@@ -225,7 +225,7 @@ export async function calculateAndCreateContributions(
     const { error: insertError } = await supabase
       .from('contributions')
       .upsert(contributions, {
-        onConflict: 'household_id,user_id,year,month',
+        onConflict: 'household_id,profile_id,year,month',
         ignoreDuplicates: false,
       });
 
@@ -297,7 +297,7 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
   // Obtener datos completos de la contribución
   const { data: contribution, error: fetchError } = await supabase
     .from('contributions')
-    .select('expected_amount, household_id, user_id, month, year')
+    .select('expected_amount, household_id, profile_id, month, year')
     .eq('id', contributionId)
     .single();
 
@@ -305,7 +305,7 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
   if (!contribution) return fail('Contribución no encontrada');
 
   // @ts-ignore - Supabase type inference
-  const { expected_amount, household_id, user_id, month, year } = contribution;
+  const { expected_amount, household_id, profile_id, month, year } = contribution;
 
   // 1. Buscar o crear categoría "Nómina" (tipo income)
   let { data: nominaCategoryData } = await supabase
@@ -339,16 +339,16 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
   // 2. Crear movimiento de ingreso
   const movementData: MovementInsert = {
     household_id,
-    user_id,
+    profile_id,
     category_id: categoryId,
     type: 'income',
     amount: expected_amount,
     currency: 'EUR',
-    note: `Contribución mensual ${month}/${year}`,
+    description: `Contribución mensual ${month}/${year}`,
     occurred_at: new Date().toISOString().substring(0, 10),
   };
 
-  const { error: movementError } = await supabase.from('movements').insert(movementData);
+  const { error: movementError } = await supabase.from('transactions').insert(movementData);
 
   if (movementError) return fail('Error al crear movimiento de ingreso');
 
@@ -530,17 +530,17 @@ export async function createPrePayment(formData: FormData): Promise<Result> {
   // 1. Crear el movimiento de gasto
   const movementData: MovementInsert = {
     household_id: parsed.data.household_id,
-    user_id: parsed.data.user_id,
+    profile_id: parsed.data.profile_id,
     category_id: parsed.data.category_id,
     type: 'expense',
     amount: parsed.data.amount,
     currency: 'EUR',
-    note: `[PRE-PAGO] ${parsed.data.description}`,
+    description: `[PRE-PAGO] ${parsed.data.description}`,
     occurred_at: new Date().toISOString().substring(0, 10),
   };
 
   const { data: movement, error: movementError } = await supabase
-    .from('movements')
+    .from('transactions')
     .insert(movementData)
     .select('id')
     .single();
@@ -554,7 +554,7 @@ export async function createPrePayment(formData: FormData): Promise<Result> {
     .from('pre_payments')
     .insert({
       household_id: parsed.data.household_id,
-      user_id: parsed.data.user_id,
+      profile_id: parsed.data.profile_id,
       month: parsed.data.month,
       year: parsed.data.year,
       amount: parsed.data.amount,
@@ -566,7 +566,7 @@ export async function createPrePayment(formData: FormData): Promise<Result> {
 
   if (prePaymentError) {
     // Rollback: eliminar el movimiento si falla el pre-pago
-    await supabase.from('movements').delete().eq('id', movement.id);
+    await supabase.from('transactions').delete().eq('id', movement.id);
     return fail('Error al crear el pre-pago');
   }
 
@@ -616,8 +616,8 @@ export async function getPrePayments(
 
   // Construir lookup maps
   const membersMap = new Map(
-    (membersData || []).map((m: { user_id: string; email: string | null }) => [
-      m.user_id,
+    (membersData || []).map((m: { profile_id: string; email: string | null }) => [
+      m.profile_id,
       m.email || 'Desconocido',
     ])
   );
@@ -628,7 +628,7 @@ export async function getPrePayments(
   // Enriquecer pre-pagos con datos relacionados
   return prePayments.map((pp) => ({
     ...pp,
-    user: { email: membersMap.get(pp.user_id) || 'Desconocido' },
+    user: { email: membersMap.get(pp.profile_id) || 'Desconocido' },
     category: categoriesMap.get(pp.category_id || '') || { name: 'Sin categoría', icon: null },
   }));
 }
@@ -674,7 +674,7 @@ export async function deletePrePayment(prePaymentId: string): Promise<Result> {
   // Eliminar el movimiento asociado
   if (prePayment.movement_id) {
     await supabase
-      .from('movements')
+      .from('transactions')
       .delete()
       .eq('id', prePayment.movement_id);
   }
@@ -702,14 +702,14 @@ export async function recordContributionPayment(
   // Obtener datos completos de la contribución
   const { data: contribution, error: fetchError } = await supabase
     .from('contributions')
-    .select('expected_amount, pre_payment_amount, paid_amount, household_id, user_id, month, year')
+    .select('expected_amount, pre_payment_amount, paid_amount, household_id, profile_id, month, year')
     .eq('id', contributionId)
     .single();
 
   if (fetchError) return fail(fetchError.message);
   if (!contribution) return fail('Contribución no encontrada');
 
-  const { expected_amount, pre_payment_amount, paid_amount, household_id, user_id, month, year } =
+  const { expected_amount, pre_payment_amount, paid_amount, household_id, profile_id, month, year } =
     contribution;
 
   // Calcular monto ajustado
@@ -751,16 +751,16 @@ export async function recordContributionPayment(
   // 2. Crear movimiento de ingreso
   const movementData: MovementInsert = {
     household_id,
-    user_id,
+    profile_id,
     category_id: categoryId,
     type: 'income',
     amount,
     currency: 'EUR',
-    note: `Contribución mensual ${month}/${year}`,
+    description: `Contribución mensual ${month}/${year}`,
     occurred_at: new Date().toISOString().substring(0, 10),
   };
 
-  const { error: movementError } = await supabase.from('movements').insert(movementData);
+  const { error: movementError } = await supabase.from('transactions').insert(movementData);
 
   if (movementError) return fail('Error al crear movimiento de ingreso');
 

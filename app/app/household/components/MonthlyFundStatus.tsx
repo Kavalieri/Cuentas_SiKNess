@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 
 interface Member {
   id: string;
-  user_id: string;
+  profile_id: string;
   email: string;
   role: 'owner' | 'member';
   currentIncome: number;
@@ -20,7 +20,7 @@ interface Member {
 
 interface Contribution {
   id: string;
-  user_id: string;
+  profile_id: string;
   expected_amount: number;
   paid_amount: number;
   status: string;
@@ -206,13 +206,13 @@ export function MonthlyFundStatus({
               Aportaciones Individuales
             </h3>
             {members.map((member) => {
-              const contribution = contributions.find(c => c.user_id === member.user_id);
-              const isCurrentUser = member.user_id === currentUserId;
+              const contribution = contributions.find(c => c.profile_id === member.profile_id);
+              const isCurrentUser = member.profile_id === currentUserId;
 
               if (!contribution) {
                 return (
                   <div
-                    key={`${member.user_id}-no-contrib`}
+                    key={`${member.profile_id}-no-contrib`}
                     className="flex items-center justify-between p-3 border rounded-lg bg-muted/50"
                   >
                     <div>
@@ -234,7 +234,7 @@ export function MonthlyFundStatus({
 
               return (
                 <div
-                  key={`${member.user_id}-contrib`}
+                  key={`${member.profile_id}-contrib`}
                   className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
                     isPaid ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-background'
                   }`}
@@ -268,10 +268,10 @@ export function MonthlyFundStatus({
                     {!isPaid && isCurrentUser && isCurrentMonth && (
                       <Button
                         size="sm"
-                        onClick={() => handleMarkAsPaid(contribution.id, member.user_id)}
-                        disabled={loadingUserId === member.user_id}
+                        onClick={() => handleMarkAsPaid(contribution.id, member.profile_id)}
+                        disabled={loadingUserId === member.profile_id}
                       >
-                        {loadingUserId === member.user_id ? 'Guardando...' : 'Marcar como Aportado'}
+                        {loadingUserId === member.profile_id ? 'Guardando...' : 'Marcar como Aportado'}
                       </Button>
                     )}
                     {isPaid && (

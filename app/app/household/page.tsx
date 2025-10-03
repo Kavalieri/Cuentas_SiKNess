@@ -21,6 +21,19 @@ export default async function HouseholdPage() {
     redirect('/login');
   }
 
+  const supabase = await supabaseServer();
+
+  // Obtener profile_id del usuario actual
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!currentProfile) {
+    redirect('/login');
+  }
+
   const householdId = await getCurrentHouseholdId();
   
   // Si no tiene household, redirigir a creación
@@ -29,7 +42,6 @@ export default async function HouseholdPage() {
   }
 
   const userIsOwner = await isOwner();
-  const supabase = await supabaseServer();
 
   // Obtener información del hogar
   const { data: household } = await supabase
@@ -52,13 +64,13 @@ export default async function HouseholdPage() {
     (membersData || []).map(async (member) => {
       const { data: income } = await supabase.rpc('get_member_income', {
         p_household_id: householdId,
-        p_user_id: member.user_id,
+        p_profile_id: member.profile_id,
         p_date: new Date().toISOString().split('T')[0],
       });
 
       return {
         id: member.id,
-        user_id: member.user_id,
+        profile_id: member.profile_id,
         email: member.email || 'Sin email',
         role: member.role as 'owner' | 'member',
         currentIncome: (income as number) ?? 0,
@@ -89,19 +101,19 @@ export default async function HouseholdPage() {
   // Preparar datos para ContributionsContent
   const totalIncome = members.reduce((sum, m) => sum + m.currentIncome, 0);
   const contributionsMap = new Map(
-    (contributions || []).map((c) => [c.user_id, c])
+    (contributions || []).map((c) => [c.profile_id, c])
   );
   
   const membersWithIncomes = members.map((m) => ({
-    user_id: m.user_id,
+    profile_id: m.profile_id,
     email: m.email,
     income: m.currentIncome,
-    contribution: contributionsMap.get(m.user_id) || null,
+    contribution: contributionsMap.get(m.profile_id) || null,
     role: m.role, // Incluir el rol del miembro
   }));
 
-  const currentUserIncome = members.find((m) => m.user_id === user.id)?.currentIncome || 0;
-  const currentUserContribution = contributionsMap.get(user.id) || null;
+  const currentUserIncome = members.find((m) => m.profile_id === currentProfile.id)?.currentIncome || 0;
+  const currentUserContribution = contributionsMap.get(currentProfile.id) || null;
   const totalPaid = (contributions || []).reduce((sum, c) => sum + (c.paid_amount || 0), 0);
 
   // Obtener categorías de gastos para pre-pagos
@@ -145,7 +157,7 @@ export default async function HouseholdPage() {
             initialMembers={members}
             initialContributions={contributions || []}
             initialGoalAmount={goalAmount}
-            currentUserId={user.id}
+            currentUserId={currentProfile.id}
           />
         </TabsContent>
 

@@ -15,12 +15,23 @@ export default async function ProfilePage() {
   const userHouseholds = await getUserHouseholds();
   const supabase = await supabaseServer();
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    redirect('/login');
+  }
+
   // Obtener ingreso actual (del hogar activo si existe)
   let currentIncome = 0;
   if (householdId) {
     const { data: income } = await supabase.rpc('get_member_income', {
       p_household_id: householdId,
-      p_user_id: user.id,
+      p_profile_id: profile.id,
       p_date: new Date().toISOString().split('T')[0],
     });
     currentIncome = (income as number) ?? 0;

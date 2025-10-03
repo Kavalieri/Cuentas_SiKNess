@@ -12,7 +12,7 @@ import { createPrePayment, deletePrePayment } from '@/app/app/contributions/acti
 import { Trash2, Plus } from 'lucide-react';
 
 type Member = {
-  user_id: string;
+  profile_id: string;
   email: string;
   role: string;
 };
@@ -26,7 +26,7 @@ type Category = {
 
 type PrePayment = {
   id: string;
-  user_id: string;
+  profile_id: string;
   amount: number;
   category_id: string | null;
   description: string;
@@ -147,7 +147,7 @@ export function PrePaymentsSection({
                   </SelectTrigger>
                   <SelectContent>
                     {members.map((member) => (
-                      <SelectItem key={member.user_id} value={member.user_id}>
+                      <SelectItem key={member.profile_id} value={member.profile_id}>
                         {member.email} {member.role === 'owner' && '(Owner)'}
                       </SelectItem>
                     ))}
