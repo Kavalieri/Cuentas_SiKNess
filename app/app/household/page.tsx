@@ -7,9 +7,10 @@ import { MembersList } from './components/MembersList';
 import { DangerZone } from './components/DangerZone';
 import { OverviewWrapper } from './components/OverviewWrapper';
 import { CategoriesTab } from './components/CategoriesTab';
+import { ContributionsContent } from '@/app/app/contributions/components/ContributionsContent';
+import { getPrePayments } from '@/app/app/contributions/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { CALCULATION_TYPES, type CalculationType } from '@/lib/contributionTypes';
 
 export default async function HouseholdPage() {
   const user = await getCurrentUser();
@@ -71,14 +72,43 @@ export default async function HouseholdPage() {
     .eq('year', now.getFullYear())
     .eq('month', now.getMonth() + 1);
 
-  // Obtener meta mensual
+  // Obtener meta mensual y configuración
   const { data: settings } = await supabase
     .from('household_settings')
-    .select('monthly_contribution_goal')
+    .select('*')
     .eq('household_id', householdId)
     .single();
 
   const goalAmount = settings?.monthly_contribution_goal ?? 0;
+  const currency = settings?.currency || 'EUR';
+  const calculationType = (settings?.calculation_type as CalculationType) || CALCULATION_TYPES.PROPORTIONAL;
+
+  // Preparar datos para ContributionsContent
+  const totalIncome = members.reduce((sum, m) => sum + m.currentIncome, 0);
+  const contributionsMap = new Map(
+    (contributions || []).map((c) => [c.user_id, c])
+  );
+  
+  const membersWithIncomes = members.map((m) => ({
+    user_id: m.user_id,
+    email: m.email,
+    income: m.currentIncome,
+    contribution: contributionsMap.get(m.user_id) || null,
+  }));
+
+  const currentUserIncome = members.find((m) => m.user_id === user.id)?.currentIncome || 0;
+  const currentUserContribution = contributionsMap.get(user.id) || null;
+  const totalPaid = (contributions || []).reduce((sum, c) => sum + (c.paid_amount || 0), 0);
+
+  // Obtener categorías de gastos para pre-pagos
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('id, name, icon, type')
+    .eq('household_id', householdId)
+    .order('name');
+
+  // Obtener pre-pagos del mes actual
+  const prePayments = await getPrePayments(householdId, now.getFullYear(), now.getMonth() + 1);
 
   return (
     <div className="space-y-6">
@@ -92,8 +122,9 @@ export default async function HouseholdPage() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
+          <TabsTrigger value="contributions">Contribuciones</TabsTrigger>
           <TabsTrigger value="categories">Categorías</TabsTrigger>
           <TabsTrigger value="members">Miembros</TabsTrigger>
           <TabsTrigger value="settings">Configuración</TabsTrigger>
@@ -102,27 +133,6 @@ export default async function HouseholdPage() {
 
         {/* Tab 1: Overview / Resumen */}
         <TabsContent value="overview" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>💰 Contribuciones del Mes</CardTitle>
-              <CardDescription>
-                Gestiona las contribuciones proporcionales del hogar
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  El sistema de contribuciones ahora tiene su propia página dedicada con todas las funcionalidades.
-                </p>
-                <Link href="/app/contributions">
-                  <Button className="w-full">
-                    Ver Contribuciones Completas →
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
           <OverviewWrapper
             householdId={householdId}
             initialMembers={members}
@@ -132,12 +142,35 @@ export default async function HouseholdPage() {
           />
         </TabsContent>
 
-        {/* Tab 2: Categorías */}
+        {/* Tab 2: Contribuciones */}
+        <TabsContent value="contributions" className="space-y-6 mt-6">
+          <ContributionsContent
+            householdId={householdId}
+            userId={user.id}
+            userEmail={user.email || ''}
+            currentUserIncome={currentUserIncome}
+            currentUserContribution={currentUserContribution}
+            totalIncome={totalIncome}
+            membersWithIncomes={membersWithIncomes}
+            monthlyGoal={goalAmount}
+            totalPaid={totalPaid}
+            calculationType={calculationType}
+            currency={currency}
+            isOwner={userIsOwner}
+            categories={categories || []}
+            prePayments={prePayments}
+            currentMonth={now.getMonth() + 1}
+            currentYear={now.getFullYear()}
+            memberRole={members.find((m) => m.user_id === user.id)?.role || 'member'}
+          />
+        </TabsContent>
+
+        {/* Tab 3: Categorías */}
         <TabsContent value="categories" className="space-y-6 mt-6">
           <CategoriesTab />
         </TabsContent>
 
-        {/* Tab 3: Miembros */}
+        {/* Tab 4: Miembros */}
         <TabsContent value="members" className="space-y-6 mt-6">
           {userIsOwner ? (
             <Card>
@@ -177,7 +210,7 @@ export default async function HouseholdPage() {
           )}
         </TabsContent>
 
-        {/* Tab 4: Configuración del Hogar */}
+        {/* Tab 5: Configuración del Hogar */}
         <TabsContent value="settings" className="space-y-6 mt-6">
           <HouseholdInfo 
             household={{
@@ -189,7 +222,7 @@ export default async function HouseholdPage() {
           />
         </TabsContent>
 
-        {/* Tab 5: Zona Peligrosa (solo owner) */}
+        {/* Tab 6: Zona Peligrosa (solo owner) */}
         {userIsOwner && (
           <TabsContent value="danger" className="space-y-6 mt-6">
             <DangerZone />

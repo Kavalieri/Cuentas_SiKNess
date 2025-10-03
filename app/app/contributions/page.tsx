@@ -1,8 +1,4 @@
-import { HeroContribution } from './components/HeroContribution';
-import { HouseholdSummary } from './components/HouseholdSummary';
-import { ContributionMembersList } from './components/ContributionMembersList';
-import { ConfigurationSection } from './components/ConfigurationSection';
-import { PrePaymentsSection } from './components/PrePaymentsSection';
+import { ContributionsContent } from './components/ContributionsContent';
 import { getCurrentHouseholdId } from '@/lib/adminCheck';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabaseServer';
@@ -131,53 +127,24 @@ export default async function ContributionsPage() {
         </p>
       </div>
 
-      {/* Hero: Tu contribución */}
-      <HeroContribution
-        contribution={currentUserContribution}
+      <ContributionsContent
+        householdId={householdId}
+        userId={user.id}
         userEmail={user.email || ''}
+        currentUserIncome={currentUserIncome}
+        currentUserContribution={currentUserContribution}
         totalIncome={totalIncome}
-        userIncome={currentUserIncome}
-        currency={currency}
-      />
-
-      {/* Resumen del hogar */}
-      <HouseholdSummary
+        membersWithIncomes={membersWithIncomes}
         monthlyGoal={monthlyGoal}
         totalPaid={totalPaid}
         calculationType={calculationType}
         currency={currency}
-      />
-
-      {/* Pre-pagos (solo visible para owners) */}
-      <PrePaymentsSection
-        householdId={householdId}
-        members={membersWithIncomes.map((m) => ({
-          user_id: m.user_id,
-          email: m.email,
-          role: memberData?.role || 'member',
-        }))}
+        isOwner={isOwner}
         categories={categories || []}
         prePayments={prePayments}
         currentMonth={currentMonth}
         currentYear={currentYear}
-        isOwner={isOwner}
-      />
-
-      {/* Lista de miembros */}
-      <ContributionMembersList
-        members={membersWithIncomes}
-        totalIncome={totalIncome}
-      />
-
-      {/* Configuración */}
-      <ConfigurationSection
-        householdId={householdId}
-        userId={user.id}
-        currentGoal={monthlyGoal}
-        currentIncome={currentUserIncome}
-        currentCalculationType={calculationType}
-        isOwner={isOwner}
-        currency={currency}
+        memberRole={memberData?.role || 'member'}
       />
     </div>
   );
