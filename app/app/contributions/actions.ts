@@ -52,7 +52,17 @@ export async function setMemberIncome(formData: FormData): Promise<Result> {
     return fail(error.message);
   }
 
+  // Recalcular contribuciones del mes actual automáticamente
+  const now = new Date();
+  await calculateAndCreateContributions(
+    parsed.data.household_id,
+    now.getFullYear(),
+    now.getMonth() + 1
+  );
+
   revalidatePath('/app/contributions');
+  revalidatePath('/app/household');
+  revalidatePath('/app/profile');
   return ok();
 }
 
@@ -116,7 +126,16 @@ export async function setContributionGoal(formData: FormData): Promise<Result> {
 
   if (error) return fail(error.message);
 
+  // Recalcular contribuciones del mes actual automáticamente
+  const now = new Date();
+  await calculateAndCreateContributions(
+    parsed.data.household_id,
+    now.getFullYear(),
+    now.getMonth() + 1
+  );
+
   revalidatePath('/app/contributions');
+  revalidatePath('/app/household');
   return ok();
 }
 
@@ -250,17 +269,73 @@ export async function updateContributionPaidAmount(
 export async function markContributionAsPaid(contributionId: string): Promise<Result> {
   const supabase = await supabaseServer();
 
-  // Obtener expected_amount
+  // Obtener datos completos de la contribución
   const { data: contribution, error: fetchError } = await supabase
     .from('contributions')
-    .select('expected_amount')
+    .select('expected_amount, household_id, user_id, month, year')
     .eq('id', contributionId)
     .single();
 
   if (fetchError) return fail(fetchError.message);
+  if (!contribution) return fail('Contribución no encontrada');
 
+  // @ts-ignore - Supabase type inference
+  const { expected_amount, household_id, user_id, month, year } = contribution;
+
+  // 1. Buscar o crear categoría "Nómina" (tipo income)
+  let { data: nominaCategoryData } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('household_id', household_id)
+    .eq('name', 'Nómina')
+    .eq('type', 'income')
+    .maybeSingle();
+
+  // Si no existe, crearla
+  if (!nominaCategoryData) {
+    const { data: newCategory, error: createCatError } = await supabase
+      .from('categories')
+      .insert({
+        household_id,
+        name: 'Nómina',
+        type: 'income',
+        icon: '💰',
+      })
+      .select('id')
+      .single();
+
+    if (createCatError || !newCategory) return fail('Error al crear categoría Nómina');
+    nominaCategoryData = newCategory;
+  }
+
+  // @ts-ignore - Supabase type inference
+  const categoryId: string = nominaCategoryData.id;
+
+  // 2. Crear movimiento de ingreso
+  // @ts-ignore - Supabase type inference issue
+  const { error: movementError } = await supabase.from('movements').insert({
+    household_id,
+    user_id,
+    category_id: categoryId,
+    type: 'income',
+    amount: expected_amount,
+    currency: 'EUR',
+    note: `Contribución mensual ${month}/${year}`,
+    occurred_at: new Date().toISOString().split('T')[0],
+  });
+
+  if (movementError) return fail('Error al crear movimiento de ingreso');
+
+  // 3. Actualizar contribución como pagada
   // @ts-ignore
-  return updateContributionPaidAmount(contributionId, contribution.expected_amount);
+  const result = await updateContributionPaidAmount(contributionId, expected_amount);
+
+  if (!result.ok) return result;
+
+  revalidatePath('/app/contributions');
+  revalidatePath('/app');
+  revalidatePath('/app/expenses');
+  return ok();
 }
 
 /**
