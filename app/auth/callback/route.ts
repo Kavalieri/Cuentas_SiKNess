@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { supabaseServer } from '@/lib/supabaseServer';
+import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -29,7 +30,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=no_session', request.url));
     }
 
-    // Sesión creada exitosamente, redirigir a /app
+    // NUEVO: Verificar si hay token de invitación guardado en cookie
+    const cookieStore = await cookies();
+    const invitationToken = cookieStore.get('invitation_token');
+    
+    if (invitationToken?.value) {
+      // Si hay token de invitación, redirigir a la página de invitación
+      return NextResponse.redirect(
+        new URL(`/app/invite?token=${invitationToken.value}`, request.url)
+      );
+    }
+
+    // Sesión creada exitosamente, redirigir a /app (o next)
     return NextResponse.redirect(new URL(next, request.url));
   }
 

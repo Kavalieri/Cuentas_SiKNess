@@ -9,6 +9,9 @@ import { OverviewWrapper } from './components/OverviewWrapper';
 import { CategoriesTab } from './components/CategoriesTab';
 import { ContributionsContent } from '@/app/app/contributions/components/ContributionsContent';
 import { getPrePayments } from '@/app/app/contributions/actions';
+import { getPendingInvitations } from './invitations/actions';
+import { PendingInvitationsList } from './components/PendingInvitationsList';
+import { CreateInviteDialog } from './components/CreateInviteDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CALCULATION_TYPES, type CalculationType } from '@/lib/contributionTypes';
 
@@ -110,6 +113,9 @@ export default async function HouseholdPage() {
   // Obtener pre-pagos del mes actual
   const prePayments = await getPrePayments(householdId, now.getFullYear(), now.getMonth() + 1);
 
+  // Obtener invitaciones pendientes (solo para owners)
+  const pendingInvitations = userIsOwner ? await getPendingInvitations() : [];
+
   return (
     <div className="space-y-6">
       <div>
@@ -172,13 +178,23 @@ export default async function HouseholdPage() {
 
         {/* Tab 4: Miembros */}
         <TabsContent value="members" className="space-y-6 mt-6">
+          {/* Invitaciones pendientes (solo owners) */}
+          {userIsOwner && pendingInvitations.length > 0 && (
+            <PendingInvitationsList invitations={pendingInvitations} />
+          )}
+
           {userIsOwner ? (
             <Card>
               <CardHeader>
-                <CardTitle>Miembros del Hogar</CardTitle>
-                <CardDescription>
-                  Gestiona los miembros y sus permisos
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Miembros del Hogar</CardTitle>
+                    <CardDescription>
+                      Gestiona los miembros y sus permisos
+                    </CardDescription>
+                  </div>
+                  <CreateInviteDialog householdId={household.id} />
+                </div>
               </CardHeader>
               <CardContent>
                 <MembersList members={members} />

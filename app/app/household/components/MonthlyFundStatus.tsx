@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { toast } from 'sonner';
-import { markContributionAsPaid } from '@/app/app/contributions/actions';
+import { markContributionAsPaid, calculateAndCreateContributions } from '@/app/app/contributions/actions';
+import { useRouter } from 'next/navigation';
 
 interface Member {
   id: string;
@@ -36,23 +37,30 @@ interface MonthlyFundStatusProps {
 }
 
 export function MonthlyFundStatus({
-  // householdId, // No usado actualmente, pero puede ser necesario en futuras features
+  householdId,
   members,
   contributions,
   monthlyFund,
   currentUserId,
   selectedMonth,
 }: MonthlyFundStatusProps) {
+  const router = useRouter();
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   const isCurrentMonth = 
     selectedMonth.getFullYear() === new Date().getFullYear() &&
     selectedMonth.getMonth() === new Date().getMonth();
 
+  // Verificar si hay configuración necesaria
+  const hasIncomesConfigured = members.every(m => m.currentIncome > 0);
+  const hasGoalConfigured = monthlyFund > 0;
+  const needsConfiguration = !hasIncomesConfigured || !hasGoalConfigured;
+
   // Calcular totales
   const totalExpected = contributions.reduce((sum, c) => sum + c.expected_amount, 0);
   const totalPaid = contributions.reduce((sum, c) => sum + c.paid_amount, 0);
-  const fundProgress = (totalPaid / totalExpected) * 100;
+  const fundProgress = totalExpected > 0 ? (totalPaid / totalExpected) * 100 : 0;
 
   const handleMarkAsPaid = async (contributionId: string, userId: string) => {
     setLoadingUserId(userId);
@@ -65,15 +73,100 @@ export function MonthlyFundStatus({
       toast.error(result.message);
     } else {
       toast.success('✅ Aportación marcada como realizada');
-      window.location.reload();
+      router.refresh();
     }
+  };
+
+  const handleCalculateContributions = async () => {
+    setIsCalculating(true);
+
+    const result = await calculateAndCreateContributions(
+      householdId,
+      selectedMonth.getFullYear(),
+      selectedMonth.getMonth() + 1
+    );
+
+    setIsCalculating(false);
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+
+    toast.success('✅ Contribuciones calculadas correctamente');
+    router.refresh();
   };
 
   return (
     <div className="space-y-6">
-      {/* Resumen del Fondo Mensual */}
-      <Card className="border-2">
-        <CardHeader>
+      {/* Mensaje de configuración necesaria */}
+      {needsConfiguration && (
+        <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+          <CardHeader>
+            <CardTitle className="text-amber-900 dark:text-amber-100 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              Configuración Incompleta
+            </CardTitle>
+            <CardDescription className="text-amber-800 dark:text-amber-200">
+              Antes de poder calcular las contribuciones, necesitas:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2 text-sm">
+              {!hasGoalConfigured && (
+                <div className="flex items-start gap-2 text-amber-900 dark:text-amber-100">
+                  <Circle className="w-4 h-4 mt-0.5" />
+                  <p>
+                    <strong>Configurar el fondo objetivo:</strong> Ve a la pestaña &quot;Contribuciones&quot; → 
+                    &quot;Configuración&quot; y establece el monto mensual del fondo.
+                  </p>
+                </div>
+              )}
+              {!hasIncomesConfigured && (
+                <div className="flex items-start gap-2 text-amber-900 dark:text-amber-100">
+                  <Circle className="w-4 h-4 mt-0.5" />
+                  <p>
+                    <strong>Configurar ingresos de los miembros:</strong> Todos los miembros deben tener 
+                    sus ingresos configurados en la pestaña &quot;Contribuciones&quot; → &quot;Configuración&quot;.
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Mensaje cuando no hay contribuciones calculadas */}
+      {!needsConfiguration && contributions.length === 0 && (
+        <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950/20">
+          <CardHeader>
+            <CardTitle className="text-blue-900 dark:text-blue-100 flex items-center gap-2">
+              🧮 Contribuciones No Calculadas
+            </CardTitle>
+            <CardDescription className="text-blue-800 dark:text-blue-200">
+              Las contribuciones para este mes aún no han sido calculadas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-blue-900 dark:text-blue-100">
+              Ya tienes todo configurado. Haz clic en el botón para calcular cuánto debe aportar 
+              cada miembro al fondo común de {formatCurrency(monthlyFund)} basado en sus ingresos.
+            </p>
+            <Button 
+              onClick={handleCalculateContributions} 
+              disabled={isCalculating}
+              className="w-full"
+            >
+              {isCalculating ? 'Calculando...' : '🧮 Calcular Contribuciones del Mes'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Resumen del Fondo Mensual (solo si hay contribuciones) */}
+      {contributions.length > 0 && (
+        <Card className="border-2">
+          <CardHeader>
           <CardTitle className="flex items-center gap-2">
             💰 Fondo Mensual del Hogar
             {fundProgress === 100 && (
@@ -199,6 +292,7 @@ export function MonthlyFundStatus({
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Información adicional */}
       <Card>

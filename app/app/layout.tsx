@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/supabaseServer';
 import { signOut } from '@/app/login/actions';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home, Receipt, User, Users, Shield } from 'lucide-react';
+import { LogOut, Home, User, Users, Shield } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { isSystemAdmin } from '@/lib/adminCheck';
 
@@ -51,12 +51,6 @@ export default async function AppLayout({
                 <Button variant="ghost" size="sm">
                   <Users className="mr-2 h-4 w-4" />
                   Hogar
-                </Button>
-              </Link>
-              <Link href="/app/expenses">
-                <Button variant="ghost" size="sm">
-                  <Receipt className="mr-2 h-4 w-4" />
-                  Movimientos
                 </Button>
               </Link>
               <Link href="/app/profile">

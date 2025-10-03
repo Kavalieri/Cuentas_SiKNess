@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Mail, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { sendMagicLink } from './actions';
 
@@ -13,7 +15,16 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [hasInvitation, setHasInvitation] = useState(false);
   const searchParams = useSearchParams();
+
+  // Detectar si viene con token de invitación
+  useEffect(() => {
+    const returnUrl = searchParams.get('returnUrl');
+    if (returnUrl?.includes('/app/invite')) {
+      setHasInvitation(true);
+    }
+  }, [searchParams]);
 
   // Mostrar error si viene del callback
   useEffect(() => {
@@ -79,15 +90,30 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Iniciar Sesión</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {hasInvitation && <UserPlus className="h-5 w-5" />}
+            {hasInvitation ? '¡Te han invitado!' : 'Iniciar Sesión'}
+          </CardTitle>
           <CardDescription>
-            Introduce tu email y te enviaremos un enlace mágico para acceder
+            {hasInvitation 
+              ? 'Inicia sesión o crea una cuenta para aceptar tu invitación'
+              : 'Introduce tu email y te enviaremos un enlace mágico para acceder'
+            }
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {hasInvitation && (
+            <Alert>
+              <Mail className="h-4 w-4" />
+              <AlertDescription>
+                Has recibido una invitación. Después de iniciar sesión, podrás aceptarla automáticamente.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

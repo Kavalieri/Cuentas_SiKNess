@@ -213,6 +213,65 @@ export type Database = {
         }
         Relationships: []
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string | null
+          current_uses: number
+          email: string | null
+          expires_at: string
+          household_id: string | null
+          id: string
+          invited_by: string
+          max_uses: number | null
+          metadata: Json | null
+          status: string
+          token: string
+          type: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string | null
+          current_uses?: number
+          email?: string | null
+          expires_at: string
+          household_id?: string | null
+          id?: string
+          invited_by: string
+          max_uses?: number | null
+          metadata?: Json | null
+          status?: string
+          token: string
+          type?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string | null
+          current_uses?: number
+          email?: string | null
+          expires_at?: string
+          household_id?: string | null
+          id?: string
+          invited_by?: string
+          max_uses?: number | null
+          metadata?: Json | null
+          status?: string
+          token?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_incomes: {
         Row: {
           created_at: string
@@ -395,6 +454,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          household_id: string
+          message: string
+          success: boolean
+        }[]
+      }
       admin_add_member_to_household: {
         Args: { p_household_id: string; p_role?: string; p_user_id: string }
         Returns: Json

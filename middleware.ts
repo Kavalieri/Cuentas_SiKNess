@@ -6,6 +6,18 @@ export async function middleware(request: NextRequest) {
     request,
   });
 
+  // CAPTURAR TOKEN DE INVITACIÓN EN URL
+  // Si la URL contiene ?token=xxx, guardarlo en cookie temporal
+  const invitationToken = request.nextUrl.searchParams.get('token');
+  if (invitationToken) {
+    supabaseResponse.cookies.set('invitation_token', invitationToken, {
+      maxAge: 3600, // 1 hora
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    });
+  }
+
   // En Next.js 15, las variables de entorno no están disponibles en middleware
   // Usar directamente las variables desde el request
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -42,9 +54,12 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Si el usuario no está autenticado y está intentando acceder a /app, redirigir a login
-  if (!user && request.nextUrl.pathname.startsWith('/app')) {
+  // EXCEPTO /app/invite que debe ser accesible sin auth
+  if (!user && request.nextUrl.pathname.startsWith('/app') && !request.nextUrl.pathname.startsWith('/app/invite')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    // Preservar returnUrl para volver después del login
+    url.searchParams.set('returnUrl', request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 
@@ -53,6 +68,30 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/app';
     return NextResponse.redirect(url);
+  }
+
+  // Si el usuario está autenticado y accede a /app sin household, redirigir a onboarding
+  // (excepto si ya está en onboarding, household/create, o settings)
+  if (
+    user &&
+    request.nextUrl.pathname === '/app' &&
+    !request.nextUrl.pathname.startsWith('/app/onboarding') &&
+    !request.nextUrl.pathname.startsWith('/app/household/create') &&
+    !request.nextUrl.pathname.startsWith('/app/settings')
+  ) {
+    // Verificar si el usuario tiene household
+    const { data: household } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    // Si no tiene household, redirigir a onboarding
+    if (!household) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/app/onboarding';
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
