@@ -17,28 +17,48 @@ export default async function DashboardPage() {
 
   // Si el usuario no tiene hogar, mostrar onboarding
   if (!householdId) {
-    // Verificar si hay un token de invitación en cookie
-    const cookieStore = await cookies();
-    const invitationToken = cookieStore.get('invitation_token')?.value;
-
+    // PRIMERO: Buscar invitaciones pendientes en la base de datos por email
+    const pendingInvitationsResult = await getUserPendingInvitations();
     let pendingInvitation = undefined;
-    if (invitationToken) {
-      // Intentar obtener detalles de la invitación
-      const result = await getInvitationDetails(invitationToken);
-      
-      if (result.ok) {
-        // Invitación válida - mostrarla en el dashboard
+
+    if (pendingInvitationsResult.ok && pendingInvitationsResult.data && pendingInvitationsResult.data.length > 0) {
+      // Usar la primera invitación pendiente encontrada
+      const inv = pendingInvitationsResult.data[0];
+      if (inv) {
         pendingInvitation = {
-          id: result.data!.id,
-          token: result.data!.token,
-          household_name: result.data!.household_name,
-          invited_by_email: result.data!.invited_by_email,
-          expires_at: result.data!.expires_at,
-          type: result.data!.type,
+          id: inv.id,
+          token: inv.token,
+          household_name: inv.household_name,
+          invited_by_email: inv.invited_by_email,
+          expires_at: inv.expires_at,
+          type: inv.type,
         };
-      } else {
-        // Invitación inválida (expirada/cancelada/usada) - limpiar cookie
-        cookieStore.delete('invitation_token');
+      }
+    }
+
+    // FALLBACK: Si no se encontró en DB, verificar cookie
+    if (!pendingInvitation) {
+      const cookieStore = await cookies();
+      const invitationToken = cookieStore.get('invitation_token')?.value;
+
+      if (invitationToken) {
+        // Intentar obtener detalles de la invitación
+        const result = await getInvitationDetails(invitationToken);
+        
+        if (result.ok) {
+          // Invitación válida - mostrarla en el dashboard
+          pendingInvitation = {
+            id: result.data!.id,
+            token: result.data!.token,
+            household_name: result.data!.household_name,
+            invited_by_email: result.data!.invited_by_email,
+            expires_at: result.data!.expires_at,
+            type: result.data!.type,
+          };
+        } else {
+          // Invitación inválida (expirada/cancelada/usada) - limpiar cookie
+          cookieStore.delete('invitation_token');
+        }
       }
     }
 
