@@ -307,6 +307,65 @@ export type Database = {
           },
         ]
       }
+      monthly_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_balance: number
+          created_at: string
+          household_id: string
+          id: string
+          month: number
+          notes: string | null
+          opening_balance: number
+          status: string
+          total_expenses: number
+          total_income: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_balance?: number
+          created_at?: string
+          household_id: string
+          id?: string
+          month: number
+          notes?: string | null
+          opening_balance?: number
+          status?: string
+          total_expenses?: number
+          total_income?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_balance?: number
+          created_at?: string
+          household_id?: string
+          id?: string
+          month?: number
+          notes?: string | null
+          opening_balance?: number
+          status?: string
+          total_expenses?: number
+          total_income?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_periods_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movements: {
         Row: {
           amount: number
@@ -317,6 +376,7 @@ export type Database = {
           id: string
           note: string | null
           occurred_at: string
+          period_id: string | null
           type: string
           user_id: string | null
         }
@@ -329,6 +389,7 @@ export type Database = {
           id?: string
           note?: string | null
           occurred_at: string
+          period_id?: string | null
           type: string
           user_id?: string | null
         }
@@ -341,6 +402,7 @@ export type Database = {
           id?: string
           note?: string | null
           occurred_at?: string
+          period_id?: string | null
           type?: string
           user_id?: string | null
         }
@@ -357,6 +419,20 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "v_period_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -483,13 +559,87 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_period_stats: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_balance: number | null
+          created_at: string | null
+          expense_count: number | null
+          household_id: string | null
+          id: string | null
+          income_count: number | null
+          month: number | null
+          monthly_savings: number | null
+          movement_count: number | null
+          opening_balance: number | null
+          savings_percentage: number | null
+          status: string | null
+          top_expense_category: string | null
+          total_expenses: number | null
+          total_income: number | null
+          updated_at: string | null
+          year: number | null
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_balance?: number | null
+          created_at?: string | null
+          expense_count?: never
+          household_id?: string | null
+          id?: string | null
+          income_count?: never
+          month?: number | null
+          monthly_savings?: never
+          movement_count?: never
+          opening_balance?: number | null
+          savings_percentage?: never
+          status?: string | null
+          top_expense_category?: never
+          total_expenses?: number | null
+          total_income?: number | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_balance?: number | null
+          created_at?: string | null
+          expense_count?: never
+          household_id?: string | null
+          id?: string | null
+          income_count?: never
+          month?: number | null
+          monthly_savings?: never
+          movement_count?: never
+          opening_balance?: number | null
+          savings_percentage?: never
+          status?: string | null
+          top_expense_category?: never
+          total_expenses?: number | null
+          total_income?: number | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_periods_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: {
         Args: { p_token: string }
         Returns: {
           household_id: string
+          household_name: string
           message: string
           success: boolean
         }[]
@@ -513,6 +663,29 @@ export type Database = {
         Args: { p_contribution_id: string }
         Returns: number
       }
+      cleanup_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      close_monthly_period: {
+        Args: { p_notes?: string; p_period_id: string }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_balance: number
+          created_at: string
+          household_id: string
+          id: string
+          month: number
+          notes: string | null
+          opening_balance: number
+          status: string
+          total_expenses: number
+          total_income: number
+          updated_at: string
+          year: number
+        }
+      }
       create_default_categories: {
         Args: { p_household_id: string }
         Returns: undefined
@@ -520,6 +693,25 @@ export type Database = {
       create_household_with_member: {
         Args: { p_household_name: string; p_user_id: string }
         Returns: Json
+      }
+      ensure_monthly_period: {
+        Args: { p_household_id: string; p_month: number; p_year: number }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_balance: number
+          created_at: string
+          household_id: string
+          id: string
+          month: number
+          notes: string | null
+          opening_balance: number
+          status: string
+          total_expenses: number
+          total_income: number
+          updated_at: string
+          year: number
+        }
       }
       get_household_members: {
         Args: { p_household_id: string }
@@ -543,6 +735,33 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      migrate_existing_movements: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          household_id: string
+          movements_assigned: number
+          periods_created: number
+        }[]
+      }
+      reopen_monthly_period: {
+        Args: { p_period_id: string }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_balance: number
+          created_at: string
+          household_id: string
+          id: string
+          month: number
+          notes: string | null
+          opening_balance: number
+          status: string
+          total_expenses: number
+          total_income: number
+          updated_at: string
+          year: number
+        }
+      }
       restore_to_stock: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -550,6 +769,25 @@ export type Database = {
       update_contribution_status: {
         Args: { p_contribution_id: string }
         Returns: undefined
+      }
+      update_period_totals: {
+        Args: { p_period_id: string }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_balance: number
+          created_at: string
+          household_id: string
+          id: string
+          month: number
+          notes: string | null
+          opening_balance: number
+          status: string
+          total_expenses: number
+          total_income: number
+          updated_at: string
+          year: number
+        }
       }
       wipe_household_data: {
         Args: { p_household_id: string }
