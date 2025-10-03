@@ -31,7 +31,6 @@ type Member = {
   user_id: string;
   email: string;
   role: 'owner' | 'member';
-  created_at: string;
   currentIncome: number;
 };
 

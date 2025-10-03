@@ -25,7 +25,6 @@ interface Member {
   user_id: string;
   email: string;
   role: string;
-  created_at: string;
   currentIncome: number;
 }
 

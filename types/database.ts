@@ -349,7 +349,6 @@ export type Database = {
       get_household_members: {
         Args: { p_household_id: string }
         Returns: {
-          created_at: string
           email: string
           household_id: string
           id: string

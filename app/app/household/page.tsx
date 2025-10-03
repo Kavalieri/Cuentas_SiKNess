@@ -58,7 +58,6 @@ export default async function HouseholdPage() {
         user_id: member.user_id,
         email: member.email || 'Sin email',
         role: member.role as 'owner' | 'member',
-        created_at: member.created_at,
         currentIncome: (income as number) ?? 0,
       };
     })

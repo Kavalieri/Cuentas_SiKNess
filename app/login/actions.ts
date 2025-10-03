@@ -23,11 +23,13 @@ export async function sendMagicLink(formData: FormData): Promise<Result> {
   const supabase = await supabaseServer();
   const { email } = parsed.data;
 
+  // Detectar la URL base correcta según el entorno
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      // Usar la URL de tu aplicación, no la de Supabase
-      emailRedirectTo: `http://localhost:3000/auth/callback`,
+      emailRedirectTo: `${baseUrl}/auth/callback`,
     },
   });
 
