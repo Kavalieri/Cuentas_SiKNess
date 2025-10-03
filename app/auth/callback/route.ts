@@ -6,15 +6,38 @@ import { cookies } from 'next/headers';
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const token_hash = requestUrl.searchParams.get('token_hash');
+  const type = requestUrl.searchParams.get('type');
   const next = requestUrl.searchParams.get('next') || '/app';
+  
+  // Manejar errores que vienen directamente de Supabase
+  const error = requestUrl.searchParams.get('error');
+  const error_code = requestUrl.searchParams.get('error_code');
+  const error_description = requestUrl.searchParams.get('error_description');
+  
+  if (error) {
+    console.error('Auth callback error:', { error, error_code, error_description });
+    
+    // Mensajes de error más amigables
+    let friendlyMessage = error_description || error;
+    if (error_code === 'otp_expired') {
+      friendlyMessage = 'El enlace ha expirado. Por favor, solicita uno nuevo.';
+    } else if (error === 'access_denied') {
+      friendlyMessage = 'El enlace es inválido o ya fue usado. Solicita uno nuevo.';
+    }
+    
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(friendlyMessage)}`, request.url),
+    );
+  }
 
+  // Manejar flujo PKCE (code)
   if (code) {
     const supabase = await supabaseServer();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
       console.error('Error exchanging code for session:', error);
-      // Si hay error, redirigir al login con mensaje de error
       return NextResponse.redirect(
         new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url),
       );
@@ -45,6 +68,51 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(next, request.url));
   }
 
-  // Si no hay código, redirigir al login
+  // Manejar flujo OTP antiguo (token_hash) - para compatibilidad
+  if (token_hash && type) {
+    console.log('Using token_hash flow (OTP)');
+    const supabase = await supabaseServer();
+    
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash,
+      type: type as any,
+    });
+
+    if (error) {
+      console.error('Error verifying OTP:', error);
+      let friendlyMessage = error.message;
+      if (error.message.includes('expired')) {
+        friendlyMessage = 'El enlace ha expirado. Por favor, solicita uno nuevo.';
+      }
+      return NextResponse.redirect(
+        new URL(`/login?error=${encodeURIComponent(friendlyMessage)}`, request.url),
+      );
+    }
+
+    // Verificar sesión después de OTP
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      console.error('No session after OTP verification');
+      return NextResponse.redirect(new URL('/login?error=no_session', request.url));
+    }
+
+    // NUEVO: Verificar si hay token de invitación guardado en cookie
+    const cookieStore = await cookies();
+    const invitationToken = cookieStore.get('invitation_token');
+    
+    if (invitationToken?.value) {
+      return NextResponse.redirect(
+        new URL(`/app/invite?token=${invitationToken.value}`, request.url)
+      );
+    }
+
+    return NextResponse.redirect(new URL(next, request.url));
+  }
+
+  // Si no hay código ni token_hash, redirigir al login
+  console.log('No code or token_hash found, redirecting to login');
   return NextResponse.redirect(new URL('/login', request.url));
 }
