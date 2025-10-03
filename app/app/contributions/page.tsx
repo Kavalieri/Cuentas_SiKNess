@@ -2,9 +2,11 @@ import { HeroContribution } from './components/HeroContribution';
 import { HouseholdSummary } from './components/HouseholdSummary';
 import { ContributionMembersList } from './components/ContributionMembersList';
 import { ConfigurationSection } from './components/ConfigurationSection';
+import { PrePaymentsSection } from './components/PrePaymentsSection';
 import { getCurrentHouseholdId } from '@/lib/adminCheck';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabaseServer';
+import { getPrePayments } from './actions';
 import type { Database } from '@/types/database';
 import { CALCULATION_TYPES, type CalculationType } from '@/lib/contributionTypes';
 
@@ -110,6 +112,16 @@ export default async function ContributionsPage() {
 
   const isOwner = memberData?.role === 'owner';
 
+  // Obtener categorías de gastos para pre-pagos
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('id, name, icon, type')
+    .eq('household_id', householdId)
+    .order('name');
+
+  // Obtener pre-pagos del mes actual
+  const prePayments = await getPrePayments(householdId, currentYear, currentMonth);
+
   return (
     <div className="space-y-6">
       <div>
@@ -134,6 +146,21 @@ export default async function ContributionsPage() {
         totalPaid={totalPaid}
         calculationType={calculationType}
         currency={currency}
+      />
+
+      {/* Pre-pagos (solo visible para owners) */}
+      <PrePaymentsSection
+        householdId={householdId}
+        members={membersWithIncomes.map((m) => ({
+          user_id: m.user_id,
+          email: m.email,
+          role: memberData?.role || 'member',
+        }))}
+        categories={categories || []}
+        prePayments={prePayments}
+        currentMonth={currentMonth}
+        currentYear={currentYear}
+        isOwner={isOwner}
       />
 
       {/* Lista de miembros */}

@@ -90,6 +90,7 @@ export type Database = {
           month: number
           paid_amount: number
           paid_at: string | null
+          pre_payment_amount: number
           status: string
           updated_at: string
           user_id: string
@@ -103,6 +104,7 @@ export type Database = {
           month: number
           paid_amount?: number
           paid_at?: string | null
+          pre_payment_amount?: number
           status?: string
           updated_at?: string
           user_id: string
@@ -116,6 +118,7 @@ export type Database = {
           month?: number
           paid_amount?: number
           paid_at?: string | null
+          pre_payment_amount?: number
           status?: string
           updated_at?: string
           user_id?: string
@@ -299,6 +302,73 @@ export type Database = {
           },
         ]
       }
+      pre_payments: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string
+          household_id: string
+          id: string
+          month: number
+          movement_id: string | null
+          updated_at: string | null
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          household_id: string
+          id?: string
+          month: number
+          movement_id?: string | null
+          updated_at?: string | null
+          user_id: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          household_id?: string
+          id?: string
+          month?: number
+          movement_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pre_payments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_payments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_payments_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_admins: {
         Row: {
           created_at: string | null
@@ -339,6 +409,10 @@ export type Database = {
           expected_amount: number
           user_id: string
         }[]
+      }
+      calculate_pre_payment_amount: {
+        Args: { p_contribution_id: string }
+        Returns: number
       }
       create_default_categories: {
         Args: { p_household_id: string }

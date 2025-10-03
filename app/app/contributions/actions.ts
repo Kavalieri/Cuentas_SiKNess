@@ -6,6 +6,14 @@ import { supabaseServer } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 import { CALCULATION_TYPES } from '@/lib/contributionTypes';
+import type { Database } from '@/types/database';
+
+// =====================================================
+// Type Helpers
+// =====================================================
+
+// Helper type para inserts de movements que evita problemas con tipos opcionales
+type MovementInsert = Database['public']['Tables']['movements']['Insert'];
 
 // =====================================================
 // Schemas de Validación
@@ -35,6 +43,16 @@ const ContributionAdjustmentSchema = z.object({
     message: 'El ajuste no puede ser cero',
   }),
   reason: z.string().min(3, 'La razón debe tener al menos 3 caracteres'),
+});
+
+const PrePaymentSchema = z.object({
+  household_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  month: z.coerce.number().int().min(1).max(12),
+  year: z.coerce.number().int().min(2020),
+  amount: z.coerce.number().positive(),
+  category_id: z.string().uuid(),
+  description: z.string().min(3, 'La descripción debe tener al menos 3 caracteres'),
 });
 
 // =====================================================
@@ -319,8 +337,7 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
   const categoryId: string = nominaCategoryData.id;
 
   // 2. Crear movimiento de ingreso
-  // @ts-ignore - Supabase type inference issue
-  const { error: movementError } = await supabase.from('movements').insert({
+  const movementData: MovementInsert = {
     household_id,
     user_id,
     category_id: categoryId,
@@ -328,8 +345,10 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
     amount: expected_amount,
     currency: 'EUR',
     note: `Contribución mensual ${month}/${year}`,
-    occurred_at: new Date().toISOString().split('T')[0],
-  });
+    occurred_at: new Date().toISOString().substring(0, 10),
+  };
+
+  const { error: movementError } = await supabase.from('movements').insert(movementData);
 
   if (movementError) return fail('Error al crear movimiento de ingreso');
 
@@ -475,4 +494,307 @@ export async function getContributionsSummary(householdId: string) {
     totalPending,
     completionPercentage,
   };
+}
+
+// =====================================================
+// Pre-pagos (Advance Payments)
+// =====================================================
+
+/**
+ * Crear un pre-pago: gasto que un miembro hace antes de la contribución
+ * Se descuenta automáticamente de su contribución mensual esperada
+ */
+export async function createPrePayment(formData: FormData): Promise<Result> {
+  const parsed = PrePaymentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
+  }
+
+  const supabase = await supabaseServer();
+  const user = (await supabase.auth.getUser()).data.user;
+
+  if (!user) return fail('Usuario no autenticado');
+
+  // Verificar que el usuario es owner del hogar
+  const { data: memberData } = await supabase
+    .from('household_members')
+    .select('role')
+    .eq('household_id', parsed.data.household_id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!memberData || memberData.role !== 'owner') {
+    return fail('Solo el propietario del hogar puede crear pre-pagos');
+  }
+
+  // 1. Crear el movimiento de gasto
+  const movementData: MovementInsert = {
+    household_id: parsed.data.household_id,
+    user_id: parsed.data.user_id,
+    category_id: parsed.data.category_id,
+    type: 'expense',
+    amount: parsed.data.amount,
+    currency: 'EUR',
+    note: `[PRE-PAGO] ${parsed.data.description}`,
+    occurred_at: new Date().toISOString().substring(0, 10),
+  };
+
+  const { data: movement, error: movementError } = await supabase
+    .from('movements')
+    .insert(movementData)
+    .select('id')
+    .single();
+
+  if (movementError || !movement) {
+    return fail('Error al crear el movimiento de gasto');
+  }
+
+  // 2. Crear el pre-pago
+  const { error: prePaymentError } = await supabase
+    .from('pre_payments')
+    .insert({
+      household_id: parsed.data.household_id,
+      user_id: parsed.data.user_id,
+      month: parsed.data.month,
+      year: parsed.data.year,
+      amount: parsed.data.amount,
+      category_id: parsed.data.category_id,
+      description: parsed.data.description,
+      movement_id: movement.id,
+      created_by: user.id,
+    });
+
+  if (prePaymentError) {
+    // Rollback: eliminar el movimiento si falla el pre-pago
+    await supabase.from('movements').delete().eq('id', movement.id);
+    return fail('Error al crear el pre-pago');
+  }
+
+  // El trigger automáticamente actualizará contribution.pre_payment_amount
+
+  revalidatePath('/app/contributions');
+  revalidatePath('/app/expenses');
+  revalidatePath('/app');
+  return ok();
+}
+
+/**
+ * Obtener pre-pagos de un hogar para un mes específico
+ */
+export async function getPrePayments(
+  householdId: string,
+  year: number,
+  month: number
+) {
+  const supabase = await supabaseServer();
+
+  // Obtener pre-pagos
+  const { data: prePayments, error } = await supabase
+    .from('pre_payments')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('year', year)
+    .eq('month', month)
+    .order('created_at', { ascending: false });
+
+  if (error || !prePayments) return [];
+
+  // Obtener datos de miembros con sus emails
+  const { data: membersData } = await supabase.rpc('get_household_members', {
+    p_household_id: householdId,
+  });
+
+  // Obtener categorías
+  const categoryIds = [...new Set(prePayments.map((pp) => pp.category_id).filter(Boolean))] as string[];
+  const { data: categories } = categoryIds.length > 0
+    ? await supabase
+        .from('categories')
+        .select('id, name, icon')
+        .eq('household_id', householdId)
+        .in('id', categoryIds)
+    : { data: [] };
+
+  // Construir lookup maps
+  const membersMap = new Map(
+    (membersData || []).map((m: { user_id: string; email: string | null }) => [
+      m.user_id,
+      m.email || 'Desconocido',
+    ])
+  );
+  const categoriesMap = new Map(
+    (categories || []).map((c) => [c.id, { name: c.name, icon: c.icon }])
+  );
+
+  // Enriquecer pre-pagos con datos relacionados
+  return prePayments.map((pp) => ({
+    ...pp,
+    user: { email: membersMap.get(pp.user_id) || 'Desconocido' },
+    category: categoriesMap.get(pp.category_id || '') || { name: 'Sin categoría', icon: null },
+  }));
+}
+
+/**
+ * Eliminar un pre-pago
+ */
+export async function deletePrePayment(prePaymentId: string): Promise<Result> {
+  const supabase = await supabaseServer();
+  const user = (await supabase.auth.getUser()).data.user;
+
+  if (!user) return fail('Usuario no autenticado');
+
+  // Obtener datos del pre-pago
+  const { data: prePayment } = await supabase
+    .from('pre_payments')
+    .select('household_id, movement_id')
+    .eq('id', prePaymentId)
+    .single();
+
+  if (!prePayment) return fail('Pre-pago no encontrado');
+
+  // Verificar que el usuario es owner
+  const { data: memberData } = await supabase
+    .from('household_members')
+    .select('role')
+    .eq('household_id', prePayment.household_id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!memberData || memberData.role !== 'owner') {
+    return fail('Solo el propietario del hogar puede eliminar pre-pagos');
+  }
+
+  // Eliminar el pre-pago (esto disparará el trigger para actualizar la contribución)
+  const { error: deleteError } = await supabase
+    .from('pre_payments')
+    .delete()
+    .eq('id', prePaymentId);
+
+  if (deleteError) return fail('Error al eliminar el pre-pago');
+
+  // Eliminar el movimiento asociado
+  if (prePayment.movement_id) {
+    await supabase
+      .from('movements')
+      .delete()
+      .eq('id', prePayment.movement_id);
+  }
+
+  revalidatePath('/app/contributions');
+  revalidatePath('/app/expenses');
+  revalidatePath('/app');
+  return ok();
+}
+
+// =====================================================
+// Registro de Pagos Personalizados
+// =====================================================
+
+/**
+ * Registrar un pago de contribución (total, parcial o excedente)
+ * Reemplaza a markContributionAsPaid con soporte para montos personalizados
+ */
+export async function recordContributionPayment(
+  contributionId: string,
+  amount: number
+): Promise<Result> {
+  const supabase = await supabaseServer();
+
+  // Obtener datos completos de la contribución
+  const { data: contribution, error: fetchError } = await supabase
+    .from('contributions')
+    .select('expected_amount, pre_payment_amount, paid_amount, household_id, user_id, month, year')
+    .eq('id', contributionId)
+    .single();
+
+  if (fetchError) return fail(fetchError.message);
+  if (!contribution) return fail('Contribución no encontrada');
+
+  const { expected_amount, pre_payment_amount, paid_amount, household_id, user_id, month, year } =
+    contribution;
+
+  // Calcular monto ajustado
+  const adjusted_amount = expected_amount - (pre_payment_amount || 0);
+
+  // Validar que el monto sea positivo
+  if (amount <= 0) {
+    return fail('El monto debe ser mayor a cero');
+  }
+
+  // 1. Buscar o crear categoría "Nómina" (tipo income)
+  let { data: nominaCategoryData } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('household_id', household_id)
+    .eq('name', 'Nómina')
+    .eq('type', 'income')
+    .maybeSingle();
+
+  // Si no existe, crearla
+  if (!nominaCategoryData) {
+    const { data: newCategory, error: createCatError } = await supabase
+      .from('categories')
+      .insert({
+        household_id,
+        name: 'Nómina',
+        type: 'income',
+        icon: '💰',
+      })
+      .select('id')
+      .single();
+
+    if (createCatError || !newCategory) return fail('Error al crear categoría Nómina');
+    nominaCategoryData = newCategory;
+  }
+
+  const categoryId: string = nominaCategoryData.id;
+
+  // 2. Crear movimiento de ingreso
+  const movementData: MovementInsert = {
+    household_id,
+    user_id,
+    category_id: categoryId,
+    type: 'income',
+    amount,
+    currency: 'EUR',
+    note: `Contribución mensual ${month}/${year}`,
+    occurred_at: new Date().toISOString().substring(0, 10),
+  };
+
+  const { error: movementError } = await supabase.from('movements').insert(movementData);
+
+  if (movementError) return fail('Error al crear movimiento de ingreso');
+
+  // 3. Actualizar contribución
+  const newPaidAmount = (paid_amount || 0) + amount;
+  
+  let newStatus: string;
+  if (newPaidAmount >= adjusted_amount) {
+    newStatus = 'paid';
+  } else if (newPaidAmount > 0) {
+    newStatus = 'partial';
+  } else {
+    newStatus = 'pending';
+  }
+
+  // Si hay sobrepago, marcarlo como overpaid
+  if (newPaidAmount > adjusted_amount) {
+    newStatus = 'overpaid';
+  }
+
+  const { error: updateError } = await supabase
+    .from('contributions')
+    .update({
+      paid_amount: newPaidAmount,
+      status: newStatus,
+      paid_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', contributionId);
+
+  if (updateError) return fail('Error al actualizar contribución');
+
+  revalidatePath('/app/contributions');
+  revalidatePath('/app');
+  revalidatePath('/app/expenses');
+  return ok();
 }
