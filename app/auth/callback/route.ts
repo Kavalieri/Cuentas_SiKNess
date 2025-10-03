@@ -53,6 +53,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=no_session', request.url));
     }
 
+    // CRÍTICO: Asegurar que existe profile (fallback si trigger falla)
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', session.user.id)
+      .maybeSingle();
+
+    if (!existingProfile) {
+      console.log('Creating missing profile for user:', session.user.id);
+      const { error: profileError } = await supabase.from('profiles').insert({
+        auth_user_id: session.user.id,
+        email: session.user.email ?? '',
+        display_name: session.user.email?.split('@')[0] ?? 'Usuario',
+      });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        // No bloqueamos el flujo, el trigger debería haberlo creado
+      }
+    }
+
     // NUEVO: Verificar si hay token de invitación guardado en cookie
     const cookieStore = await cookies();
     const invitationToken = cookieStore.get('invitation_token');
