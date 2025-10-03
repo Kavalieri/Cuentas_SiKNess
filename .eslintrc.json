@@ -1,0 +1,23 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
+  "plugins": ["@typescript-eslint", "unused-imports"],
+  "parserOptions": { "project": ["./tsconfig.json"] },
+  "rules": {
+    "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+    "@typescript-eslint/ban-ts-comment": "off",
+    "unused-imports/no-unused-imports": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["../*"],
+            "message": "Usa imports absolutos '@/...' en lugar de relativos ascendentes."
+          }
+        ]
+      }
+    ],
+    "react/jsx-key": "off"
+  }
+}

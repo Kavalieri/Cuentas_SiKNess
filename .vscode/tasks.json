@@ -1,0 +1,72 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "supabase db push",
+      "type": "shell",
+      "command": "npx supabase db push"
+    },
+    {
+      "label": "build-compile",
+      "type": "shell",
+      "command": "npm run build"
+    },
+    {
+      "label": "arrancar",
+      "type": "shell",
+      "command": "npm run dev"
+    },
+    {
+      "label": "supabase gen types",
+      "type": "shell",
+      "command": "npx supabase gen types typescript --project-id fizxvvtakvmmeflmbwud | Out-File -FilePath types/database.ts -Encoding utf8"
+    },
+    {
+      "label": "supabase db push + gen types",
+      "dependsOn": ["supabase db push", "supabase gen types"],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "supabase db pull",
+      "type": "shell",
+      "command": "npx supabase db pull"
+    },
+    {
+      "label": "supabase migration new",
+      "type": "shell",
+      "command": "npx supabase migration new ${input:migrationName}"
+    },
+    {
+      "label": "supabase link",
+      "type": "shell",
+      "command": "npx supabase link --project-ref fizxvvtakvmmeflmbwud"
+    },
+    {
+      "label": "supabase db reset",
+      "type": "shell",
+      "command": "npx supabase db reset"
+    },
+    {
+      "label": "supabase start",
+      "type": "shell",
+      "command": "npx supabase start"
+    },
+    {
+      "label": "supabase stop",
+      "type": "shell",
+      "command": "npx supabase stop"
+    },
+    {
+      "label": "supabase status",
+      "type": "shell",
+      "command": "npx supabase status"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "migrationName",
+      "type": "promptString",
+      "description": "Nombre de la migración (ej: add_user_preferences)"
+    }
+  ]
+}
