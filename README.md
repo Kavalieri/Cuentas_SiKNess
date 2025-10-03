@@ -2,21 +2,39 @@
 
 Aplicación web minimalista para gestionar gastos e ingresos compartidos en pareja.
 
+[![Deploy on Vercel](https://vercel.com/button)](https://cuentas-sik.vercel.app)
+
+**🌐 Demo en producción**: https://cuentas-sik.vercel.app
+
 ## ✅ Estado Actual
 
+### Core Features
 - ✅ **Autenticación**: Magic link funcionando
 - ✅ **Creación de Households**: RLS sin recursión (con SECURITY DEFINER)
-- ✅ **Gestión de Categorías**: CRUD completo con UI (crear, listar, eliminar)
+- ✅ **Gestión de Categorías**: CRUD completo con UI
 - ✅ **Movimientos (Gastos/Ingresos)**: Implementado
 - ✅ **Dashboard**: Vista mensual con resúmenes
-- ✅ **Sistema de Contribuciones**: Backend + UI completo (3 tabs)
-- ✅ **Panel de Administración**: Dashboard + Wipe + Gestión de Miembros
+- ✅ **Modo Oscuro**: Dark/Light mode con persistencia y detección del sistema
+
+### Sistema de Contribuciones ⭐ NEW
+- ✅ **UI Simplificada**: Vista única en lugar de 3 pestañas
+- ✅ **Tipos de Cálculo**: Proporcional, Partes Iguales, Personalizado
+- ✅ **Pre-pagos**: Sistema para registrar gastos adelantados por miembros
+- ✅ **Pagos Flexibles**: Parciales, completos o sobrepagos
+- ✅ **Auto-creación de Movimientos**: Los pagos crean movimientos de ingreso automáticamente
+- ✅ **Estados de Pago**: pending, partial, paid, overpaid
+
+### Administración
+- ✅ **Panel de Administración**: Dashboard + Wipe + Gestión de Miembros + System Admins
 - ✅ **Perfil Personal**: Cada usuario puede editar su ingreso
 - ✅ **Gestión de Miembros**: Cambiar roles, eliminar miembros (admin)
-- ✅ **Función Wipe**: Limpiar datos de testing
-- ✅ **Modo Oscuro**: Dark/Light mode con persistencia
+- ✅ **Función Wipe**: Limpiar datos de testing con protección anti-wipe
+
+### DevOps
 - ✅ **Supabase CLI**: Workflow de migraciones automatizado
-- ✅ **Build**: Producción funcionando correctamente (15 páginas)
+- ✅ **Build**: Producción funcionando (20 páginas)
+- ✅ **CI/CD**: GitHub Actions + Auto-deploy en Vercel
+- ✅ **Release Please**: Versionado automático con pre-releases alpha
 
 ## 🚀 Stack Tecnológico
 
@@ -88,21 +106,31 @@ CuentasSiK/
 │       ├── layout.tsx       # Layout con navegación
 │       ├── page.tsx         # Dashboard
 │       ├── expenses/        # Gestión de movimientos
-│       ├── categories/      # ✅ Gestión de categorías (UI completa)
-│       ├── contributions/   # ✅ Sistema de contribuciones (3 tabs)
-│       ├── profile/         # ✅ Perfil personal (NEW)
-│       ├── admin/           # ✅ Panel de administración (NEW)
+│       ├── categories/      # ✅ Gestión de categorías
+│       ├── contributions/   # ✅ Sistema de contribuciones (NEW: single-page)
+│       │   ├── page.tsx     # Vista única con todos los componentes
+│       │   ├── actions.ts   # Server Actions
+│       │   └── components/  # Componentes especializados
+│       │       ├── HeroContribution.tsx        # Tu contribución con opciones de pago
+│       │       ├── HouseholdSummary.tsx        # Resumen del hogar
+│       │       ├── ContributionMembersList.tsx # Lista de miembros con pre-pagos
+│       │       ├── ConfigurationSection.tsx    # Configuración (owners)
+│       │       └── PrePaymentsSection.tsx      # Pre-pagos (owners) ⭐ NEW
+│       ├── profile/         # ✅ Perfil personal
+│       ├── admin/           # ✅ Panel de administración
 │       │   ├── page.tsx     # Dashboard admin
 │       │   ├── wipe/        # Limpiar datos
-│       │   └── members/     # ✅ Gestión de miembros (NEW)
-│       └── settings/        # Configuración
+│       │   ├── members/     # ✅ Gestión de miembros
+│       │   └── system-admins/ # ✅ Gestión de system admins
+│       └── household/       # Configuración del hogar
 ├── components/
 │   ├── ui/                  # Componentes shadcn/ui
 │   └── shared/              # Componentes compartidos
 ├── lib/                     # Utilidades
 │   ├── supabaseServer.ts   # Cliente Supabase server-side
 │   ├── supabaseBrowser.ts  # Cliente Supabase client-side
-│   ├── adminCheck.ts       # ✅ Verificación de permisos owner (NEW)
+│   ├── adminCheck.ts       # ✅ Verificación de permisos owner
+│   ├── contributionTypes.ts # ✅ Tipos de cálculo (proportional, equal, custom)
 │   ├── result.ts           # Pattern Result
 │   ├── format.ts           # Formateo de moneda
 │   ├── date.ts             # Utilidades de fechas
@@ -111,9 +139,17 @@ CuentasSiK/
 │   ├── schema.sql               # Esquema base de datos
 │   ├── contributions-schema.sql # ✅ Sistema de contribuciones
 │   └── seed.sql                 # Datos iniciales
+├── supabase/
+│   ├── config.toml         # Configuración Supabase CLI
+│   └── migrations/         # Migraciones SQL con timestamps
+│       ├── 20251003120000_add_calculation_type_to_household_settings.sql
+│       ├── 20251003120001_update_calculate_monthly_contributions.sql
+│       └── 20251003130000_create_pre_payments_system.sql ⭐ NEW
 ├── docs/
-│   ├── CONTRIBUTIONS_SYSTEM.md         # ✅ Sistema de contribuciones
-│   ├── USER_MANAGEMENT_IMPLEMENTATION.md # ✅ Gestión de usuarios (NEW)
+│   ├── CONTRIBUTIONS_SYSTEM.md           # ✅ Sistema de contribuciones
+│   ├── CONTRIBUTIONS_REFACTOR_PLAN.md    # ✅ Plan de refactorización ⭐ NEW
+│   ├── USER_MANAGEMENT_IMPLEMENTATION.md # ✅ Gestión de usuarios
+│   ├── WIPE_PROTECTION_SYSTEM.md         # ✅ Sistema anti-wipe ⭐ NEW
 │   ├── DARK_MODE.md
 │   ├── SUPABASE_CLI.md
 │   └── VERCEL_DEPLOY.md
@@ -147,11 +183,16 @@ La aplicación usa **magic links** de Supabase. Los usuarios reciben un enlace p
 - **categories**: Categorías personalizadas por hogar (expense/income)
 - **movements**: Transacciones (gastos/ingresos)
 
-#### Sistema de Contribuciones
+#### Sistema de Contribuciones ⭐
 - **member_incomes**: Historial de ingresos mensuales por miembro
-- **household_settings**: Meta de contribución mensual del hogar
+- **household_settings**: Meta de contribución mensual + tipo de cálculo
 - **contributions**: Contribuciones calculadas y rastreadas por miembro/mes
 - **contribution_adjustments**: Ajustes manuales a contribuciones
+- **pre_payments**: Pre-pagos registrados antes del ciclo de contribución ⭐ NEW
+
+#### Administración
+- **system_admins**: Super administradores con acceso completo
+- **wipe_protection**: Protección contra wipes accidentales
 
 ### Seguridad
 
@@ -171,11 +212,36 @@ La aplicación usa **magic links** de Supabase. Los usuarios reciben un enlace p
 
 ## 🚀 Despliegue en Vercel
 
-1. Conecta tu repositorio en [Vercel](https://vercel.com)
-2. Configura las variables de entorno:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Deploy automático en cada push a `main`
+### Auto-deploy Configurado ✅
+
+El proyecto está configurado con **auto-deploy desde GitHub**:
+
+- ✅ **Push a `main`** → Deploy automático a producción
+- ✅ **Pull Requests** → Deploy preview con URL única
+- ✅ **URL de producción**: https://cuentas-sik.vercel.app
+
+### Setup Manual
+
+Si necesitas desplegar manualmente:
+
+1. Instala Vercel CLI: `npm i -g vercel`
+2. Login: `vercel login`
+3. Deploy: `vercel --prod`
+
+### Configuración de Variables de Entorno
+
+En el dashboard de Vercel (Settings → Environment Variables):
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://fizxvvtakvmmeflmbwud.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+```
+
+**Importante**: Después de configurar, actualiza las **Redirect URLs** en Supabase:
+- Settings → Authentication → URL Configuration
+- Añade: `https://cuentas-sik.vercel.app/auth/callback`
+
+Ver [docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md) para más detalles.
 
 ## 📝 Convenciones de Commits
 
@@ -198,18 +264,47 @@ git commit -m "feat: add CSV export for movements"
 **Sistema**: Release Please con pre-releases alpha  
 **Versión actual**: `0.0.0` → Primera release será `0.0.1-alpha.0`
 
-Ver [Guía completa de versionado](docs/VERSIONING_AND_RELEASES.md)
+**Proceso automático**:
+1. Haces commits con Conventional Commits
+2. Push a `main` → Auto-deploy en Vercel
+3. Release Please crea/actualiza PR con CHANGELOG
+4. Al mergear el PR → Se crea tag + GitHub Release automáticamente
+
+Ver [docs/VERSIONING_AND_RELEASES.md](docs/VERSIONING_AND_RELEASES.md)
 
 ### Proceso de Desarrollo
 
-1. Crea una rama desde `main`: `feat/nombre-funcionalidad`
-2. Haz commits siguiendo Conventional Commits
-3. Abre un Pull Request
-4. El CI ejecutará: lint + build + tests
-5. Tras mergear, Release Please creará automáticamente:
-   - CHANGELOG.md actualizado
-   - Bump de versión semántica
-   - GitHub Release con tag
+1. Haz cambios en tu rama local
+2. Commits siguiendo Conventional Commits:
+   ```bash
+   git commit -m "feat: add new feature"
+   git commit -m "fix: resolve bug in contributions"
+   ```
+3. Push a `main`:
+   ```bash
+   git push origin main
+   ```
+4. **Auto-deploy** se activa automáticamente en Vercel
+5. Release Please detecta commits y:
+   - Crea/actualiza PR con changelog
+   - Al mergear → Crea tag + release en GitHub
+
+### Supabase Migrations
+
+Usando Supabase CLI para gestionar cambios en la base de datos:
+
+```bash
+# Crear nueva migración
+npx supabase migration new nombre_descriptivo
+
+# Aplicar migraciones a producción
+npx supabase db push
+
+# Regenerar tipos TypeScript
+npm run types:supabase
+```
+
+Ver [docs/SUPABASE_CLI.md](docs/SUPABASE_CLI.md) para más detalles.
 
 ## 🧪 Testing
 
@@ -221,14 +316,15 @@ Ver [Guía completa de versionado](docs/VERSIONING_AND_RELEASES.md)
 ## 📚 Documentación
 
 ### Guías Principales
-- [Instrucciones para AI Agents](.github/copilot-instructions.md)
-- [Versionado y Releases](docs/VERSIONING_AND_RELEASES.md) ← **Sistema de pre-releases alpha**
-- [Sistema de Contribuciones](docs/CONTRIBUTIONS_SYSTEM.md)
-- [Gestión de Usuarios](docs/USER_MANAGEMENT_IMPLEMENTATION.md)
-- [Modo Oscuro](docs/DARK_MODE.md)
-- [Fix RLS Recursión](docs/FIX_RLS_RECURSION.md)
-- [Deploy en Vercel](docs/VERCEL_DEPLOY.md)
-- [Supabase CLI](docs/SUPABASE_CLI.md)
+- [Instrucciones para AI Agents](.github/copilot-instructions.md) - Guía completa del proyecto
+- [Sistema de Contribuciones](docs/CONTRIBUTIONS_SYSTEM.md) - Cómo funciona el sistema proporcional
+- [Plan de Refactorización](docs/CONTRIBUTIONS_REFACTOR_PLAN.md) ⭐ - Mejoras implementadas
+- [Gestión de Usuarios](docs/USER_MANAGEMENT_IMPLEMENTATION.md) - Roles y permisos
+- [Sistema Anti-Wipe](docs/WIPE_PROTECTION_SYSTEM.md) ⭐ - Protección de datos
+- [Modo Oscuro](docs/DARK_MODE.md) - Implementación dark/light mode
+- [Deploy en Vercel](docs/VERCEL_DEPLOY.md) - Guía de despliegue
+- [Supabase CLI](docs/SUPABASE_CLI.md) - Workflow de migraciones
+- [Versionado](docs/VERSIONING_AND_RELEASES.md) - Sistema de pre-releases alpha
 
 ### Referencias
 - [Especificación Completa](prompt_inicial_del_agente_app_gastos_pareja_next_instructions.md)
@@ -238,35 +334,40 @@ Ver [Guía completa de versionado](docs/VERSIONING_AND_RELEASES.md)
 
 ## 🛣️ Roadmap
 
-### ✅ Completado
+### ✅ Completado (v0.0.1-alpha.0)
 - [x] Setup inicial del proyecto
 - [x] Autenticación con magic links
-- [x] Estructura de rutas y navegación
-- [x] Sistema de households (hogares)
-- [x] Fix error de recursión en RLS
-- [x] CRUD de categorías con UI completa
-- [x] CRUD de movimientos (gastos/ingresos)
+- [x] Sistema de households con RLS
+- [x] CRUD de categorías y movimientos
 - [x] Dashboard con resumen mensual
-- [x] Modo oscuro (dark/light)
-- [x] Sistema de contribuciones proporcionales (backend + UI)
-- [x] Panel de administración (dashboard + wipe + members)
-- [x] Gestión de miembros (cambiar roles, eliminar)
-- [x] Perfil personal (editar ingreso propio)
+- [x] Modo oscuro con persistencia
+- [x] Panel de administración completo
+- [x] Sistema de contribuciones proporcionales
+- [x] **Tipos de cálculo múltiples** (proporcional, igual, custom)
+- [x] **Sistema de pre-pagos** ⭐
+- [x] **Pagos flexibles** (parcial, completo, sobrepago) ⭐
 - [x] Supabase CLI workflow
-- [x] Build de producción
+- [x] Auto-deploy en Vercel
+- [x] Build de producción (20 páginas)
 
 ### 🚧 En Progreso
+- [ ] Testing manual de pre-pagos en producción
+- [ ] Fix bugs reportados (household settings)
+
+### 📋 Próximas Features (v0.1.0)
 - [ ] Sistema de invitaciones por email
 - [ ] Gráficos con Recharts
-- [ ] Edición de categorías (actualmente solo crear/eliminar)
-
-### 📋 Pendiente
+- [ ] Edición de categorías
 - [ ] Filtros avanzados en movimientos
 - [ ] Export/Import CSV
 - [ ] Import desde Excel existente
 - [ ] History tab en contribuciones
-- [ ] Integración con Google Sheets (futuro)
+
+### 🔮 Futuro (v0.2.0+)
+- [ ] Integración con Google Sheets
 - [ ] PWA (Progressive Web App)
+- [ ] Notificaciones push
+- [ ] Múltiples households por usuario
 
 ## 📄 Licencia
 
