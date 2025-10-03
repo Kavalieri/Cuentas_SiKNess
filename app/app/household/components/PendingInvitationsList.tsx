@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mail, X, Copy, Check, Clock } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Mail, X, Copy, Check, Clock, AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cancelInvitation } from '@/app/app/household/invitations/actions';
+import { cancelInvitation, cleanupOrphanedInvitations } from '@/app/app/household/invitations/actions';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -18,7 +19,8 @@ interface Invitation {
   created_at: string | null;
   expires_at: string;
   household_id: string | null;
-  type?: string; // Nuevo campo opcional
+  type?: string;
+  households?: { id: string; name: string } | null; // JOIN con households
 }
 
 interface PendingInvitationsListProps {
@@ -28,10 +30,35 @@ interface PendingInvitationsListProps {
 export function PendingInvitationsList({ invitations }: PendingInvitationsListProps) {
   const [copied, setCopied] = useState<string | null>(null);
   const [canceling, setCanceling] = useState<string | null>(null);
+  const [cleaningAll, setCleaningAll] = useState(false);
 
   if (!invitations || invitations.length === 0) {
     return null;
   }
+
+  // Detectar invitaciones huérfanas (household_id existe pero households es null)
+  const orphanedInvitations = invitations.filter(
+    inv => inv.household_id && !inv.households
+  );
+  const validInvitations = invitations.filter(
+    inv => !inv.household_id || inv.households
+  );
+
+  const handleCleanupAll = async () => {
+    if (!confirm(`¿Eliminar ${orphanedInvitations.length} invitación(es) con errores?`)) {
+      return;
+    }
+
+    setCleaningAll(true);
+    const result = await cleanupOrphanedInvitations();
+    setCleaningAll(false);
+
+    if (!result.ok) {
+      toast.error(result.message);
+    } else {
+      toast.success(`${result.data?.deleted || 0} invitación(es) eliminadas`);
+    }
+  };
 
   const handleCopyLink = async (token: string) => {
     const baseUrl = window.location.origin;
@@ -62,19 +89,66 @@ export function PendingInvitationsList({ invitations }: PendingInvitationsListPr
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Invitaciones Pendientes
-        </CardTitle>
-        <CardDescription>
-          Links de invitación enviados que aún no han sido aceptados
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {invitations.map((invitation) => {
+    <>
+      {/* Alert para invitaciones huérfanas */}
+      {orphanedInvitations.length > 0 && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="flex items-center justify-between">
+            <span>Invitaciones con Errores</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleCleanupAll}
+              disabled={cleaningAll}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              {cleaningAll ? 'Eliminando...' : 'Limpiar Todo'}
+            </Button>
+          </AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>
+              Se encontraron {orphanedInvitations.length} invitación(es) que apuntan a un hogar que ya no existe.
+              Esto puede ocurrir si el hogar fue eliminado después de crear la invitación.
+            </p>
+            <div className="space-y-1">
+              {orphanedInvitations.map(inv => (
+                <div key={inv.id} className="flex items-center justify-between text-sm p-2 bg-background/50 rounded">
+                  <span className="flex items-center gap-2">
+                    <Mail className="h-3 w-3" />
+                    {inv.email || 'Sin email'}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCancel(inv.id)}
+                    disabled={canceling === inv.id || cleaningAll}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Eliminar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Lista de invitaciones válidas */}
+      {validInvitations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Invitaciones Pendientes
+            </CardTitle>
+            <CardDescription>
+              Links de invitación enviados que aún no han sido aceptados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {validInvitations.map((invitation) => {
             const expiresAt = new Date(invitation.expires_at);
             const isExpiringSoon = expiresAt.getTime() - Date.now() < 24 * 60 * 60 * 1000; // < 24h
             
@@ -144,5 +218,7 @@ export function PendingInvitationsList({ invitations }: PendingInvitationsListPr
         </div>
       </CardContent>
     </Card>
+      )}
+    </>
   );
 }

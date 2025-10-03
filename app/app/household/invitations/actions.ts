@@ -237,7 +237,7 @@ export async function createInvitation(formData: FormData): Promise<Result<{ tok
 }
 
 /**
- * Cancela una invitación pendiente
+ * Cancela una invitación pendiente (la elimina, no la marca como cancelada)
  * Solo owners pueden cancelar
  */
 export async function cancelInvitation(invitationId: string): Promise<Result> {
@@ -248,11 +248,12 @@ export async function cancelInvitation(invitationId: string): Promise<Result> {
 
   const supabase = await supabaseServer();
 
+  // Borrar la invitación directamente (las canceladas son errores, no necesitan registro)
+  // Nota: No filtramos por status='pending' para permitir borrar invitaciones huérfanas
   const { error } = await supabase
     .from('invitations')
-    .update({ status: 'cancelled' })
-    .eq('id', invitationId)
-    .eq('status', 'pending');
+    .delete()
+    .eq('id', invitationId);
 
   if (error) {
     return fail('Error al cancelar la invitación: ' + error.message);
@@ -260,6 +261,63 @@ export async function cancelInvitation(invitationId: string): Promise<Result> {
 
   revalidatePath('/app/household');
   return ok();
+}
+
+/**
+ * Limpia todas las invitaciones huérfanas del hogar actual
+ * (invitaciones que apuntan a households inexistentes)
+ * Solo owners pueden ejecutar
+ */
+export async function cleanupOrphanedInvitations(): Promise<Result<{ deleted: number }>> {
+  const userIsOwner = await isOwner();
+  if (!userIsOwner) {
+    return fail('No tienes permisos para esta acción');
+  }
+
+  const householdId = await getUserHouseholdId();
+  if (!householdId) {
+    return fail('No se encontró el hogar');
+  }
+
+  const supabase = await supabaseServer();
+
+  // Obtener invitaciones del household actual que apuntan a households inexistentes
+  const { data: orphaned } = await supabase
+    .from('invitations')
+    .select(`
+      id,
+      household_id,
+      households (id)
+    `)
+    .eq('household_id', householdId)
+    .eq('status', 'pending');
+
+  if (!orphaned) {
+    return ok({ deleted: 0 });
+  }
+
+  // Filtrar las que tienen households null (huérfanas)
+  const orphanedIds = orphaned
+    .filter((inv) => !('households' in inv) || !inv.households)
+    .map((inv) => inv.id);
+
+  if (orphanedIds.length === 0) {
+    return ok({ deleted: 0 });
+  }
+
+  // Borrar invitaciones huérfanas
+  const { error } = await supabase
+    .from('invitations')
+    .delete()
+    .in('id', orphanedIds);
+
+  if (error) {
+    console.error('Error deleting orphaned invitations:', error);
+    return fail('Error al limpiar invitaciones huérfanas');
+  }
+
+  revalidatePath('/app/household');
+  return ok({ deleted: orphanedIds.length });
 }
 
 /**
@@ -538,6 +596,7 @@ export async function acceptInvitation(token: string): Promise<Result<{ househol
 /**
  * Obtiene las invitaciones pendientes del hogar actual
  * Solo para owners
+ * INCLUYE invitaciones con errores (household inexistente) para debugging
  */
 export async function getPendingInvitations() {
   const userIsOwner = await isOwner();
@@ -552,9 +611,17 @@ export async function getPendingInvitations() {
 
   const supabase = await supabaseServer();
 
+  // Obtener TODAS las invitaciones pendientes del household
+  // Incluso si el household_id es inválido, para poder ver errores
   const { data, error } = await supabase
     .from('invitations')
-    .select('*')
+    .select(`
+      *,
+      households (
+        id,
+        name
+      )
+    `)
     .eq('household_id', householdId)
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
@@ -562,6 +629,15 @@ export async function getPendingInvitations() {
   if (error) {
     console.error('Error fetching invitations:', error);
     return [];
+  }
+
+  // Log para debugging: detectar invitaciones huérfanas
+  const orphanedInvitations = data?.filter((inv) => !('households' in inv) || !inv.households) || [];
+  if (orphanedInvitations.length > 0) {
+    console.warn(`⚠️  Encontradas ${orphanedInvitations.length} invitaciones huérfanas (household inexistente)`);
+    orphanedInvitations.forEach((inv) => {
+      console.warn(`   - Invitation ID: ${inv.id}, Email: ${inv.email || 'N/A'}, Token: ${inv.token.substring(0, 10)}...`);
+    });
   }
 
   return data || [];
