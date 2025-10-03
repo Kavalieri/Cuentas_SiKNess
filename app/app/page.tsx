@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { getUserHouseholdId } from '@/lib/supabaseServer';
-import { getMonthSummary, getMovements } from './expenses/actions';
+import { getMonthSummary, getMovements, getCategoryExpenses, getMonthComparison } from './expenses/actions';
 import { getCategories } from './categories/actions';
 import { getInvitationDetails, getUserPendingInvitations } from './household/invitations/actions';
 import { DashboardOnboarding } from './components/DashboardOnboarding';
@@ -64,15 +64,21 @@ export default async function DashboardPage() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1; // getMonth() devuelve 0-11
 
+  // Calcular rango de fechas del mes
+  const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+  const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+
   // Obtener invitaciones pendientes del usuario
   const pendingInvitationsResult = await getUserPendingInvitations();
   const pendingInvitations = pendingInvitationsResult.ok ? pendingInvitationsResult.data || [] : [];
 
   // Obtener datos en paralelo
-  const [summaryResult, movementsResult, categoriesResult] = await Promise.all([
+  const [summaryResult, movementsResult, categoriesResult, categoryExpensesResult, comparisonResult] = await Promise.all([
     getMonthSummary(year, month),
     getMovements(),
     getCategories(),
+    getCategoryExpenses({ startDate, endDate }),
+    getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
   ]);
 
   const summary = summaryResult.ok
@@ -81,6 +87,8 @@ export default async function DashboardPage() {
 
   const allMovements = movementsResult.ok ? (movementsResult.data || []) : [];
   const categories = categoriesResult.ok ? (categoriesResult.data || []) : [];
+  const categoryExpenses = categoryExpensesResult.ok ? (categoryExpensesResult.data || []) : [];
+  const comparison = comparisonResult.ok ? comparisonResult.data : undefined;
 
   return (
     <div className="space-y-8">
@@ -93,6 +101,8 @@ export default async function DashboardPage() {
         initialCategories={categories as never[]}
         initialMovements={allMovements as never[]}
         initialSummary={summary}
+        initialCategoryExpenses={categoryExpenses as never[]}
+        initialComparison={comparison as never}
       />
     </div>
   );
