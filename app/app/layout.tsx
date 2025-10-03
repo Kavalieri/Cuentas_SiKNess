@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/supabaseServer';
+import { getCurrentUser, getUserHouseholdId } from '@/lib/supabaseServer';
 import { signOut } from '@/app/login/actions';
 import { Button } from '@/components/ui/button';
 import { LogOut, Home, User, Users, Shield } from 'lucide-react';
@@ -30,6 +30,7 @@ export default async function AppLayout({
   }
 
   const userIsSystemAdmin = await isSystemAdmin();
+  const householdId = await getUserHouseholdId();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -47,12 +48,14 @@ export default async function AppLayout({
                   Dashboard
                 </Button>
               </Link>
-              <Link href="/app/household">
-                <Button variant="ghost" size="sm">
-                  <Users className="mr-2 h-4 w-4" />
-                  Hogar
-                </Button>
-              </Link>
+              {householdId && (
+                <Link href="/app/household">
+                  <Button variant="ghost" size="sm">
+                    <Users className="mr-2 h-4 w-4" />
+                    Hogar
+                  </Button>
+                </Link>
+              )}
               <Link href="/app/profile">
                 <Button variant="ghost" size="sm">
                   <User className="mr-2 h-4 w-4" />

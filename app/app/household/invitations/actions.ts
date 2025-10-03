@@ -84,14 +84,14 @@ export async function createFlexibleInvitation(
     if (options.email) {
       const { data: existingInvitation } = await supabase
         .from('invitations')
-        .select('id')
+        .select('id, status')
         .eq('email', options.email)
         .eq('household_id', options.householdId)
         .eq('status', 'pending')
         .maybeSingle();
 
       if (existingInvitation) {
-        return fail('Ya existe una invitación pendiente para este email en este hogar');
+        return fail('Ya existe una invitación pendiente para este email en este hogar. Cancela la anterior antes de crear una nueva.');
       }
     }
   }
@@ -264,14 +264,19 @@ export async function cancelInvitation(invitationId: string): Promise<Result> {
 
 /**
  * Obtiene los detalles de una invitación por su token
- * No requiere autenticación (para que usuarios nuevos puedan ver la invitación)
+ * NO requiere autenticación para permitir que nuevos usuarios vean la invitación
  */
 export async function getInvitationDetails(token: string): Promise<Result<InvitationDetails>> {
   if (!token || token.length !== 64) {
     return fail('Token inválido');
   }
 
-  const supabase = await supabaseServer();
+  // Usar supabaseBrowser para evitar problemas con cookies de sesión
+  const { createBrowserClient } = await import('@supabase/ssr');
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   // @ts-ignore - Tipos pendientes de regenerar después de aplicar migración
   const { data, error } = await supabase
@@ -365,6 +370,7 @@ export async function getInvitationDetails(token: string): Promise<Result<Invita
 /**
  * Acepta una invitación por token
  * El usuario debe estar autenticado y su email debe coincidir
+ * IMPORTANTE: Limpia la cookie de invitación después de usarla
  */
 export async function acceptInvitation(token: string): Promise<Result<{ householdId: string; householdName: string }>> {
   const user = await getCurrentUser();
@@ -393,6 +399,12 @@ export async function acceptInvitation(token: string): Promise<Result<{ househol
   if (!result || !result.success) {
     return fail(result?.message || 'Error desconocido');
   }
+
+  // CRÍTICO: Limpiar la cookie de invitación después de aceptarla
+  // Esto previene que el dashboard intente validar un token ya usado
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  cookieStore.delete('invitation_token');
 
   revalidatePath('/app');
   revalidatePath('/app/household');

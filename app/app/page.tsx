@@ -1,23 +1,48 @@
-import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getUserHouseholdId } from '@/lib/supabaseServer';
 import { getMonthSummary, getMovements } from './expenses/actions';
 import { getCategories } from './categories/actions';
+import { getInvitationDetails } from './household/invitations/actions';
 import { formatCurrency } from '@/lib/format';
 import { AddMovementDialog } from './expenses/components/AddMovementDialog';
 import { MovementsList } from './components/MovementsList';
+import { DashboardOnboarding } from './components/DashboardOnboarding';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default async function DashboardPage() {
   // Verificar si el usuario tiene un household
   const householdId = await getUserHouseholdId();
 
-  // Si no tiene household, redirigir a onboarding
+  // Si el usuario no tiene hogar, mostrar onboarding
   if (!householdId) {
-    redirect('/app/onboarding');
-  }
+    // Verificar si hay un token de invitación en cookie
+    const cookieStore = await cookies();
+    const invitationToken = cookieStore.get('invitation_token')?.value;
 
-  // Obtener el mes y año actual
+    let pendingInvitation = undefined;
+    if (invitationToken) {
+      // Intentar obtener detalles de la invitación
+      const result = await getInvitationDetails(invitationToken);
+      
+      if (result.ok) {
+        // Invitación válida - mostrarla en el dashboard
+        pendingInvitation = {
+          id: result.data!.id,
+          token: result.data!.token,
+          household_name: result.data!.household_name,
+          invited_by_email: result.data!.invited_by_email,
+          expires_at: result.data!.expires_at,
+          type: result.data!.type,
+        };
+      } else {
+        // Invitación inválida (expirada/cancelada/usada) - limpiar cookie
+        cookieStore.delete('invitation_token');
+      }
+    }
+
+    return <DashboardOnboarding pendingInvitation={pendingInvitation} />;
+  }  // Obtener el mes y año actual
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1; // getMonth() devuelve 0-11
