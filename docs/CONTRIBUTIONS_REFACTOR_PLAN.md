@@ -1,7 +1,8 @@
 # Plan de Refactorización: Sistema de Contribuciones
 
 **Fecha**: 3 de octubre de 2025  
-**Objetivo**: Simplificar y mejorar el sistema de contribuciones del hogar
+**Objetivo**: Simplificar y mejorar el sistema de contribuciones del hogar  
+**Última actualización**: Testing auto-deploy Vercel
 
 ## Estado Actual
 
@@ -9,6 +10,7 @@
 ✅ **Fase 2**: Integración con movimientos - **COMPLETADO**  
 ✅ **Fase 3**: Mejoras perfil - **YA EXISTÍA**  
 ✅ **Fase 6**: Tipos de cálculo - **COMPLETADO**  
+✅ **Fase 7**: Pre-pagos y pagos flexibles - **COMPLETADO**  
 ⏳ **Fase 4**: Fix bugs household - **PENDIENTE**  
 ⏳ **Fase 5**: Testing completo - **PENDIENTE**
 
