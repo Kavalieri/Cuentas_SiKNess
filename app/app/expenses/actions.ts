@@ -195,3 +195,40 @@ export async function getMonthSummary(
     balance: income - expenses,
   });
 }
+
+/**
+ * Obtiene el balance total acumulativo (todos los movimientos históricos)
+ */
+export async function getTotalBalance(): Promise<Result<{ balance: number; income: number; expenses: number }>> {
+  const householdId = await getUserHouseholdId();
+  if (!householdId) {
+    return ok({ balance: 0, income: 0, expenses: 0 });
+  }
+
+  const supabase = await supabaseServer();
+
+  const { data, error } = await supabase
+    .from('movements')
+    .select('type, amount')
+    .eq('household_id', householdId);
+
+  if (error) {
+    return fail(error.message);
+  }
+
+  // @ts-ignore - Supabase types issue
+  const expenses =
+    // @ts-ignore
+    data?.filter((m) => m.type === 'expense').reduce((sum, m) => sum + Number(m.amount), 0) || 0;
+
+  // @ts-ignore - Supabase types issue
+  const income =
+    // @ts-ignore
+    data?.filter((m) => m.type === 'income').reduce((sum, m) => sum + Number(m.amount), 0) || 0;
+
+  return ok({
+    balance: income - expenses,
+    income,
+    expenses,
+  });
+}

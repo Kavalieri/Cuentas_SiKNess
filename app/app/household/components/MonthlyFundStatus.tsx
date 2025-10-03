@@ -212,7 +212,7 @@ export function MonthlyFundStatus({
               if (!contribution) {
                 return (
                   <div
-                    key={member.id}
+                    key={`${member.user_id}-no-contrib`}
                     className="flex items-center justify-between p-3 border rounded-lg bg-muted/50"
                   >
                     <div>
@@ -234,7 +234,7 @@ export function MonthlyFundStatus({
 
               return (
                 <div
-                  key={member.id}
+                  key={`${member.user_id}-contrib`}
                   className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
                     isPaid ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-background'
                   }`}
@@ -246,13 +246,13 @@ export function MonthlyFundStatus({
                       <Circle className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">
+                      <div className="font-medium text-sm">
                         {member.email}
                         {isCurrentUser && <span className="text-primary ml-2">(Tú)</span>}
                         {member.role === 'owner' && (
                           <Badge variant="outline" className="ml-2 text-xs">Owner</Badge>
                         )}
-                      </p>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {percentage.toFixed(1)}% del fondo • {formatCurrency(contribution.expected_amount)}
                       </p>

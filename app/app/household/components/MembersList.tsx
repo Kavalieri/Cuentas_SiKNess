@@ -87,7 +87,7 @@ export function MembersList({ members }: MembersListProps) {
         const isRemoving = removingMember === member.id;
 
         return (
-          <div key={member.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <div key={`${member.user_id}-member`} className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <p className="font-medium">{member.email}</p>

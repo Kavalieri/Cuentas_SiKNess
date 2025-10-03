@@ -13,6 +13,7 @@ type Member = {
   email: string;
   income: number;
   contribution: Contribution | null;
+  role: 'owner' | 'member';
 };
 
 export default async function ContributionsPage() {
@@ -59,6 +60,7 @@ export default async function ContributionsPage() {
         email: member.email || 'Sin email',
         income: (income as number) || 0,
         contribution: null,
+        role: member.role as 'owner' | 'member', // Incluir el rol del miembro
       };
     })
   );
@@ -99,14 +101,7 @@ export default async function ContributionsPage() {
   );
 
   // Verificar si el usuario es owner
-  const { data: memberData } = await supabase
-    .from('household_members')
-    .select('role')
-    .eq('household_id', householdId)
-    .eq('user_id', user.id)
-    .single();
-
-  const isOwner = memberData?.role === 'owner';
+  const isOwner = membersWithIncomes.find((m) => m.user_id === user.id)?.role === 'owner';
 
   // Obtener categorías de gastos para pre-pagos
   const { data: categories } = await supabase
@@ -144,7 +139,6 @@ export default async function ContributionsPage() {
         prePayments={prePayments}
         currentMonth={currentMonth}
         currentYear={currentYear}
-        memberRole={memberData?.role || 'member'}
       />
     </div>
   );

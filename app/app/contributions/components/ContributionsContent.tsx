@@ -18,6 +18,7 @@ type Member = {
   email: string;
   income: number;
   contribution: Contribution | null;
+  role: 'owner' | 'member';
 };
 
 interface ContributionsContentProps {
@@ -37,7 +38,6 @@ interface ContributionsContentProps {
   prePayments: PrePayment[];
   currentMonth: number;
   currentYear: number;
-  memberRole: string;
 }
 
 export function ContributionsContent({
@@ -57,7 +57,6 @@ export function ContributionsContent({
   prePayments,
   currentMonth,
   currentYear,
-  memberRole,
 }: ContributionsContentProps) {
   return (
     <div className="space-y-6">
@@ -84,7 +83,7 @@ export function ContributionsContent({
         members={membersWithIncomes.map((m) => ({
           user_id: m.user_id,
           email: m.email,
-          role: memberRole,
+          role: m.role, // Usar el rol real del miembro
         }))}
         categories={categories}
         prePayments={prePayments}

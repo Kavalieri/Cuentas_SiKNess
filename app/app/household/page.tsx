@@ -97,6 +97,7 @@ export default async function HouseholdPage() {
     email: m.email,
     income: m.currentIncome,
     contribution: contributionsMap.get(m.user_id) || null,
+    role: m.role, // Incluir el rol del miembro
   }));
 
   const currentUserIncome = members.find((m) => m.user_id === user.id)?.currentIncome || 0;
@@ -167,7 +168,6 @@ export default async function HouseholdPage() {
             prePayments={prePayments}
             currentMonth={now.getMonth() + 1}
             currentYear={now.getFullYear()}
-            memberRole={members.find((m) => m.user_id === user.id)?.role || 'member'}
           />
         </TabsContent>
 

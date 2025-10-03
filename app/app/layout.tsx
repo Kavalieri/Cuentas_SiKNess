@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Home, User, Users, Shield } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { HouseholdSelector } from '@/components/shared/HouseholdSelector';
+import { BalanceDisplay } from '@/components/shared/BalanceDisplay';
 import { isSystemAdmin } from '@/lib/adminCheck';
+import { getTotalBalance } from '@/app/app/expenses/actions';
 
 function SignOutButton() {
   return (
@@ -33,6 +35,10 @@ export default async function AppLayout({
   const userIsSystemAdmin = await isSystemAdmin();
   const householdId = await getUserHouseholdId();
   const userHouseholds = await getUserHouseholds();
+
+  // Obtener balance total si tiene household
+  const balanceResult = householdId ? await getTotalBalance() : null;
+  const balance = balanceResult?.ok ? balanceResult.data : null;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -75,6 +81,14 @@ export default async function AppLayout({
             </nav>
           </div>
           <div className="flex items-center gap-4">
+            {/* Balance Total (siempre visible si tiene household) */}
+            {balance && (
+              <BalanceDisplay
+                balance={balance.balance}
+                income={balance.income}
+                expenses={balance.expenses}
+              />
+            )}
             {/* Selector de household (solo si tiene múltiples) */}
             {userHouseholds.length > 1 && householdId && (
               <HouseholdSelector
@@ -82,7 +96,7 @@ export default async function AppLayout({
                 activeHouseholdId={householdId}
               />
             )}
-            <span className="text-sm text-muted-foreground">{user.email}</span>
+            <span className="text-sm text-muted-foreground hidden lg:inline">{user.email}</span>
             <ThemeToggle />
             <SignOutButton />
           </div>
