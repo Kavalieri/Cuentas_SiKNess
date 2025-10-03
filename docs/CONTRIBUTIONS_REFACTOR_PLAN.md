@@ -3,15 +3,140 @@
 **Fecha**: 3 de octubre de 2025  
 **Objetivo**: Simplificar y mejorar el sistema de contribuciones del hogar
 
-## Problemas Actuales
+## Estado Actual
 
-1. **UI Compleja**: 3 pestañas (Estado, Configuración, Historial) → redundante
-2. **Roles confusos**: No queda claro qué puede hacer Owner vs Admin vs Usuario
-3. **Bug de configuración**: Resumen del hogar dice "no configurado" aunque esté todo OK
-4. **Falta integración**: Marcar contribución como pagada no crea movimiento de ingreso
-5. **Historial redundante**: Ya existe en la pestaña de gastos/movimientos
+✅ **Fase 1**: Simplificación UI - **COMPLETADO**  
+✅ **Fase 2**: Integración con movimientos - **COMPLETADO**  
+✅ **Fase 3**: Mejoras perfil - **YA EXISTÍA**  
+✅ **Fase 6**: Tipos de cálculo - **COMPLETADO**  
+⏳ **Fase 4**: Fix bugs household - **PENDIENTE**  
+⏳ **Fase 5**: Testing completo - **PENDIENTE**
 
-## Solución Propuesta
+## Problemas Actuales (Resueltos)
+
+1. ✅ **UI Compleja**: 3 pestañas (Estado, Configuración, Historial) → **RESUELTO: Vista única**
+2. ✅ **Roles confusos**: No queda claro qué puede hacer Owner vs Admin vs Usuario → **RESUELTO: Permisos claros en UI**
+3. ⏳ **Bug de configuración**: Resumen del hogar dice "no configurado" → **PENDIENTE: Testar**
+4. ✅ **Falta integración**: Marcar contribución como pagada no crea movimiento → **RESUELTO: Crea movimiento + categoría Nómina**
+5. ✅ **Historial redundante**: Ya existe en la pestaña de gastos/movimientos → **RESUELTO: Eliminado**
+6. ✅ **Solo un tipo de cálculo**: Solo proporcional → **RESUELTO: 3 tipos disponibles**
+
+## ✨ Nueva Funcionalidad: Tipos de Cálculo
+
+### Tipos Implementados
+
+#### 1. Proporcional al Ingreso (default)
+- **Fórmula**: `(ingreso_miembro / total_ingresos) * meta_mensual`
+- **Ejemplo**: Miembro A gana 2500€, Miembro B gana 1500€, Meta 2000€
+  - Total ingresos = 4000€
+  - A contribuye: (2500/4000) * 2000 = 1250€ (62.5%)
+  - B contribuye: (1500/4000) * 2000 = 750€ (37.5%)
+- **Ideal para**: Parejas con diferencias significativas de ingresos
+
+#### 2. A Partes Iguales
+- **Fórmula**: `meta_mensual / número_de_miembros`
+- **Ejemplo**: 2 miembros, Meta 2000€
+  - Cada miembro: 2000 / 2 = 1000€ (50%)
+- **Ideal para**: Parejas que prefieren contribuir igual independientemente del ingreso
+
+#### 3. Personalizado (Futuro)
+- **Descripción**: El owner define manualmente el % de cada miembro
+- **Ejemplo**: Owner decide que A contribuye 70% y B 30%
+- **Estado**: Placeholder - implementación futura
+
+### Cambios en la Base de Datos
+
+#### Nueva columna `calculation_type` en `household_settings`
+```sql
+ALTER TABLE household_settings 
+ADD COLUMN calculation_type TEXT NOT NULL DEFAULT 'proportional'
+CHECK (calculation_type IN ('proportional', 'equal', 'custom'));
+```
+
+Valores:
+- `'proportional'` - Proporcional al ingreso (default)
+- `'equal'` - A partes iguales
+- `'custom'` - Personalizado (futuro)
+
+#### Función actualizada `calculate_monthly_contributions`
+La función RPC de PostgreSQL ahora soporta los 3 tipos:
+
+```sql
+-- Lógica de cálculo según tipo
+IF v_calculation_type = 'equal' THEN
+  -- goal / member_count
+ELSIF v_calculation_type = 'proportional' THEN
+  -- (member_income / total_income) * goal
+ELSIF v_calculation_type = 'custom' THEN
+  -- Futuro: usar percentages pre-definidos
+END IF;
+```
+
+### Cambios en la UI
+
+#### ConfigurationSection (Solo Owner)
+```tsx
+<Select value={calculationType}>
+  <SelectItem value="proportional">Proporcional al Ingreso</SelectItem>
+  <SelectItem value="equal">A Partes Iguales</SelectItem>
+  <SelectItem value="custom" disabled>Personalizado (Futuro)</SelectItem>
+</Select>
+```
+
+**Descripción dinámica** según tipo seleccionado:
+- Proporcional: "Cada miembro aporta según su ingreso mensual. Mayor ingreso = mayor contribución."
+- Equal: "Todos los miembros aportan la misma cantidad, independientemente de sus ingresos."
+- Custom: "Definir manualmente el porcentaje de contribución de cada miembro (próximamente)."
+
+#### HouseholdSummary
+Badge en el header mostrando el tipo de cálculo actual:
+```tsx
+<Badge variant="secondary">
+  <Calculator className="h-3 w-3" />
+  Proporcional al Ingreso
+</Badge>
+```
+
+#### ContributionMembersList
+Los porcentajes se calculan según el tipo activo (sin cambios visuales, solo lógica interna)
+
+### Archivos Nuevos/Modificados
+
+#### Nuevos Archivos
+1. **`lib/contributionTypes.ts`**
+   - Enum `CALCULATION_TYPES` con los 3 tipos
+   - Labels y descripciones para cada tipo
+   - Helper `calculateContributionAmount()` para cálculos client-side
+   - Helper `getContributionPercentage()` para mostrar %
+
+2. **`supabase/migrations/20251003120000_add_calculation_type_to_household_settings.sql`**
+   - Añade columna `calculation_type`
+
+3. **`supabase/migrations/20251003120001_update_calculate_monthly_contributions.sql`**
+   - Actualiza función RPC para soportar tipos
+
+#### Archivos Modificados
+1. **`app/app/contributions/actions.ts`**
+   - Import de `CALCULATION_TYPES`
+   - Schema `HouseholdSettingsSchema` incluye `calculation_type`
+   - Action `setContributionGoal` guarda el tipo seleccionado
+
+2. **`app/app/contributions/page.tsx`**
+   - Lee `calculationType` de settings
+   - Pasa `calculationType` a componentes
+
+3. **`app/app/contributions/components/ConfigurationSection.tsx`**
+   - Select para elegir tipo (solo owner)
+   - Muestra descripción dinámica
+   - Envía `calculation_type` al backend
+
+4. **`app/app/contributions/components/HouseholdSummary.tsx`**
+   - Muestra badge con tipo de cálculo actual
+
+5. **`types/database.ts`**
+   - Regenerado con nuevo campo `calculation_type`
+
+## Solución Propuesta (Original)
 
 ### Estructura Nueva (1 sola vista)
 

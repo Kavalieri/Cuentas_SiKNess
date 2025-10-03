@@ -6,6 +6,7 @@ import { getCurrentHouseholdId } from '@/lib/adminCheck';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabaseServer';
 import type { Database } from '@/types/database';
+import { CALCULATION_TYPES, type CalculationType } from '@/lib/contributionTypes';
 
 type Contribution = Database['public']['Tables']['contributions']['Row'];
 
@@ -39,6 +40,7 @@ export default async function ContributionsPage() {
 
   const monthlyGoal = settings?.monthly_contribution_goal || 0;
   const currency = settings?.currency || 'EUR';
+  const calculationType = (settings?.calculation_type as CalculationType) || CALCULATION_TYPES.PROPORTIONAL;
 
   // Obtener miembros del hogar con sus ingresos
   const { data: membersData } = await supabase.rpc('get_household_members', {
@@ -130,11 +132,12 @@ export default async function ContributionsPage() {
       <HouseholdSummary
         monthlyGoal={monthlyGoal}
         totalPaid={totalPaid}
+        calculationType={calculationType}
         currency={currency}
       />
 
       {/* Lista de miembros */}
-            <ContributionMembersList
+      <ContributionMembersList
         members={membersWithIncomes}
         totalIncome={totalIncome}
       />
@@ -145,6 +148,7 @@ export default async function ContributionsPage() {
         userId={user.id}
         currentGoal={monthlyGoal}
         currentIncome={currentUserIncome}
+        currentCalculationType={calculationType}
         isOwner={isOwner}
         currency={currency}
       />

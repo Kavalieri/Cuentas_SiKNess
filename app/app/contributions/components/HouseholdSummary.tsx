@@ -2,18 +2,22 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/format';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Calculator } from 'lucide-react';
+import { CALCULATION_TYPE_LABELS, type CalculationType } from '@/lib/contributionTypes';
 
 type HouseholdSummaryProps = {
   monthlyGoal: number;
   totalPaid: number;
+  calculationType: CalculationType;
   currency?: string;
 };
 
 export function HouseholdSummary({
   monthlyGoal,
   totalPaid,
+  calculationType,
   currency = 'EUR',
 }: HouseholdSummaryProps) {
   const progressPercentage = monthlyGoal > 0 ? (totalPaid / monthlyGoal) * 100 : 0;
@@ -22,9 +26,15 @@ export function HouseholdSummary({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Resumen del Hogar
+        <CardTitle className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Resumen del Hogar
+          </span>
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Calculator className="h-3 w-3" />
+            {CALCULATION_TYPE_LABELS[calculationType]}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

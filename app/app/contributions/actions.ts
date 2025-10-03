@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
+import { CALCULATION_TYPES } from '@/lib/contributionTypes';
 
 // =====================================================
 // Schemas de Validación
@@ -21,6 +22,11 @@ const HouseholdSettingsSchema = z.object({
   household_id: z.string().uuid(),
   monthly_contribution_goal: z.coerce.number().positive(),
   currency: z.string().min(3).max(3).default('EUR'),
+  calculation_type: z.enum([
+    CALCULATION_TYPES.PROPORTIONAL,
+    CALCULATION_TYPES.EQUAL,
+    CALCULATION_TYPES.CUSTOM,
+  ]).default(CALCULATION_TYPES.PROPORTIONAL),
 });
 
 const ContributionAdjustmentSchema = z.object({
@@ -118,6 +124,7 @@ export async function setContributionGoal(formData: FormData): Promise<Result> {
         household_id: parsed.data.household_id,
         monthly_contribution_goal: parsed.data.monthly_contribution_goal,
         currency: parsed.data.currency,
+        calculation_type: parsed.data.calculation_type,
         updated_at: new Date().toISOString(),
         updated_by: (await supabase.auth.getUser()).data.user?.id,
       },

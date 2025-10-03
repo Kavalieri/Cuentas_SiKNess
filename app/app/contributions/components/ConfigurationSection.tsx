@@ -4,17 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Settings, Calculator } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { setContributionGoal, setMemberIncome } from '@/app/app/contributions/actions';
 import { formatCurrency } from '@/lib/format';
+import { 
+  CALCULATION_TYPES, 
+  CALCULATION_TYPE_LABELS, 
+  CALCULATION_TYPE_DESCRIPTIONS,
+  type CalculationType 
+} from '@/lib/contributionTypes';
 
 type ConfigurationSectionProps = {
   householdId: string;
   userId: string;
   currentGoal: number;
   currentIncome: number;
+  currentCalculationType: CalculationType;
   isOwner: boolean;
   currency?: string;
 };
@@ -24,11 +32,13 @@ export function ConfigurationSection({
   userId,
   currentGoal,
   currentIncome,
+  currentCalculationType,
   isOwner,
   currency = 'EUR',
 }: ConfigurationSectionProps) {
   const [isLoadingGoal, setIsLoadingGoal] = useState(false);
   const [isLoadingIncome, setIsLoadingIncome] = useState(false);
+  const [calculationType, setCalculationType] = useState<CalculationType>(currentCalculationType);
 
   const handleUpdateGoal = async (formData: FormData) => {
     setIsLoadingGoal(true);
@@ -65,10 +75,42 @@ export function ConfigurationSection({
       <CardContent className="space-y-6">
         {/* Meta mensual del hogar - Solo Owner */}
         {isOwner && (
-          <form action={handleUpdateGoal} className="space-y-3">
+          <form action={handleUpdateGoal} className="space-y-4">
             <input type="hidden" name="household_id" value={householdId} />
             <input type="hidden" name="currency" value={currency} />
+            <input type="hidden" name="calculation_type" value={calculationType} />
 
+            {/* Tipo de Cálculo */}
+            <div className="space-y-2">
+              <Label htmlFor="calculation_type" className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                Método de Cálculo
+              </Label>
+              <Select
+                value={calculationType}
+                onValueChange={(value) => setCalculationType(value as CalculationType)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(CALCULATION_TYPES).map((type) => (
+                    <SelectItem 
+                      key={type} 
+                      value={type}
+                      disabled={type === CALCULATION_TYPES.CUSTOM}
+                    >
+                      {CALCULATION_TYPE_LABELS[type]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {CALCULATION_TYPE_DESCRIPTIONS[calculationType]}
+              </p>
+            </div>
+
+            {/* Meta Mensual */}
             <div className="space-y-2">
               <Label htmlFor="monthly_contribution_goal">
                 Meta Mensual del Hogar
@@ -96,15 +138,33 @@ export function ConfigurationSection({
         )}
 
         {!isOwner && (
-          <div className="space-y-2">
-            <Label>Meta Mensual del Hogar</Label>
-            <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-              <span className="text-sm text-muted-foreground">Meta actual:</span>
-              <span className="font-semibold">{formatCurrency(currentGoal, currency)}</span>
+          <div className="space-y-4">
+            {/* Tipo de Cálculo (Solo lectura) */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                Método de Cálculo
+              </Label>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-md">
+                <span className="text-sm text-muted-foreground">Método actual:</span>
+                <span className="font-semibold">{CALCULATION_TYPE_LABELS[currentCalculationType]}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {CALCULATION_TYPE_DESCRIPTIONS[currentCalculationType]}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Solo el propietario del hogar puede modificar la meta mensual
-            </p>
+
+            {/* Meta Mensual (Solo lectura) */}
+            <div className="space-y-2">
+              <Label>Meta Mensual del Hogar</Label>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-md">
+                <span className="text-sm text-muted-foreground">Meta actual:</span>
+                <span className="font-semibold">{formatCurrency(currentGoal, currency)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Solo el propietario del hogar puede modificar estos valores
+              </p>
+            </div>
           </div>
         )}
 

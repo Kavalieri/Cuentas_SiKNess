@@ -159,6 +159,7 @@ export type Database = {
       }
       household_settings: {
         Row: {
+          calculation_type: string
           currency: string
           household_id: string
           monthly_contribution_goal: number
@@ -166,6 +167,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          calculation_type?: string
           currency?: string
           household_id: string
           monthly_contribution_goal: number
@@ -173,6 +175,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          calculation_type?: string
           currency?: string
           household_id?: string
           monthly_contribution_goal?: number
@@ -334,7 +337,6 @@ export type Database = {
         Args: { p_household_id: string; p_month: number; p_year: number }
         Returns: {
           expected_amount: number
-          income_percentage: number
           user_id: string
         }[]
       }
