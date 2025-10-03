@@ -43,7 +43,7 @@ export async function createHousehold(formData: FormData): Promise<Result<{ hous
   // @ts-ignore - Supabase types issue con Next.js 15
   const { data, error } = await supabase.rpc('create_household_with_member', {
     p_household_name: parsed.data.name,
-    p_user_id: user.id,
+    p_profile_id: profile.id, // UPDATED: profile_id instead of user_id
   });
 
   if (error || !data) {

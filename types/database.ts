@@ -828,7 +828,7 @@ export type Database = {
         Returns: undefined
       }
       create_household_with_member: {
-        Args: { p_household_name: string; p_user_id: string }
+        Args: { p_household_name: string; p_profile_id: string }
         Returns: Json
       }
       ensure_monthly_period: {
