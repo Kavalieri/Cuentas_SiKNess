@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { ProfileForm } from './components/ProfileForm';
 import { IncomeForm } from './components/IncomeForm';
 import { HouseholdsList } from './components/HouseholdsList';
+import { ProfileInvitationsCard } from './components/ProfileInvitationsCard';
+import { getUserPendingInvitations } from '@/app/app/household/invitations/actions';
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -37,6 +39,10 @@ export default async function ProfilePage() {
     currentIncome = (income as number) ?? 0;
   }
 
+  // Obtener invitaciones pendientes
+  const pendingInvitationsResult = await getUserPendingInvitations();
+  const pendingInvitations = pendingInvitationsResult.ok ? pendingInvitationsResult.data! : [];
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
@@ -61,6 +67,9 @@ export default async function ProfilePage() {
           />
         </CardContent>
       </Card>
+
+      {/* Invitaciones Pendientes */}
+      <ProfileInvitationsCard invitations={pendingInvitations} />
 
       {/* Hogares */}
       <Card>

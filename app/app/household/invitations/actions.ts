@@ -259,7 +259,11 @@ export async function cancelInvitation(invitationId: string): Promise<Result> {
     return fail('Error al cancelar la invitación: ' + error.message);
   }
 
+  // Revalidar todas las rutas relevantes
   revalidatePath('/app/household');
+  revalidatePath('/app/profile');
+  revalidatePath('/app');
+  
   return ok();
 }
 
@@ -316,7 +320,11 @@ export async function cleanupOrphanedInvitations(): Promise<Result<{ deleted: nu
     return fail('Error al limpiar invitaciones huérfanas');
   }
 
+  // Revalidar todas las rutas relevantes
   revalidatePath('/app/household');
+  revalidatePath('/app/profile');
+  revalidatePath('/app');
+  
   return ok({ deleted: orphanedIds.length });
 }
 
@@ -571,12 +579,6 @@ export async function acceptInvitation(token: string): Promise<Result<{ househol
     return fail(result?.message || 'Error desconocido');
   }
 
-  // CRÍTICO: Limpiar la cookie de invitación después de aceptarla
-  // Esto previene que el dashboard intente validar un token ya usado
-  const { cookies } = await import('next/headers');
-  const cookieStore = await cookies();
-  cookieStore.delete('invitation_token');
-
   // Obtener profile_id del usuario
   const { data: profile } = await supabase
     .from('profiles')
@@ -595,8 +597,10 @@ export async function acceptInvitation(token: string): Promise<Result<{ househol
     updated_at: new Date().toISOString(),
   });
 
+  // Revalidar todas las rutas relevantes
   revalidatePath('/app');
   revalidatePath('/app/household');
+  revalidatePath('/app/profile');
 
   return ok({
     householdId: result.household_id!,

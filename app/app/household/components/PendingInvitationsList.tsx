@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ interface PendingInvitationsListProps {
 }
 
 export function PendingInvitationsList({ invitations }: PendingInvitationsListProps) {
+  const router = useRouter();
   const [copied, setCopied] = useState<string | null>(null);
   const [canceling, setCanceling] = useState<string | null>(null);
   const [cleaningAll, setCleaningAll] = useState(false);
@@ -57,6 +59,7 @@ export function PendingInvitationsList({ invitations }: PendingInvitationsListPr
       toast.error(result.message);
     } else {
       toast.success(`${result.data?.deleted || 0} invitación(es) eliminadas`);
+      router.refresh(); // Recargar datos del servidor
     }
   };
 
@@ -84,6 +87,7 @@ export function PendingInvitationsList({ invitations }: PendingInvitationsListPr
       toast.error(result.message);
     } else {
       toast.success('Invitación cancelada');
+      router.refresh(); // Recargar datos del servidor
     }
     setCanceling(null);
   };
