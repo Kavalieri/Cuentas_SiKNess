@@ -1,0 +1,188 @@
+-- ============================================================================
+-- WIPE DATA: Limpiar datos pero preservar usuarios y estructura
+-- ============================================================================
+-- Descripción: Limpia todos los datos de prueba pero preserva:
+-- - Estructura de tablas, funciones, triggers, policies
+-- - Usuarios (auth.users y profiles)
+-- - System admins
+-- - Crea automáticamente hogar "Casa Test" vacío con los 2 usuarios
+-- ============================================================================
+
+DO $$
+DECLARE
+  v_admin_count INTEGER;
+  v_user_count INTEGER;
+  v_user1_id UUID;
+  v_user2_id UUID;
+  v_profile1_id UUID;
+  v_profile2_id UUID;
+  v_household_id UUID;
+BEGIN
+  -- Contar administradores y usuarios actuales
+  SELECT COUNT(*) INTO v_admin_count FROM system_admins;
+  SELECT COUNT(*) INTO v_user_count FROM profiles;
+  
+  RAISE NOTICE '============================================================================';
+  RAISE NOTICE 'WIPE DATA - Preserve Users and Structure';
+  RAISE NOTICE '============================================================================';
+  RAISE NOTICE 'System admins found: %', v_admin_count;
+  RAISE NOTICE 'Users (profiles) found: %', v_user_count;
+  RAISE NOTICE '';
+  
+  -- Verificar que hay usuarios
+  IF v_user_count = 0 THEN
+    RAISE EXCEPTION 'No users found. Cannot proceed with wipe.';
+  END IF;
+  
+  -- Deshabilitar temporalmente RLS para poder eliminar
+  ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE contribution_adjustments DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE contributions DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE member_incomes DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE household_settings DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE categories DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE invitations DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE user_settings DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE household_members DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE households DISABLE ROW LEVEL SECURITY;
+  
+  RAISE NOTICE 'RLS disabled for data deletion...';
+  RAISE NOTICE '';
+  
+  -- Eliminar datos en orden correcto (respetando FKs)
+  RAISE NOTICE 'Deleting data...';
+  
+  -- 1. Transacciones
+  DELETE FROM transactions;
+  RAISE NOTICE '  ✓ Transactions deleted';
+  
+  -- 2. Sistema de contribuciones
+  DELETE FROM contribution_adjustments;
+  RAISE NOTICE '  ✓ Contribution adjustments deleted';
+  
+  DELETE FROM contributions;
+  RAISE NOTICE '  ✓ Contributions deleted';
+  
+  DELETE FROM member_incomes;
+  RAISE NOTICE '  ✓ Member incomes deleted';
+  
+  DELETE FROM household_settings;
+  RAISE NOTICE '  ✓ Household settings deleted';
+  
+  -- 3. Categorías
+  DELETE FROM categories;
+  RAISE NOTICE '  ✓ Categories deleted';
+  
+  -- 4. Invitaciones
+  DELETE FROM invitations;
+  RAISE NOTICE '  ✓ Invitations deleted';
+  
+  -- 5. Configuración de usuario (reset pero no borrar)
+  UPDATE user_settings SET active_household_id = NULL, preferences = NULL;
+  RAISE NOTICE '  ✓ User settings reset';
+  
+  -- 6. Membresías y hogares
+  DELETE FROM household_members;
+  RAISE NOTICE '  ✓ Household members deleted';
+  
+  DELETE FROM households;
+  RAISE NOTICE '  ✓ Households deleted';
+  
+  RAISE NOTICE '';
+  RAISE NOTICE 'Data deletion complete!';
+  RAISE NOTICE '';
+  
+  -- Habilitar RLS nuevamente
+  ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE contribution_adjustments ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE contributions ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE member_incomes ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE household_settings ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE household_members ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE households ENABLE ROW LEVEL SECURITY;
+  
+  RAISE NOTICE 'RLS re-enabled!';
+  RAISE NOTICE '';
+  
+  -- ========================================================================
+  -- Crear hogar "Casa Test" vacío con los 2 usuarios existentes
+  -- ========================================================================
+  RAISE NOTICE 'Creating test household...';
+  
+  -- Obtener los 2 primeros usuarios (asumir que son fumetas y caballero)
+  SELECT id INTO v_profile1_id FROM profiles ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_profile2_id FROM profiles ORDER BY created_at OFFSET 1 LIMIT 1;
+  
+  IF v_profile1_id IS NULL OR v_profile2_id IS NULL THEN
+    RAISE EXCEPTION 'Need at least 2 users to create test household';
+  END IF;
+  
+  -- Crear hogar "Casa Test"
+  INSERT INTO households (name, currency)
+  VALUES ('Casa Test', 'EUR')
+  RETURNING id INTO v_household_id;
+  
+  RAISE NOTICE '  ✓ Household created: Casa Test (ID: %)', v_household_id;
+  
+  -- Agregar miembros (primer usuario = owner, segundo = member)
+  INSERT INTO household_members (household_id, profile_id, role)
+  VALUES 
+    (v_household_id, v_profile1_id, 'owner'),
+    (v_household_id, v_profile2_id, 'member');
+  
+  RAISE NOTICE '  ✓ Members added: 2 users';
+  
+  -- Establecer como hogar activo para ambos usuarios
+  UPDATE user_settings
+  SET active_household_id = v_household_id
+  WHERE profile_id IN (v_profile1_id, v_profile2_id);
+  
+  RAISE NOTICE '  ✓ Active household set for both users';
+  
+  -- Crear categorías por defecto
+  INSERT INTO categories (household_id, name, icon, type) VALUES
+    (v_household_id, 'Vivienda', '🏠', 'expense'),
+    (v_household_id, 'Supermercado', '🛒', 'expense'),
+    (v_household_id, 'Transporte', '🚗', 'expense'),
+    (v_household_id, 'Salud', '💊', 'expense'),
+    (v_household_id, 'Ocio', '🎉', 'expense'),
+    (v_household_id, 'Luz', '💡', 'expense'),
+    (v_household_id, 'Internet', '📡', 'expense'),
+    (v_household_id, 'Butano', '🔥', 'expense'),
+    (v_household_id, 'Nómina', '💰', 'income'),
+    (v_household_id, 'Extra', '💵', 'income');
+  
+  RAISE NOTICE '  ✓ Default categories created: 10 categories';
+  RAISE NOTICE '';
+  
+  -- ========================================================================
+  -- Resumen final
+  -- ========================================================================
+  RAISE NOTICE '============================================================================';
+  RAISE NOTICE 'WIPE COMPLETED SUCCESSFULLY';
+  RAISE NOTICE '============================================================================';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Data cleaned:';
+  RAISE NOTICE '  ✓ All transactions';
+  RAISE NOTICE '  ✓ All contributions, adjustments, and incomes';
+  RAISE NOTICE '  ✓ All old categories and households';
+  RAISE NOTICE '  ✓ All invitations';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Preserved:';
+  RAISE NOTICE '  ✓ Database structure (tables, triggers, policies)';
+  RAISE NOTICE '  ✓ Users (% profiles)', v_user_count;
+  RAISE NOTICE '  ✓ System admins (% admins)', v_admin_count;
+  RAISE NOTICE '';
+  RAISE NOTICE 'Fresh setup created:';
+  RAISE NOTICE '  ✓ Household: Casa Test';
+  RAISE NOTICE '  ✓ Members: 2 (1 owner, 1 member)';
+  RAISE NOTICE '  ✓ Categories: 10 default categories';
+  RAISE NOTICE '  ✓ Active household set for both users';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Ready for testing! Login and start fresh.';
+  RAISE NOTICE '============================================================================';
+  
+END $$;

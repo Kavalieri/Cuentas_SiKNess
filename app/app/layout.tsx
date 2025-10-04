@@ -5,6 +5,7 @@ import { signOut } from '@/app/login/actions';
 import { Button } from '@/components/ui/button';
 import { LogOut, Home, User, Users, Shield } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { PrivacyToggle } from '@/components/shared/PrivacyToggle';
 import { HouseholdSelector } from '@/components/shared/HouseholdSelector';
 import { BalanceDisplay } from '@/components/shared/BalanceDisplay';
 import { isSystemAdmin } from '@/lib/adminCheck';
@@ -108,6 +109,7 @@ export default async function AppLayout({
                 </Button>
               </Link>
 
+              <PrivacyToggle />
               <ThemeToggle />
               <SignOutButton />
             </div>

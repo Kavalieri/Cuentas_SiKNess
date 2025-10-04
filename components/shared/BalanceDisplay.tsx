@@ -1,8 +1,8 @@
 'use client';
 
-import { formatCurrency } from '@/lib/format';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { usePrivateFormat } from '@/lib/hooks/usePrivateFormat';
 
 interface BalanceDisplayProps {
   balance: number;
@@ -11,6 +11,7 @@ interface BalanceDisplayProps {
 }
 
 export function BalanceDisplay({ balance, income, expenses }: BalanceDisplayProps) {
+  const { formatPrivateCurrency } = usePrivateFormat();
   const isPositive = balance >= 0;
 
   return (
@@ -20,7 +21,7 @@ export function BalanceDisplay({ balance, income, expenses }: BalanceDisplayProp
         <div className="flex flex-col">
           <span className="text-xs text-muted-foreground">Balance Total</span>
           <div className={`text-sm font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-            {formatCurrency(balance)}
+            {formatPrivateCurrency(balance)}
           </div>
         </div>
       </div>
@@ -28,11 +29,11 @@ export function BalanceDisplay({ balance, income, expenses }: BalanceDisplayProp
       <div className="flex gap-2 text-xs">
         <Badge variant="outline" className="gap-1">
           <TrendingUp className="h-3 w-3 text-green-600" />
-          {formatCurrency(income)}
+          {formatPrivateCurrency(income)}
         </Badge>
         <Badge variant="outline" className="gap-1">
           <TrendingDown className="h-3 w-3 text-red-600" />
-          {formatCurrency(expenses)}
+          {formatPrivateCurrency(expenses)}
         </Badge>
       </div>
     </div>
