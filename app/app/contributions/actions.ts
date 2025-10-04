@@ -347,6 +347,15 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
   // @ts-ignore - Supabase type inference
   const categoryId: string = nominaCategoryData.id;
 
+  // 1.5. Obtener email del miembro para incluirlo en la descripción
+  const { data: memberProfile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', profile_id)
+    .single();
+
+  const memberEmail = memberProfile?.email || 'Miembro desconocido';
+
   // 2. Crear movimiento de ingreso
   const movementData: MovementInsert = {
     household_id,
@@ -355,7 +364,7 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
     type: 'income',
     amount: expected_amount,
     currency: 'EUR',
-    description: `Contribución mensual ${month}/${year}`,
+    description: `Contribución mensual ${month}/${year} - ${memberEmail}`,
     occurred_at: new Date().toISOString().substring(0, 10),
   };
 
@@ -621,6 +630,15 @@ export async function recordContributionPayment(
 
   const categoryId: string = nominaCategoryData.id;
 
+  // 1.5. Obtener email del miembro para incluirlo en la descripción
+  const { data: memberProfile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', profile_id)
+    .single();
+
+  const memberEmail = memberProfile?.email || 'Miembro desconocido';
+
   // 2. Crear movimiento de ingreso
   const movementData: MovementInsert = {
     household_id,
@@ -629,7 +647,7 @@ export async function recordContributionPayment(
     type: 'income',
     amount,
     currency: 'EUR',
-    description: `Contribución mensual ${month}/${year}`,
+    description: `Contribución mensual ${month}/${year} - ${memberEmail}`,
     occurred_at: new Date().toISOString().substring(0, 10),
   };
 

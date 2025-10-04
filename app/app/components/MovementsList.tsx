@@ -15,7 +15,7 @@ interface Movement {
   amount: number;
   currency: string;
   type: 'expense' | 'income';
-  note: string | null;
+  description: string | null;
   occurred_at: string;
   categories: {
     name: string;
@@ -78,8 +78,8 @@ export function MovementsList({ movements, showActions = true }: MovementsListPr
                   <p className="font-medium truncate">
                     {movement.categories?.name || 'Sin categoría'}
                   </p>
-                  {movement.note && (
-                    <p className="text-sm text-muted-foreground truncate">{movement.note}</p>
+                  {movement.description && (
+                    <p className="text-sm text-muted-foreground truncate">{movement.description}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
                     {new Date(movement.occurred_at).toLocaleDateString('es-ES', {

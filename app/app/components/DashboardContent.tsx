@@ -26,7 +26,7 @@ type Movement = {
   type: 'expense' | 'income';
   amount: number;
   currency: string;
-  note: string | null;
+  description: string | null;
   occurred_at: string;
   created_at: string | null;
   categories: {
