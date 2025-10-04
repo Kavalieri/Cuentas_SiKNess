@@ -101,9 +101,7 @@ export function ContributionsContent({
       {/* Configuración */}
       <ConfigurationSection
         householdId={householdId}
-        userId={userId}
         currentGoal={monthlyGoal}
-        currentIncome={currentUserIncome}
         currentCalculationType={calculationType}
         isOwner={isOwner}
         currency={currency}

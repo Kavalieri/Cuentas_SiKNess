@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Settings, Calculator } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { setContributionGoal, setMemberIncome } from '@/app/app/contributions/actions';
+import { setContributionGoal } from '@/app/app/contributions/actions';
 import { formatCurrency } from '@/lib/format';
 import { 
   CALCULATION_TYPES, 
@@ -19,9 +19,7 @@ import {
 
 type ConfigurationSectionProps = {
   householdId: string;
-  userId: string;
   currentGoal: number;
-  currentIncome: number;
   currentCalculationType: CalculationType;
   isOwner: boolean;
   currency?: string;
@@ -29,15 +27,12 @@ type ConfigurationSectionProps = {
 
 export function ConfigurationSection({
   householdId,
-  userId,
   currentGoal,
-  currentIncome,
   currentCalculationType,
   isOwner,
   currency = 'EUR',
 }: ConfigurationSectionProps) {
   const [isLoadingGoal, setIsLoadingGoal] = useState(false);
-  const [isLoadingIncome, setIsLoadingIncome] = useState(false);
   const [calculationType, setCalculationType] = useState<CalculationType>(currentCalculationType);
 
   const handleUpdateGoal = async (formData: FormData) => {
@@ -50,18 +45,6 @@ export function ConfigurationSection({
       toast.error(result.message);
     }
     setIsLoadingGoal(false);
-  };
-
-  const handleUpdateIncome = async (formData: FormData) => {
-    setIsLoadingIncome(true);
-    const result = await setMemberIncome(formData);
-
-    if (result.ok) {
-      toast.success('Ingreso mensual actualizado');
-    } else {
-      toast.error(result.message);
-    }
-    setIsLoadingIncome(false);
   };
 
   return (
@@ -167,39 +150,6 @@ export function ConfigurationSection({
             </div>
           </div>
         )}
-
-        {/* Ingreso mensual personal - Todos los usuarios */}
-        <form action={handleUpdateIncome} className="space-y-3">
-          <input type="hidden" name="household_id" value={householdId} />
-          <input type="hidden" name="user_id" value={userId} />
-          <input
-            type="hidden"
-            name="effective_from"
-            value={new Date().toISOString().split('T')[0]}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="monthly_income">Tu Ingreso Mensual Personal</Label>
-            <div className="flex gap-2">
-              <Input
-                id="monthly_income"
-                name="monthly_income"
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={currentIncome}
-                placeholder="2500.00"
-                required
-              />
-              <Button type="submit" disabled={isLoadingIncome}>
-                {isLoadingIncome ? 'Guardando...' : 'Actualizar'}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Actual: {formatCurrency(currentIncome, currency)}
-            </p>
-          </div>
-        </form>
       </CardContent>
     </Card>
   );
