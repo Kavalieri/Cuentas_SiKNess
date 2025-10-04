@@ -42,7 +42,7 @@ const ContributionAdjustmentSchema = z.object({
   amount: z.coerce.number().refine((val) => val !== 0, {
     message: 'El ajuste no puede ser cero',
   }),
-  type: z.enum(['manual', 'prepayment', 'bonus', 'penalty']).default('manual'),
+  type: z.enum(['manual', 'prepayment']).default('manual'),
   reason: z.string().min(3, 'La razón debe tener al menos 3 caracteres'),
   category_id: z.string().uuid().optional(),
   movement_id: z.string().uuid().optional(),
@@ -443,7 +443,9 @@ export async function addContributionAdjustment(
   // Si es un prepayment con monto negativo y tiene categoría, crear movimientos automáticamente
   const isPrepayment = parsed.data.type === 'prepayment';
   const isNegativeAmount = parsed.data.amount < 0;
-  const hasCategory = parsed.data.category_id && parsed.data.category_id !== '';
+  const hasCategory = parsed.data.category_id && 
+                      parsed.data.category_id !== '' && 
+                      parsed.data.category_id !== '__none__';
 
   if (isPrepayment && isNegativeAmount && hasCategory) {
     const absoluteAmount = Math.abs(parsed.data.amount);
@@ -506,7 +508,7 @@ export async function addContributionAdjustment(
     amount: parsed.data.amount,
     type: parsed.data.type,
     reason: parsed.data.reason,
-    category_id: parsed.data.category_id || null,
+    category_id: hasCategory ? parsed.data.category_id : null,
     movement_id: movementId,
     created_by: profile.id,
   });

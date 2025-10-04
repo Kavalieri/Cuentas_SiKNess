@@ -50,7 +50,7 @@ type Member = {
   } | null;
 };
 
-type AdjustmentType = 'manual' | 'prepayment' | 'bonus' | 'penalty';
+type AdjustmentType = 'manual' | 'prepayment';
 
 type Adjustment = {
   id: string;
@@ -85,16 +85,12 @@ interface ContributionAdjustmentsSectionProps {
 
 const ADJUSTMENT_TYPE_LABELS: Record<AdjustmentType, string> = {
   manual: 'Ajuste Manual',
-  prepayment: 'Pre-pago',
-  bonus: 'Bonificación',
-  penalty: 'Penalización',
+  prepayment: 'Pre-pago (Gasto Anticipado)',
 };
 
 const ADJUSTMENT_TYPE_ICONS: Record<AdjustmentType, React.ElementType> = {
   manual: DollarSign,
   prepayment: Receipt,
-  bonus: TrendingDown,
-  penalty: TrendingUp,
 };
 
 export function ContributionAdjustmentsSection({
@@ -177,9 +173,12 @@ export function ContributionAdjustmentsSection({
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Agregar Ajuste</DialogTitle>
-                <DialogDescription>
-                  Los ajustes modifican el monto esperado de contribución. 
-                  Usa valores negativos para descuentos y positivos para cargos adicionales.
+                <DialogDescription className="space-y-2">
+                  <p>Los ajustes modifican el monto esperado de contribución.</p>
+                  <div className="text-xs space-y-1 mt-2 bg-muted p-2 rounded">
+                    <p><strong>Ajuste Manual:</strong> Descuento o cargo genérico (ej: "Reducción por vacaciones")</p>
+                    <p><strong>Pre-pago:</strong> El miembro pagó un gasto del hogar por adelantado. Si especificas categoría y monto negativo, se crearán automáticamente los movimientos de gasto e ingreso virtual.</p>
+                  </div>
                 </DialogDescription>
               </DialogHeader>
 
@@ -247,16 +246,21 @@ export function ContributionAdjustmentsSection({
                   />
                 </div>
 
-                {/* Categoría (opcional) */}
+                {/* Categoría (opcional - solo para prepayment con monto negativo) */}
                 {adjustmentType === 'prepayment' && (
                   <div className="space-y-2">
-                    <Label htmlFor="category_id">Categoría (opcional)</Label>
-                    <Select name="category_id">
+                    <Label htmlFor="category_id">
+                      Categoría del Gasto (opcional)
+                      <span className="text-xs text-muted-foreground ml-2">
+                        Si especificas una categoría, se creará automáticamente el movimiento de gasto
+                      </span>
+                    </Label>
+                    <Select name="category_id" defaultValue="__none__">
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una categoría" />
+                        <SelectValue placeholder="Sin categoría (solo ajuste)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sin categoría</SelectItem>
+                        <SelectItem value="__none__">Sin categoría</SelectItem>
                         {categories
                           .filter((cat) => cat.type === 'expense')
                           .map((cat) => (

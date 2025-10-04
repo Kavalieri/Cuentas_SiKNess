@@ -49,37 +49,64 @@ export type Database = {
       contribution_adjustments: {
         Row: {
           amount: number
+          approved_at: string | null
+          approved_by: string | null
           category_id: string | null
           contribution_id: string
           created_at: string
           created_by: string
+          expense_category_id: string | null
+          expense_description: string | null
           id: string
+          income_description: string | null
+          income_movement_id: string | null
           movement_id: string | null
           reason: string
+          rejected_at: string | null
+          rejected_by: string | null
+          status: string
           type: string | null
           updated_at: string | null
         }
         Insert: {
           amount: number
+          approved_at?: string | null
+          approved_by?: string | null
           category_id?: string | null
           contribution_id: string
           created_at?: string
           created_by: string
+          expense_category_id?: string | null
+          expense_description?: string | null
           id?: string
+          income_description?: string | null
+          income_movement_id?: string | null
           movement_id?: string | null
           reason: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          status?: string
           type?: string | null
           updated_at?: string | null
         }
         Update: {
           amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
           category_id?: string | null
           contribution_id?: string
           created_at?: string
           created_by?: string
+          expense_category_id?: string | null
+          expense_description?: string | null
           id?: string
+          income_description?: string | null
+          income_movement_id?: string | null
           movement_id?: string | null
           reason?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          status?: string
           type?: string | null
           updated_at?: string | null
         }
@@ -103,6 +130,27 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustments_expense_category_id_fkey"
+            columns: ["expense_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustments_income_movement_id_fkey"
+            columns: ["income_movement_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustments_income_movement_id_fkey"
+            columns: ["income_movement_id"]
+            isOneToOne: false
+            referencedRelation: "v_transactions_with_profile"
             referencedColumns: ["id"]
           },
           {
@@ -832,6 +880,10 @@ export type Database = {
       get_member_income: {
         Args: { p_date?: string; p_household_id: string; p_profile_id: string }
         Returns: number
+      }
+      is_contribution_owner: {
+        Args: { p_contribution_id: string }
+        Returns: boolean
       }
       is_system_admin: {
         Args: { check_user_id?: string }
