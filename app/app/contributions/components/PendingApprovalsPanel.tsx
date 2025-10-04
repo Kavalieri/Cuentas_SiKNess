@@ -9,9 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, XCircle, Edit, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getPendingAdjustments, approvePrepayment, rejectPrepayment, updatePendingAdjustment } from '../adjustment-actions';
+import { getPendingAdjustments, approvePrepayment, rejectPrepayment } from '@/app/app/contributions/adjustment-actions';
 import { formatCurrency } from '@/lib/format';
 import type { Database } from '@/types/database';
 
@@ -61,8 +61,19 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
     
     if (result.ok && result.data) {
       // Transformar datos
-      const transformed = (result.data as any[]).map((item) => ({
-        adjustment: item,
+      type RawItem = {
+        contributions: {
+          profile_id: string;
+          profiles: { display_name: string | null; email: string };
+          year: number;
+          month: number;
+        };
+        categories: Category | null;
+        [key: string]: unknown;
+      };
+      
+      const transformed = ((result.data as unknown) as RawItem[]).map((item) => ({
+        adjustment: item as unknown as AdjustmentRow,
         member: {
           profile_id: item.contributions.profile_id,
           display_name: item.contributions.profiles.display_name,

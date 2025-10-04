@@ -58,9 +58,6 @@ export function HeroContribution({
   }
 
   const percentage = totalIncome > 0 ? (userIncome / totalIncome) * 100 : 0;
-  const isPaid = contribution.status === 'paid' || contribution.status === 'overpaid';
-  const isPending = contribution.status === 'pending' || contribution.status === 'partial';
-  const isOverpaid = contribution.status === 'overpaid';
   
   // adjustments_total puede ser positivo (cargos extra) o negativo (descuentos)
   const hasAdjustments = (contribution.adjustments_total || 0) !== 0;

@@ -156,8 +156,6 @@ export default async function ContributionsPage() {
         currency={currency}
         isOwner={isOwner}
         categories={categories || []}
-        currentMonth={currentMonth}
-        currentYear={currentYear}
       />
     </div>
   );

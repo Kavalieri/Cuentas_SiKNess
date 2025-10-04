@@ -10,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Receipt, PlusCircle, Loader2, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { createPrepaymentRequest, recordExtraIncome } from '../adjustment-actions';
-import { formatCurrency } from '@/lib/format';
+import { createPrepaymentRequest, recordExtraIncome } from '@/app/app/contributions/adjustment-actions';
 import type { Database } from '@/types/database';
 
 type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'icon' | 'type'>;
@@ -19,17 +18,13 @@ type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | '
 interface QuickActionsProps {
   contributionId: string | null;
   categories: Category[];
-  currency: string;
   hasMetGoal: boolean;
-  currentStatus: string;
 }
 
 export function QuickActions({
   contributionId,
   categories,
-  currency,
   hasMetGoal,
-  currentStatus,
 }: QuickActionsProps) {
   const [showPrepaymentDialog, setShowPrepaymentDialog] = useState(false);
   const [showExtraIncomeDialog, setShowExtraIncomeDialog] = useState(false);
@@ -264,7 +259,7 @@ export function QuickActions({
               <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg text-sm space-y-1">
                 <p className="font-medium">ℹ️ Qué sucederá:</p>
                 <ol className="list-decimal list-inside space-y-1 text-xs text-muted-foreground">
-                  <li>Se creará una solicitud de pre-pago con estado "Pendiente"</li>
+                  <li>Se creará una solicitud de pre-pago con estado &quot;Pendiente&quot;</li>
                   <li>Un owner recibirá notificación para revisar tu solicitud</li>
                   <li>Al aprobarla, se crearán 2 movimientos automáticamente:
                     <ul className="list-disc list-inside ml-4 mt-1">
@@ -358,7 +353,7 @@ export function QuickActions({
                   <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
                     <li>Se registrará inmediatamente (sin necesidad de aprobación)</li>
                     <li>Se creará un movimiento de ingreso al fondo común</li>
-                    <li>Tu estado pasará a "Overpaid" (aportaste más de lo esperado)</li>
+                    <li>Tu estado pasará a &quot;Overpaid&quot; (aportaste más de lo esperado)</li>
                   </ul>
                 </div>
               </div>

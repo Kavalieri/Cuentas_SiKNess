@@ -150,7 +150,7 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
                           }).format(transaction.amount)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {(transaction.households as any)?.name ?? 'Hogar desconocido'}
+                          {(transaction.households as { name: string })?.name ?? 'Hogar desconocido'}
                         </p>
                       </div>
                     </div>
@@ -185,10 +185,10 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
                   >
                     <div>
                       <p className="font-medium">
-                        {(member.profiles as any)?.display_name ?? (member.profiles as any)?.email ?? 'Usuario desconocido'}
+                        {(member.profiles as { display_name?: string; email?: string })?.display_name ?? (member.profiles as { display_name?: string; email?: string })?.email ?? 'Usuario desconocido'}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {(member.households as any)?.name ?? 'Hogar desconocido'} • {member.role === 'owner' ? '👑 Owner' : '👥 Member'}
+                        {(member.households as { name: string })?.name ?? 'Hogar desconocido'} • {member.role === 'owner' ? '👑 Owner' : '👥 Member'}
                       </p>
                     </div>
                     <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
@@ -267,7 +267,7 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
                     <div>
                       <p className="font-medium">{category.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {(category.households as any)?.name ?? 'Hogar desconocido'}
+                        {(category.households as { name: string })?.name ?? 'Hogar desconocido'}
                       </p>
                     </div>
                     <Badge variant={category.type === 'expense' ? 'destructive' : 'default'}>

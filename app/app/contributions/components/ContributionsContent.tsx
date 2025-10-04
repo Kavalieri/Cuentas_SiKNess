@@ -1,3 +1,5 @@
+'use client';
+
 import { HeroContribution } from './HeroContribution';
 import { HouseholdSummary } from './HouseholdSummary';
 import { ContributionMembersList } from './ContributionMembersList';
@@ -31,8 +33,6 @@ interface ContributionsContentProps {
   currency: string;
   isOwner: boolean;
   categories: Category[];
-  currentMonth: number;
-  currentYear: number;
 }
 
 export function ContributionsContent({
@@ -48,8 +48,6 @@ export function ContributionsContent({
   currency,
   isOwner,
   categories,
-  currentMonth,
-  currentYear,
 }: ContributionsContentProps) {
   return (
     <div className="space-y-6">
@@ -79,12 +77,10 @@ export function ContributionsContent({
       <QuickActions
         contributionId={currentUserContribution?.id || null}
         categories={categories}
-        currency={currency}
         hasMetGoal={
           currentUserContribution?.status === 'paid' || 
           currentUserContribution?.status === 'overpaid'
         }
-        currentStatus={currentUserContribution?.status || 'pending'}
       />
 
       {/* Lista de miembros */}

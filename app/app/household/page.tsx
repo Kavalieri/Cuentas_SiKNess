@@ -172,8 +172,6 @@ export default async function HouseholdPage() {
             currency={currency}
             isOwner={userIsOwner}
             categories={categories || []}
-            currentMonth={now.getMonth() + 1}
-            currentYear={now.getFullYear()}
           />
         </TabsContent>
 
