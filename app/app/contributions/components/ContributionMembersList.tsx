@@ -40,9 +40,9 @@ export function ContributionMembersList({
         );
       case 'overpaid':
         return (
-          <Badge variant="destructive">
+          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
             <CheckCircle2 className="mr-1 h-3 w-3" />
-            Sobrepagado
+            Aporte Extra
           </Badge>
         );
       case 'pending':
@@ -166,8 +166,8 @@ export function ContributionMembersList({
 
                     {remainingAmount < 0 && (
                       <div className="flex justify-between text-sm pt-1 border-t">
-                        <span className="text-muted-foreground font-medium">Excedente:</span>
-                        <span className="font-bold text-orange-600 dark:text-orange-400">
+                        <span className="text-muted-foreground font-medium">Aporte extra:</span>
+                        <span className="font-bold text-green-600 dark:text-green-400">
                           +{formatCurrency(Math.abs(remainingAmount), currency)}
                         </span>
                       </div>

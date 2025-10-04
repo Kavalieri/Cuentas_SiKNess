@@ -99,13 +99,13 @@ export function HeroContribution({
         <CardTitle className="text-2xl flex items-center justify-between">
           <span>🎯 Tu Contribución Este Mes</span>
           <Badge
-            variant={isPaid ? (isOverpaid ? 'destructive' : 'default') : 'secondary'}
-            className="text-sm"
+            variant={isPaid ? 'default' : 'secondary'}
+            className={`text-sm ${isOverpaid ? 'bg-green-600 hover:bg-green-700' : ''}`}
           >
             {isPaid ? (
               <>
                 <CheckCircle2 className="mr-1 h-4 w-4" />
-                {isOverpaid ? 'Sobrepagado' : 'Pagado'}
+                {isOverpaid ? 'Aporte Extra' : 'Pagado'}
               </>
             ) : (
               <>
@@ -185,10 +185,10 @@ export function HeroContribution({
 
         {/* Estado sobrepagado */}
         {isOverpaid && (
-          <div className="rounded-lg bg-orange-500/10 border border-orange-500/20 p-4">
-            <p className="text-sm text-orange-700 dark:text-orange-400 flex items-center gap-2">
+          <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
+            <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
-              Has pagado de más. El excedente se acreditará al próximo mes.
+              ¡Excelente! Has aportado {formatCurrency(contribution.paid_amount - contribution.expected_amount, currency)} más de lo esperado este mes. Gracias por tu contribución extra.
             </p>
           </div>
         )}
@@ -243,7 +243,7 @@ export function HeroContribution({
                     className="max-w-xs"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Puedes pagar menos (pago parcial) o más (sobrepago)
+                    Puedes pagar menos (pago parcial) o más (aporte extra)
                   </p>
                 </div>
               )}
