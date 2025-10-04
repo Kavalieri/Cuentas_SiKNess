@@ -49,29 +49,48 @@ export type Database = {
       contribution_adjustments: {
         Row: {
           amount: number
+          category_id: string | null
           contribution_id: string
           created_at: string
           created_by: string
           id: string
+          movement_id: string | null
           reason: string
+          type: string | null
+          updated_at: string | null
         }
         Insert: {
           amount: number
+          category_id?: string | null
           contribution_id: string
           created_at?: string
           created_by: string
           id?: string
+          movement_id?: string | null
           reason: string
+          type?: string | null
+          updated_at?: string | null
         }
         Update: {
           amount?: number
+          category_id?: string | null
           contribution_id?: string
           created_at?: string
           created_by?: string
           id?: string
+          movement_id?: string | null
           reason?: string
+          type?: string | null
+          updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "contribution_adjustments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contribution_adjustments_contribution_id_fkey"
             columns: ["contribution_id"]
@@ -79,10 +98,32 @@ export type Database = {
             referencedRelation: "contributions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contribution_adjustments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustments_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustments_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "v_transactions_with_profile"
+            referencedColumns: ["id"]
+          },
         ]
       }
       contributions: {
         Row: {
+          adjustments_total: number | null
           created_at: string
           expected_amount: number
           household_id: string
@@ -90,13 +131,13 @@ export type Database = {
           month: number
           paid_amount: number
           paid_at: string | null
-          pre_payment_amount: number
           profile_id: string
           status: string
           updated_at: string
           year: number
         }
         Insert: {
+          adjustments_total?: number | null
           created_at?: string
           expected_amount: number
           household_id: string
@@ -104,13 +145,13 @@ export type Database = {
           month: number
           paid_amount?: number
           paid_at?: string | null
-          pre_payment_amount?: number
           profile_id: string
           status?: string
           updated_at?: string
           year: number
         }
         Update: {
+          adjustments_total?: number | null
           created_at?: string
           expected_amount?: number
           household_id?: string
@@ -118,7 +159,6 @@ export type Database = {
           month?: number
           paid_amount?: number
           paid_at?: string | null
-          pre_payment_amount?: number
           profile_id?: string
           status?: string
           updated_at?: string
@@ -383,87 +423,6 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pre_payments: {
-        Row: {
-          amount: number
-          category_id: string | null
-          created_at: string | null
-          created_by: string | null
-          description: string
-          household_id: string
-          id: string
-          month: number
-          movement_id: string | null
-          profile_id: string
-          updated_at: string | null
-          year: number
-        }
-        Insert: {
-          amount: number
-          category_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description: string
-          household_id: string
-          id?: string
-          month: number
-          movement_id?: string | null
-          profile_id: string
-          updated_at?: string | null
-          year: number
-        }
-        Update: {
-          amount?: number
-          category_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string
-          household_id?: string
-          id?: string
-          month?: number
-          movement_id?: string | null
-          profile_id?: string
-          updated_at?: string | null
-          year?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pre_payments_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pre_payments_household_id_fkey"
-            columns: ["household_id"]
-            isOneToOne: false
-            referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pre_payments_movement_id_fkey"
-            columns: ["movement_id"]
-            isOneToOne: false
-            referencedRelation: "transactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pre_payments_movement_id_fkey"
-            columns: ["movement_id"]
-            isOneToOne: false
-            referencedRelation: "v_transactions_with_profile"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pre_payments_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -795,10 +754,6 @@ export type Database = {
           expected_amount: number
           profile_id: string
         }[]
-      }
-      calculate_pre_payment_amount: {
-        Args: { p_contribution_id: string }
-        Returns: number
       }
       cleanup_expired_invitations: {
         Args: Record<PropertyKey, never>

@@ -15,7 +15,7 @@ type Contribution = {
   id: string;
   expected_amount: number;
   paid_amount: number;
-  pre_payment_amount: number;
+  adjustments_total: number | null;
   status: string;
   month: number;
   year: number;
@@ -62,9 +62,10 @@ export function HeroContribution({
   const isPending = contribution.status === 'pending' || contribution.status === 'partial';
   const isOverpaid = contribution.status === 'overpaid';
   
-  const adjustedAmount = contribution.expected_amount - (contribution.pre_payment_amount || 0);
-  const hasPrePayments = (contribution.pre_payment_amount || 0) > 0;
-  const remainingToPay = adjustedAmount - (contribution.paid_amount || 0);
+  // adjustments_total puede ser positivo (cargos extra) o negativo (descuentos)
+  const hasAdjustments = (contribution.adjustments_total || 0) !== 0;
+  // expected_amount YA incluye adjustments_total (calculado en el trigger)
+  const remainingToPay = contribution.expected_amount - (contribution.paid_amount || 0);
 
   const handleRecordPayment = async () => {
     let amountToRecord: number;
@@ -119,32 +120,28 @@ export function HeroContribution({
         {/* Desglose de montos */}
         <div className="space-y-3">
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-muted-foreground">Contribución base:</span>
+            <span className="text-sm text-muted-foreground">
+              Contribución esperada:
+            </span>
             <span className="text-2xl font-bold">
               {formatCurrency(contribution.expected_amount, currency)}
             </span>
           </div>
 
-          {hasPrePayments && (
-            <div className="flex items-baseline justify-between text-green-600 dark:text-green-400">
+          {hasAdjustments && (
+            <div className={`flex items-baseline justify-between ${
+              (contribution.adjustments_total || 0) < 0 
+                ? 'text-green-600 dark:text-green-400' 
+                : 'text-orange-600 dark:text-orange-400'
+            }`}>
               <span className="text-sm flex items-center gap-1">
                 <TrendingDown className="h-4 w-4" />
-                Pre-pagos:
+                Ajustes:
               </span>
               <span className="text-xl font-semibold">
-                -{formatCurrency(contribution.pre_payment_amount, currency)}
+                {(contribution.adjustments_total || 0) < 0 ? '' : '+'}
+                {formatCurrency(contribution.adjustments_total || 0, currency)}
               </span>
-            </div>
-          )}
-
-          {hasPrePayments && (
-            <div className="pt-2 border-t">
-              <div className="flex items-baseline justify-between">
-                <span className="text-sm font-medium">Monto ajustado:</span>
-                <span className="text-3xl font-bold text-primary">
-                  {formatCurrency(adjustedAmount, currency)}
-                </span>
-              </div>
             </div>
           )}
 

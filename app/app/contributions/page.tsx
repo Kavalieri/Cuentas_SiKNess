@@ -2,7 +2,6 @@ import { ContributionsContent } from './components/ContributionsContent';
 import { getCurrentHouseholdId } from '@/lib/adminCheck';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabaseServer';
-import { getPrePayments } from './actions';
 import type { Database } from '@/types/database';
 import { CALCULATION_TYPES, type CalculationType } from '@/lib/contributionTypes';
 
@@ -116,15 +115,12 @@ export default async function ContributionsPage() {
   // Verificar si el usuario es owner
   const isOwner = membersWithIncomes.find((m) => m.profile_id === currentProfileId)?.role === 'owner';
 
-  // Obtener categorías de gastos para pre-pagos
+  // Obtener categorías de gastos
   const { data: categories } = await supabase
     .from('categories')
     .select('id, name, icon, type')
     .eq('household_id', householdId)
     .order('name');
-
-  // Obtener pre-pagos del mes actual
-  const prePayments = await getPrePayments(householdId, currentYear, currentMonth);
 
   return (
     <div className="space-y-6">
@@ -148,7 +144,6 @@ export default async function ContributionsPage() {
         currency={currency}
         isOwner={isOwner}
         categories={categories || []}
-        prePayments={prePayments}
         currentMonth={currentMonth}
         currentYear={currentYear}
       />

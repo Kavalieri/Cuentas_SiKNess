@@ -13,7 +13,7 @@ type Member = {
     id: string;
     expected_amount: number;
     paid_amount: number;
-    pre_payment_amount: number;
+    adjustments_total: number | null;
     status: string;
   } | null;
 };
@@ -87,12 +87,10 @@ export function ContributionMembersList({
         {members.map((member) => {
           const percentage = totalIncome > 0 ? (member.income / totalIncome) * 100 : 0;
           const contribution = member.contribution;
-          const hasPrePayments = contribution && (contribution.pre_payment_amount || 0) > 0;
-          const adjustedAmount = contribution
-            ? contribution.expected_amount - (contribution.pre_payment_amount || 0)
-            : 0;
+          const hasAdjustments = contribution && (contribution.adjustments_total || 0) !== 0;
+          // expected_amount YA incluye adjustments_total
           const remainingAmount = contribution
-            ? adjustedAmount - (contribution.paid_amount || 0)
+            ? contribution.expected_amount - (contribution.paid_amount || 0)
             : 0;
 
           return (
@@ -119,23 +117,19 @@ export function ContributionMembersList({
                       </span>
                     </div>
                     
-                    {hasPrePayments && (
-                      <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                    {hasAdjustments && (
+                      <div className={`flex justify-between text-sm ${
+                        (contribution.adjustments_total || 0) < 0 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-orange-600 dark:text-orange-400'
+                      }`}>
                         <span className="flex items-center gap-1">
                           <TrendingDown className="h-3 w-3" />
-                          Pre-pagos:
+                          Ajustes:
                         </span>
                         <span className="font-semibold">
-                          -{formatCurrency(contribution.pre_payment_amount, currency)}
-                        </span>
-                      </div>
-                    )}
-
-                    {hasPrePayments && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground font-medium">Monto ajustado:</span>
-                        <span className="font-bold">
-                          {formatCurrency(adjustedAmount, currency)}
+                          {(contribution.adjustments_total || 0) < 0 ? '' : '+'}
+                          {formatCurrency(contribution.adjustments_total || 0, currency)}
                         </span>
                       </div>
                     )}

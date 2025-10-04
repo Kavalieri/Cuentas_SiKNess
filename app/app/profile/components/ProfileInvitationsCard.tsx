@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Home, Calendar, CheckCircle2, XCircle } from 'lucide-react';
+import { Mail, Home, Calendar, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { acceptInvitation } from '@/app/app/household/invitations/actions';
 import { formatDistanceToNow } from 'date-fns';

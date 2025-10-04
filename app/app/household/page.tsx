@@ -8,7 +8,6 @@ import { DangerZone } from './components/DangerZone';
 import { OverviewWrapper } from './components/OverviewWrapper';
 import { CategoriesTab } from './components/CategoriesTab';
 import { ContributionsContent } from '@/app/app/contributions/components/ContributionsContent';
-import { getPrePayments } from '@/app/app/contributions/actions';
 import { getPendingInvitations } from './invitations/actions';
 import { PendingInvitationsList } from './components/PendingInvitationsList';
 import { CreateInviteDialog } from './components/CreateInviteDialog';
@@ -123,9 +122,6 @@ export default async function HouseholdPage() {
     .eq('household_id', householdId)
     .order('name');
 
-  // Obtener pre-pagos del mes actual
-  const prePayments = await getPrePayments(householdId, now.getFullYear(), now.getMonth() + 1);
-
   // Obtener invitaciones pendientes (solo para owners)
   const pendingInvitations = userIsOwner ? await getPendingInvitations() : [];
 
@@ -176,7 +172,6 @@ export default async function HouseholdPage() {
             currency={currency}
             isOwner={userIsOwner}
             categories={categories || []}
-            prePayments={prePayments}
             currentMonth={now.getMonth() + 1}
             currentYear={now.getFullYear()}
           />

@@ -42,17 +42,10 @@ const ContributionAdjustmentSchema = z.object({
   amount: z.coerce.number().refine((val) => val !== 0, {
     message: 'El ajuste no puede ser cero',
   }),
+  type: z.enum(['manual', 'prepayment', 'bonus', 'penalty']).default('manual'),
   reason: z.string().min(3, 'La razón debe tener al menos 3 caracteres'),
-});
-
-const PrePaymentSchema = z.object({
-  household_id: z.string().uuid(),
-  profile_id: z.string().uuid(),
-  month: z.coerce.number().int().min(1).max(12),
-  year: z.coerce.number().int().min(2020),
-  amount: z.coerce.number().positive(),
-  category_id: z.string().uuid(),
-  description: z.string().min(3, 'La descripción debe tener al menos 3 caracteres'),
+  category_id: z.string().uuid().optional(),
+  movement_id: z.string().uuid().optional(),
 });
 
 // =====================================================
@@ -408,39 +401,32 @@ export async function addContributionAdjustment(
 
   if (!user) return fail('No autenticado');
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return fail('Usuario no encontrado');
+
   // @ts-ignore - Supabase type inference issue
   const { error } = await supabase.from('contribution_adjustments').insert({
     contribution_id: parsed.data.contribution_id,
     amount: parsed.data.amount,
+    type: parsed.data.type,
     reason: parsed.data.reason,
-    created_by: user.id,
+    category_id: parsed.data.category_id || null,
+    movement_id: parsed.data.movement_id || null,
+    created_by: profile.id, // Ahora usamos profile.id en vez de user.id
   });
 
   if (error) return fail(error.message);
 
-  // Recalcular el expected_amount de la contribución
-  const { data: contribution, error: fetchError } = await supabase
-    .from('contributions')
-    .select('expected_amount')
-    .eq('id', parsed.data.contribution_id)
-    .single();
-
-  if (fetchError) return fail(fetchError.message);
-
-  const newExpectedAmount =
-    // @ts-ignore
-    (contribution.expected_amount || 0) + parsed.data.amount;
-
-  // @ts-ignore - Supabase type inference issue
-  const { error: updateError } = await supabase
-    .from('contributions')
-    .update({
-      expected_amount: newExpectedAmount,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', parsed.data.contribution_id);
-
-  if (updateError) return fail(updateError.message);
+  // El trigger update_contribution_adjustments_total() actualizará automáticamente:
+  // - contributions.adjustments_total
+  // - contributions.expected_amount
+  // - contributions.updated_at
 
   revalidatePath('/app/contributions');
   return ok();
@@ -454,7 +440,9 @@ export async function getContributionAdjustments(contributionId: string) {
     .select(
       `
       *,
-      creator:auth.users(id, email)
+      category:categories(id, name, icon),
+      movement:transactions(id, description, amount, occurred_at),
+      creator:profiles(id, email)
     `
     )
     .eq('contribution_id', contributionId)
@@ -515,214 +503,6 @@ export async function getContributionsSummary(householdId: string) {
 }
 
 // =====================================================
-// Pre-pagos (Advance Payments)
-// =====================================================
-
-/**
- * Crear un pre-pago: gasto que un miembro hace antes de la contribución
- * Se descuenta automáticamente de su contribución mensual esperada
- */
-export async function createPrePayment(formData: FormData): Promise<Result> {
-  const parsed = PrePaymentSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
-  }
-
-  const supabase = await supabaseServer();
-  const user = (await supabase.auth.getUser()).data.user;
-
-  if (!user) return fail('Usuario no autenticado');
-
-  // Obtener profile_id del usuario
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('auth_user_id', user.id)
-    .single();
-
-  if (!profile) return fail('Usuario no encontrado');
-
-  // Verificar que el usuario es owner del hogar
-  const { data: memberData } = await supabase
-    .from('household_members')
-    .select('role')
-    .eq('household_id', parsed.data.household_id)
-    .eq('profile_id', profile.id)
-    .single();
-
-  if (!memberData || memberData.role !== 'owner') {
-    return fail('Solo el propietario del hogar puede crear pre-pagos');
-  }
-
-  // 1. Crear el movimiento de gasto
-  const movementData: MovementInsert = {
-    household_id: parsed.data.household_id,
-    profile_id: parsed.data.profile_id,
-    category_id: parsed.data.category_id,
-    type: 'expense',
-    amount: parsed.data.amount,
-    currency: 'EUR',
-    description: `[PRE-PAGO] ${parsed.data.description}`,
-    occurred_at: new Date().toISOString().substring(0, 10),
-  };
-
-  const { data: movement, error: movementError } = await supabase
-    .from('transactions')
-    .insert(movementData)
-    .select('id')
-    .single();
-
-  if (movementError || !movement) {
-    return fail('Error al crear el movimiento de gasto');
-  }
-
-  // 2. Crear el pre-pago
-  const { error: prePaymentError } = await supabase
-    .from('pre_payments')
-    .insert({
-      household_id: parsed.data.household_id,
-      profile_id: parsed.data.profile_id,
-      month: parsed.data.month,
-      year: parsed.data.year,
-      amount: parsed.data.amount,
-      category_id: parsed.data.category_id,
-      description: parsed.data.description,
-      movement_id: movement.id,
-      created_by: user.id,
-    });
-
-  if (prePaymentError) {
-    console.error('Pre-payment insert error:', prePaymentError);
-    // Rollback: eliminar el movimiento si falla el pre-pago
-    await supabase.from('transactions').delete().eq('id', movement.id);
-    return fail(`Error al crear el pre-pago: ${prePaymentError.message}`);
-  }
-
-  // El trigger automáticamente actualizará contribution.pre_payment_amount
-
-  revalidatePath('/app/contributions');
-  revalidatePath('/app/expenses');
-  revalidatePath('/app');
-  return ok();
-}
-
-/**
- * Obtener pre-pagos de un hogar para un mes específico
- */
-export async function getPrePayments(
-  householdId: string,
-  year: number,
-  month: number
-) {
-  const supabase = await supabaseServer();
-
-  // Obtener pre-pagos
-  const { data: prePayments, error } = await supabase
-    .from('pre_payments')
-    .select('*')
-    .eq('household_id', householdId)
-    .eq('year', year)
-    .eq('month', month)
-    .order('created_at', { ascending: false });
-
-  if (error || !prePayments) return [];
-
-  // Obtener datos de miembros con sus emails
-  const { data: membersData } = await supabase.rpc('get_household_members', {
-    p_household_id: householdId,
-  });
-
-  // Obtener categorías
-  const categoryIds = [...new Set(prePayments.map((pp) => pp.category_id).filter(Boolean))] as string[];
-  const { data: categories } = categoryIds.length > 0
-    ? await supabase
-        .from('categories')
-        .select('id, name, icon')
-        .eq('household_id', householdId)
-        .in('id', categoryIds)
-    : { data: [] };
-
-  // Construir lookup maps
-  const membersMap = new Map(
-    (membersData || []).map((m: { profile_id: string; email: string | null }) => [
-      m.profile_id,
-      m.email || 'Desconocido',
-    ])
-  );
-  const categoriesMap = new Map(
-    (categories || []).map((c) => [c.id, { name: c.name, icon: c.icon }])
-  );
-
-  // Enriquecer pre-pagos con datos relacionados
-  return prePayments.map((pp) => ({
-    ...pp,
-    user: { email: membersMap.get(pp.profile_id) || 'Desconocido' },
-    category: categoriesMap.get(pp.category_id || '') || { name: 'Sin categoría', icon: null },
-  }));
-}
-
-/**
- * Eliminar un pre-pago
- */
-export async function deletePrePayment(prePaymentId: string): Promise<Result> {
-  const supabase = await supabaseServer();
-  const user = (await supabase.auth.getUser()).data.user;
-
-  if (!user) return fail('Usuario no autenticado');
-
-  // Obtener datos del pre-pago
-  const { data: prePayment } = await supabase
-    .from('pre_payments')
-    .select('household_id, movement_id')
-    .eq('id', prePaymentId)
-    .single();
-
-  if (!prePayment) return fail('Pre-pago no encontrado');
-
-  // Obtener profile_id del usuario
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('auth_user_id', user.id)
-    .single();
-
-  if (!profile) return fail('Usuario no encontrado');
-
-  // Verificar que el usuario es owner
-  const { data: memberData } = await supabase
-    .from('household_members')
-    .select('role')
-    .eq('household_id', prePayment.household_id)
-    .eq('profile_id', profile.id)
-    .single();
-
-  if (!memberData || memberData.role !== 'owner') {
-    return fail('Solo el propietario del hogar puede eliminar pre-pagos');
-  }
-
-  // Eliminar el pre-pago (esto disparará el trigger para actualizar la contribución)
-  const { error: deleteError } = await supabase
-    .from('pre_payments')
-    .delete()
-    .eq('id', prePaymentId);
-
-  if (deleteError) return fail('Error al eliminar el pre-pago');
-
-  // Eliminar el movimiento asociado
-  if (prePayment.movement_id) {
-    await supabase
-      .from('transactions')
-      .delete()
-      .eq('id', prePayment.movement_id);
-  }
-
-  revalidatePath('/app/contributions');
-  revalidatePath('/app/expenses');
-  revalidatePath('/app');
-  return ok();
-}
-
-// =====================================================
 // Registro de Pagos Personalizados
 // =====================================================
 
@@ -739,18 +519,18 @@ export async function recordContributionPayment(
   // Obtener datos completos de la contribución
   const { data: contribution, error: fetchError } = await supabase
     .from('contributions')
-    .select('expected_amount, pre_payment_amount, paid_amount, household_id, profile_id, month, year')
+    .select('expected_amount, adjustments_total, paid_amount, household_id, profile_id, month, year')
     .eq('id', contributionId)
     .single();
 
   if (fetchError) return fail(fetchError.message);
   if (!contribution) return fail('Contribución no encontrada');
 
-  const { expected_amount, pre_payment_amount, paid_amount, household_id, profile_id, month, year } =
+  const { expected_amount, paid_amount, household_id, profile_id, month, year } =
     contribution;
 
-  // Calcular monto ajustado
-  const adjusted_amount = expected_amount - (pre_payment_amount || 0);
+  // Calcular monto ajustado (expected_amount ya incluye adjustments_total)
+  const adjusted_amount = expected_amount;
 
   // Validar que el monto sea positivo
   if (amount <= 0) {
