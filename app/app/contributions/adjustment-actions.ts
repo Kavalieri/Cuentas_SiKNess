@@ -118,7 +118,7 @@ export async function createPrepaymentRequest(formData: FormData): Promise<Resul
     expense_description: parsed.data.expense_description || null,
     income_description: parsed.data.income_description || null,
     status: 'pending',
-    created_by: user.id,
+    created_by: profileId, // Usar profile_id en lugar de auth_user_id
   };
 
   const { data: adjustment, error } = await supabase
@@ -266,7 +266,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
     .from('contribution_adjustments')
     .update({
       status: 'approved',
-      approved_by: user.id,
+      approved_by: profileId, // Usar profile_id en lugar de auth_user_id
       approved_at: new Date().toISOString(),
       expense_category_id: parsed.data.expense_category_id,
       expense_description: parsed.data.expense_description,
@@ -355,7 +355,7 @@ export async function rejectPrepayment(formData: FormData): Promise<Result> {
     .from('contribution_adjustments')
     .update({
       status: 'rejected',
-      rejected_by: user.id,
+      rejected_by: profileId, // Usar profile_id en lugar de auth_user_id
       rejected_at: new Date().toISOString(),
       reason: updatedReason,
     })
@@ -453,10 +453,10 @@ export async function recordExtraIncome(formData: FormData): Promise<Result> {
     type: 'extra_income',
     reason: parsed.data.reason,
     status: 'approved',
-    approved_by: user.id,
+    approved_by: profileId, // Usar profile_id en lugar de auth_user_id
     approved_at: new Date().toISOString(),
     movement_id: incomeMovement.id,
-    created_by: user.id,
+    created_by: profileId, // Usar profile_id en lugar de auth_user_id
   };
 
   const { error: adjustmentError } = await supabase
