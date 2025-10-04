@@ -2,8 +2,8 @@ import { HeroContribution } from './HeroContribution';
 import { HouseholdSummary } from './HouseholdSummary';
 import { ContributionMembersList } from './ContributionMembersList';
 import { ConfigurationSection } from './ConfigurationSection';
-import { ContributionAdjustmentsSection } from './ContributionAdjustmentsSection';
 import { PendingApprovalsPanel } from './PendingApprovalsPanel';
+import { QuickActions } from './QuickActions';
 import type { Database } from '@/types/database';
 import type { CalculationType } from '@/lib/contributionTypes';
 
@@ -75,15 +75,16 @@ export function ContributionsContent({
         <PendingApprovalsPanel categories={categories} currency={currency} />
       )}
 
-      {/* Ajustes de contribución */}
-      <ContributionAdjustmentsSection
+      {/* Acciones Rápidas: Pre-pago e Ingreso Extra */}
+      <QuickActions
         contributionId={currentUserContribution?.id || null}
-        householdId={householdId}
-        members={membersWithIncomes}
         categories={categories}
-        currentMonth={currentMonth}
-        currentYear={currentYear}
         currency={currency}
+        hasMetGoal={
+          currentUserContribution?.status === 'paid' || 
+          currentUserContribution?.status === 'overpaid'
+        }
+        currentStatus={currentUserContribution?.status || 'pending'}
       />
 
       {/* Lista de miembros */}
