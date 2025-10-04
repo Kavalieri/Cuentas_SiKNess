@@ -31,10 +31,22 @@ El sistema se basa en **10 tablas principales** con RLS habilitado:
 6. **`household_settings`**: Meta de contribución mensual del hogar
 7. **`contributions`**: Contribuciones calculadas y rastreadas por miembro/mes
 8. **`contribution_adjustments`**: Ajustes manuales a contribuciones
+   - **IMPORTANTE**: Ajustes tipo "prepayment" con monto negativo y categoría crean automáticamente 2 movimientos:
+     * Movimiento de gasto (expense) con la categoría seleccionada
+     * Movimiento de ingreso virtual (income) que representa el aporte del miembro
+   - Al eliminar ajuste, se eliminan automáticamente todos los movimientos relacionados
+9. **`transactions`** (anteriormente `movements`): Transacciones con tipos expense/income
+   - Incluye movimientos manuales y auto-generados por contribuciones/ajustes
 
 **Sistema de Múltiples Hogares** (ver `docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md`):
-9. **`user_settings`**: Configuración del usuario (active_household_id, preferences)
-10. **`invitations`**: Sistema de invitaciones con RLS público para acceso sin login
+10. **`user_settings`**: Configuración del usuario (active_household_id, preferences)
+11. **`invitations`**: Sistema de invitaciones con RLS público para acceso sin login
+
+**Sistema de Privacidad** (ver `docs/PRIVACY_MODE.md`) ⭐ NEW:
+- **PrivacyProvider**: Contexto React con estado `hideAmounts` persistido en localStorage
+- **usePrivateFormat()**: Hook que retorna `formatPrivateCurrency()` (muestra "•••" si hideAmounts activo)
+- **PrivacyToggle**: Botón Eye/EyeOff en header junto a ThemeToggle
+- **Uso**: Ocultar cantidades en lugares públicos con un click
 
 **Punto crítico**: Row Level Security (RLS) está habilitado desde el día 1. Todas las políticas verifican que `auth.uid()` pertenezca al `household_id` del recurso consultado.
 
@@ -463,18 +475,74 @@ Ver documentación completa en `docs/CONTRIBUTIONS_SYSTEM.md`.
 - `setContributionGoal()`: Configurar meta mensual del hogar
 - `calculateAndCreateContributions()`: Generar contribuciones proporcionales
 - `updateContributionPaidAmount()`: Actualizar monto pagado
-- `addContributionAdjustment()`: Agregar ajuste manual
+- `addContributionAdjustment()`: Agregar ajuste manual (crea movimientos duales automáticamente) ⭐
+- `deleteContributionAdjustment()`: Eliminar ajuste y sus movimientos relacionados ⭐
 
 **Integración con Movimientos**:
 - Cada gasto cuenta como pago hacia la contribución del mes
 - El estado se actualiza automáticamente: `pending`, `partial`, `paid`, `overpaid`
+- **Ajustes con Movimientos Duales** ⭐ NEW:
+  * Ajuste tipo "prepayment" con monto negativo y categoría → crea automáticamente:
+    1. Movimiento de gasto (expense) en la categoría seleccionada
+    2. Movimiento de ingreso virtual (income) representando el aporte del miembro
+  * Al eliminar ajuste → se eliminan automáticamente TODOS los movimientos relacionados
+  * Búsqueda inteligente por: movement_id, descripción [Ajuste: razón], [Pre-pago]
+
+### Sistema de Privacy Mode ⭐ NEW
+
+Ver documentación completa en `docs/PRIVACY_MODE.md`.
+
+**Concepto**: Ocultar cantidades monetarias cuando se usa la app en lugares públicos.
+
+**Componentes**:
+- `components/shared/PrivacyProvider.tsx`: Contexto global con estado hideAmounts
+- `components/shared/PrivacyToggle.tsx`: Botón Eye/EyeOff en header
+- `components/shared/PrivateAmount.tsx`: Wrapper para mostrar cantidades
+- `lib/hooks/usePrivateFormat.ts`: Hook personalizado
+
+**Uso en componentes**:
+```typescript
+'use client';
+import { usePrivateFormat } from '@/lib/hooks/usePrivateFormat';
+
+const { formatPrivateCurrency } = usePrivateFormat();
+return <span>{formatPrivateCurrency(amount)}</span>;
+// Si hideAmounts = true → muestra "•••"
+// Si hideAmounts = false → muestra "1.500,00 €"
+```
+
+**Persistencia**: localStorage como `'hide-amounts'`
+
+### Utilidades de Testing y Wipe ⭐ NEW
+
+**Wipe Selectivo** (`db/wipe_data_preserve_users.sql`):
+- Script SQL para limpiar datos pero preservar usuarios y estructura
+- **Preserva**: auth.users, profiles, system_admins, estructura DB
+- **Limpia**: transactions, contributions, adjustments, categories, households
+- **Crea automáticamente**: Hogar "Casa Test" con 2 miembros + 10 categorías
+- **Uso**: Ejecutar en Supabase SQL Editor antes de pruebas
+
+**Procedimiento de Testing** (`docs/TEST_PROCEDURE.md`):
+- Guía paso a paso para testing completo desde cero
+- Incluye: wipe → configuración → ajustes → verificación
+- Checklist de funcionalidades y valores esperados
+
+**Debug de Ajustes** (`db/delete_orphan_adjustment.sql`):
+- Queries SQL para encontrar y eliminar ajustes huérfanos
+- Útil si la UI falla en eliminar correctamente
 
 ### Referencias Clave
 
 - Especificación completa: `prompt_inicial_del_agente_app_gastos_pareja_next_instructions.md`
 - Schema DB: `db/schema.sql`, `db/contributions-schema.sql`
-- Guías: `docs/VERCEL_DEPLOY.md`, `docs/SUPABASE_CLI.md`, `docs/CONTRIBUTIONS_SYSTEM.md`
-- **Sistema de Múltiples Hogares**: `docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md` ⭐ NEW
+- Guías principales:
+  * `docs/VERCEL_DEPLOY.md` - Deploy en Vercel
+  * `docs/SUPABASE_CLI.md` - Workflow de migraciones
+  * `docs/CONTRIBUTIONS_SYSTEM.md` - Sistema de contribuciones
+  * `docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md` - Sistema multi-hogar ⭐
+  * `docs/PRIVACY_MODE.md` - Ocultación de cantidades ⭐ NEW
+  * `docs/TEST_PROCEDURE.md` - Procedimiento de testing ⭐ NEW
+  * `docs/SESSION_SUMMARY_2025-10-04.md` - Resumen de cambios recientes ⭐ NEW
 - Config: `.env.example`
 
 ## Cuando Implementes Nueva Funcionalidad

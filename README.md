@@ -21,10 +21,17 @@ Aplicación web minimalista para gestionar gastos e ingresos compartidos en pare
 ### Sistema de Contribuciones ⭐ NEW
 - ✅ **UI Simplificada**: Vista única en lugar de 3 pestañas
 - ✅ **Tipos de Cálculo**: Proporcional, Partes Iguales, Personalizado
-- ✅ **Pre-pagos**: Sistema para registrar gastos adelantados por miembros
+- ✅ **Ajustes con Movimientos Duales**: Pre-pagos crean automáticamente gasto + ingreso virtual ⭐ NEW
+- ✅ **Eliminación Inteligente**: Limpieza automática de ajustes y movimientos relacionados ⭐ NEW
 - ✅ **Pagos Flexibles**: Parciales, completos o sobrepagos
 - ✅ **Auto-creación de Movimientos**: Los pagos crean movimientos de ingreso automáticamente
 - ✅ **Estados de Pago**: pending, partial, paid, overpaid
+- ✅ **Balance Correcto**: Total recaudado incluye pre-pagos + pagos al fondo ⭐ NEW
+
+### Privacy & UX ⭐ NEW
+- ✅ **Privacy Mode**: Ocultar cantidades en lugares públicos con toggle Eye/EyeOff
+- ✅ **Persistencia**: Preferencia guardada en localStorage
+- ✅ **Contexto Global**: PrivacyProvider + hook usePrivateFormat()
 
 ### Administración
 - ✅ **Panel de Administración**: Dashboard + Wipe + Gestión de Miembros + System Admins
@@ -134,6 +141,9 @@ CuentasSiK/
 ├── components/
 │   ├── ui/                  # Componentes shadcn/ui
 │   └── shared/              # Componentes compartidos
+│       ├── PrivacyProvider.tsx   # ⭐ Contexto de privacidad
+│       ├── PrivacyToggle.tsx     # ⭐ Toggle Eye/EyeOff
+│       └── PrivateAmount.tsx     # ⭐ Wrapper para cantidades privadas
 ├── lib/                     # Utilidades
 │   ├── supabaseServer.ts   # Cliente Supabase server-side
 │   ├── supabaseBrowser.ts  # Cliente Supabase client-side
@@ -142,11 +152,15 @@ CuentasSiK/
 │   ├── result.ts           # Pattern Result
 │   ├── format.ts           # Formateo de moneda
 │   ├── date.ts             # Utilidades de fechas
-│   └── csv.ts              # Import/Export CSV
+│   ├── csv.ts              # Import/Export CSV
+│   └── hooks/
+│       └── usePrivateFormat.ts # ⭐ Hook para formateo con privacidad
 ├── db/
-│   ├── schema.sql               # Esquema base de datos
-│   ├── contributions-schema.sql # ✅ Sistema de contribuciones
-│   └── seed.sql                 # Datos iniciales
+│   ├── schema.sql                    # Esquema base de datos
+│   ├── contributions-schema.sql      # ✅ Sistema de contribuciones
+│   ├── seed.sql                      # Datos iniciales
+│   ├── wipe_data_preserve_users.sql  # ⭐ Wipe selectivo para testing
+│   └── delete_orphan_adjustment.sql  # ⭐ Debug de ajustes huérfanos
 ├── supabase/
 │   ├── config.toml         # Configuración Supabase CLI
 │   └── migrations/         # Migraciones SQL con timestamps
@@ -158,6 +172,9 @@ CuentasSiK/
 │   ├── CONTRIBUTIONS_REFACTOR_PLAN.md    # ✅ Plan de refactorización ⭐ NEW
 │   ├── USER_MANAGEMENT_IMPLEMENTATION.md # ✅ Gestión de usuarios
 │   ├── WIPE_PROTECTION_SYSTEM.md         # ✅ Sistema anti-wipe ⭐ NEW
+│   ├── PRIVACY_MODE.md                   # ⭐ Sistema de ocultación de cantidades
+│   ├── TEST_PROCEDURE.md                 # ⭐ Procedimiento de testing completo
+│   ├── SESSION_SUMMARY_2025-10-04.md     # ⭐ Resumen de cambios recientes
 │   ├── DARK_MODE.md
 │   ├── SUPABASE_CLI.md
 │   └── VERCEL_DEPLOY.md
@@ -345,8 +362,11 @@ Ver [docs/SUPABASE_CLI.md](docs/SUPABASE_CLI.md) para más detalles.
 ### Guías Principales
 - [Instrucciones para AI Agents](.github/copilot-instructions.md) - Guía completa del proyecto
 - [Sistema de Contribuciones](docs/CONTRIBUTIONS_SYSTEM.md) - Cómo funciona el sistema proporcional
-- [Sistema de Múltiples Hogares](docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md) ⭐ NEW - Gestión multi-hogar
+- [Sistema de Múltiples Hogares](docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md) ⭐ - Gestión multi-hogar
 - [Plan de Refactorización](docs/CONTRIBUTIONS_REFACTOR_PLAN.md) ⭐ - Mejoras implementadas
+- [Privacy Mode](docs/PRIVACY_MODE.md) ⭐ NEW - Sistema de ocultación de cantidades
+- [Procedimiento de Testing](docs/TEST_PROCEDURE.md) ⭐ NEW - Testing completo desde cero
+- [Resumen de Sesión](docs/SESSION_SUMMARY_2025-10-04.md) ⭐ NEW - Cambios recientes
 - [Gestión de Usuarios](docs/USER_MANAGEMENT_IMPLEMENTATION.md) - Roles y permisos
 - [Sistema Anti-Wipe](docs/WIPE_PROTECTION_SYSTEM.md) ⭐ - Protección de datos
 - [Modo Oscuro](docs/DARK_MODE.md) - Implementación dark/light mode
