@@ -217,7 +217,7 @@ export default async function HouseholdPage() {
               <CardContent>
                 <ul className="space-y-2">
                   {members.map((member) => (
-                    <li key={member.id} className="flex items-center gap-2">
+                    <li key={member.profile_id} className="flex items-center gap-2">
                       <span>{member.email}</span>
                       {member.role === 'owner' && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">

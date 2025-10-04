@@ -3,23 +3,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { Home, Users, Tag, TrendingDown, Settings } from 'lucide-react';
+import SystemDetails from './components/SystemDetails';
 
 export default async function AdminPage() {
   const supabase = await supabaseServer();
 
   // Obtener estadísticas globales del sistema
-  const [householdsResult, usersResult, categoriesResult, movementsResult] = await Promise.all([
+  const [householdsResult, membersResult, categoriesResult, transactionsResult, adminsResult, contributionsResult, adjustmentsResult] = await Promise.all([
     supabase.from('households').select('id', { count: 'exact', head: true }),
-    supabase.from('household_members').select('user_id', { count: 'exact', head: true }),
+    supabase.from('household_members').select('profile_id', { count: 'exact', head: true }),
     supabase.from('categories').select('id', { count: 'exact', head: true }),
     supabase.from('transactions').select('id', { count: 'exact', head: true }),
+    supabase.from('system_admins').select('user_id', { count: 'exact', head: true }),
+    supabase.from('contributions').select('id', { count: 'exact', head: true }),
+    supabase.from('contribution_adjustments').select('id', { count: 'exact', head: true }),
   ]);
 
   const stats = {
     households: householdsResult.count ?? 0,
-    users: usersResult.count ?? 0,
+    members: membersResult.count ?? 0,
     categories: categoriesResult.count ?? 0,
-    movements: movementsResult.count ?? 0,
+    transactions: transactionsResult.count ?? 0,
+    admins: adminsResult.count ?? 0,
+    contributions: contributionsResult.count ?? 0,
+    adjustments: adjustmentsResult.count ?? 0,
   };
 
   return (
@@ -45,11 +52,11 @@ export default async function AdminPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Usuarios
+                Miembros
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.users}</div>
+              <div className="text-2xl font-bold">{stats.members}</div>
               <p className="text-xs text-muted-foreground mt-1">Membresías activas</p>
             </CardContent>
           </Card>
@@ -71,12 +78,54 @@ export default async function AdminPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <TrendingDown className="h-4 w-4" />
-                Movimientos
+                Transacciones
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.movements}</div>
-              <p className="text-xs text-muted-foreground mt-1">Transacciones registradas</p>
+              <div className="text-2xl font-bold">{stats.transactions}</div>
+              <p className="text-xs text-muted-foreground mt-1">Movimientos registrados</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Segunda fila de estadísticas */}
+        <div className="grid gap-4 md:grid-cols-3 mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                System Admins
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.admins}</div>
+              <p className="text-xs text-muted-foreground mt-1">Administradores</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                Contribuciones
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.contributions}</div>
+              <p className="text-xs text-muted-foreground mt-1">Registros mensuales</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                Ajustes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.adjustments}</div>
+              <p className="text-xs text-muted-foreground mt-1">Pre-pagos y ajustes</p>
             </CardContent>
           </Card>
         </div>
@@ -171,6 +220,12 @@ export default async function AdminPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Detalles del Sistema */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">📋 Vista Detallada</h2>
+        <SystemDetails supabase={supabase} />
       </div>
 
       {/* Herramientas de Desarrollo */}

@@ -22,7 +22,7 @@ export default function RestoreToStockPage() {
     categories: true,
     memberIncomes: true,
     householdSettings: true,
-    households: true, // Por defecto elimina hogares
+    households: false, // Por SEGURIDAD: NO elimina hogares por defecto
   });
 
   const handleRestore = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -83,8 +83,8 @@ export function MembersList({ members }: MembersListProps) {
   return (
     <div className="space-y-3">
       {members.map((member) => {
-        const isUpdating = updatingRole === member.id;
-        const isRemoving = removingMember === member.id;
+        const isUpdating = updatingRole === member.profile_id;
+        const isRemoving = removingMember === member.profile_id;
 
         return (
           <div key={`${member.profile_id}-member`} className="flex items-center justify-between p-4 bg-muted rounded-lg">
@@ -103,7 +103,7 @@ export function MembersList({ members }: MembersListProps) {
             <div className="flex items-center gap-2">
               <Select
                 value={member.role}
-                onValueChange={(value) => handleRoleChange(member.id, value)}
+                onValueChange={(value) => handleRoleChange(member.profile_id, value)}
                 disabled={isUpdating || isRemoving}
               >
                 <SelectTrigger className="w-[130px]">
@@ -131,7 +131,7 @@ export function MembersList({ members }: MembersListProps) {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => handleRemove(member.id)}
+                      onClick={() => handleRemove(member.profile_id)}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                       Eliminar
