@@ -93,45 +93,41 @@ export function DashboardContent({
     setSelectedMonth(newDate);
     setIsLoading(true);
 
-    try {
-      const year = newDate.getFullYear();
-      const month = newDate.getMonth() + 1;
+    const year = newDate.getFullYear();
+    const month = newDate.getMonth() + 1;
 
-      // Calcular rango de fechas del mes
-      const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+    // Calcular rango de fechas del mes
+    const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
 
-      const [summaryResult, movementsResult, categoryExpensesResult, comparisonResult] = await Promise.all([
-        getMonthSummary(year, month),
-        getMovements({ startDate, endDate }),
-        getCategoryExpenses({ startDate, endDate }),
-        getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
-      ]);
+    const [summaryResult, movementsResult, categoryExpensesResult, comparisonResult] = await Promise.all([
+      getMonthSummary(year, month),
+      getMovements({ startDate, endDate }),
+      getCategoryExpenses({ startDate, endDate }),
+      getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
+    ]);
 
-      if (summaryResult.ok) {
-        setSummary(summaryResult.data || { expenses: 0, income: 0, balance: 0 });
-      } else {
-        toast.error('Error al cargar el resumen');
-      }
-
-      if (movementsResult.ok) {
-        setMovements((movementsResult.data || []) as Movement[]);
-      } else {
-        toast.error('Error al cargar los movimientos');
-      }
-
-      if (categoryExpensesResult.ok) {
-        setCategoryExpenses((categoryExpensesResult.data || []) as CategoryExpense[]);
-      }
-
-      if (comparisonResult.ok && comparisonResult.data) {
-        setComparison(comparisonResult.data as MonthComparison);
-      }
-    } catch {
-      toast.error('Error al cambiar de mes');
-    } finally {
-      setIsLoading(false);
+    if (summaryResult.ok) {
+      setSummary(summaryResult.data || { expenses: 0, income: 0, balance: 0 });
+    } else {
+      toast.error('Error al cargar el resumen');
     }
+
+    if (movementsResult.ok) {
+      setMovements((movementsResult.data || []) as Movement[]);
+    } else {
+      toast.error('Error al cargar los movimientos');
+    }
+
+    if (categoryExpensesResult.ok) {
+      setCategoryExpenses((categoryExpensesResult.data || []) as CategoryExpense[]);
+    }
+
+    if (comparisonResult.ok && comparisonResult.data) {
+      setComparison(comparisonResult.data as MonthComparison);
+    }
+
+    setIsLoading(false);
   };
 
   const expenseMovements = movements.filter((m) => m.type === 'expense');

@@ -37,30 +37,27 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const formData = new FormData(e.currentTarget);
-      formData.append('type', type);
+    const formData = new FormData(e.currentTarget);
+    formData.append('type', type);
 
-      const result = await createMovement(formData);
+    const result = await createMovement(formData);
 
-      if (!result.ok) {
-        toast.error(result.message);
-        if (result.fieldErrors) {
-          Object.entries(result.fieldErrors).forEach(([field, errors]) => {
-            toast.error(`${field}: ${errors[0]}`);
-          });
-        }
-      } else {
-        toast.success('Movimiento creado exitosamente');
-        setOpen(false);
-        // Reset form
-        e.currentTarget.reset();
+    if (!result.ok) {
+      toast.error(result.message);
+      if (result.fieldErrors) {
+        Object.entries(result.fieldErrors).forEach(([field, errors]) => {
+          toast.error(`${field}: ${errors[0]}`);
+        });
       }
-    } catch {
-      toast.error('Ocurrió un error. Inténtalo de nuevo.');
-    } finally {
       setIsLoading(false);
+      return;
     }
+
+    // Éxito
+    toast.success('Movimiento creado exitosamente');
+    setOpen(false);
+    e.currentTarget.reset();
+    setIsLoading(false);
   };
 
   return (
