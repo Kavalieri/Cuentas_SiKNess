@@ -872,6 +872,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      selective_wipe_household: {
+        Args: { p_household_id: string; p_options?: Json }
+        Returns: Json
+      }
+      selective_wipe_system: {
+        Args: { p_options?: Json }
+        Returns: Json
+      }
       update_contribution_status: {
         Args: { p_contribution_id: string }
         Returns: undefined

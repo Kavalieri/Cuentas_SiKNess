@@ -13,6 +13,22 @@ const WipeSchema = z.object({
   }),
 });
 
+const SelectiveWipeSchema = z.object({
+  confirmation: z.string().refine((val) => val === 'ELIMINAR TODO', {
+    message: 'Debes escribir exactamente "ELIMINAR TODO" para confirmar',
+  }),
+  householdId: z.string().uuid().optional(),
+  options: z.object({
+    transactions: z.boolean(),
+    contributions: z.boolean(),
+    adjustments: z.boolean(),
+    categories: z.boolean(),
+    memberIncomes: z.boolean(),
+    householdSettings: z.boolean(),
+    households: z.boolean().optional(),
+  }),
+});
+
 /**
  * Ejecuta la función de wipe en la base de datos
  * Elimina TODOS los datos del household excepto miembros
@@ -119,6 +135,112 @@ export async function restoreToStock(formData: FormData): Promise<Result> {
   }
 
   // Revalidar todas las rutas afectadas
+  revalidatePath('/app');
+  revalidatePath('/app/admin');
+
+  return ok(data);
+}
+
+/**
+ * Wipe selectivo de un hogar con opciones configurables
+ * Permite elegir qué elementos eliminar
+ */
+export async function selectiveWipeHousehold(formData: FormData): Promise<Result> {
+  // Verificar permisos de system admin
+  const userIsSystemAdmin = await isSystemAdmin();
+  if (!userIsSystemAdmin) {
+    return fail('Solo los administradores del sistema pueden ejecutar esta acción');
+  }
+
+  // Parsear y validar datos
+  const rawData = Object.fromEntries(formData);
+  const optionsData = {
+    confirmation: rawData.confirmation,
+    householdId: rawData.householdId,
+    options: {
+      transactions: rawData.transactions === 'true',
+      contributions: rawData.contributions === 'true',
+      adjustments: rawData.adjustments === 'true',
+      categories: rawData.categories === 'true',
+      memberIncomes: rawData.memberIncomes === 'true',
+      householdSettings: rawData.householdSettings === 'true',
+      households: rawData.households === 'true',
+    },
+  };
+
+  const parsed = SelectiveWipeSchema.safeParse(optionsData);
+  if (!parsed.success) {
+    return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
+  }
+
+  const { householdId, options } = parsed.data;
+
+  if (!householdId) {
+    return fail('Debe seleccionar un hogar');
+  }
+
+  // Ejecutar wipe selectivo
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.rpc('selective_wipe_household', {
+    p_household_id: householdId,
+    p_options: options,
+  });
+
+  if (error) {
+    console.error('Error en wipe selectivo:', error);
+    return fail(`Error al ejecutar wipe: ${error.message}`);
+  }
+
+  revalidatePath('/app');
+  revalidatePath('/app/admin');
+
+  return ok(data);
+}
+
+/**
+ * Wipe selectivo del sistema completo con opciones configurables
+ * Permite elegir qué elementos eliminar globalmente
+ */
+export async function selectiveWipeSystem(formData: FormData): Promise<Result> {
+  // Verificar permisos de system admin
+  const userIsSystemAdmin = await isSystemAdmin();
+  if (!userIsSystemAdmin) {
+    return fail('Solo los administradores del sistema pueden ejecutar esta acción');
+  }
+
+  // Parsear y validar datos
+  const rawData = Object.fromEntries(formData);
+  const optionsData = {
+    confirmation: rawData.confirmation,
+    options: {
+      transactions: rawData.transactions === 'true',
+      contributions: rawData.contributions === 'true',
+      adjustments: rawData.adjustments === 'true',
+      categories: rawData.categories === 'true',
+      memberIncomes: rawData.memberIncomes === 'true',
+      householdSettings: rawData.householdSettings === 'true',
+      households: rawData.households === 'true',
+    },
+  };
+
+  const parsed = SelectiveWipeSchema.omit({ householdId: true }).safeParse(optionsData);
+  if (!parsed.success) {
+    return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
+  }
+
+  const { options } = parsed.data;
+
+  // Ejecutar wipe selectivo global
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.rpc('selective_wipe_system', {
+    p_options: options,
+  });
+
+  if (error) {
+    console.error('Error en wipe selectivo del sistema:', error);
+    return fail(`Error al ejecutar wipe: ${error.message}`);
+  }
+
   revalidatePath('/app');
   revalidatePath('/app/admin');
 
