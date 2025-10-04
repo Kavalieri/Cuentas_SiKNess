@@ -107,14 +107,32 @@ export default async function ContributionsPage() {
   const currentUserContribution = contributionsMap.get(currentProfileId) || null;
 
   // Calcular total pagado
-  // Incluye paid_amount (pagos registrados) + ajustes negativos (pre-pagos/gastos directos)
-  // Los ajustes negativos representan gastos ya realizados que cuentan como contribución
+  // Total pagado = suma de paid_amount de cada miembro
+  // Para mostrar dinero realmente recaudado/gastado, necesitamos también los ajustes con movimiento
+  // PERO: expected_amount ya incluye adjustments_total, así que solo sumamos paid_amount
+  // Para obtener el "efectivamente contribuido al hogar", debemos considerar:
+  // - Lo que pasó por el fondo (paid_amount)
+  // - Los gastos directos que tienen movimiento (ajustes negativos con movement_id)
+  
+  // Primero obtenemos todos los ajustes que tienen movimiento vinculado
+  const { data: adjustmentsWithMovement } = await supabase
+    .from('contribution_adjustments')
+    .select('amount, contribution_id')
+    .in('contribution_id', (contributions || []).map(c => c.id))
+    .not('movement_id', 'is', null);
+
+  // Calcular total de ajustes negativos con movimiento (gastos directos ya realizados)
+  const directExpenses = (adjustmentsWithMovement || [])
+    .filter(adj => adj.amount < 0)
+    .reduce((sum, adj) => sum + Math.abs(adj.amount), 0);
+
   const totalPaid = (contributions || []).reduce((sum, c) => {
-    const paidAmount = c.paid_amount || 0;
-    // Si hay ajustes negativos, se consideran como ya pagados (gastos realizados directamente)
-    const adjustmentsPaid = Math.min(0, c.adjustments_total || 0); // Solo negativos
-    return sum + paidAmount + Math.abs(adjustmentsPaid);
-  }, 0);
+    return sum + (c.paid_amount || 0);
+  }, 0) + directExpenses;
+
+  console.log('[DEBUG] Direct Expenses (pre-payments):', directExpenses);
+  console.log('[DEBUG] Total Paid from fund:', totalPaid - directExpenses);
+  console.log('[DEBUG] Total Paid (including direct):', totalPaid, 'Monthly Goal:', monthlyGoal);
 
   // Verificar si el usuario es owner
   const isOwner = membersWithIncomes.find((m) => m.profile_id === currentProfileId)?.role === 'owner';
