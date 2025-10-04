@@ -5,7 +5,6 @@ import { HouseholdSummary } from './HouseholdSummary';
 import { ContributionMembersList } from './ContributionMembersList';
 import { ConfigurationSection } from './ConfigurationSection';
 import { PendingApprovalsPanel } from './PendingApprovalsPanel';
-import { QuickActions } from './QuickActions';
 import type { Database } from '@/types/database';
 import type { CalculationType } from '@/lib/contributionTypes';
 
@@ -58,6 +57,7 @@ export function ContributionsContent({
         totalIncome={totalIncome}
         userIncome={currentUserIncome}
         currency={currency}
+        categories={categories}
       />
 
       {/* Resumen del hogar */}
@@ -72,16 +72,6 @@ export function ContributionsContent({
       {isOwner && (
         <PendingApprovalsPanel categories={categories} currency={currency} />
       )}
-
-      {/* Acciones Rápidas: Pre-pago e Ingreso Extra */}
-      <QuickActions
-        contributionId={currentUserContribution?.id || null}
-        categories={categories}
-        hasMetGoal={
-          currentUserContribution?.status === 'paid' || 
-          currentUserContribution?.status === 'overpaid'
-        }
-      />
 
       {/* Lista de miembros */}
       <ContributionMembersList

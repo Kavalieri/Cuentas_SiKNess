@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { CheckCircle2, Clock, TrendingDown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CheckCircle2, Clock, TrendingDown, Receipt } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { toast } from 'sonner';
 import { recordContributionPayment } from '@/app/app/contributions/actions';
+import { createPrepaymentRequest } from '@/app/app/contributions/adjustment-actions';
 import { useState } from 'react';
 
 type Contribution = {
@@ -21,12 +23,19 @@ type Contribution = {
   year: number;
 };
 
+type Category = {
+  id: string;
+  name: string;
+  type: string;
+};
+
 type HeroContributionProps = {
   contribution: Contribution | null;
   userEmail: string;
   totalIncome: number;
   userIncome: number;
   currency?: string;
+  categories: Category[];
 };
 
 export function HeroContribution({
@@ -34,10 +43,21 @@ export function HeroContribution({
   totalIncome,
   userIncome,
   currency = 'EUR',
+  categories,
 }: HeroContributionProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<'full' | 'custom'>('full');
+  const [paymentMode, setPaymentMode] = useState<'full' | 'custom' | 'prepayment'>('full');
   const [customAmount, setCustomAmount] = useState('');
+  
+  // Estados para pre-pago
+  const [prepaymentAmount, setPrepaymentAmount] = useState('');
+  const [prepaymentCategory, setPrepaymentCategory] = useState('');
+  const [prepaymentReason, setPrepaymentReason] = useState('');
+  const [prepaymentExpenseDesc, setPrepaymentExpenseDesc] = useState('');
+  const [prepaymentIncomeDesc, setPrepaymentIncomeDesc] = useState('');
+
+  // Filtrar solo categorías de tipo expense
+  const expenseCategories = categories.filter(c => c.type === 'expense');
 
   if (!contribution) {
     return (
@@ -70,16 +90,21 @@ export function HeroContribution({
   const actualIsOverpaid = actualStatus === 'overpaid';
 
   const handleRecordPayment = async () => {
+    if (!contribution) return;
+
     let amountToRecord: number;
 
     if (paymentMode === 'full') {
       amountToRecord = remainingToPay;
-    } else {
+    } else if (paymentMode === 'custom') {
       amountToRecord = parseFloat(customAmount);
       if (isNaN(amountToRecord) || amountToRecord <= 0) {
         toast.error('Por favor, introduce un monto válido');
         return;
       }
+    } else {
+      // paymentMode === 'prepayment'
+      return handlePrepaymentSubmit();
     }
 
     setIsLoading(true);
@@ -89,9 +114,81 @@ export function HeroContribution({
       toast.success('✅ Pago registrado correctamente');
       setCustomAmount('');
       setPaymentMode('full');
+      // Recargar página después de 1 segundo
+      setTimeout(() => {
+        toast.info('🔄 Actualizando...', { duration: 2000 });
+        window.location.reload();
+      }, 1000);
     } else {
       toast.error(result.message);
     }
+    setIsLoading(false);
+  };
+
+  const handlePrepaymentSubmit = async () => {
+    if (!contribution) return;
+
+    // Validaciones
+    if (!prepaymentAmount || isNaN(parseFloat(prepaymentAmount)) || parseFloat(prepaymentAmount) <= 0) {
+      toast.error('Por favor, introduce un monto válido');
+      return;
+    }
+
+    if (!prepaymentCategory) {
+      toast.error('Por favor, selecciona una categoría');
+      return;
+    }
+
+    if (!prepaymentReason.trim()) {
+      toast.error('Por favor, describe el motivo del pre-pago');
+      return;
+    }
+
+    if (!prepaymentExpenseDesc.trim()) {
+      toast.error('Por favor, describe el gasto realizado');
+      return;
+    }
+
+    if (!prepaymentIncomeDesc.trim()) {
+      toast.error('Por favor, describe tu aporte');
+      return;
+    }
+
+    setIsLoading(true);
+
+    const formData = new FormData();
+    formData.append('contribution_id', contribution.id);
+    formData.append('amount', (-parseFloat(prepaymentAmount)).toString()); // Negativo = reducción
+    formData.append('category_id', prepaymentCategory);
+    formData.append('reason', prepaymentReason);
+    formData.append('expense_description', prepaymentExpenseDesc);
+    formData.append('income_description', prepaymentIncomeDesc);
+
+    const result = await createPrepaymentRequest(formData);
+
+    if (result.ok) {
+      toast.success('✅ Solicitud de pre-pago enviada', {
+        description: 'Un owner debe aprobarla para que se registre en el sistema',
+        duration: 5000,
+      });
+      
+      // Resetear formulario
+      setPrepaymentAmount('');
+      setPrepaymentCategory('');
+      setPrepaymentReason('');
+      setPrepaymentExpenseDesc('');
+      setPrepaymentIncomeDesc('');
+      setPaymentMode('full');
+
+      // Recargar después de 1 segundo
+      setTimeout(() => {
+        toast.info('🔄 Actualizando...', { duration: 2000 });
+        window.location.reload();
+      }, 1000);
+    } else {
+      toast.error(result.message);
+    }
+
     setIsLoading(false);
   };
 
@@ -256,6 +353,21 @@ export function HeroContribution({
                   />
                   <span className="text-sm">Cantidad personalizada</span>
                 </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMode"
+                    value="prepayment"
+                    checked={paymentMode === 'prepayment'}
+                    onChange={() => setPaymentMode('prepayment')}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm flex items-center gap-1">
+                    <Receipt className="h-4 w-4" />
+                    Pre-pago (gasto ya realizado)
+                  </span>
+                </label>
               </div>
 
               {paymentMode === 'custom' && (
@@ -278,16 +390,111 @@ export function HeroContribution({
                   </p>
                 </div>
               )}
+
+              {paymentMode === 'prepayment' && (
+                <div className="space-y-3 ml-6 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs text-blue-900 dark:text-blue-100 mb-2">
+                    💡 Los pre-pagos requieren aprobación de un owner. Proporciona todos los detalles:
+                  </p>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="prepaymentAmount" className="text-xs">
+                      Monto del gasto (€):
+                    </Label>
+                    <Input
+                      id="prepaymentAmount"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={prepaymentAmount}
+                      onChange={(e) => setPrepaymentAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="max-w-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="prepaymentCategory" className="text-xs">
+                      Categoría del gasto:
+                    </Label>
+                    <Select value={prepaymentCategory} onValueChange={setPrepaymentCategory}>
+                      <SelectTrigger id="prepaymentCategory" className="max-w-xs">
+                        <SelectValue placeholder="Selecciona categoría..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {expenseCategories.length === 0 && (
+                          <SelectItem value="__empty__" disabled>
+                            No hay categorías disponibles
+                          </SelectItem>
+                        )}
+                        {expenseCategories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="prepaymentReason" className="text-xs">
+                      Motivo del pre-pago:
+                    </Label>
+                    <Input
+                      id="prepaymentReason"
+                      type="text"
+                      value={prepaymentReason}
+                      onChange={(e) => setPrepaymentReason(e.target.value)}
+                      placeholder="Ej: Pagué la luz de octubre"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="prepaymentExpenseDesc" className="text-xs">
+                      Descripción del gasto:
+                    </Label>
+                    <Input
+                      id="prepaymentExpenseDesc"
+                      type="text"
+                      value={prepaymentExpenseDesc}
+                      onChange={(e) => setPrepaymentExpenseDesc(e.target.value)}
+                      placeholder="Ej: Recibo luz octubre 2025"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="prepaymentIncomeDesc" className="text-xs">
+                      Descripción del aporte:
+                    </Label>
+                    <Input
+                      id="prepaymentIncomeDesc"
+                      type="text"
+                      value={prepaymentIncomeDesc}
+                      onChange={(e) => setPrepaymentIncomeDesc(e.target.value)}
+                      placeholder="Ej: Aporte de Juan - Luz octubre"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <Button
               onClick={handleRecordPayment}
-              disabled={isLoading || (paymentMode === 'custom' && !customAmount)}
+              disabled={isLoading || (paymentMode === 'custom' && !customAmount) || (paymentMode === 'prepayment' && (!prepaymentAmount || !prepaymentCategory))}
               size="lg"
               className="w-full"
             >
-              <CheckCircle2 className="mr-2 h-5 w-5" />
-              {isLoading ? 'Procesando...' : 'Registrar Pago'}
+              {paymentMode === 'prepayment' ? (
+                <>
+                  <Receipt className="mr-2 h-5 w-5" />
+                  {isLoading ? 'Enviando solicitud...' : 'Solicitar Aprobación de Pre-pago'}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-5 w-5" />
+                  {isLoading ? 'Procesando...' : 'Registrar Pago'}
+                </>
+              )}
             </Button>
           </div>
         )}

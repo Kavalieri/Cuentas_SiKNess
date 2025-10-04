@@ -88,7 +88,10 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
       }));
       setPendingAdjustments(transformed);
     } else if (!result.ok) {
-      toast.error('message' in result ? result.message : 'Error al cargar ajustes pendientes');
+      // No mostrar toast si el error es de permisos (el componente ya tiene guard isOwner)
+      if (result.message !== 'Solo los owners pueden ver ajustes pendientes') {
+        toast.error('message' in result ? result.message : 'Error al cargar ajustes pendientes');
+      }
     }
     
     setLoading(false);
