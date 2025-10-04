@@ -76,7 +76,7 @@ export function PrePaymentsSection({
 
     const formData = new FormData();
     formData.append('household_id', householdId);
-    formData.append('user_id', selectedMember);
+    formData.append('profile_id', selectedMember); // FIXED: was 'user_id'
     formData.append('category_id', selectedCategory);
     formData.append('amount', amount);
     formData.append('description', description);
