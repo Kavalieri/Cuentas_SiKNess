@@ -3,6 +3,7 @@ import { HouseholdSummary } from './HouseholdSummary';
 import { ContributionMembersList } from './ContributionMembersList';
 import { ConfigurationSection } from './ConfigurationSection';
 import { ContributionAdjustmentsSection } from './ContributionAdjustmentsSection';
+import { PendingApprovalsPanel } from './PendingApprovalsPanel';
 import type { Database } from '@/types/database';
 import type { CalculationType } from '@/lib/contributionTypes';
 
@@ -68,6 +69,11 @@ export function ContributionsContent({
         calculationType={calculationType}
         currency={currency}
       />
+
+      {/* Panel de Aprobaciones (solo owners) */}
+      {isOwner && (
+        <PendingApprovalsPanel categories={categories} currency={currency} />
+      )}
 
       {/* Ajustes de contribución */}
       <ContributionAdjustmentsSection
