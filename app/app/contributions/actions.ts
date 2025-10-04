@@ -592,17 +592,98 @@ export async function getHouseholdAdjustments(
 export async function deleteContributionAdjustment(adjustmentId: string): Promise<Result> {
   const supabase = await supabaseServer();
 
-  const { error } = await supabase
+  // 1. Obtener el ajuste y la contribución asociada
+  const { data: adjustment, error: fetchError } = await supabase
+    .from('contribution_adjustments')
+    .select(`
+      *,
+      contribution:contributions!inner(
+        profile_id,
+        household_id,
+        year,
+        month
+      )
+    `)
+    .eq('id', adjustmentId)
+    .single();
+
+  if (fetchError) return fail('Error al obtener ajuste: ' + fetchError.message);
+  if (!adjustment) return fail('Ajuste no encontrado');
+
+  // @ts-ignore - Supabase type inference issue
+  const contribution = adjustment.contribution;
+
+  // 2. Buscar y eliminar movimientos asociados
+  const movementsToDelete: string[] = [];
+
+  // A) Si tiene movement_id directo, agregarlo
+  if (adjustment.movement_id) {
+    movementsToDelete.push(adjustment.movement_id);
+  }
+
+  // B) Buscar por descripción con [Ajuste: razón]
+  const searchPattern = `%[Ajuste: ${adjustment.reason}]%`;
+  const { data: movementsByDescription } = await supabase
+    .from('transactions')
+    .select('id')
+    .eq('household_id', contribution.household_id)
+    .like('description', searchPattern);
+
+  if (movementsByDescription) {
+    movementsByDescription.forEach(m => {
+      if (!movementsToDelete.includes(m.id)) {
+        movementsToDelete.push(m.id);
+      }
+    });
+  }
+
+  // C) Buscar por descripción con [Pre-pago] (formato antiguo)
+  if (adjustment.type === 'prepayment' && adjustment.category_id) {
+    const { data: movementsByPrePago } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('household_id', contribution.household_id)
+      .eq('profile_id', contribution.profile_id)
+      .eq('category_id', adjustment.category_id)
+      .eq('type', 'expense')
+      .like('description', '%[Pre-pago]%');
+
+    if (movementsByPrePago) {
+      movementsByPrePago.forEach(m => {
+        if (!movementsToDelete.includes(m.id)) {
+          movementsToDelete.push(m.id);
+        }
+      });
+    }
+  }
+
+  // Eliminar todos los movimientos encontrados
+  if (movementsToDelete.length > 0) {
+    const { error: deleteMovementsError } = await supabase
+      .from('transactions')
+      .delete()
+      .in('id', movementsToDelete);
+
+    if (deleteMovementsError) {
+      console.error('Error al eliminar movimientos:', deleteMovementsError);
+      // No fallar, continuar con la eliminación del ajuste
+    }
+  }
+
+  // 3. Eliminar el ajuste
+  const { error: deleteError } = await supabase
     .from('contribution_adjustments')
     .delete()
     .eq('id', adjustmentId);
 
-  if (error) return fail(error.message);
+  if (deleteError) return fail('Error al eliminar ajuste: ' + deleteError.message);
 
   // El trigger update_contribution_adjustments_total() actualizará automáticamente
   // el total de ajustes y el monto esperado de la contribución
 
   revalidatePath('/app/contributions');
+  revalidatePath('/app');
+  revalidatePath('/app/expenses');
   return ok();
 }
 

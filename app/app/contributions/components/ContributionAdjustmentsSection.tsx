@@ -26,6 +26,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { 
   addContributionAdjustment,
@@ -105,6 +106,7 @@ export function ContributionAdjustmentsSection({
   currentYear,
   currency = 'EUR',
 }: ContributionAdjustmentsSectionProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
@@ -129,7 +131,8 @@ export function ContributionAdjustmentsSection({
     if (result.ok) {
       toast.success('Ajuste agregado correctamente');
       setIsOpen(false);
-      loadAdjustments();
+      await loadAdjustments();
+      router.refresh(); // Forzar refresh completo
     } else {
       toast.error(result.message);
     }
@@ -137,12 +140,13 @@ export function ContributionAdjustmentsSection({
   };
 
   const handleDeleteAdjustment = async (adjustmentId: string) => {
-    if (!confirm('¿Eliminar este ajuste?')) return;
+    if (!confirm('¿Eliminar este ajuste? Se eliminarán también los movimientos asociados.')) return;
 
     const result = await deleteContributionAdjustment(adjustmentId);
     if (result.ok) {
-      toast.success('Ajuste eliminado');
-      loadAdjustments();
+      toast.success('Ajuste y movimientos eliminados correctamente');
+      await loadAdjustments();
+      router.refresh(); // Forzar refresh completo
     } else {
       toast.error(result.message);
     }
