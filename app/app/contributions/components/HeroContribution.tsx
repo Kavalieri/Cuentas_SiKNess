@@ -116,18 +116,22 @@ export function HeroContribution({
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+            <CardContent className="space-y-6">
         {/* Desglose de montos */}
         <div className="space-y-3">
-          <div className="flex items-baseline justify-between">
-            <span className="text-sm text-muted-foreground">
-              Contribución esperada:
-            </span>
-            <span className="text-2xl font-bold">
-              {formatCurrency(contribution.expected_amount, currency)}
-            </span>
-          </div>
+          {/* Mostrar primero la base de contribución (sin ajustes) */}
+          {hasAdjustments && (
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">
+                Contribución base:
+              </span>
+              <span className="text-lg font-semibold text-muted-foreground">
+                {formatCurrency(contribution.expected_amount - (contribution.adjustments_total || 0), currency)}
+              </span>
+            </div>
+          )}
 
+          {/* Luego los ajustes */}
           {hasAdjustments && (
             <div className={`flex items-baseline justify-between ${
               (contribution.adjustments_total || 0) < 0 
@@ -145,16 +149,28 @@ export function HeroContribution({
             </div>
           )}
 
+          {/* Total esperado - lo más importante */}
+          <div className="flex items-baseline justify-between pt-2 border-t">
+            <span className="text-sm font-medium">
+              Total esperado:
+            </span>
+            <span className="text-2xl font-bold">
+              {formatCurrency(contribution.expected_amount, currency)}
+            </span>
+          </div>
+
+          {/* Monto ya pagado */}
           {contribution.paid_amount > 0 && (
-            <div className="flex items-baseline justify-between text-muted-foreground">
-              <span className="text-sm">Ya pagado:</span>
-              <span className="text-lg font-semibold">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Ya pagado:</span>
+              <span className="text-lg font-semibold text-green-600 dark:text-green-400">
                 {formatCurrency(contribution.paid_amount, currency)}
               </span>
             </div>
           )}
 
-          {isPending && remainingToPay > 0 && (
+          {/* Pendiente o aporte extra */}
+          {remainingToPay > 0 && (
             <div className="pt-2 border-t">
               <div className="flex items-baseline justify-between">
                 <span className="text-sm font-medium">Pendiente:</span>
@@ -165,6 +181,18 @@ export function HeroContribution({
             </div>
           )}
 
+          {remainingToPay < 0 && (
+            <div className="pt-2 border-t">
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">Aporte extra:</span>
+                <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  +{formatCurrency(Math.abs(remainingToPay), currency)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Porcentaje del hogar */}
           <div className="flex items-baseline justify-between pt-2 border-t">
             <span className="text-xs text-muted-foreground">Porcentaje del hogar:</span>
             <span className="text-lg font-semibold text-muted-foreground">
@@ -188,7 +216,7 @@ export function HeroContribution({
           <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
             <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
-              ¡Excelente! Has aportado {formatCurrency(contribution.paid_amount - contribution.expected_amount, currency)} más de lo esperado este mes. Gracias por tu contribución extra.
+              ¡Excelente! Has aportado {formatCurrency(Math.abs(remainingToPay), currency)} más de lo esperado este mes. Gracias por tu contribución extra.
             </p>
           </div>
         )}
@@ -198,6 +226,7 @@ export function HeroContribution({
           <div className="space-y-4 pt-2">
             <div className="space-y-3">
               <Label className="text-sm font-medium">Opciones de pago:</Label>
+```
               
               <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-2 cursor-pointer">

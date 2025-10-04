@@ -101,16 +101,20 @@ export default async function ContributionsPage() {
     member.contribution = contributionsMap.get(member.profile_id) || null;
   });
 
-    // Datos del usuario actual
+  // Datos del usuario actual
   const currentUserIncome =
     membersWithIncomes.find((m) => m.profile_id === currentProfileId)?.income || 0;
   const currentUserContribution = contributionsMap.get(currentProfileId) || null;
 
   // Calcular total pagado
-  const totalPaid = (contributions || []).reduce(
-    (sum, c) => sum + (c.paid_amount || 0),
-    0
-  );
+  // Incluye paid_amount (pagos registrados) + ajustes negativos (pre-pagos/gastos directos)
+  // Los ajustes negativos representan gastos ya realizados que cuentan como contribución
+  const totalPaid = (contributions || []).reduce((sum, c) => {
+    const paidAmount = c.paid_amount || 0;
+    // Si hay ajustes negativos, se consideran como ya pagados (gastos realizados directamente)
+    const adjustmentsPaid = Math.min(0, c.adjustments_total || 0); // Solo negativos
+    return sum + paidAmount + Math.abs(adjustmentsPaid);
+  }, 0);
 
   // Verificar si el usuario es owner
   const isOwner = membersWithIncomes.find((m) => m.profile_id === currentProfileId)?.role === 'owner';
