@@ -40,13 +40,24 @@ export async function createMovement(formData: FormData): Promise<Result<{ id: s
 
   const supabase = await supabaseServer();
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    return fail('Usuario no encontrado');
+  }
+
   // @ts-ignore - Supabase types issue
   const { data, error } = await supabase
     .from('transactions')
     // @ts-ignore
     .insert({
       household_id: householdId,
-      user_id: user.id,
+      profile_id: profile.id,
       category_id: parsed.data.category_id, // Ya transformado por Zod
       type: parsed.data.type,
       amount: parsed.data.amount,

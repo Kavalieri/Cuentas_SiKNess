@@ -17,11 +17,22 @@ export default async function SettingsPage({
 
   const supabase = await supabaseServer();
   
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    redirect('/login');
+  }
+
   // Verificar si el usuario tiene household
   const { data: household } = await supabase
     .from('household_members')
     .select('household_id')
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .maybeSingle();
 
   // Si viene con waitingInvite=true, redirigir a onboarding

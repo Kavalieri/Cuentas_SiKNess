@@ -515,12 +515,21 @@ export async function createPrePayment(formData: FormData): Promise<Result> {
 
   if (!user) return fail('Usuario no autenticado');
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return fail('Usuario no encontrado');
+
   // Verificar que el usuario es owner del hogar
   const { data: memberData } = await supabase
     .from('household_members')
     .select('role')
     .eq('household_id', parsed.data.household_id)
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .single();
 
   if (!memberData || memberData.role !== 'owner') {
@@ -651,12 +660,21 @@ export async function deletePrePayment(prePaymentId: string): Promise<Result> {
 
   if (!prePayment) return fail('Pre-pago no encontrado');
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return fail('Usuario no encontrado');
+
   // Verificar que el usuario es owner
   const { data: memberData } = await supabase
     .from('household_members')
     .select('role')
     .eq('household_id', prePayment.household_id)
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .single();
 
   if (!memberData || memberData.role !== 'owner') {
