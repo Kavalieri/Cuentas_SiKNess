@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,7 @@ interface AddMovementDialogProps {
 }
 
 export function AddMovementDialog({ categories }: AddMovementDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [type, setType] = useState<'expense' | 'income'>('expense');
@@ -53,11 +55,14 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
       return;
     }
 
-    // Éxito
-    toast.success('Movimiento creado exitosamente');
-    setOpen(false);
+    // Éxito: resetear formulario antes de cerrar
     e.currentTarget.reset();
+    toast.success('Movimiento creado exitosamente');
     setIsLoading(false);
+    setOpen(false);
+    
+    // Revalidar datos del servidor para actualizar la UI
+    router.refresh();
   };
 
   return (
