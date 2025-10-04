@@ -16,6 +16,23 @@ type AdjustmentInsert = Database['public']['Tables']['contribution_adjustments']
 type MovementInsert = Database['public']['Tables']['transactions']['Insert'];
 
 // =====================================================
+// Helper: Obtener Profile ID del usuario autenticado
+// =====================================================
+
+async function getCurrentProfileId(supabase: Awaited<ReturnType<typeof supabaseServer>>): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  return profile?.id || null;
+}
+
+// =====================================================
 // Schemas de Validación
 // =====================================================
 
@@ -63,6 +80,12 @@ export async function createPrepaymentRequest(formData: FormData): Promise<Resul
     return fail('Usuario no autenticado');
   }
 
+  // Obtener profile_id del usuario actual
+  const profileId = await getCurrentProfileId(supabase);
+  if (!profileId) {
+    return fail('Perfil de usuario no encontrado');
+  }
+
   // Verificar que el usuario sea miembro del hogar de esta contribución
   const { data: contribution, error: contributionError } = await supabase
     .from('contributions')
@@ -78,7 +101,7 @@ export async function createPrepaymentRequest(formData: FormData): Promise<Resul
     .from('household_members')
     .select('profile_id')
     .eq('household_id', contribution.household_id)
-    .eq('profile_id', user.id)
+    .eq('profile_id', profileId)
     .single();
 
   if (!membership) {
@@ -131,6 +154,12 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
     return fail('Usuario no autenticado');
   }
 
+  // Obtener profile_id del usuario actual
+  const profileId = await getCurrentProfileId(supabase);
+  if (!profileId) {
+    return fail('Perfil de usuario no encontrado');
+  }
+
   // Obtener ajuste y validar estado
   const { data: adjustment, error: adjustmentError } = await supabase
     .from('contribution_adjustments')
@@ -159,7 +188,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
     .from('household_members')
     .select('role')
     .eq('household_id', adjustment.contributions.household_id)
-    .eq('profile_id', user.id)
+    .eq('profile_id', profileId)
     .single();
 
   if (!membership || membership.role !== 'owner') {
@@ -283,6 +312,12 @@ export async function rejectPrepayment(formData: FormData): Promise<Result> {
     return fail('Usuario no autenticado');
   }
 
+  // Obtener profile_id del usuario actual
+  const profileId = await getCurrentProfileId(supabase);
+  if (!profileId) {
+    return fail('Perfil de usuario no encontrado');
+  }
+
   // Obtener ajuste y validar estado
   const { data: adjustment, error: adjustmentError } = await supabase
     .from('contribution_adjustments')
@@ -306,7 +341,7 @@ export async function rejectPrepayment(formData: FormData): Promise<Result> {
     .from('household_members')
     .select('role')
     .eq('household_id', adjustment.contributions.household_id)
-    .eq('profile_id', user.id)
+    .eq('profile_id', profileId)
     .single();
 
   if (!membership || membership.role !== 'owner') {
@@ -354,6 +389,12 @@ export async function recordExtraIncome(formData: FormData): Promise<Result> {
     return fail('Usuario no autenticado');
   }
 
+  // Obtener profile_id del usuario actual
+  const profileId = await getCurrentProfileId(supabase);
+  if (!profileId) {
+    return fail('Perfil de usuario no encontrado');
+  }
+
   // Obtener contribución
   const { data: contribution, error: contributionError } = await supabase
     .from('contributions')
@@ -370,7 +411,7 @@ export async function recordExtraIncome(formData: FormData): Promise<Result> {
     .from('household_members')
     .select('profile_id')
     .eq('household_id', contribution.household_id)
-    .eq('profile_id', user.id)
+    .eq('profile_id', profileId)
     .single();
 
   if (!membership) {
@@ -462,6 +503,12 @@ export async function updatePendingAdjustment(formData: FormData): Promise<Resul
     return fail('Usuario no autenticado');
   }
 
+  // Obtener profile_id del usuario actual
+  const profileId = await getCurrentProfileId(supabase);
+  if (!profileId) {
+    return fail('Perfil de usuario no encontrado');
+  }
+
   // Obtener ajuste y validar estado
   const { data: adjustment, error: adjustmentError } = await supabase
     .from('contribution_adjustments')
@@ -485,7 +532,7 @@ export async function updatePendingAdjustment(formData: FormData): Promise<Resul
     .from('household_members')
     .select('role')
     .eq('household_id', adjustment.contributions.household_id)
-    .eq('profile_id', user.id)
+    .eq('profile_id', profileId)
     .single();
 
   if (!membership || membership.role !== 'owner') {
@@ -532,6 +579,12 @@ export async function getPendingAdjustments(): Promise<Result<AdjustmentRow[]>> 
     return fail('Usuario no autenticado');
   }
 
+  // Obtener profile_id del usuario actual
+  const profileId = await getCurrentProfileId(supabase);
+  if (!profileId) {
+    return fail('Perfil de usuario no encontrado');
+  }
+
   // Obtener household_id activo del usuario
   const householdId = await import('@/lib/supabaseServer').then(m => m.getUserHouseholdId());
   if (!householdId) {
@@ -543,7 +596,7 @@ export async function getPendingAdjustments(): Promise<Result<AdjustmentRow[]>> 
     .from('household_members')
     .select('role')
     .eq('household_id', householdId)
-    .eq('profile_id', user.id)
+    .eq('profile_id', profileId)
     .single();
 
   if (!membership || membership.role !== 'owner') {
