@@ -66,13 +66,31 @@ export async function setMemberIncome(formData: FormData): Promise<Result> {
   }
 
   const supabase = await supabaseServer();
-  // @ts-ignore - Supabase type inference issue
-  const { error } = await supabase.from('member_incomes').insert(parsed.data);
+  
+  // Convertir fecha a string ISO para Supabase
+  const effective_from_str: string = parsed.data.effective_from.toISOString().split('T')[0]!;
+  
+  const incomeData: {
+    household_id: string;
+    profile_id: string;
+    monthly_income: number;
+    effective_from: string;
+  } = {
+    household_id: parsed.data.household_id,
+    profile_id: parsed.data.profile_id,
+    monthly_income: parsed.data.monthly_income,
+    effective_from: effective_from_str,
+  };
+  
+  // Usar UPSERT para actualizar si ya existe o crear si no existe
+  const { error } = await supabase
+    .from('member_incomes')
+    .upsert(incomeData, {
+      onConflict: 'household_id,profile_id,effective_from',
+      ignoreDuplicates: false,
+    });
 
   if (error) {
-    if (error.code === '23505') {
-      return fail('Ya existe un ingreso para esta fecha');
-    }
     return fail(error.message);
   }
 
@@ -574,9 +592,10 @@ export async function createPrePayment(formData: FormData): Promise<Result> {
     });
 
   if (prePaymentError) {
+    console.error('Pre-payment insert error:', prePaymentError);
     // Rollback: eliminar el movimiento si falla el pre-pago
     await supabase.from('transactions').delete().eq('id', movement.id);
-    return fail('Error al crear el pre-pago');
+    return fail(`Error al crear el pre-pago: ${prePaymentError.message}`);
   }
 
   // El trigger automáticamente actualizará contribution.pre_payment_amount
