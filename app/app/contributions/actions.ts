@@ -419,6 +419,87 @@ export async function addContributionAdjustment(
 
   if (!profile) return fail('Usuario no encontrado');
 
+  // Obtener datos de la contribución para saber household_id y profile_id del miembro
+  const { data: contribution, error: contributionError } = await supabase
+    .from('contributions')
+    .select('household_id, profile_id, year, month')
+    .eq('id', parsed.data.contribution_id)
+    .single();
+
+  if (contributionError || !contribution) return fail('Contribución no encontrada');
+
+  // Obtener email del miembro para la descripción
+  const { data: memberProfile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', contribution.profile_id)
+    .single();
+
+  const memberEmail = memberProfile?.email || 'Miembro desconocido';
+
+  let movementId: string | null = parsed.data.movement_id || null;
+  let incomeMovementId: string | null = null;
+
+  // Si es un prepayment con monto negativo y tiene categoría, crear movimientos automáticamente
+  const isPrepayment = parsed.data.type === 'prepayment';
+  const isNegativeAmount = parsed.data.amount < 0;
+  const hasCategory = parsed.data.category_id && parsed.data.category_id !== '';
+
+  if (isPrepayment && isNegativeAmount && hasCategory) {
+    const absoluteAmount = Math.abs(parsed.data.amount);
+    const today = new Date().toISOString().substring(0, 10);
+
+    // 1. Crear movimiento de GASTO (el gasto real que hizo el miembro)
+    const expenseData: MovementInsert = {
+      household_id: contribution.household_id,
+      profile_id: contribution.profile_id,
+      category_id: parsed.data.category_id,
+      type: 'expense',
+      amount: absoluteAmount,
+      currency: 'EUR',
+      description: `${parsed.data.reason} [Pre-pago]`,
+      occurred_at: today,
+    };
+
+    const { data: expenseMovement, error: expenseError } = await supabase
+      .from('transactions')
+      .insert(expenseData)
+      .select('id')
+      .single();
+
+    if (expenseError || !expenseMovement) {
+      return fail('Error al crear movimiento de gasto: ' + (expenseError?.message || 'desconocido'));
+    }
+
+    movementId = expenseMovement.id;
+
+    // 2. Crear movimiento de INGRESO virtual (el aporte que representa ese gasto)
+    const incomeData: MovementInsert = {
+      household_id: contribution.household_id,
+      profile_id: contribution.profile_id,
+      category_id: null, // Los ingresos virtuales no tienen categoría
+      type: 'income',
+      amount: absoluteAmount,
+      currency: 'EUR',
+      description: `Aporte virtual ${contribution.month}/${contribution.year} - ${memberEmail} [Ajuste: ${parsed.data.reason}]`,
+      occurred_at: today,
+    };
+
+    const { data: incomeMovement, error: incomeError } = await supabase
+      .from('transactions')
+      .insert(incomeData)
+      .select('id')
+      .single();
+
+    if (incomeError || !incomeMovement) {
+      // Si falla el ingreso, eliminar el gasto creado
+      await supabase.from('transactions').delete().eq('id', movementId);
+      return fail('Error al crear movimiento de ingreso virtual: ' + (incomeError?.message || 'desconocido'));
+    }
+
+    incomeMovementId = incomeMovement.id;
+  }
+
   // @ts-ignore - Supabase type inference issue
   const { error } = await supabase.from('contribution_adjustments').insert({
     contribution_id: parsed.data.contribution_id,
@@ -426,11 +507,16 @@ export async function addContributionAdjustment(
     type: parsed.data.type,
     reason: parsed.data.reason,
     category_id: parsed.data.category_id || null,
-    movement_id: parsed.data.movement_id || null,
-    created_by: profile.id, // Ahora usamos profile.id en vez de user.id
+    movement_id: movementId,
+    created_by: profile.id,
   });
 
-  if (error) return fail(error.message);
+  if (error) {
+    // Si falla la inserción del ajuste, eliminar los movimientos creados
+    if (movementId) await supabase.from('transactions').delete().eq('id', movementId);
+    if (incomeMovementId) await supabase.from('transactions').delete().eq('id', incomeMovementId);
+    return fail(error.message);
+  }
 
   // El trigger update_contribution_adjustments_total() actualizará automáticamente:
   // - contributions.adjustments_total
@@ -438,6 +524,8 @@ export async function addContributionAdjustment(
   // - contributions.updated_at
 
   revalidatePath('/app/contributions');
+  revalidatePath('/app');
+  revalidatePath('/app/expenses');
   return ok();
 }
 

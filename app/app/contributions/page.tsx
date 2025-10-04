@@ -106,33 +106,23 @@ export default async function ContributionsPage() {
     membersWithIncomes.find((m) => m.profile_id === currentProfileId)?.income || 0;
   const currentUserContribution = contributionsMap.get(currentProfileId) || null;
 
-  // Calcular total pagado
-  // Total pagado = suma de paid_amount de cada miembro
-  // Para mostrar dinero realmente recaudado/gastado, necesitamos también los ajustes con movimiento
-  // PERO: expected_amount ya incluye adjustments_total, así que solo sumamos paid_amount
-  // Para obtener el "efectivamente contribuido al hogar", debemos considerar:
-  // - Lo que pasó por el fondo (paid_amount)
-  // - Los gastos directos que tienen movimiento (ajustes negativos con movement_id)
-  
-  // Primero obtenemos todos los ajustes que tienen movimiento vinculado
-  const { data: adjustmentsWithMovement } = await supabase
-    .from('contribution_adjustments')
-    .select('amount, contribution_id')
-    .in('contribution_id', (contributions || []).map(c => c.id))
-    .not('movement_id', 'is', null);
+  // Calcular total pagado del mes actual
+  // Obtener todos los ingresos del mes (incluye pagos al fondo + aportes virtuales de pre-pagos)
+  const startDate = new Date(currentYear, currentMonth - 1, 1).toISOString().substring(0, 10);
+  const endDate = new Date(currentYear, currentMonth, 0).toISOString().substring(0, 10);
 
-  // Calcular total de ajustes negativos con movimiento (gastos directos ya realizados)
-  const directExpenses = (adjustmentsWithMovement || [])
-    .filter(adj => adj.amount < 0)
-    .reduce((sum, adj) => sum + Math.abs(adj.amount), 0);
+  const { data: monthlyIncomes } = await supabase
+    .from('transactions')
+    .select('amount')
+    .eq('household_id', householdId)
+    .eq('type', 'income')
+    .gte('occurred_at', startDate)
+    .lte('occurred_at', endDate);
 
-  const totalPaid = (contributions || []).reduce((sum, c) => {
-    return sum + (c.paid_amount || 0);
-  }, 0) + directExpenses;
+  const totalPaid = (monthlyIncomes || []).reduce((sum, income) => sum + income.amount, 0);
 
-  console.log('[DEBUG] Direct Expenses (pre-payments):', directExpenses);
-  console.log('[DEBUG] Total Paid from fund:', totalPaid - directExpenses);
-  console.log('[DEBUG] Total Paid (including direct):', totalPaid, 'Monthly Goal:', monthlyGoal);
+  console.log('[DEBUG] Monthly Incomes:', monthlyIncomes?.length || 0, 'transactions');
+  console.log('[DEBUG] Total Paid (all incomes):', totalPaid, 'Monthly Goal:', monthlyGoal);
 
   // Verificar si el usuario es owner
   const isOwner = membersWithIncomes.find((m) => m.profile_id === currentProfileId)?.role === 'owner';
