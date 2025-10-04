@@ -45,6 +45,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
   const [isRejecting, setIsRejecting] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Formulario de aprobación
   const [expenseCategoryId, setExpenseCategoryId] = useState<string>('');
@@ -122,15 +123,21 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
     setShowRejectDialog(true);
   };
 
-  // Aprobar pre-pago
-  const handleApprove = async () => {
-    if (!selectedAdjustment) return;
-    
+  // Aprobar pre-pago (handler del botón principal)
+  const handleApproveClick = () => {
     if (!expenseCategoryId || !expenseDescription || !incomeDescription) {
       toast.error('Todos los campos son requeridos');
       return;
     }
+    // Mostrar diálogo de confirmación
+    setShowConfirmDialog(true);
+  };
 
+  // Confirmar aprobación (después de la confirmación)
+  const handleConfirmApprove = async () => {
+    if (!selectedAdjustment) return;
+
+    setShowConfirmDialog(false);
     setIsApproving(true);
     
     const formData = new FormData();
@@ -142,9 +149,19 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
     const result = await approvePrepayment(formData);
     
     if (result.ok) {
-      toast.success('Pre-pago aprobado correctamente');
+      toast.success('✅ Pre-pago aprobado', {
+        description: 'Los movimientos se han creado y la contribución se ha actualizado',
+        duration: 5000,
+      });
       setShowApproveDialog(false);
-      loadPendingAdjustments(); // Recargar lista
+      
+      // Update optimista: eliminar el ajuste de la lista inmediatamente
+      setPendingAdjustments((prev) => 
+        prev.filter((item) => item.adjustment.id !== selectedAdjustment.adjustment.id)
+      );
+      
+      // Recargar en background para sincronizar
+      setTimeout(() => loadPendingAdjustments(), 1000);
     } else {
       toast.error('message' in result ? result.message : 'Error al aprobar pre-pago');
     }
@@ -170,9 +187,19 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
     const result = await rejectPrepayment(formData);
     
     if (result.ok) {
-      toast.success('Pre-pago rechazado');
+      toast.success('❌ Pre-pago rechazado', {
+        description: `Se ha notificado a ${selectedAdjustment.member.display_name || selectedAdjustment.member.email}`,
+        duration: 5000,
+      });
       setShowRejectDialog(false);
-      loadPendingAdjustments(); // Recargar lista
+      
+      // Update optimista: eliminar el ajuste de la lista inmediatamente
+      setPendingAdjustments((prev) => 
+        prev.filter((item) => item.adjustment.id !== selectedAdjustment.adjustment.id)
+      );
+      
+      // Recargar en background para sincronizar
+      setTimeout(() => loadPendingAdjustments(), 1000);
     } else {
       toast.error('message' in result ? result.message : 'Error al rechazar pre-pago');
     }
@@ -320,6 +347,24 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                 </p>
               </div>
 
+              {/* Preview del impacto en contribución */}
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  📊 Impacto en la Contribución
+                </p>
+                <div className="space-y-1 text-sm">
+                  <p className="text-blue-800 dark:text-blue-200">
+                    ✅ El <strong>paid_amount</strong> aumentará en {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                  </p>
+                  <p className="text-blue-800 dark:text-blue-200">
+                    💰 Esto cuenta como pago hacia la contribución del mes {selectedAdjustment.contribution.month}/{selectedAdjustment.contribution.year}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
+                    El estado de la contribución se actualizará automáticamente después de aprobar
+                  </p>
+                </div>
+              </div>
+
               <div className="border-t pt-4 space-y-4">
                 <p className="font-medium">Movimientos que se crearán:</p>
 
@@ -399,7 +444,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
               Cancelar
             </Button>
             <Button
-              onClick={handleApprove}
+              onClick={handleApproveClick}
               disabled={isApproving || !expenseCategoryId || !expenseDescription || !incomeDescription}
             >
               {isApproving ? (
@@ -410,7 +455,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Aprobar y Crear Movimientos
+                  Revisar y Aprobar
                 </>
               )}
             </Button>
@@ -477,6 +522,73 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                 <>
                   <XCircle className="h-4 w-4 mr-2" />
                   Rechazar Pre-pago
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmación Final */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-500" />
+              Confirmar Aprobación
+            </DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que quieres aprobar este pre-pago?
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedAdjustment && (
+            <div className="space-y-3">
+              <div className="p-3 bg-muted rounded-lg space-y-1">
+                <p className="text-sm">
+                  <strong>Miembro:</strong> {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
+                </p>
+                <p className="text-sm">
+                  <strong>Monto:</strong> {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                </p>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <p className="font-medium">✅ Se crearán los siguientes movimientos:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
+                  <li>Gasto de {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}</li>
+                  <li>Ingreso virtual de {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}</li>
+                </ul>
+                <p className="font-medium mt-3">📊 Impacto:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
+                  <li>La contribución del miembro se actualizará automáticamente</li>
+                  <li>Esta acción no se puede deshacer fácilmente</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+              disabled={isApproving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmApprove}
+              disabled={isApproving}
+            >
+              {isApproving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Aprobando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Sí, Aprobar
                 </>
               )}
             </Button>

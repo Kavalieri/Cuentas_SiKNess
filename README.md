@@ -21,12 +21,54 @@ Aplicación web minimalista para gestionar gastos e ingresos compartidos en pare
 ### Sistema de Contribuciones ⭐ NEW
 - ✅ **UI Simplificada**: Vista única en lugar de 3 pestañas
 - ✅ **Tipos de Cálculo**: Proporcional, Partes Iguales, Personalizado
-- ✅ **Ajustes con Movimientos Duales**: Pre-pagos crean automáticamente gasto + ingreso virtual ⭐ NEW
-- ✅ **Eliminación Inteligente**: Limpieza automática de ajustes y movimientos relacionados ⭐ NEW
 - ✅ **Pagos Flexibles**: Parciales, completos o sobrepagos
 - ✅ **Auto-creación de Movimientos**: Los pagos crean movimientos de ingreso automáticamente
 - ✅ **Estados de Pago**: pending, partial, paid, overpaid
-- ✅ **Balance Correcto**: Total recaudado incluye pre-pagos + pagos al fondo ⭐ NEW
+- ✅ **Balance Correcto**: Total recaudado incluye pre-pagos + pagos al fondo
+
+### Sistema de Ajustes con Aprobación ⭐⭐ NEW (Oct 2025)
+
+Sistema completo de gestión de contribuciones con workflow de aprobación:
+
+**Flujo de Pre-pagos**:
+1. **Solicitud (Miembro)**: Miembro crea solicitud de pre-pago desde QuickActions
+   - Selecciona categoría de gasto (ej. "Supermercado")
+   - Indica monto y descripción
+   - Estado inicial: `pending`
+2. **Review (Owner)**: Owner ve solicitud en Panel de Aprobaciones
+   - Preview detallado del impacto en contribución (bloque azul)
+   - Puede editar categoría y descripciones antes de aprobar
+3. **Confirmación (Owner)**: Dialog de confirmación final
+   - Resumen del ajuste (miembro, monto, mes/año)
+   - Lista de movimientos que se crearán
+   - Advertencia: "Esta acción no se puede deshacer fácilmente"
+4. **Aprobación/Rechazo**:
+   - ✅ **Aprobar**: Crea 2 movimientos automáticamente + actualiza `paid_amount`
+   - ❌ **Rechazar**: Cambia estado a `rejected` + notifica al miembro
+5. **Update Optimista**: UI se actualiza inmediatamente sin recarga completa
+
+**Funcionalidades Clave**:
+- ✅ **Pre-pagos con Validación**: Los miembros solicitan, los owners aprueban
+- ✅ **Estados de Ajustes**: `pending` → `approved` / `rejected` con trazabilidad completa
+- ✅ **Movimientos Duales Automáticos**: Pre-pagos aprobados crean:
+  * Movimiento de gasto en la categoría seleccionada
+  * Movimiento de ingreso virtual representando el aporte del miembro
+- ✅ **Panel de Aprobaciones**: Interface dedicada para owners con contador de pendientes
+- ✅ **Edición Pre-aprobación**: Owners pueden modificar categoría y descripciones
+- ✅ **Confirmación de Seguridad**: Diálogo de dos pasos antes de aprobar
+- ✅ **Preview de Impacto**: Muestra cómo aumentará `paid_amount` y afectará al mes/año
+- ✅ **Ingresos Extra**: Aportes voluntarios con aprobación automática (no requieren owner)
+- ✅ **Updates Optimistas**: UI se actualiza inmediatamente, recarga en background después de 1s
+- ✅ **Notificaciones Mejoradas**: Toasts con descripciones y duración 5000ms
+- ✅ **Eliminación Inteligente**: Al eliminar ajuste → elimina automáticamente movimientos relacionados
+
+**Archivos del Sistema**:
+- Migration: `supabase/migrations/20251004_restructure_adjustments_approval_system.sql`
+- Server Actions: `app/app/contributions/adjustment-actions.ts` (565 líneas)
+- Panel Aprobaciones: `app/app/contributions/components/PendingApprovalsPanel.tsx` (597 líneas)
+- Formularios: `app/app/contributions/components/QuickActions.tsx` (411 líneas)
+- Testing Checklist: `docs/TESTING_CHECKLIST_ADJUSTMENTS.md` (570+ líneas)
+- Documentación: `docs/ADJUSTMENTS_REDESIGN.md`
 
 ### Privacy & UX ⭐ NEW
 - ✅ **Privacy Mode**: Ocultar cantidades en lugares públicos con toggle Eye/EyeOff
@@ -212,8 +254,7 @@ La aplicación usa **magic links** de Supabase. Los usuarios reciben un enlace p
 - **member_incomes**: Historial de ingresos mensuales por miembro
 - **household_settings**: Meta de contribución mensual + tipo de cálculo
 - **contributions**: Contribuciones calculadas y rastreadas por miembro/mes
-- **contribution_adjustments**: Ajustes manuales a contribuciones
-- **pre_payments**: Pre-pagos registrados antes del ciclo de contribución ⭐ NEW
+- **contribution_adjustments**: Ajustes con sistema de aprobación (pending/approved/rejected) ⭐⭐ NEW
 
 #### Sistema de Múltiples Hogares ⭐ NEW
 - **user_settings**: Configuración del usuario (active_household_id, preferences)

@@ -95,12 +95,16 @@ export function QuickActions({
     if (result.ok) {
       toast.success('✅ Solicitud de pre-pago enviada', {
         description: 'Un owner debe aprobarla para que se registre en el sistema',
+        duration: 5000,
       });
       setShowPrepaymentDialog(false);
       resetPrepaymentForm();
       
-      // Recargar página para ver el ajuste pending
-      window.location.reload();
+      // Mostrar mensaje de espera antes de recargar
+      setTimeout(() => {
+        toast.info('🔄 Actualizando...', { duration: 2000 });
+        window.location.reload();
+      }, 1000);
     } else {
       toast.error('message' in result ? result.message : 'Error al crear solicitud');
     }
@@ -135,12 +139,18 @@ export function QuickActions({
     const result = await recordExtraIncome(formData);
 
     if (result.ok) {
-      toast.success('✅ Ingreso extra registrado correctamente');
+      toast.success('✅ Ingreso extra registrado correctamente', {
+        description: 'Tu contribución se ha actualizado automáticamente',
+        duration: 5000,
+      });
       setShowExtraIncomeDialog(false);
       resetExtraIncomeForm();
       
-      // Recargar página para ver el ajuste
-      window.location.reload();
+      // Mostrar mensaje de espera antes de recargar
+      setTimeout(() => {
+        toast.info('🔄 Actualizando...', { duration: 2000 });
+        window.location.reload();
+      }, 1000);
     } else {
       toast.error('message' in result ? result.message : 'Error al registrar ingreso extra');
     }
