@@ -67,6 +67,11 @@ export function HeroContribution({
   // expected_amount YA incluye adjustments_total (calculado en el trigger)
   const remainingToPay = contribution.expected_amount - (contribution.paid_amount || 0);
 
+  // DEBUG: Forzar recálculo del status localmente si los datos del servidor están incorrectos
+  const actualStatus = remainingToPay > 0 ? 'pending' : remainingToPay < 0 ? 'overpaid' : 'paid';
+  const actualIsPending = actualStatus === 'pending' || contribution.status === 'partial';
+  const actualIsOverpaid = actualStatus === 'overpaid';
+
   const handleRecordPayment = async () => {
     let amountToRecord: number;
 
@@ -99,13 +104,13 @@ export function HeroContribution({
         <CardTitle className="text-2xl flex items-center justify-between">
           <span>🎯 Tu Contribución Este Mes</span>
           <Badge
-            variant={isPaid ? 'default' : 'secondary'}
-            className={`text-sm ${isOverpaid ? 'bg-green-600 hover:bg-green-700' : ''}`}
+            variant={actualIsOverpaid || (!actualIsPending && remainingToPay <= 0) ? 'default' : 'secondary'}
+            className={`text-sm ${actualIsOverpaid ? 'bg-green-600 hover:bg-green-700' : ''}`}
           >
-            {isPaid ? (
+            {!actualIsPending && remainingToPay <= 0 ? (
               <>
                 <CheckCircle2 className="mr-1 h-4 w-4" />
-                {isOverpaid ? 'Aporte Extra' : 'Pagado'}
+                {actualIsOverpaid ? 'Aporte Extra' : 'Pagado'}
               </>
             ) : (
               <>
@@ -202,7 +207,7 @@ export function HeroContribution({
         </div>
 
         {/* Estado pagado */}
-        {isPaid && !isOverpaid && (
+        {!actualIsOverpaid && !actualIsPending && (
           <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
             <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
@@ -212,7 +217,7 @@ export function HeroContribution({
         )}
 
         {/* Estado sobrepagado */}
-        {isOverpaid && (
+        {actualIsOverpaid && (
           <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
             <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
@@ -222,7 +227,7 @@ export function HeroContribution({
         )}
 
         {/* Formulario de pago */}
-        {isPending && remainingToPay > 0 && (
+        {actualIsPending && remainingToPay > 0 && (
           <div className="space-y-4 pt-2">
             <div className="space-y-3">
               <Label className="text-sm font-medium">Opciones de pago:</Label>
