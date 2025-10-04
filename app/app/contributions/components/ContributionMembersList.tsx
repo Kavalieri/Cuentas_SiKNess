@@ -139,7 +139,7 @@ export function ContributionMembersList({
                       </div>
                     )}
 
-                    <div className="flex justify-between text-sm font-semibold pt-1 border-t">
+                    <div className="flex justify-between text-base font-bold pt-2 border-t">
                       <span>Total esperado:</span>
                       <span>
                         {formatCurrency(contribution.expected_amount, currency)}
@@ -156,18 +156,18 @@ export function ContributionMembersList({
                     )}
 
                     {remainingAmount > 0 && (
-                      <div className="flex justify-between text-sm pt-1 border-t">
-                        <span className="text-muted-foreground font-medium">Pendiente:</span>
-                        <span className="font-bold text-orange-600 dark:text-orange-400">
+                      <div className="flex justify-between text-base font-bold pt-2 border-t text-orange-600 dark:text-orange-400">
+                        <span>Pendiente:</span>
+                        <span>
                           {formatCurrency(remainingAmount, currency)}
                         </span>
                       </div>
                     )}
 
                     {remainingAmount < 0 && (
-                      <div className="flex justify-between text-sm pt-1 border-t">
-                        <span className="text-muted-foreground font-medium">Aporte extra:</span>
-                        <span className="font-bold text-green-600 dark:text-green-400">
+                      <div className="flex justify-between text-base font-bold pt-2 border-t text-green-600 dark:text-green-400">
+                        <span>Aporte extra:</span>
+                        <span>
                           +{formatCurrency(Math.abs(remainingAmount), currency)}
                         </span>
                       </div>
