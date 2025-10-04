@@ -453,6 +453,45 @@ export async function getContributionAdjustments(contributionId: string) {
   return data || [];
 }
 
+export async function getHouseholdAdjustments(
+  householdId: string,
+  year: number,
+  month: number
+) {
+  const supabase = await supabaseServer();
+
+  // Obtener todas las contribuciones del hogar para el mes
+  const { data: contributions } = await supabase
+    .from('contributions')
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('year', year)
+    .eq('month', month);
+
+  if (!contributions || contributions.length === 0) return [];
+
+  const contributionIds = contributions.map((c) => c.id);
+
+  // Obtener todos los ajustes de esas contribuciones
+  const { data, error } = await supabase
+    .from('contribution_adjustments')
+    .select(
+      `
+      *,
+      contribution:contributions(id, profile_id, profiles(id, email)),
+      category:categories(id, name, icon),
+      movement:transactions(id, description, amount, occurred_at),
+      creator:profiles(id, email)
+    `
+    )
+    .in('contribution_id', contributionIds)
+    .order('created_at', { ascending: false });
+
+  if (error) return [];
+  // @ts-ignore - Supabase type inference issue
+  return data || [];
+}
+
 export async function deleteContributionAdjustment(adjustmentId: string): Promise<Result> {
   const supabase = await supabaseServer();
 

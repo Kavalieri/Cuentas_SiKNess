@@ -73,6 +73,7 @@ export function ContributionsContent({
       <ContributionAdjustmentsSection
         contributionId={currentUserContribution?.id || null}
         householdId={householdId}
+        members={membersWithIncomes}
         categories={categories}
         currentMonth={currentMonth}
         currentYear={currentYear}

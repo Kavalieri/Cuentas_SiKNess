@@ -113,15 +113,20 @@ export function ContributionMembersList({
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Contribución base:</span>
                       <span className="font-semibold">
-                        {formatCurrency(contribution.expected_amount, currency)}
+                        {formatCurrency(contribution.expected_amount - (contribution.adjustments_total || 0), currency)}
                       </span>
+                    </div>
+                    
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Porcentaje:</span>
+                      <span className="font-semibold">{percentage.toFixed(1)}%</span>
                     </div>
                     
                     {hasAdjustments && (
                       <div className={`flex justify-between text-sm ${
                         (contribution.adjustments_total || 0) < 0 
                           ? 'text-green-600 dark:text-green-400' 
-                          : 'text-orange-600 dark:text-orange-400'
+                          : 'text-red-600 dark:text-red-400'
                       }`}>
                         <span className="flex items-center gap-1">
                           <TrendingDown className="h-3 w-3" />
@@ -134,9 +139,11 @@ export function ContributionMembersList({
                       </div>
                     )}
 
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Porcentaje:</span>
-                      <span className="font-semibold">{percentage.toFixed(1)}%</span>
+                    <div className="flex justify-between text-sm font-semibold pt-1 border-t">
+                      <span>Total esperado:</span>
+                      <span>
+                        {formatCurrency(contribution.expected_amount, currency)}
+                      </span>
                     </div>
                     
                     {contribution.paid_amount > 0 && (

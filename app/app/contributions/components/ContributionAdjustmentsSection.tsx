@@ -29,13 +29,25 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { 
   addContributionAdjustment,
-  getContributionAdjustments,
+  getHouseholdAdjustments,
   deleteContributionAdjustment
 } from '@/app/app/contributions/actions';
 import { formatCurrency, formatDate } from '@/lib/format';
 import type { Database } from '@/types/database';
 
 type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'icon' | 'type'>;
+
+type Member = {
+  profile_id: string;
+  email: string;
+  contribution: {
+    id: string;
+    expected_amount: number;
+    paid_amount: number;
+    adjustments_total: number | null;
+    status: string;
+  } | null;
+};
 
 type AdjustmentType = 'manual' | 'prepayment' | 'bonus' | 'penalty';
 
@@ -50,6 +62,11 @@ type Adjustment = {
   created_at: string;
   updated_at: string;
   created_by: string;
+  contribution?: {
+    id: string;
+    profile_id: string;
+    profiles: { id: string; email: string };
+  } | null;
   category?: { id: string; name: string; icon: string } | null;
   movement?: { id: string; description: string; amount: number; occurred_at: string } | null;
   creator?: { id: string; email: string } | null;
@@ -58,6 +75,7 @@ type Adjustment = {
 interface ContributionAdjustmentsSectionProps {
   contributionId: string | null;
   householdId: string;
+  members: Member[];
   categories: Category[];
   currentMonth: number;
   currentYear: number;
@@ -80,27 +98,29 @@ const ADJUSTMENT_TYPE_ICONS: Record<AdjustmentType, React.ElementType> = {
 
 export function ContributionAdjustmentsSection({
   contributionId,
+  householdId,
+  members,
   categories,
+  currentMonth,
+  currentYear,
   currency = 'EUR',
 }: ContributionAdjustmentsSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
   const [adjustmentType, setAdjustmentType] = useState<AdjustmentType>('manual');
+  const [selectedMemberId, setSelectedMemberId] = useState<string>(contributionId || '');
 
-  // Cargar ajustes cuando el componente se monta o el contributionId cambia
+  // Cargar ajustes del hogar completo para el mes actual
   const loadAdjustments = async () => {
-    if (!contributionId) return;
-    const data = await getContributionAdjustments(contributionId);
+    const data = await getHouseholdAdjustments(householdId, currentYear, currentMonth);
     setAdjustments(data as Adjustment[]);
   };
 
   useEffect(() => {
-    if (contributionId) {
-      loadAdjustments();
-    }
+    loadAdjustments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contributionId]);
+  }, [householdId, currentMonth, currentYear]);
 
   const handleAddAdjustment = async (formData: FormData) => {
     setIsLoading(true);
@@ -160,7 +180,29 @@ export function ContributionAdjustmentsSection({
               </DialogHeader>
 
               <form action={handleAddAdjustment} className="space-y-4">
-                <input type="hidden" name="contribution_id" value={contributionId} />
+                <input type="hidden" name="contribution_id" value={selectedMemberId} />
+
+                {/* Selección de Miembro */}
+                <div className="space-y-2">
+                  <Label htmlFor="member">Miembro</Label>
+                  <Select
+                    value={selectedMemberId}
+                    onValueChange={setSelectedMemberId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un miembro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {members
+                        .filter((m) => m.contribution)
+                        .map((member) => (
+                          <SelectItem key={member.contribution!.id} value={member.contribution!.id}>
+                            {member.email}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {/* Tipo de Ajuste */}
                 <div className="space-y-2">
@@ -248,13 +290,13 @@ export function ContributionAdjustmentsSection({
         {/* Resumen de ajustes */}
         {adjustments.length > 0 && (
           <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-            <span className="text-sm text-muted-foreground">Total de ajustes:</span>
+            <span className="text-sm text-muted-foreground">Total de ajustes del hogar:</span>
             <span
               className={`font-semibold ${
                 totalAdjustments < 0
                   ? 'text-green-600 dark:text-green-400'
                   : totalAdjustments > 0
-                  ? 'text-orange-600 dark:text-orange-400'
+                  ? 'text-red-600 dark:text-red-400'
                   : ''
               }`}
             >
@@ -275,6 +317,7 @@ export function ContributionAdjustmentsSection({
             {adjustments.map((adjustment) => {
               const Icon = ADJUSTMENT_TYPE_ICONS[adjustment.type];
               const isNegative = adjustment.amount < 0;
+              const memberEmail = adjustment.contribution?.profiles?.email || 'Desconocido';
 
               return (
                 <div
@@ -282,7 +325,7 @@ export function ContributionAdjustmentsSection({
                   className="flex items-start justify-between p-3 border rounded-md hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                       <Badge variant={isNegative ? 'default' : 'secondary'}>
                         {ADJUSTMENT_TYPE_LABELS[adjustment.type]}
@@ -291,11 +334,14 @@ export function ContributionAdjustmentsSection({
                         className={`font-semibold ${
                           isNegative
                             ? 'text-green-600 dark:text-green-400'
-                            : 'text-orange-600 dark:text-orange-400'
+                            : 'text-red-600 dark:text-red-400'
                         }`}
                       >
                         {isNegative ? '' : '+'}
                         {formatCurrency(adjustment.amount, currency)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        • {memberEmail}
                       </span>
                     </div>
 
@@ -312,7 +358,7 @@ export function ContributionAdjustmentsSection({
                       {adjustment.creator && (
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          {adjustment.creator.email}
+                          Creado por: {adjustment.creator.email}
                         </div>
                       )}
                       <div className="flex items-center gap-1">
