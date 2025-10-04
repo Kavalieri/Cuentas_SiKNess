@@ -2,6 +2,7 @@ import { HeroContribution } from './HeroContribution';
 import { HouseholdSummary } from './HouseholdSummary';
 import { ContributionMembersList } from './ContributionMembersList';
 import { ConfigurationSection } from './ConfigurationSection';
+import { ContributionAdjustmentsSection } from './ContributionAdjustmentsSection';
 import type { Database } from '@/types/database';
 import type { CalculationType } from '@/lib/contributionTypes';
 
@@ -45,6 +46,9 @@ export function ContributionsContent({
   calculationType,
   currency,
   isOwner,
+  categories,
+  currentMonth,
+  currentYear,
 }: ContributionsContentProps) {
   return (
     <div className="space-y-6">
@@ -65,7 +69,15 @@ export function ContributionsContent({
         currency={currency}
       />
 
-      {/* TODO: Agregar ContributionAdjustmentsSection aquí con categories, currentMonth, currentYear */}
+      {/* Ajustes de contribución */}
+      <ContributionAdjustmentsSection
+        contributionId={currentUserContribution?.id || null}
+        householdId={householdId}
+        categories={categories}
+        currentMonth={currentMonth}
+        currentYear={currentYear}
+        currency={currency}
+      />
 
       {/* Lista de miembros */}
       <ContributionMembersList

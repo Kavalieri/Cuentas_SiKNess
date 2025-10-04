@@ -453,6 +453,23 @@ export async function getContributionAdjustments(contributionId: string) {
   return data || [];
 }
 
+export async function deleteContributionAdjustment(adjustmentId: string): Promise<Result> {
+  const supabase = await supabaseServer();
+
+  const { error } = await supabase
+    .from('contribution_adjustments')
+    .delete()
+    .eq('id', adjustmentId);
+
+  if (error) return fail(error.message);
+
+  // El trigger update_contribution_adjustments_total() actualizará automáticamente
+  // el total de ajustes y el monto esperado de la contribución
+
+  revalidatePath('/app/contributions');
+  return ok();
+}
+
 // =====================================================
 // Dashboard de Contribuciones
 // =====================================================
