@@ -46,11 +46,22 @@ export async function isOwner(): Promise<boolean> {
     return false;
   }
 
-  // Verificar rol en household_members
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    return false;
+  }
+
+  // Verificar rol en household_members usando profile_id
   const { data, error } = await supabase
     .from('household_members')
     .select('role')
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .single();
 
   if (error || !data) {
@@ -75,10 +86,22 @@ export async function getCurrentHouseholdId(): Promise<string | null> {
     return null;
   }
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    return null;
+  }
+
+  // Buscar household usando profile_id
   const { data, error } = await supabase
     .from('household_members')
     .select('household_id')
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .single();
 
   if (error || !data) {
@@ -93,6 +116,7 @@ export async function getCurrentHouseholdId(): Promise<string | null> {
  */
 export async function getCurrentUserMembership(): Promise<{
   userId: string;
+  profileId: string;
   householdId: string;
   role: 'owner' | 'member';
 } | null> {
@@ -106,10 +130,22 @@ export async function getCurrentUserMembership(): Promise<{
     return null;
   }
 
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    return null;
+  }
+
+  // Buscar membership usando profile_id
   const { data, error } = await supabase
     .from('household_members')
     .select('household_id, role')
-    .eq('user_id', user.id)
+    .eq('profile_id', profile.id)
     .single();
 
   if (error || !data) {
@@ -118,6 +154,7 @@ export async function getCurrentUserMembership(): Promise<{
 
   return {
     userId: user.id,
+    profileId: profile.id,
     householdId: data.household_id,
     role: data.role as 'owner' | 'member',
   };
