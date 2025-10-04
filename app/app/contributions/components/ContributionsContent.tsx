@@ -23,7 +23,6 @@ type Member = {
 
 interface ContributionsContentProps {
   householdId: string;
-  userId: string;
   userEmail: string;
   currentUserIncome: number;
   currentUserContribution: Contribution | null;
@@ -42,7 +41,6 @@ interface ContributionsContentProps {
 
 export function ContributionsContent({
   householdId,
-  userId,
   userEmail,
   currentUserIncome,
   currentUserContribution,

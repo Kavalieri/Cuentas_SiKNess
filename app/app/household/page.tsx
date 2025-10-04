@@ -165,7 +165,6 @@ export default async function HouseholdPage() {
         <TabsContent value="contributions" className="space-y-6 mt-6">
           <ContributionsContent
             householdId={householdId}
-            userId={user.id}
             userEmail={user.email || ''}
             currentUserIncome={currentUserIncome}
             currentUserContribution={currentUserContribution}

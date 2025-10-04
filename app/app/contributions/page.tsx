@@ -137,7 +137,6 @@ export default async function ContributionsPage() {
 
       <ContributionsContent
         householdId={householdId}
-        userId={user.id}
         userEmail={user.email || ''}
         currentUserIncome={currentUserIncome}
         currentUserContribution={currentUserContribution}
