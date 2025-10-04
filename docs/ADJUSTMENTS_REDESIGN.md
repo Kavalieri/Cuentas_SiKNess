@@ -1,7 +1,7 @@
 # Sistema de Ajustes - Rediseño Completo
 
-**Fecha**: 2025-10-04  
-**Estado**: 🚧 En Implementación
+**Fecha**: 2025-10-04 (inicio) → 2025-10-05 (completado MVP)  
+**Estado**: ✅ **Completado y Desplegado** (listo para testing en producción)
 
 ## 🎯 Objetivo
 
@@ -465,21 +465,44 @@ export async function updatePendingAdjustment(
 - [x] `getPendingAdjustments()` - Helper para obtener lista de pending (owner)
 - [x] Schemas Zod actualizados
 
-### **Fase 3: Componentes UI** ⏳ EN PROGRESO
-- [ ] `<ContributionProgress />` - Barra de progreso con stats
-- [ ] `<QuickActions />` - Botones de ingreso extra y pre-pago
-- [ ] `<AdjustmentsHistory />` - Lista con badges de estado
-- [ ] `<PendingApprovalsList />` - Lista de ajustes pending (owner)
-- [ ] `<ApprovalDialog />` - Formulario de revisión con edición
-- [ ] `<RejectionDialog />` - Formulario de rechazo con razón
+### **Fase 3: Componentes UI** ✅ COMPLETADO
+- [x] `<PendingApprovalsPanel />` - Panel de aprobaciones con lista de pending (owner only)
+  - Lista completa de ajustes pendientes con detalles
+  - Modal de aprobación con edición de categoría y descripciones
+  - Preview de los 2 movimientos que se crearán
+  - Modal de rechazo con razón obligatoria
+  - Recarga automática tras aprobar/rechazar
+- [x] `<QuickActions />` - Formularios para miembros
+  - Botón "Registrar Pre-pago" con formulario completo
+  - Botón "Registrar Ingreso Extra" (solo si `hasMetGoal`)
+  - Validaciones y info boxes explicando cada flujo
+  - Recarga automática tras crear solicitud
+- [x] `<ContributionsContent />` - Actualizado a Client Component
+  - Integración de PendingApprovalsPanel (condicional para owners)
+  - Integración de QuickActions (reemplazo de ContributionAdjustmentsSection)
+  - Props limpiadas (eliminados currentMonth/currentYear)
+- [x] Eliminación de componente obsoleto `ContributionAdjustmentsSection.tsx`
 
-### **Fase 4: Integración y Testing** ⏳ PENDIENTE
-- [ ] Reorganizar rutas de contributions
-- [ ] Testing de flujo completo de pre-pagos
+### **Fase 4: Build y Despliegue** ✅ COMPLETADO
+- [x] Corrección de 18+ errores de ESLint/TypeScript
+- [x] Todos los imports convertidos a absolutos (@/...)
+- [x] Eliminación de código no usado (unused imports/vars)
+- [x] Tipos explícitos (sin `any` sin tipar)
+- [x] JSX entities escapadas correctamente
+- [x] Build exitoso sin errores ✅
+- [x] Push a GitHub (commit 4d95292)
+- [x] Despliegue automático en Vercel desbloqueado
+
+### **Fase 5: Testing y Mejoras** ⏳ PENDIENTE
+- [ ] Testing del flujo completo de pre-pagos en producción
+- [ ] Verificar trazabilidad de movimientos duales
 - [ ] Testing de ingresos extra
-- [ ] Verificar trazabilidad de movimientos
 - [ ] Recalculo automático de contribuciones tras aprobación
 - [ ] Sistema de notificaciones (owners → miembros)
+- [ ] Mejoras UX:
+  - [ ] Loading states optimistas
+  - [ ] Confirmación antes de aprobar
+  - [ ] Preview más detallado del impacto en contribución
 - [ ] Documentar en README
 
 ---
@@ -492,14 +515,26 @@ export async function updatePendingAdjustment(
 
 ---
 
-**Última actualización**: 2025-10-04
+**Última actualización**: 2025-10-05
 
-**Estado actual**: Fase 2 completada ✅
+**Estado actual**: Fases 1-4 completadas ✅ | Build exitoso | Listo para testing en producción
 
 **Próximos pasos**: 
-1. Crear componentes UI para dashboard de contribuciones
-2. Panel de aprobaciones para owners
-3. Testing del flujo completo de pre-pagos
-4. Sistema de notificaciones
+1. ✅ ~~Crear componentes UI~~ → COMPLETADO
+2. ✅ ~~Panel de aprobaciones para owners~~ → COMPLETADO  
+3. ✅ ~~Build exitoso~~ → COMPLETADO (commit 4d95292)
+4. ⏳ **Testing del flujo completo en producción**
+5. ⏳ Sistema de notificaciones
+6. ⏳ Optimizaciones UX (loading states, confirmaciones)
 
-**Archivo de Server Actions**: `app/app/contributions/adjustment-actions.ts`
+**Archivos principales**:
+- **Server Actions**: `app/app/contributions/adjustment-actions.ts` (565 líneas)
+- **Panel Aprobaciones**: `app/app/contributions/components/PendingApprovalsPanel.tsx` (478 líneas)
+- **Formularios Miembros**: `app/app/contributions/components/QuickActions.tsx` (415 líneas)
+- **Migración SQL**: `supabase/migrations/20251004_restructure_adjustments_approval_system.sql`
+
+**Commits relacionados**:
+- `fbf9eb0`: feat: sistema de aprobación completo (Fase 1+2)
+- `7979373`: feat: panel de aprobaciones para owners (Fase 3 - Paso 1)
+- `7e1f13e`: feat: formularios de pre-pago e ingreso extra (Fase 3 - Paso 2)
+- `4d95292`: fix: corregir errores de build para despliegue en Vercel (Fase 4)
