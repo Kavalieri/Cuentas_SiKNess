@@ -27,7 +27,6 @@ interface ContributionsContentProps {
   totalIncome: number;
   membersWithIncomes: Member[];
   monthlyGoal: number;
-  totalPaid: number;
   calculationType: CalculationType;
   currency: string;
   isOwner: boolean;
@@ -43,7 +42,6 @@ export function ContributionsContent({
   totalIncome,
   membersWithIncomes,
   monthlyGoal,
-  totalPaid,
   calculationType,
   currency,
   isOwner,

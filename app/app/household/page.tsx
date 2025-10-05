@@ -113,7 +113,6 @@ export default async function HouseholdPage() {
 
   const currentUserIncome = members.find((m) => m.profile_id === currentProfile.id)?.currentIncome || 0;
   const currentUserContribution = contributionsMap.get(currentProfile.id) || null;
-  const totalPaid = (contributions || []).reduce((sum, c) => sum + (c.paid_amount || 0), 0);
 
   // Obtener categorías de gastos para pre-pagos
   const { data: categories } = await supabase
@@ -168,7 +167,6 @@ export default async function HouseholdPage() {
             totalIncome={totalIncome}
             membersWithIncomes={membersWithIncomes}
             monthlyGoal={goalAmount}
-            totalPaid={totalPaid}
             calculationType={calculationType}
             currency={currency}
             isOwner={userIsOwner}

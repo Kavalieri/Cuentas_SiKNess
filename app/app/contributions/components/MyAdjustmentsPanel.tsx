@@ -424,8 +424,8 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                 <p className="text-sm font-medium">Movimientos que se crearán:</p>
 
                 {/* Movimiento 1: Gasto */}
-                <div className="space-y-2 p-3 bg-red-50 rounded-lg">
-                  <Label className="text-sm font-medium">1️⃣ Gasto</Label>
+                <div className="space-y-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <Label className="text-sm font-medium text-destructive">1️⃣ Gasto</Label>
                   <div className="space-y-2">
                     <div>
                       <Label htmlFor="expense-category">Categoría *</Label>
@@ -460,8 +460,8 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                 </div>
 
                 {/* Movimiento 2: Ingreso virtual */}
-                <div className="space-y-2 p-3 bg-green-50 rounded-lg">
-                  <Label className="text-sm font-medium">2️⃣ Ingreso Virtual (Aporte)</Label>
+                <div className="space-y-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <Label className="text-sm font-medium text-green-600 dark:text-green-400">2️⃣ Ingreso Virtual (Aporte)</Label>
                   <div>
                     <Label htmlFor="income-desc">Descripción</Label>
                     <Input

@@ -63,7 +63,7 @@ function LoginForm() {
 
   if (emailSent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Revisa tu correo</CardTitle>
@@ -72,7 +72,7 @@ function LoginForm() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Haz clic en el enlace del correo para acceder a tu cuenta. El enlace es válido
               durante 1 hora.
             </p>

@@ -152,7 +152,6 @@ export default async function ContributionsPage() {
         totalIncome={totalIncome}
         membersWithIncomes={membersWithIncomes}
         monthlyGoal={monthlyGoal}
-        totalPaid={totalPaid}
         calculationType={calculationType}
         currency={currency}
         isOwner={isOwner}
