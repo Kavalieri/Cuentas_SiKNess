@@ -225,28 +225,58 @@ const advisors = await mcp_supabase_get_advisors({
 
 ### Modelo de Datos (Esquema en `db/schema.sql`)
 
-El sistema se basa en **12 tablas principales** con RLS habilitado:
+El sistema se basa en **15 tablas principales** con RLS habilitado:
 
 **Core**:
 1. **`households`**: Hogar compartido. Un usuario puede pertenecer a múltiples hogares.
+   - Columnas nuevas ⭐: `status` (active/archived/deleted), `settings` (JSONB)
 2. **`household_members`**: Relación many-to-many entre usuarios y hogares (con role: owner/member)
 3. **`categories`**: Categorías de gastos/ingresos por hogar (tipo: `expense` | `income`)
-4. **`transactions`** (anteriormente `movements`): Transacciones con tipos expense/income
-   - Incluye movimientos manuales y auto-generados por contribuciones/ajustes
+   - **23 categorías predeterminadas**: 15 gasto + 8 ingreso (creadas por trigger automático)
+4. **`transactions`**: Transacciones con ownership, estados y auditoría completa ⭐ REFACTORIZADO
+   - **Ownership**: `paid_by` (quién pagó realmente)
+   - **Split gastos**: `split_type` (none/equal/proportional/custom), `split_data` (JSONB config)
+   - **Estados**: `status` (draft/pending/confirmed/locked)
+   - **Rastreo origen**: `source_type` (manual/adjustment/recurring/import), `source_id` (UUID)
+   - **Auditoría completa**: `created_by`, `updated_by`, `locked_at`, `locked_by`
+   - **IMPORTANTE**: Transacciones locked (mes cerrado) NO son editables hasta reapertura
 
 **Sistema de Contribuciones** (ver `docs/CONTRIBUTIONS_SYSTEM.md`):
 5. **`member_incomes`**: Ingresos mensuales de cada miembro con historial
 6. **`household_settings`**: Meta de contribución mensual del hogar
 7. **`contributions`**: Contribuciones calculadas y rastreadas por miembro/mes
-8. **`contribution_adjustments`**: Ajustes manuales a contribuciones
-   - **IMPORTANTE**: Ajustes tipo "prepayment" con monto negativo y categoría crean automáticamente 2 movimientos:
-     * Movimiento de gasto (expense) con la categoría seleccionada
-     * Movimiento de ingreso virtual (income) que representa el aporte del miembro
-   - Al eliminar ajuste, se eliminan automáticamente todos los movimientos relacionados
+8. **`contribution_adjustments`**: Ajustes manuales a contribuciones con auditoría ⭐
+   - Estados: `pending`, `active`, `applied`, `cancelled`, `locked`
+   - Auditoría: `created_by`, `updated_by`, `locked_at`, `locked_by`
+   - **IMPORTANTE**: Ajustes locked NO son editables
+
+**Sistema de Períodos Mensuales** ⭐ NEW (ver `docs/IMPLEMENTATION_PLAN.md`):
+9. **`monthly_periods`**: Gestión de cierre mensual con validación secuencial
+   - Estados: `future`, `active`, `closing`, `closed`, `historical`
+   - Validación: Mes anterior debe cerrarse antes de trabajar en siguiente
+   - Columnas: `auto_close_enabled`, `reopened_count`, `closed_at`, `closed_by`, `last_reopened_at/by`
+10. **`period_access_log`**: Auditoría completa de cierres/reaperturas de períodos
+
+**Sistema de Créditos Miembros** ⭐ NEW:
+11. **`member_credits`**: Créditos/débitos con decisión mensual flexible
+   - Estados: `active`, `applied`, `transferred`, `expired`
+   - **Decisión mensual**: `monthly_decision` (apply_to_month | keep_active | transfer_to_savings)
+   - Columnas: `auto_apply` (bool), `transferred_to_savings` (bool), `savings_transaction_id`
+   - Miembro decide al inicio de mes qué hacer con su crédito
+
+**Sistema de Ahorro del Hogar** ⭐ NEW (ver `docs/SESSION_SUMMARY_2025-10-05_SISTEMA_AHORRO.md`):
+12. **`household_savings`**: Fondo de ahorro común con metas opcionales
+   - Balance tracking: `current_balance`, `goal_amount`, `goal_description`, `goal_deadline`
+   - Un solo fondo por household (UNIQUE constraint)
+13. **`savings_transactions`**: Historial completo de movimientos del fondo con trazabilidad profesional
+   - Tipos: `deposit`, `withdrawal`, `transfer_from_credit`, `interest`, `adjustment`
+   - Balance tracking: `balance_before`, `balance_after` (CONSTRAINT validación automática)
+   - Rastreo: `source_profile_id`, `source_credit_id`, `destination_transaction_id`
+   - Categorías opcionales: `emergency`, `vacation`, `home`, `investment`, `other`
 
 **Sistema de Múltiples Hogares** (ver `docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md`):
-9. **`user_settings`**: Configuración del usuario (active_household_id, preferences)
-10. **`invitations`**: Sistema de invitaciones con RLS público para acceso sin login
+14. **`user_settings`**: Configuración del usuario (active_household_id, preferences)
+15. **`invitations`**: Sistema de invitaciones con RLS público para acceso sin login
 
 **Sistema de Historial de Transacciones** ⭐ NEW:
 11. **`transaction_history`**: Auditoría completa de cambios en transacciones
@@ -261,6 +291,80 @@ El sistema se basa en **12 tablas principales** con RLS habilitado:
 - **usePrivateFormat()**: Hook que retorna `formatPrivateCurrency()` (muestra "•••" si hideAmounts activo)
 - **PrivacyToggle**: Botón Eye/EyeOff en header junto a ThemeToggle
 - **Uso**: Ocultar cantidades en lugares públicos con un click
+
+**Punto crítico**: Row Level Security (RLS) está habilitado desde el día 1. Todas las políticas verifican que `auth.uid()` pertenezca al `household_id` del recurso consultado.
+
+### Sistema Refactorizado - 12 Migraciones Aplicadas ⭐ NEW
+
+**Estado**: ✅ 12/12 migraciones aplicadas y verificadas el 5 octubre 2025
+
+El sistema ha sido completamente refactorizado con 12 migraciones SQL que implementan:
+
+1. **`add_transaction_ownership`** (5 oct):
+   - Ownership: `paid_by` (UUID, quién pagó), `split_type` (none/equal/proportional/custom), `split_data` (JSONB)
+   - Estados robustos: `status` (draft/pending/confirmed/locked) con CHECK constraint
+   - Source tracking: `source_type` (manual/adjustment/recurring/import), `source_id` (UUID)
+   - Auditoría: `created_by`, `updated_by`, `locked_at`, `locked_by`
+
+2. **`create_member_credits`** (5 oct):
+   - Tabla completa para créditos/débitos con estado y decisión flexible
+   - Columnas: `amount`, `description`, `origin_date`, `status`, `auto_apply`, `monthly_decision`
+
+3. **`enhance_monthly_periods`** (5 oct):
+   - Mejorado con `auto_close_enabled`, `reopened_count`, `status` (future/active/closing/closed/historical)
+   - Columnas auditoría: `closed_at`, `closed_by`, `last_reopened_at`, `last_reopened_by`
+
+4. **`create_period_access_log`** (5 oct):
+   - Auditoría completa de cierres/reaperturas con usuario y razón
+
+5. **`enhance_contribution_adjustments`** (5 oct):
+   - Agregado `status` (pending/active/applied/cancelled/locked)
+   - Auditoría: `created_by`, `updated_by`, `locked_at`, `locked_by`
+   - Relación con transactions para reajustes
+
+6. **`enhance_households`** (5 oct):
+   - Agregado `status` (active/archived/deleted)
+   - `settings` JSONB para configuración flexible (currency, preferences)
+
+7. **`create_period_functions`** (5 oct):
+   - `ensure_monthly_period(household_id, year, month)`: Crea período si no existe, valida mes anterior cerrado
+   - `close_monthly_period(period_id, closed_by, notes)`: Cierra mes, bloquea transactions/adjustments
+   - `reopen_monthly_period(period_id, reopened_by, reason)`: Reabre mes, incrementa reopened_count
+   - `apply_member_credits(household_id, year, month)`: Aplica créditos activos FIFO
+
+8. **`update_rls_policies`** (5 oct):
+   - RLS mejorado: Transactions/adjustments locked NO editables (solo owners pueden leer)
+   - Policies validación: `status != 'locked'` en UPDATE/DELETE
+
+9. **`create_savings_system`** (5 oct):
+   - `household_savings`: Fondo de ahorro con `current_balance`, `goal_amount`, meta tracking
+   - `savings_transactions`: Historial con `balance_before`, `balance_after`, CONSTRAINT validación
+
+10. **`improve_member_credits_savings`** (5 oct):
+    - `member_credits.monthly_decision` (apply_to_month/keep_active/transfer_to_savings)
+    - `auto_apply` (bool), `transferred_to_savings` (bool), `savings_transaction_id` (relación)
+
+11. **`seed_default_categories`** (5 oct):
+    - Función `create_default_categories(household_id)`: Crea 23 categorías + household_savings
+    - Trigger `on_household_created_create_categories`: Ejecuta automáticamente al INSERT household
+    - **23 categorías**: 15 expense (Vivienda, Supermercado, Transporte, Restaurantes, Ocio, Salud, Educación, Menaje, Ropa, Mascotas, Regalos, Suscripciones, Deportes, Belleza, Varios) + 8 income (Nómina, Freelance, Inversiones, Ventas, Devoluciones, Aportación Cuenta Conjunta, Bonus, Varios)
+
+12. **`create_savings_functions`** (5 oct):
+    - `transfer_credit_to_savings(credit_id, transferred_by, notes)`: Transfiere crédito al fondo (200 LOC)
+    - `withdraw_from_savings(household_id, amount, reason, withdrawn_by, ...)`: Retira con validación balance (150 LOC)
+    - `deposit_to_savings(household_id, amount, profile_id, description, ...)`: Depósito manual (100 LOC)
+
+**Documentación completa**:
+- `docs/MAJOR_REFACTOR_TRANSACTIONS_SYSTEM.md`: Problemas identificados y solución propuesta
+- `docs/IMPLEMENTATION_PLAN.md`: Plan de ejecución con SQL completo de las 12 migraciones
+- `docs/SESSION_SUMMARY_2025-10-05_SISTEMA_AHORRO.md`: Resumen completo de la sesión
+
+**Estado DB**:
+- ✅ 27 columnas nuevas verificadas existentes
+- ✅ 9 funciones SQL verificadas existentes
+- ✅ Trigger `on_household_created` funcional
+- ✅ Tipos TypeScript regenerados (`types/database.ts`)
+- ✅ WIPE ejecutado: Household "Casa Test", 2 miembros, 23 categorías auto, 1 household_savings balance 0
 
 **Punto crítico**: Row Level Security (RLS) está habilitado desde el día 1. Todas las políticas verifican que `auth.uid()` pertenezca al `household_id` del recurso consultado.
 
@@ -319,11 +423,11 @@ app/
 │  ├─ page.tsx                 # Dashboard: resumen mensual, gráficos, últimas transacciones
 │  ├─ expenses/
 │  │  ├─ page.tsx              # Listado completo con filtros
-│  │  ├─ actions.ts            # Server Actions (CRUD movimientos)
+│  │  ├─ actions.ts            # Server Actions (CRUD transacciones)
 │  │  ├─ schema.ts             # Zod schemas
 │  │  └─ components/           # Componentes locales de esta ruta
-│  │     ├─ ExpenseForm.tsx
-│  │     └─ ExpenseList.tsx
+│  │     ├─ TransactionForm.tsx
+│  │     └─ TransactionList.tsx
 │  ├─ categories/page.tsx      # CRUD de categorías
 │  ├─ contributions/           # Sistema de contribuciones proporcionales
 │  │  ├─ page.tsx              # Dashboard y configuración
@@ -364,13 +468,13 @@ docs/
 ### Convenciones de Código
 
 #### Nombres y Estructura
-- **Variables/Funciones**: `camelCase` → `getMonthlyTotals`, `createMovement`
-- **Componentes/Tipos**: `PascalCase` → `AddMovementDialog`, `Movement`
+- **Variables/Funciones**: `camelCase` → `getMonthlyTotals`, `createTransaction`
+- **Componentes/Tipos**: `PascalCase` → `AddTransactionDialog`, `Transaction`
 - **Constantes globales**: `SCREAMING_SNAKE_CASE`
 - **Rutas Next**: `kebab-case` → `/app/expenses`
 - **SQL**: `snake_case` → `household_id`, `occurred_at`
-- **Tablas**: Plurales → `movements`, `categories`, `household_members`
-- **Índices**: Descriptivos → `idx_movements_household_occurred_at_desc`
+- **Tablas**: Plurales → `transactions`, `categories`, `household_members`
+- **Índices**: Descriptivos → `idx_transactions_household_occurred_at_desc`
 
 #### Archivos y Estructura
 - **Componentes**: `PascalCase.tsx` → `AddMovementDialog.tsx`
@@ -416,24 +520,47 @@ import { supabaseServer } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 
-const MovementSchema = z.object({
+const TransactionSchema = z.object({
   household_id: z.string().uuid(),
   category_id: z.string().uuid().nullable(),
   type: z.enum(['expense','income']),
   amount: z.coerce.number().positive(),
   currency: z.string().min(1),
-  note: z.string().optional(),
+  description: z.string().optional(),
   occurred_at: z.coerce.date(),
+  paid_by: z.string().uuid(),
+  split_type: z.enum(['none','equal','proportional','custom']).default('none'),
+  split_data: z.record(z.any()).optional(),
 });
 
-export async function createMovement(formData: FormData): Promise<Result> {
-  const parsed = MovementSchema.safeParse(Object.fromEntries(formData));
+export async function createTransaction(formData: FormData): Promise<Result> {
+  const parsed = TransactionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
   
   const supabase = supabaseServer();
-  const { error } = await supabase.from('movements').insert(parsed.data);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return fail('No autenticado');
+  
+  // Asegurar período mensual existe
+  const year = parsed.data.occurred_at.getFullYear();
+  const month = parsed.data.occurred_at.getMonth() + 1;
+  const { data: periodId, error: periodError } = await supabase.rpc('ensure_monthly_period', {
+    household_id: parsed.data.household_id,
+    year_param: year,
+    month_param: month
+  });
+  
+  if (periodError) return fail(periodError.message);
+  
+  const { error } = await supabase.from('transactions').insert({
+    ...parsed.data,
+    period_id: periodId,
+    created_by: user.id,
+    source_type: 'manual',
+    status: 'confirmed'
+  });
   
   if (error) return fail(error.message);
   
@@ -457,7 +584,7 @@ export async function createMovement(formData: FormData): Promise<Result> {
 
 ```typescript
 // Ejemplo de uso en componente
-const result = await createMovement(formData);
+const result = await createTransaction(formData);
 if (!result.ok) {
   toast.error(result.message);
   // Pintar fieldErrors en el formulario con React Hook Form
@@ -467,7 +594,7 @@ if (!result.ok) {
     });
   }
 } else {
-  toast.success('Movimiento guardado');
+  toast.success('Transacción guardada');
 }
 ```
 
@@ -501,7 +628,7 @@ npx shadcn@latest add button input label form dialog sheet select table card tab
 #### Import/Export
 - `lib/csv.ts`: `toCSV(rows)` y `fromCSV(text)` con Papaparse
 - Excel: Usar librería `xlsx` cuando se implemente
-- Mapeo de columnas: `occurred_at`, `type`, `category`, `amount`, `currency`, `note`
+- Mapeo de columnas: `occurred_at`, `type`, `category`, `amount`, `currency`, `description`
 - **Idempotencia**: Si categoría no existe durante import, crearla automáticamente
 - **Excel existente** (`Cuentas Casa SiK.xlsx`): Generar `external_ref` hash opcional para idempotencia
 
@@ -538,7 +665,7 @@ npm run dev
 - `chore:`, `docs:`, `refactor:`, `test:` sin bump
 - `feat!:` o `fix!:` breaking change (bump major)
 
-Ejemplo: `feat: add CSV export for movements`
+Ejemplo: `feat: add CSV export for transactions`
 
 #### Releases (Release Please)
 - Push a `main` → Release Please analiza commits
@@ -566,7 +693,7 @@ Ejemplo: `feat: add CSV export for movements`
 
 #### Estrategia Pragmática
 - **Unit (Vitest)**: Utilidades puras → `lib/date.ts`, `lib/format.ts`, `lib/csv.ts`
-- **Componentes críticos**: `ExpenseForm` (validaciones + submit), `MonthSelector`
+- **Componentes críticos**: `TransactionForm` (validaciones + submit), `MonthSelector`
 - **Testing library**: React Testing Library para componentes
 - **NO testear**: Integraciones Supabase profundas (confiar en RLS + proveedor)
 - **E2E (opcional fase 2)**: Playwright smoke tests (crear/editar/borrar) - mockear Auth
@@ -576,7 +703,7 @@ Ejemplo: `feat: add CSV export for movements`
 ✅ `lib/date.ts` → rangos de mes, formateo  
 ✅ `lib/format.ts` → formateo de moneda y fechas  
 ✅ `lib/csv.ts` → parse/format CSV  
-✅ `ExpenseForm` → validación Zod, submit  
+✅ `TransactionForm` → validación Zod, submit  
 ❌ Server Actions con Supabase (confiar en RLS)  
 ❌ Componentes de shadcn/ui (ya testeados upstream)
 
@@ -599,10 +726,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ### Seed Data (en `db/seed.sql`)
 
 Valores por defecto:
-- **Moneda**: EUR
-- **Categorías (gasto)**: Vivienda, Luz, Internet, Supermercado, Butano, Transporte, Ocio, Salud
-- **Categorías (ingreso)**: Nómina, Extra
+- **Moneda**: EUR (almacenada en `households.settings` JSONB como `{"currency": "EUR"}`)
+- **Categorías**: **23 categorías predeterminadas** creadas automáticamente por trigger `on_household_created_create_categories` al insertar household:
+  - **15 gasto**: Vivienda 🏠, Supermercado 🛒, Transporte 🚗, Restaurantes 🍽️, Ocio 🎭, Salud 🏥, Educación 📚, Menaje 🪑, Ropa 👕, Mascotas 🐶, Regalos 🎁, Suscripciones 📱, Deportes ⚽, Belleza 💄, Varios ➕
+  - **8 ingreso**: Nómina 💰, Freelance 💼, Inversiones 📈, Ventas 🏷️, Devoluciones ↩️, Aportación Cuenta Conjunta 🏦, Bonus 🎉, Varios ➕
 - **Household**: Creado por primer usuario; invitación por email para el segundo
+- **Ahorro**: Al crear household, trigger también crea automáticamente `household_savings` con balance 0
 
 ### Utilidades Mínimas Requeridas
 
@@ -682,25 +811,28 @@ Ver documentación completa en `docs/CONTRIBUTIONS_SYSTEM.md`.
 - `member_incomes`: Historial de ingresos de cada miembro
 - `household_settings`: Meta de contribución mensual
 - `contributions`: Seguimiento mensual de contribuciones (esperado vs pagado)
-- `contribution_adjustments`: Ajustes manuales con justificación
+- `contribution_adjustments`: Ajustes manuales con justificación ⭐ MEJORADO
+  - **Estados**: `pending`, `active`, `applied`, `cancelled`, `locked`
+  - **Auditoría completa**: `created_by`, `updated_by`, `locked_at`, `locked_by`
+  - **Relación con transactions**: `income_transaction_id` para reajustes
 
 **Server Actions** (`app/app/contributions/actions.ts`):
 - `setMemberIncome()`: Configurar ingreso de un miembro
 - `setContributionGoal()`: Configurar meta mensual del hogar
 - `calculateAndCreateContributions()`: Generar contribuciones proporcionales
 - `updateContributionPaidAmount()`: Actualizar monto pagado
-- `addContributionAdjustment()`: Agregar ajuste manual (crea movimientos duales automáticamente) ⭐
-- `deleteContributionAdjustment()`: Eliminar ajuste y sus movimientos relacionados ⭐
+- `addContributionAdjustment()`: Agregar ajuste manual (crea transacciones duales automáticamente) ⭐
+- `deleteContributionAdjustment()`: Eliminar ajuste y sus transacciones relacionadas ⭐
 
-**Integración con Movimientos**:
+**Integración con Transacciones**:
 - Cada gasto cuenta como pago hacia la contribución del mes
 - El estado se actualiza automáticamente: `pending`, `partial`, `paid`, `overpaid`
-- **Ajustes con Movimientos Duales** ⭐ NEW:
+- **Ajustes con Transacciones Duales** ⭐ NEW:
   * Ajuste tipo "prepayment" con monto negativo y categoría → crea automáticamente:
-    1. Movimiento de gasto (expense) en la categoría seleccionada
-    2. Movimiento de ingreso virtual (income) representando el aporte del miembro
-  * Al eliminar ajuste → se eliminan automáticamente TODOS los movimientos relacionados
-  * Búsqueda inteligente por: movement_id, descripción [Ajuste: razón], [Pre-pago]
+    1. Transacción de gasto (expense) en la categoría seleccionada
+    2. Transacción de ingreso virtual (income) representando el aporte del miembro
+  * Al eliminar ajuste → se eliminan automáticamente TODAS las transacciones relacionadas
+  * Búsqueda inteligente por: transaction_id, descripción [Ajuste: razón], [Pre-pago]
 
 ### Sistema de Privacy Mode ⭐ NEW
 

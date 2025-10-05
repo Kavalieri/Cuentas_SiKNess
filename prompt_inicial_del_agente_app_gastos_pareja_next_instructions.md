@@ -1,5 +1,14 @@
 # Prompt inicial del agente – App Gastos Pareja (Next.js + Supabase)
 
+> ⚠️ **DEPRECADO**: Este documento contiene el spec original del proyecto.  
+> Para la **documentación actualizada**, ver:
+> - `.github/copilot-instructions.md` - Instrucciones completas del proyecto
+> - `docs/IMPLEMENTATION_PLAN.md` - Sistema refactorizado con 12 migraciones aplicadas
+> - `docs/MAJOR_REFACTOR_TRANSACTIONS_SYSTEM.md` - Diseño del sistema actual
+> - `db/schema.sql` - Schema real de la base de datos
+
+---
+
 > **Rol del agente**: Arquitecto/implementador full‑stack (TypeScript) con foco en simplicidad, robustez y despliegue rápido. Trabajarás de forma iterativa, generando código listo para pegar en un repositorio Git vacío.
 
 ## 0) Objetivo del proyecto

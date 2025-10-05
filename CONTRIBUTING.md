@@ -295,13 +295,13 @@ const MAX_RETRY_ATTEMPTS = 3;
 ```typescript
 // ✅ Server Component (por defecto)
 export default async function ExpensesPage() {
-  const movements = await getMovements();
-  return <ExpenseList movements={movements} />;
+  const transactions = await getTransactions();
+  return <ExpenseList transactions={transactions} />;
 }
 
 // ✅ Client Component (solo cuando necesario)
 'use client';
-export function AddMovementDialog() {
+export function AddTransactionDialog() {
   const [open, setOpen] = useState(false);
   // ...
 }

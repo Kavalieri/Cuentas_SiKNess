@@ -486,7 +486,7 @@ Usa **Conventional Commits**:
 
 Ejemplo:
 ```bash
-git commit -m "feat: add CSV export for movements"
+git commit -m "feat: add CSV export for transactions"
 ```
 
 ## 🔄 Workflow de Desarrollo

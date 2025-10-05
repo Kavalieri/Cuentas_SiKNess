@@ -37,8 +37,9 @@ export async function getPeriod(
 
 /**
  * Obtiene o crea un período mensual (llama a la función RPC)
+ * @returns El UUID del período asegurado
  */
-export async function ensurePeriod(year: number, month: number): Promise<Result<MonthlyPeriod>> {
+export async function ensurePeriod(year: number, month: number): Promise<Result<string>> {
   const householdId = await getUserHouseholdId();
   if (!householdId) {
     return fail('No tienes un hogar activo');
@@ -117,10 +118,17 @@ export async function getPendingPeriods(): Promise<Result<MonthlyPeriod[]>> {
  */
 export async function closePeriod(periodId: string, notes?: string): Promise<Result> {
   const supabase = await supabaseServer();
+  
+  // Obtener usuario actual
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return fail('No autenticado');
+  }
 
   const { data, error } = await supabase.rpc('close_monthly_period', {
     p_period_id: periodId,
-    p_notes: notes,
+    p_closed_by: user.id,
+    p_reason: notes,
   });
 
   if (error) {
@@ -135,11 +143,19 @@ export async function closePeriod(periodId: string, notes?: string): Promise<Res
 /**
  * Reabre un período cerrado (solo owners)
  */
-export async function reopenPeriod(periodId: string): Promise<Result> {
+export async function reopenPeriod(periodId: string, reason?: string): Promise<Result> {
   const supabase = await supabaseServer();
+  
+  // Obtener usuario actual
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return fail('No autenticado');
+  }
 
   const { data, error } = await supabase.rpc('reopen_monthly_period', {
     p_period_id: periodId,
+    p_reopened_by: user.id,
+    p_reason: reason,
   });
 
   if (error) {
