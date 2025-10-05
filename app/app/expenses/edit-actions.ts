@@ -31,7 +31,7 @@ export async function updateMovement(formData: FormData): Promise<Result> {
   } = await supabase.auth.getUser();
   if (!user) return fail('No autenticado');
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('id')
     .eq('auth_user_id', user.id)
@@ -65,7 +65,7 @@ export async function updateMovement(formData: FormData): Promise<Result> {
   // 4. Verificar que el usuario pertenece al hogar
   const { data: membership } = await supabase
     .from('household_members')
-    .select('id')
+    .select('household_id, profile_id')
     .eq('household_id', currentMovement.household_id)
     .eq('profile_id', profile.id)
     .single();

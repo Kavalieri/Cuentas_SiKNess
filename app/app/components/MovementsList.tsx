@@ -18,6 +18,8 @@ interface Movement {
   type: 'expense' | 'income';
   description: string | null;
   occurred_at: string;
+  created_at: string | null;
+  updated_at?: string | null;
   category_id: string | null;
   categories: {
     name: string;
@@ -36,9 +38,10 @@ interface MovementsListProps {
   movements: Movement[];
   categories?: Category[];
   showActions?: boolean;
+  onUpdate?: () => void | Promise<void>;
 }
 
-export function MovementsList({ movements, categories = [], showActions = true }: MovementsListProps) {
+export function MovementsList({ movements, categories = [], showActions = true, onUpdate }: MovementsListProps) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -92,13 +95,17 @@ export function MovementsList({ movements, categories = [], showActions = true }
                   {movement.description && (
                     <p className="text-sm text-muted-foreground truncate">{movement.description}</p>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(movement.occurred_at).toLocaleDateString('es-ES', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </p>
+                  {movement.created_at && (
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(movement.created_at).toLocaleString('es-ES', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -148,6 +155,7 @@ export function MovementsList({ movements, categories = [], showActions = true }
           categories={categories}
           open={editingId !== null}
           onClose={() => setEditingId(null)}
+          onUpdate={onUpdate}
         />
       )}
     </div>

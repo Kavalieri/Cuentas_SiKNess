@@ -13,7 +13,7 @@ import type { Database } from '@/types/database';
 
 type AdjustmentRow = Database['public']['Tables']['contribution_adjustments']['Row'];
 type AdjustmentInsert = Database['public']['Tables']['contribution_adjustments']['Insert'];
-type MovementInsert = Database['public']['Tables']['transactions']['Insert'];
+type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
 
 // =====================================================
 // Helper: Obtener Profile ID del usuario autenticado
@@ -218,9 +218,10 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   // FIX: Construir string directamente para evitar bug de zona horaria
   // new Date(year, month, 1).toISOString() puede dar fecha anterior por timezone offset
   const movementDateStr = `${adjustment.contributions.year}-${String(adjustment.contributions.month).padStart(2, '0')}-01`;
+  const now = new Date().toISOString();
 
   // 1. Crear movimiento de GASTO (expense)
-  const expenseData: MovementInsert = {
+  const expenseData: TransactionInsert = {
     household_id: adjustment.contributions.household_id,
     type: 'expense',
     amount: absoluteAmount,
@@ -228,6 +229,8 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
     category_id: parsed.data.expense_category_id,
     description: parsed.data.expense_description,
     occurred_at: movementDateStr,
+    created_at: now,
+    updated_at: now,
   };
 
   const { data: expenseMovement, error: expenseError } = await supabase
@@ -241,7 +244,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   }
 
   // 2. Crear movimiento de INGRESO VIRTUAL (income)
-  const incomeData: MovementInsert = {
+  const incomeData: TransactionInsert = {
     household_id: adjustment.contributions.household_id,
     type: 'income',
     amount: absoluteAmount,
@@ -249,6 +252,8 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
     category_id: parsed.data.income_category_id || null, // Usar categoría si se proporciona
     description: parsed.data.income_description,
     occurred_at: movementDateStr,
+    created_at: now,
+    updated_at: now,
   };
 
   const { data: incomeMovement, error: incomeError } = await supabase
@@ -426,9 +431,10 @@ export async function recordExtraIncome(formData: FormData): Promise<Result> {
   // Crear fecha del movimiento
   const movementDate = new Date(contribution.year, contribution.month - 1, 1);
   const movementDateStr = movementDate.toISOString().split('T')[0]!;
+  const now = new Date().toISOString();
 
   // 1. Crear movimiento de INGRESO
-  const incomeData: MovementInsert = {
+  const incomeData: TransactionInsert = {
     household_id: contribution.household_id,
     type: 'income',
     amount: absoluteAmount,
@@ -436,6 +442,8 @@ export async function recordExtraIncome(formData: FormData): Promise<Result> {
     category_id: null, // Sin categoría para ingresos extra
     description: `Ingreso extra: ${parsed.data.reason}`,
     occurred_at: movementDateStr,
+    created_at: now,
+    updated_at: now,
   };
 
   const { data: incomeMovement, error: incomeError } = await supabase

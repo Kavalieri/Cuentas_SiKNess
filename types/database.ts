@@ -653,6 +653,7 @@ export type Database = {
           period_id: string | null
           profile_id: string | null
           type: string
+          updated_at: string
         }
         Insert: {
           amount: number
@@ -666,6 +667,7 @@ export type Database = {
           period_id?: string | null
           profile_id?: string | null
           type: string
+          updated_at: string
         }
         Update: {
           amount?: number
@@ -679,6 +681,7 @@ export type Database = {
           period_id?: string | null
           profile_id?: string | null
           type?: string
+          updated_at?: string
         }
         Relationships: [
           {

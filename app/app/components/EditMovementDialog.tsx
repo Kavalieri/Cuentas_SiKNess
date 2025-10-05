@@ -45,6 +45,7 @@ interface EditMovementDialogProps {
   categories: Category[];
   open: boolean;
   onClose: () => void;
+  onUpdate?: () => void | Promise<void>;
 }
 
 export function EditMovementDialog({
@@ -52,6 +53,7 @@ export function EditMovementDialog({
   categories,
   open,
   onClose,
+  onUpdate,
 }: EditMovementDialogProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -61,17 +63,19 @@ export function EditMovementDialog({
   const [occurredAt, setOccurredAt] = useState(
     movement.occurred_at ? movement.occurred_at.split('T')[0] : ''
   );
-  // FIX: Usar "none" en lugar de "" (SelectItem no acepta value vacío)
-  const [categoryId, setCategoryId] = useState<string>(
+  const [amount, setAmount] = useState(movement.amount.toString());
+  
+  // Para la categoría, usamos un approach no-controlled para evitar bugs de renderizado del Select
+  // El Select tiene key={movement.id} para forzar re-render cuando cambia el movimiento
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
     movement.category_id || 'none'
   );
-  const [amount, setAmount] = useState(movement.amount.toString());
 
   // Actualizar estado cuando cambia el movimiento
   useEffect(() => {
     setDescription(movement.description || '');
     setOccurredAt(movement.occurred_at ? movement.occurred_at.split('T')[0] : '');
-    setCategoryId(movement.category_id || 'none');
+    setSelectedCategoryId(movement.category_id || 'none');
     setAmount(movement.amount.toString());
   }, [movement]);
 
@@ -94,8 +98,8 @@ export function EditMovementDialog({
       formData.append('description', description);
       formData.append('occurred_at', occurredAt);
       // FIX: Convertir "none" a string vacío para que el schema lo transforme a null
-      if (categoryId && categoryId !== 'none') {
-        formData.append('category_id', categoryId);
+      if (selectedCategoryId && selectedCategoryId !== 'none') {
+        formData.append('category_id', selectedCategoryId);
       } else {
         formData.append('category_id', '');
       }
@@ -113,8 +117,11 @@ export function EditMovementDialog({
         }
       } else {
         toast.success('Movimiento actualizado');
-        router.refresh();
         onClose();
+        // Llamar al callback de actualización si existe
+        if (onUpdate) {
+          await onUpdate();
+        }
       }
     });
   };
@@ -161,8 +168,9 @@ export function EditMovementDialog({
           <div className="space-y-2">
             <Label htmlFor="category">Categoría</Label>
             <Select
-              value={categoryId}
-              onValueChange={setCategoryId}
+              key={movement.id}
+              defaultValue={selectedCategoryId}
+              onValueChange={setSelectedCategoryId}
               disabled={isPending}
             >
               <SelectTrigger id="category">

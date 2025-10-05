@@ -104,6 +104,7 @@ export async function getMovements(params?: {
       description,
       occurred_at,
       created_at,
+      updated_at,
       category_id,
       categories (
         id,
@@ -113,7 +114,7 @@ export async function getMovements(params?: {
     `,
     )
     .eq('household_id', householdId)
-    .order('occurred_at', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (params?.type) {
     query = query.eq('type', params.type);

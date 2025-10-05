@@ -50,5 +50,11 @@ const MovementSchema = z.object({
 - ✅ Build exitoso
 
 ## Archivos Modificados
-- `app/app/expenses/components/AddMovementDialog.tsx`
-- `app/app/expenses/actions.ts`
+- `app/app/expenses/components/AddMovementDialog.tsx` ✅
+- `app/app/expenses/actions.ts` ✅
+- `app/app/components/EditMovementDialog.tsx` ✅ (commit ff913ed)
+- `app/app/expenses/edit-actions.ts` ✅ (commit ff913ed)
+
+## Commits
+- Inicial: Fix en AddMovementDialog
+- `ff913ed`: Fix en EditMovementDialog + edit-actions.ts

@@ -29,6 +29,7 @@ type Movement = {
   description: string | null;
   occurred_at: string;
   created_at: string | null;
+  updated_at?: string | null;
   categories: {
     id: string;
     name: string;
@@ -128,6 +129,33 @@ export function DashboardContent({
     }
 
     setIsLoading(false);
+  };
+
+  // Función para refrescar datos sin cambiar el mes seleccionado
+  const refreshData = async () => {
+    const year = selectedMonth.getFullYear();
+    const month = selectedMonth.getMonth() + 1;
+
+    const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+
+    const [summaryResult, movementsResult, categoryExpensesResult] = await Promise.all([
+      getMonthSummary(year, month),
+      getMovements({ startDate, endDate }),
+      getCategoryExpenses({ startDate, endDate }),
+    ]);
+
+    if (summaryResult.ok) {
+      setSummary(summaryResult.data || { expenses: 0, income: 0, balance: 0 });
+    }
+
+    if (movementsResult.ok) {
+      setMovements((movementsResult.data || []) as Movement[]);
+    }
+
+    if (categoryExpensesResult.ok) {
+      setCategoryExpenses((categoryExpensesResult.data || []) as CategoryExpense[]);
+    }
   };
 
   const expenseMovements = movements.filter((m) => m.type === 'expense');
@@ -256,7 +284,7 @@ export function DashboardContent({
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
                 /* @ts-ignore - complex movements typing */
-                <MovementsList movements={recentMovements} />
+                <MovementsList movements={recentMovements} categories={initialCategories} onUpdate={refreshData} />
               )}
             </CardContent>
           </Card>
@@ -288,7 +316,7 @@ export function DashboardContent({
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
                 /* @ts-ignore - complex movements typing */
-                <MovementsList movements={recentIncome} />
+                <MovementsList movements={recentIncome} categories={initialCategories} onUpdate={refreshData} />
               )}
             </CardContent>
           </Card>
@@ -320,7 +348,7 @@ export function DashboardContent({
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
                 /* @ts-ignore - complex movements typing */
-                <MovementsList movements={recentExpenses} />
+                <MovementsList movements={recentExpenses} categories={initialCategories} onUpdate={refreshData} />
               )}
             </CardContent>
           </Card>
