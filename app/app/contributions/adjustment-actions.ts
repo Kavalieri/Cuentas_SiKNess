@@ -615,7 +615,8 @@ export async function getPendingAdjustments(): Promise<Result<AdjustmentRow[]>> 
         month,
         profiles!inner(display_name, email)
       ),
-      categories(name, type)
+      category:categories!category_id(name, type),
+      expense_category:categories!expense_category_id(name, type)
     `)
     .eq('contributions.household_id', householdId)
     .eq('status', 'pending')

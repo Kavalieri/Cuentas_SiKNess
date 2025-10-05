@@ -69,7 +69,8 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
           year: number;
           month: number;
         };
-        categories: Category | null;
+        category: Category | null; // Categoría original sugerida
+        expense_category: Category | null; // Categoría editada por owner
         [key: string]: unknown;
       };
       
@@ -84,7 +85,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
           year: item.contributions.year,
           month: item.contributions.month,
         },
-        category: item.categories || null,
+        category: item.expense_category || item.category || null, // Preferir expense_category si existe
       }));
       setPendingAdjustments(transformed);
     } else if (!result.ok) {
