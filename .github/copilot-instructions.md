@@ -1,5 +1,212 @@
 # CuentasSiK - AI Coding Agent Instructions
 
+## 🔧 Model Context Protocol (MCP) - PRIORIDAD ABSOLUTA
+
+**⚠️ REGLA CRÍTICA**: Usar SIEMPRE los MCPs disponibles en lugar de comandos CLI o acciones manuales.
+
+### **MCPs Configurados y Disponibles:**
+
+#### **1. Supabase MCP** 🗄️
+**Activación**: `activate_supabase_project_management()` o herramientas específicas
+
+**Herramientas disponibles:**
+- `mcp_supabase_apply_migration(project_id, name, query)` - Aplicar migraciones SQL
+- `mcp_supabase_execute_sql(project_id, query)` - Ejecutar queries SQL directamente
+- `mcp_supabase_list_migrations(project_id)` - Listar migraciones aplicadas
+- `mcp_supabase_list_tables(project_id, schemas)` - Listar tablas y estructura
+- `mcp_supabase_list_extensions(project_id)` - Listar extensiones instaladas
+- `mcp_supabase_get_advisors(project_id, type)` - Obtener alertas de seguridad/performance
+- `mcp_supabase_get_logs(project_id, service)` - Obtener logs (api, postgres, auth, etc.)
+
+**Cuándo usar:**
+- ✅ Aplicar migraciones: `apply_migration()` en vez de `supabase db push`
+- ✅ Verificar tablas: `list_tables()` en vez de SQL Editor manual
+- ✅ Ejecutar SQL: `execute_sql()` en vez de pedir al usuario
+- ✅ Validar estructura: `execute_sql()` con queries de información_schema
+- ✅ Debugging: `get_logs()` para ver errores en tiempo real
+
+**Project ID**: `fizxvvtakvmmeflmbwud` (siempre usar este ID)
+
+**Ejemplo de workflow:**
+```typescript
+// ❌ INCORRECTO (CLI):
+// "Ejecuta este SQL en Supabase SQL Editor..."
+// npx supabase db push
+
+// ✅ CORRECTO (MCP):
+await mcp_supabase_apply_migration({
+  project_id: "fizxvvtakvmmeflmbwud",
+  name: "add_new_feature",
+  query: "CREATE TABLE..."
+});
+
+// Validar inmediatamente
+await mcp_supabase_list_tables({
+  project_id: "fizxvvtakvmmeflmbwud",
+  schemas: ["public"]
+});
+```
+
+#### **2. GitHub MCP** 🐙
+**Activación**: `activate_github_repository_management()`, `activate_github_pull_request_management()`, etc.
+
+**Herramientas disponibles:**
+- `mcp_github_github_create_or_update_file()` - Crear/actualizar archivos directamente
+- `mcp_github_github_push_files()` - Push múltiples archivos en un commit
+- `mcp_github_github_create_branch()` - Crear branches
+- `mcp_github_github_list_branches()` - Listar branches
+- **Pull Requests**: crear, actualizar, mergear, revisar
+- **Issues**: crear, comentar, asignar, cerrar
+- **Workflows**: ejecutar, obtener logs, cancelar
+
+**Cuándo usar:**
+- ✅ Crear branches para features: `create_branch()` 
+- ✅ Push directo de archivos: `push_files()` (para múltiples archivos)
+- ✅ Crear PRs automáticos: cuando el cambio es grande
+- ✅ Gestionar issues: crear sub-tareas, trackear bugs
+
+**Owner/Repo**: `Kavalieri/CuentasSiK`
+
+#### **3. Vercel MCP** 🔺
+**Activación**: `activate_vercel_tools()` (ya activado)
+
+**Herramientas disponibles:**
+- `mcp_vercel_deploy_to_vercel()` - Deploy automático
+- `mcp_vercel_list_deployments()` - Listar deployments recientes
+- `mcp_vercel_get_deployment()` - Obtener detalles de deployment
+- `mcp_vercel_get_deployment_build_logs()` - Ver logs de build
+- `mcp_vercel_list_projects()` - Listar proyectos
+- `mcp_vercel_get_project()` - Detalles del proyecto
+
+**Cuándo usar:**
+- ✅ Deploy después de push: `deploy_to_vercel()` automático
+- ✅ Verificar build: `get_deployment_build_logs()` si hay error
+- ✅ Monitorear deployments: `list_deployments()` para ver histórico
+
+### **Workflow de Desarrollo con MCPs:**
+
+#### **Feature Completo (Ejemplo Real):**
+```typescript
+// 1. Crear migración SQL
+const migrationSQL = `
+  CREATE TABLE new_feature (...);
+  CREATE INDEX idx_new_feature ON new_feature(...);
+  ALTER TABLE new_feature ENABLE ROW LEVEL SECURITY;
+`;
+
+// 2. Aplicar a Supabase (sin CLI)
+await mcp_supabase_apply_migration({
+  project_id: "fizxvvtakvmmeflmbwud",
+  name: "add_new_feature",
+  query: migrationSQL
+});
+
+// 3. Validar estructura
+const tables = await mcp_supabase_list_tables({
+  project_id: "fizxvvtakvmmeflmbwud",
+  schemas: ["public"]
+});
+// Buscar "new_feature" en resultado
+
+// 4. Verificar RLS y policies
+await mcp_supabase_execute_sql({
+  project_id: "fizxvvtakvmmeflmbwud",
+  query: `
+    SELECT tablename, policyname, cmd
+    FROM pg_policies
+    WHERE tablename = 'new_feature';
+  `
+});
+
+// 5. Generar tipos TypeScript (aún necesita CLI)
+// run_in_terminal("npx supabase gen types...")
+
+// 6. Crear componentes y actions (usar edit/create tools)
+
+// 7. Build y commit local
+// run_in_terminal("npm run build")
+// run_in_terminal("git add -A && git commit -m '...'")
+
+// 8. Push a GitHub (opcional: usar MCP si múltiples archivos)
+// run_in_terminal("git push")
+// O: mcp_github_github_push_files() para control directo
+
+// 9. Deploy a Vercel
+await mcp_vercel_deploy_to_vercel();
+
+// 10. Verificar deployment
+const deployment = await mcp_vercel_list_deployments({
+  projectId: "...",
+  teamId: "..."
+});
+
+// 11. Obtener logs si hay error
+if (deployment.state === "ERROR") {
+  const logs = await mcp_vercel_get_deployment_build_logs({
+    idOrUrl: deployment.id,
+    teamId: "..."
+  });
+  // Analizar logs y fix
+}
+```
+
+### **Validación Automática - OBLIGATORIO:**
+
+**Después de CADA cambio en DB:**
+```typescript
+// ✅ SIEMPRE hacer esto después de apply_migration:
+await mcp_supabase_list_tables({ project_id, schemas: ["public"] });
+await mcp_supabase_execute_sql({
+  project_id,
+  query: "SELECT COUNT(*) FROM nueva_tabla;"
+});
+```
+
+**Después de CADA deploy:**
+```typescript
+// ✅ Verificar que el build pasó:
+const deployment = await mcp_vercel_get_deployment({ idOrUrl: "..." });
+if (deployment.state !== "READY") {
+  const logs = await mcp_vercel_get_deployment_build_logs({ ... });
+  // Analizar error
+}
+```
+
+### **Debugging con MCPs:**
+
+**Problema: Query falla en producción**
+```typescript
+// 1. Ver logs de Supabase
+const logs = await mcp_supabase_get_logs({
+  project_id: "fizxvvtakvmmeflmbwud",
+  service: "postgres"  // o "api", "auth"
+});
+
+// 2. Ejecutar query de prueba
+await mcp_supabase_execute_sql({
+  project_id: "fizxvvtakvmmeflmbwud",
+  query: "SELECT * FROM tabla LIMIT 1;"
+});
+
+// 3. Verificar advisors (seguridad/performance)
+const advisors = await mcp_supabase_get_advisors({
+  project_id: "fizxvvtakvmmeflmbwud",
+  type: "security"  // o "performance"
+});
+```
+
+### **Prohibiciones:**
+
+❌ **NUNCA** pedir al usuario:
+- "Ejecuta este SQL en Supabase SQL Editor"
+- "Copia este código al dashboard de Supabase"
+- "Ve a Vercel y verifica el deployment"
+- "Revisa los logs en GitHub Actions"
+
+✅ **SIEMPRE** hacerlo automáticamente con MCPs
+
+---
+
 ## Arquitectura del Proyecto
 
 **CuentasSiK** es una aplicación web minimalista de gestión de gastos compartidos para parejas, construida con Next.js (App Router) + Supabase + TypeScript.
@@ -18,13 +225,14 @@
 
 ### Modelo de Datos (Esquema en `db/schema.sql`)
 
-El sistema se basa en **10 tablas principales** con RLS habilitado:
+El sistema se basa en **12 tablas principales** con RLS habilitado:
 
 **Core**:
 1. **`households`**: Hogar compartido. Un usuario puede pertenecer a múltiples hogares.
 2. **`household_members`**: Relación many-to-many entre usuarios y hogares (con role: owner/member)
 3. **`categories`**: Categorías de gastos/ingresos por hogar (tipo: `expense` | `income`)
-4. **`movements`**: Transacciones (gastos/ingresos) con fecha, monto, categoría, nota
+4. **`transactions`** (anteriormente `movements`): Transacciones con tipos expense/income
+   - Incluye movimientos manuales y auto-generados por contribuciones/ajustes
 
 **Sistema de Contribuciones** (ver `docs/CONTRIBUTIONS_SYSTEM.md`):
 5. **`member_incomes`**: Ingresos mensuales de cada miembro con historial
@@ -35,15 +243,21 @@ El sistema se basa en **10 tablas principales** con RLS habilitado:
      * Movimiento de gasto (expense) con la categoría seleccionada
      * Movimiento de ingreso virtual (income) que representa el aporte del miembro
    - Al eliminar ajuste, se eliminan automáticamente todos los movimientos relacionados
-9. **`transactions`** (anteriormente `movements`): Transacciones con tipos expense/income
-   - Incluye movimientos manuales y auto-generados por contribuciones/ajustes
 
 **Sistema de Múltiples Hogares** (ver `docs/MULTI_HOUSEHOLD_IMPLEMENTATION_COMPLETE.md`):
-10. **`user_settings`**: Configuración del usuario (active_household_id, preferences)
-11. **`invitations`**: Sistema de invitaciones con RLS público para acceso sin login
+9. **`user_settings`**: Configuración del usuario (active_household_id, preferences)
+10. **`invitations`**: Sistema de invitaciones con RLS público para acceso sin login
 
-**Sistema de Privacidad** (ver `docs/PRIVACY_MODE.md`) ⭐ NEW:
-- **PrivacyProvider**: Contexto React con estado `hideAmounts` persistido en localStorage
+**Sistema de Historial de Transacciones** ⭐ NEW:
+11. **`transaction_history`**: Auditoría completa de cambios en transacciones
+   - **Trigger automático**: `save_transaction_history()` se ejecuta al UPDATE de transactions
+   - Guarda: old/new values de description, occurred_at, category_id, amount
+   - Metadatos: changed_by (profile_id), changed_at, change_reason, household_id
+   - RLS: Solo miembros del household pueden ver su historial
+   - Cascade delete: Si se borra transaction, su historial también
+
+**Sistema de Privacidad** (ver `docs/PRIVACY_MODE.md`):
+12. **PrivacyProvider**: Contexto React con estado `hideAmounts` persistido en localStorage
 - **usePrivateFormat()**: Hook que retorna `formatPrivateCurrency()` (muestra "•••" si hideAmounts activo)
 - **PrivacyToggle**: Botón Eye/EyeOff en header junto a ThemeToggle
 - **Uso**: Ocultar cantidades en lugares públicos con un click
