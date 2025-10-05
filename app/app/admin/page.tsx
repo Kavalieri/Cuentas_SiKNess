@@ -190,15 +190,15 @@ export default async function AdminPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingDown className="h-5 w-5" />
-                Movimientos
+                Transacciones
               </CardTitle>
               <CardDescription>
-                Ver y eliminar movimientos en bloque
+                Ver y eliminar transacciones en bloque
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button asChild>
-                <Link href="/app/admin/movements">Gestionar Movimientos</Link>
+                <Link href="/app/admin/transactions">Gestionar Transacciones</Link>
               </Button>
             </CardContent>
           </Card>

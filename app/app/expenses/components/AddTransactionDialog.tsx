@@ -21,13 +21,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { createMovement } from '@/app/app/expenses/actions';
+import { createTransaction } from '@/app/app/expenses/actions';
 
-interface AddMovementDialogProps {
+interface AddTransactionDialogProps {
   categories: Array<{ id: string; name: string; icon: string | null; type: string }>;
 }
 
-export function AddMovementDialog({ categories }: AddMovementDialogProps) {
+export function AddTransactionDialog({ categories }: AddTransactionDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +43,7 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
     const formData = new FormData(form);
     formData.append('type', type);
 
-    const result = await createMovement(formData);
+    const result = await createTransaction(formData);
 
     if (!result.ok) {
       toast.error(result.message);
@@ -56,7 +56,7 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
       return;
     }
 
-    // Éxito: resetear formulario antes de cerrar
+    // ├ëxito: resetear formulario antes de cerrar
     form.reset();
     toast.success('Movimiento creado exitosamente');
     setIsLoading(false);
@@ -85,15 +85,15 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="expense">💸 Gasto</SelectItem>
-                <SelectItem value="income">💰 Ingreso</SelectItem>
+                <SelectItem value="expense">­ƒÆ© Gasto</SelectItem>
+                <SelectItem value="income">­ƒÆ░ Ingreso</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Monto */}
           <div className="space-y-2">
-            <Label htmlFor="amount">Monto (€) *</Label>
+            <Label htmlFor="amount">Monto (Ôé¼) *</Label>
             <Input
               id="amount"
               name="amount"
@@ -106,15 +106,15 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
             />
           </div>
 
-          {/* Categoría */}
+          {/* Categor├¡a */}
           <div className="space-y-2">
-            <Label htmlFor="category_id">Categoría</Label>
+            <Label htmlFor="category_id">Categor├¡a</Label>
             <Select name="category_id" defaultValue="none">
               <SelectTrigger>
-                <SelectValue placeholder="Sin categoría" />
+                <SelectValue placeholder="Sin categor├¡a" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Sin categoría</SelectItem>
+                <SelectItem value="none">Sin categor├¡a</SelectItem>
                 {filteredCategories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.icon} {category.name}
@@ -137,9 +137,9 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
             />
           </div>
 
-          {/* Descripción */}
+          {/* Descripci├│n */}
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción (opcional)</Label>
+            <Label htmlFor="description">Descripci├│n (opcional)</Label>
             <Input
               id="description"
               name="description"

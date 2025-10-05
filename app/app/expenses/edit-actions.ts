@@ -22,7 +22,7 @@ const EditMovementSchema = z.object({
   amount: z.coerce.number().positive('El monto debe ser positivo'),
 });
 
-export async function updateMovement(formData: FormData): Promise<Result> {
+export async function updateTransaction(formData: FormData): Promise<Result> {
   const supabase = await supabaseServer();
 
   // 1. Obtener profile_id del usuario actual

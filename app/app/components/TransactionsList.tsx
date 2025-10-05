@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { deleteMovement } from '@/app/app/expenses/actions';
-import { EditMovementDialog } from '@/app/app/components/EditMovementDialog';
+import { deleteTransaction } from '@/app/app/expenses/actions';
+import { EditTransactionDialog } from '@/app/app/components/EditTransactionDialog';
 import { useRouter } from 'next/navigation';
 
-interface Movement {
+interface Transaction {
   id: string;
   amount: number;
   currency: string;
@@ -34,43 +34,43 @@ interface Category {
   type: string;
 }
 
-interface MovementsListProps {
-  movements: Movement[];
+interface TransactionsListProps {
+  transactions: Transaction[];
   categories?: Category[];
   showActions?: boolean;
   onUpdate?: () => void | Promise<void>;
 }
 
-export function MovementsList({ movements, categories = [], showActions = true, onUpdate }: MovementsListProps) {
+export function TransactionsList({ transactions, categories = [], showActions = true, onUpdate }: TransactionsListProps) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este movimiento?')) return;
+    if (!confirm('¿Estás seguro de eliminar esta transacción?')) return;
 
     setDeletingId(id);
-    const result = await deleteMovement(id);
+    const result = await deleteTransaction(id);
 
     if (!result.ok) {
       toast.error(result.message);
     } else {
-      toast.success('Movimiento eliminado');
+      toast.success('Transacción eliminada');
       router.refresh();
     }
     setDeletingId(null);
   };
 
-  if (movements.length === 0) {
+  if (transactions.length === 0) {
     return (
       <Card>
         <CardContent className="py-12">
           <div className="text-center text-muted-foreground">
             <p className="text-lg font-medium mb-2">
-              No hay movimientos registrados
+              No hay transacciones registradas
             </p>
             <p className="text-sm">
-              Haz click en &quot;+ Nuevo Movimiento&quot; para empezar
+              Haz click en &quot;+ Nueva Transacción&quot; para empezar
             </p>
           </div>
         </CardContent>
@@ -80,24 +80,24 @@ export function MovementsList({ movements, categories = [], showActions = true, 
 
   return (
     <div className="space-y-3">
-      {movements.map((movement) => (
-        <Card key={movement.id}>
+      {transactions.map((transaction) => (
+        <Card key={transaction.id}>
           <CardContent className="py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="text-2xl flex-shrink-0">
-                  {movement.categories?.icon || (movement.type === 'expense' ? '💸' : '💰')}
+                  {transaction.categories?.icon || (transaction.type === 'expense' ? '💸' : '💰')}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">
-                    {movement.categories?.name || 'Sin categoría'}
+                    {transaction.categories?.name || 'Sin categoría'}
                   </p>
-                  {movement.description && (
-                    <p className="text-sm text-muted-foreground truncate">{movement.description}</p>
+                  {transaction.description && (
+                    <p className="text-sm text-muted-foreground truncate">{transaction.description}</p>
                   )}
-                  {movement.created_at && (
+                  {transaction.created_at && (
                     <p className="text-xs text-muted-foreground">
-                      {new Date(movement.created_at).toLocaleString('es-ES', {
+                      {new Date(transaction.created_at).toLocaleString('es-ES', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
@@ -112,14 +112,14 @@ export function MovementsList({ movements, categories = [], showActions = true, 
                 <div className="text-right">
                   <p
                     className={`text-xl font-bold ${
-                      movement.type === 'expense' ? 'text-red-600' : 'text-green-600'
+                      transaction.type === 'expense' ? 'text-red-600' : 'text-green-600'
                     }`}
                   >
-                    {movement.type === 'expense' ? '-' : '+'}
-                    {formatCurrency(movement.amount, movement.currency)}
+                    {transaction.type === 'expense' ? '-' : '+'}
+                    {formatCurrency(transaction.amount, transaction.currency)}
                   </p>
-                  <Badge variant={movement.type === 'expense' ? 'destructive' : 'default'} className="mt-1">
-                    {movement.type === 'expense' ? 'Gasto' : 'Ingreso'}
+                  <Badge variant={transaction.type === 'expense' ? 'destructive' : 'default'} className="mt-1">
+                    {transaction.type === 'expense' ? 'Gasto' : 'Ingreso'}
                   </Badge>
                 </div>
                 {showActions && (
@@ -127,16 +127,16 @@ export function MovementsList({ movements, categories = [], showActions = true, 
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setEditingId(movement.id)}
-                      disabled={deletingId === movement.id}
+                      onClick={() => setEditingId(transaction.id)}
+                      disabled={deletingId === transaction.id}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(movement.id)}
-                      disabled={deletingId === movement.id}
+                      onClick={() => handleDelete(transaction.id)}
+                      disabled={deletingId === transaction.id}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -150,8 +150,8 @@ export function MovementsList({ movements, categories = [], showActions = true, 
 
       {/* Dialog de edición */}
       {editingId && (
-        <EditMovementDialog
-          movement={movements.find((m) => m.id === editingId)!}
+        <EditTransactionDialog
+          transaction={transactions.find((t) => t.id === editingId)!}
           categories={categories}
           open={editingId !== null}
           onClose={() => setEditingId(null)}

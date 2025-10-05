@@ -273,19 +273,19 @@ export async function getPeriodCategoryStats(
     { category_id: string; category_name: string; total: number; count: number }
   >();
 
-  (data || []).forEach((movement) => {
-    const categoryId = movement.category_id as string;
-    const categoryName = (movement.categories as { name?: string })?.name || 'Sin categoría';
+  (data || []).forEach((transaction) => {
+    const categoryId = transaction.category_id as string;
+    const categoryName = (transaction.categories as { name?: string })?.name || 'Sin categoría';
     const existing = categoryMap.get(categoryId);
 
     if (existing) {
-      existing.total += Number(movement.amount);
+      existing.total += Number(transaction.amount);
       existing.count += 1;
     } else {
       categoryMap.set(categoryId, {
         category_id: categoryId,
         category_name: categoryName,
-        total: Number(movement.amount),
+        total: Number(transaction.amount),
         count: 1,
       });
     }

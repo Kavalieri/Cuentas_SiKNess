@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MonthSelector } from '@/components/shared/MonthSelector';
-import { AddMovementDialog } from '@/app/app/expenses/components/AddMovementDialog';
-import { MovementsList } from '@/app/app/components/MovementsList';
+import { AddTransactionDialog } from '@/app/app/expenses/components/AddTransactionDialog';
+import { TransactionsList } from '@/app/app/components/TransactionsList';
 import { ExpensesByCategoryChart } from '@/app/app/components/charts/ExpensesByCategoryChart';
 import { IncomeVsExpensesChart } from '@/app/app/components/charts/IncomeVsExpensesChart';
 import { formatCurrency } from '@/lib/format';
-import { getMonthSummary, getMovements, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
+import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -21,7 +21,7 @@ type Category = {
   type: string;
 };
 
-type Movement = {
+type Transaction = {
   id: string;
   type: 'expense' | 'income';
   amount: number;
@@ -66,7 +66,7 @@ type MonthComparison = {
 
 interface DashboardContentProps {
   initialCategories: Category[];
-  initialMovements: Movement[];
+  initialTransactions: Transaction[];
   initialSummary: {
     expenses: number;
     income: number;
@@ -78,14 +78,14 @@ interface DashboardContentProps {
 
 export function DashboardContent({
   initialCategories,
-  initialMovements,
+  initialTransactions,
   initialSummary,
   initialCategoryExpenses,
   initialComparison,
 }: DashboardContentProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [summary, setSummary] = useState(initialSummary);
-  const [movements, setMovements] = useState(initialMovements);
+  const [transactions, setTransactions] = useState(initialTransactions);
   const [categoryExpenses, setCategoryExpenses] = useState(initialCategoryExpenses);
   const [comparison, setComparison] = useState(initialComparison);
   const [isLoading, setIsLoading] = useState(false);
@@ -101,9 +101,9 @@ export function DashboardContent({
     const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
 
-    const [summaryResult, movementsResult, categoryExpensesResult, comparisonResult] = await Promise.all([
+    const [summaryResult, transactionsResult, categoryExpensesResult, comparisonResult] = await Promise.all([
       getMonthSummary(year, month),
-      getMovements({ startDate, endDate }),
+      getTransactions({ startDate, endDate }),
       getCategoryExpenses({ startDate, endDate }),
       getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
     ]);
@@ -114,10 +114,10 @@ export function DashboardContent({
       toast.error('Error al cargar el resumen');
     }
 
-    if (movementsResult.ok) {
-      setMovements((movementsResult.data || []) as Movement[]);
+    if (transactionsResult.ok) {
+      setTransactions((transactionsResult.data || []) as Transaction[]);
     } else {
-      toast.error('Error al cargar los movimientos');
+      toast.error('Error al cargar los transaccións');
     }
 
     if (categoryExpensesResult.ok) {
@@ -139,9 +139,9 @@ export function DashboardContent({
     const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
 
-    const [summaryResult, movementsResult, categoryExpensesResult] = await Promise.all([
+    const [summaryResult, transactionsResult, categoryExpensesResult] = await Promise.all([
       getMonthSummary(year, month),
-      getMovements({ startDate, endDate }),
+      getTransactions({ startDate, endDate }),
       getCategoryExpenses({ startDate, endDate }),
     ]);
 
@@ -149,8 +149,8 @@ export function DashboardContent({
       setSummary(summaryResult.data || { expenses: 0, income: 0, balance: 0 });
     }
 
-    if (movementsResult.ok) {
-      setMovements((movementsResult.data || []) as Movement[]);
+    if (transactionsResult.ok) {
+      setTransactions((transactionsResult.data || []) as Transaction[]);
     }
 
     if (categoryExpensesResult.ok) {
@@ -158,17 +158,17 @@ export function DashboardContent({
     }
   };
 
-  const expenseMovements = movements.filter((m) => m.type === 'expense');
-  const incomeMovements = movements.filter((m) => m.type === 'income');
+  const expenseTransactions = transactions.filter((m) => m.type === 'expense');
+  const incomeTransactions = transactions.filter((m) => m.type === 'income');
 
   // Limitar a 10 últimas transacciones para el dashboard
-  const recentMovements = movements.slice(0, 10);
-  const recentExpenses = expenseMovements.slice(0, 10);
-  const recentIncome = incomeMovements.slice(0, 10);
+  const recentTransactions = transactions.slice(0, 10);
+  const recentExpenses = expenseTransactions.slice(0, 10);
+  const recentIncome = incomeTransactions.slice(0, 10);
 
-  const hasMoreMovements = movements.length > 10;
-  const hasMoreExpenses = expenseMovements.length > 10;
-  const hasMoreIncome = incomeMovements.length > 10;
+  const hasMoreTransactions = transactions.length > 10;
+  const hasMoreExpenses = expenseTransactions.length > 10;
+  const hasMoreIncome = incomeTransactions.length > 10;
 
   return (
     <div className="space-y-8">
@@ -182,7 +182,7 @@ export function DashboardContent({
         <div className="flex items-center gap-4">
           <MonthSelector value={selectedMonth} onChange={handleMonthChange} />
           {/* @ts-ignore - categories typing */}
-          <AddMovementDialog categories={initialCategories} />
+          <AddTransactionDialog categories={initialCategories} />
         </div>
       </div>
 
@@ -199,7 +199,7 @@ export function DashboardContent({
               {formatCurrency(summary?.income || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {incomeMovements.length} {incomeMovements.length === 1 ? 'ingreso' : 'ingresos'}
+              {incomeTransactions.length} {incomeTransactions.length === 1 ? 'ingreso' : 'ingresos'}
             </p>
           </CardContent>
         </Card>
@@ -215,7 +215,7 @@ export function DashboardContent({
               {formatCurrency(summary?.expenses || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {expenseMovements.length} {expenseMovements.length === 1 ? 'gasto' : 'gastos'}
+              {expenseTransactions.length} {expenseTransactions.length === 1 ? 'gasto' : 'gastos'}
             </p>
           </CardContent>
         </Card>
@@ -263,12 +263,12 @@ export function DashboardContent({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Últimos Movimientos</CardTitle>
+                  <CardTitle>Últimos transaccións</CardTitle>
                   <CardDescription>
-                    {recentMovements.length} {hasMoreMovements ? `de ${movements.length}` : ''} movimiento{movements.length !== 1 ? 's' : ''}
+                    {recentTransactions.length} {hasMoreTransactions ? `de ${transactions.length}` : ''} transacción{transactions.length !== 1 ? 's' : ''}
                   </CardDescription>
                 </div>
-                {hasMoreMovements && (
+                {hasMoreTransactions && (
                   <Link
                     href="/app/expenses"
                     className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
@@ -283,8 +283,8 @@ export function DashboardContent({
               {isLoading ? (
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
-                /* @ts-ignore - complex movements typing */
-                <MovementsList movements={recentMovements} categories={initialCategories} onUpdate={refreshData} />
+                /* @ts-ignore - complex transactions typing */
+                <TransactionsList transactions={recentTransactions} categories={initialCategories} onUpdate={refreshData} />
               )}
             </CardContent>
           </Card>
@@ -297,7 +297,7 @@ export function DashboardContent({
                 <div>
                   <CardTitle>Ingresos Recientes</CardTitle>
                   <CardDescription>
-                    {recentIncome.length} {hasMoreIncome ? 'de' : ''} {incomeMovements.length} ingreso{incomeMovements.length !== 1 ? 's' : ''}
+                    {recentIncome.length} {hasMoreIncome ? 'de' : ''} {incomeTransactions.length} ingreso{incomeTransactions.length !== 1 ? 's' : ''}
                   </CardDescription>
                 </div>
                 {hasMoreIncome && (
@@ -315,8 +315,8 @@ export function DashboardContent({
               {isLoading ? (
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
-                /* @ts-ignore - complex movements typing */
-                <MovementsList movements={recentIncome} categories={initialCategories} onUpdate={refreshData} />
+                /* @ts-ignore - complex transactions typing */
+                <TransactionsList transactions={recentIncome} categories={initialCategories} onUpdate={refreshData} />
               )}
             </CardContent>
           </Card>
@@ -329,7 +329,7 @@ export function DashboardContent({
                 <div>
                   <CardTitle>Gastos Recientes</CardTitle>
                   <CardDescription>
-                    {recentExpenses.length} {hasMoreExpenses ? 'de' : ''} {expenseMovements.length} gasto{expenseMovements.length !== 1 ? 's' : ''}
+                    {recentExpenses.length} {hasMoreExpenses ? 'de' : ''} {expenseTransactions.length} gasto{expenseTransactions.length !== 1 ? 's' : ''}
                   </CardDescription>
                 </div>
                 {hasMoreExpenses && (
@@ -347,8 +347,8 @@ export function DashboardContent({
               {isLoading ? (
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
-                /* @ts-ignore - complex movements typing */
-                <MovementsList movements={recentExpenses} categories={initialCategories} onUpdate={refreshData} />
+                /* @ts-ignore - complex transactions typing */
+                <TransactionsList transactions={recentExpenses} categories={initialCategories} onUpdate={refreshData} />
               )}
             </CardContent>
           </Card>

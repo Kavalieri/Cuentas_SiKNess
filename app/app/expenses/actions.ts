@@ -6,7 +6,7 @@ import { supabaseServer, getCurrentUser, getUserHouseholdId } from '@/lib/supaba
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 
-const MovementSchema = z.object({
+const TransactionSchema = z.object({
   category_id: z
     .string()
     .transform((val) => (val === '' || val === 'none' ? null : val))
@@ -19,10 +19,10 @@ const MovementSchema = z.object({
 });
 
 /**
- * Crea un nuevo movimiento (gasto o ingreso)
+ * Crea una nueva transacción (gasto o ingreso)
  */
-export async function createMovement(formData: FormData): Promise<Result<{ id: string }>> {
-  const parsed = MovementSchema.safeParse(Object.fromEntries(formData));
+export async function createTransaction(formData: FormData): Promise<Result<{ id: string }>> {
+  const parsed = TransactionSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
@@ -79,9 +79,9 @@ export async function createMovement(formData: FormData): Promise<Result<{ id: s
 }
 
 /**
- * Obtiene todos los movimientos del household
+ * Obtiene todas las transacciones del household
  */
-export async function getMovements(params?: {
+export async function getTransactions(params?: {
   type?: 'expense' | 'income';
   startDate?: string;
   endDate?: string;
@@ -138,9 +138,9 @@ export async function getMovements(params?: {
 }
 
 /**
- * Elimina un movimiento
+ * Elimina una transacción
  */
-export async function deleteMovement(movementId: string): Promise<Result> {
+export async function deleteTransaction(transactionId: string): Promise<Result> {
   const householdId = await getUserHouseholdId();
   if (!householdId) {
     return fail('No tienes un hogar configurado');
@@ -151,7 +151,7 @@ export async function deleteMovement(movementId: string): Promise<Result> {
   const { error } = await supabase
     .from('transactions')
     .delete()
-    .eq('id', movementId)
+    .eq('id', transactionId)
     .eq('household_id', householdId); // Verificar que pertenece al household
 
   if (error) {
@@ -294,7 +294,7 @@ export async function getCategoryExpenses(params?: {
     query = query.lte('occurred_at', params.endDate);
   }
 
-  const { data: movements, error } = await query;
+  const { data: transactions, error } = await query;
 
   if (error) {
     return fail(error.message);
@@ -313,18 +313,18 @@ export async function getCategoryExpenses(params?: {
   >();
 
   // @ts-ignore
-  movements?.forEach((mov) => {
+  transactions?.forEach((txn) => {
     // @ts-ignore
-    const catId = mov.category_id || 'sin-categoria';
+    const catId = txn.category_id || 'sin-categoria';
     // @ts-ignore
-    const catName = mov.categories?.name || 'Sin categoría';
+    const catName = txn.categories?.name || 'Sin categoría';
     // @ts-ignore
-    const catIcon = mov.categories?.icon || '📦';
+    const catIcon = txn.categories?.icon || '📦';
 
     if (!categoryMap.has(catId)) {
       categoryMap.set(catId, {
         // @ts-ignore
-        category_id: mov.category_id,
+        category_id: txn.category_id,
         category_name: catName,
         category_icon: catIcon,
         total: 0,
@@ -334,7 +334,7 @@ export async function getCategoryExpenses(params?: {
 
     const entry = categoryMap.get(catId)!;
     // @ts-ignore
-    entry.total += Number(mov.amount);
+    entry.total += Number(txn.amount);
     entry.count += 1;
   });
 

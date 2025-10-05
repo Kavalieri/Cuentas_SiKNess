@@ -44,7 +44,7 @@ export default async function HouseholdsPage() {
         ...household,
         stats: {
           members: household.household_members?.length ?? 0,
-          movements: movementsResult.count ?? 0,
+          transactions: movementsResult.count ?? 0,
           categories: categoriesResult.count ?? 0,
           owners: household.household_members?.filter((m) => m.role === 'owner').length ?? 0,
         },
@@ -97,9 +97,9 @@ export default async function HouseholdsPage() {
                 <div>
                   <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                     <TrendingDown className="h-3 w-3" />
-                    Movimientos
+                    Transacciones
                   </div>
-                  <div className="text-xl font-bold">{household.stats.movements}</div>
+                  <div className="text-xl font-bold">{household.stats.transactions}</div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">Categorías</div>

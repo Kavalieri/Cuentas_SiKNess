@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { getUserHouseholdId } from '@/lib/supabaseServer';
-import { getMonthSummary, getMovements, getCategoryExpenses, getMonthComparison } from './expenses/actions';
+import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from './expenses/actions';
 import { getCategories } from './categories/actions';
 import { getInvitationDetails, getUserPendingInvitations } from './household/invitations/actions';
 import { DashboardOnboarding } from './components/DashboardOnboarding';
@@ -73,9 +73,9 @@ export default async function DashboardPage() {
   const pendingInvitations = pendingInvitationsResult.ok ? pendingInvitationsResult.data || [] : [];
 
   // Obtener datos en paralelo
-  const [summaryResult, movementsResult, categoriesResult, categoryExpensesResult, comparisonResult] = await Promise.all([
+  const [summaryResult, transactionsResult, categoriesResult, categoryExpensesResult, comparisonResult] = await Promise.all([
     getMonthSummary(year, month),
-    getMovements(),
+    getTransactions(),
     getCategories(),
     getCategoryExpenses({ startDate, endDate }),
     getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
     ? summaryResult.data!
     : { expenses: 0, income: 0, balance: 0 };
 
-  const allMovements = movementsResult.ok ? (movementsResult.data || []) : [];
+  const allTransactions = transactionsResult.ok ? (transactionsResult.data || []) : [];
   const categories = categoriesResult.ok ? (categoriesResult.data || []) : [];
   const categoryExpenses = categoryExpensesResult.ok ? (categoryExpensesResult.data || []) : [];
   const comparison = comparisonResult.ok ? comparisonResult.data : undefined;
@@ -99,7 +99,7 @@ export default async function DashboardPage() {
 
       <DashboardContent
         initialCategories={categories as never[]}
-        initialMovements={allMovements as never[]}
+        initialTransactions={allTransactions as never[]}
         initialSummary={summary}
         initialCategoryExpenses={categoryExpenses as never[]}
         initialComparison={comparison as never}

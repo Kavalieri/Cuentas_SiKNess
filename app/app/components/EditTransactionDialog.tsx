@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { updateMovement } from '@/app/app/expenses/edit-actions';
+import { updateTransaction } from '@/app/app/expenses/edit-actions';
 
 interface Category {
   id: string;
@@ -30,7 +30,7 @@ interface Category {
   type: string;
 }
 
-interface Movement {
+interface Transaction {
   id: string;
   description: string | null;
   occurred_at: string;
@@ -39,47 +39,47 @@ interface Movement {
   type: 'expense' | 'income';
 }
 
-interface EditMovementDialogProps {
-  movement: Movement;
+interface EditTransactionDialogProps {
+  transaction: Transaction;
   categories: Category[];
   open: boolean;
   onClose: () => void;
   onUpdate?: () => void | Promise<void>;
 }
 
-export function EditMovementDialog({
-  movement,
+export function EditTransactionDialog({
+  transaction,
   categories,
   open,
   onClose,
   onUpdate,
-}: EditMovementDialogProps) {
+}: EditTransactionDialogProps) {
   const [isPending, startTransition] = useTransition();
 
   // Estado local para el formulario
-  const [description, setDescription] = useState(movement.description || '');
+  const [description, setDescription] = useState(transaction.description || '');
   const [occurredAt, setOccurredAt] = useState(
-    movement.occurred_at ? movement.occurred_at.split('T')[0] : ''
+    transaction.occurred_at ? transaction.occurred_at.split('T')[0] : ''
   );
-  const [amount, setAmount] = useState(movement.amount.toString());
+  const [amount, setAmount] = useState(transaction.amount.toString());
   
   // Para la categoría, usamos un approach no-controlled para evitar bugs de renderizado del Select
-  // El Select tiene key={movement.id} para forzar re-render cuando cambia el movimiento
+  // El Select tiene key={transaction.id} para forzar re-render cuando cambia el movimiento
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    movement.category_id || 'none'
+    transaction.category_id || 'none'
   );
 
   // Actualizar estado cuando cambia el movimiento
   useEffect(() => {
-    setDescription(movement.description || '');
-    setOccurredAt(movement.occurred_at ? movement.occurred_at.split('T')[0] : '');
-    setSelectedCategoryId(movement.category_id || 'none');
-    setAmount(movement.amount.toString());
-  }, [movement]);
+    setDescription(transaction.description || '');
+    setOccurredAt(transaction.occurred_at ? transaction.occurred_at.split('T')[0] : '');
+    setSelectedCategoryId(transaction.category_id || 'none');
+    setAmount(transaction.amount.toString());
+  }, [transaction]);
 
   // Filtrar categorías por tipo del movimiento
   const filteredCategories = categories.filter(
-    (cat) => cat.type === movement.type
+    (cat) => cat.type === transaction.type
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,7 +92,7 @@ export function EditMovementDialog({
 
     startTransition(async () => {
       const formData = new FormData();
-      formData.append('movementId', movement.id);
+      formData.append('movementId', transaction.id);
       formData.append('description', description);
       formData.append('occurred_at', occurredAt);
       // FIX: Convertir "none" a string vacío para que el schema lo transforme a null
@@ -103,7 +103,7 @@ export function EditMovementDialog({
       }
       formData.append('amount', amount);
 
-      const result = await updateMovement(formData);
+      const result = await updateTransaction(formData);
 
       if (!result.ok) {
         toast.error(result.message);
@@ -166,7 +166,7 @@ export function EditMovementDialog({
           <div className="space-y-2">
             <Label htmlFor="category">Categoría</Label>
             <Select
-              key={movement.id}
+              key={transaction.id}
               defaultValue={selectedCategoryId}
               onValueChange={setSelectedCategoryId}
               disabled={isPending}

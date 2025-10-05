@@ -1,48 +1,48 @@
-import { getMovements } from '@/app/app/expenses/actions';
+import { getTransactions } from '@/app/app/expenses/actions';
 import { getCategories } from '@/app/app/categories/actions';
-import { AddMovementDialog } from './components/AddMovementDialog';
+import { AddTransactionDialog } from './components/AddTransactionDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/format';
 
 export default async function ExpensesPage() {
-  // Obtener movimientos y categorías
+  // Obtener Transacciones y categorías
   const [movementsResult, categoriesResult] = await Promise.all([
-    getMovements(),
+    getTransactions(),
     getCategories(),
   ]);
 
-  const movements = movementsResult.ok ? movementsResult.data || [] : [];
+  const transactions = movementsResult.ok ? movementsResult.data || [] : [];
   const categories = categoriesResult.ok ? categoriesResult.data || [] : [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Movimientos</h1>
+          <h1 className="text-3xl font-bold">Transacciones</h1>
           <p className="text-gray-600">Todos tus gastos e ingresos</p>
         </div>
         {/* @ts-ignore - categories typing */}
-        <AddMovementDialog categories={categories} />
+        <AddTransactionDialog categories={categories} />
       </div>
 
-      {movements.length === 0 ? (
+      {transactions.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center text-gray-500">
               <p className="text-lg font-medium mb-2">
-                No hay movimientos registrados
+                No hay Transacciones registrados
               </p>
               <p className="text-sm">
-                Haz click en &quot;+ Nuevo Movimiento&quot; para empezar
+                Haz click en &quot;+ Nuevo transacción&quot; para empezar
               </p>
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {/* @ts-ignore - movements with complex typing */}
-          {movements.map((movement) => {
+          {/* @ts-ignore - transactions with complex typing */}
+          {transactions.map((movement) => {
             const m = movement as Record<string, unknown>;
             const categories = m.categories as Record<string, unknown> | null;
             
