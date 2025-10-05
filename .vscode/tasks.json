@@ -4,7 +4,7 @@
     {
       "label": "supabase db push",
       "type": "shell",
-      "command": "npx supabase db push"
+      "command": "npx supabase db push --yes"
     },
     {
       "label": "build-compile",
@@ -29,7 +29,7 @@
     {
       "label": "supabase db pull",
       "type": "shell",
-      "command": "npx supabase db pull"
+      "command": "npx supabase db pull --yes"
     },
     {
       "label": "supabase migration new",
@@ -39,27 +39,27 @@
     {
       "label": "supabase link",
       "type": "shell",
-      "command": "npx supabase link --project-ref fizxvvtakvmmeflmbwud"
+      "command": "npx supabase link --project-ref fizxvvtakvmmeflmbwud --yes"
     },
     {
       "label": "supabase db reset",
       "type": "shell",
-      "command": "npx supabase db reset"
+      "command": "npx supabase db reset --yes"
     },
     {
       "label": "supabase start",
       "type": "shell",
-      "command": "npx supabase start"
+      "command": "npx supabase start --yes"
     },
     {
       "label": "supabase stop",
       "type": "shell",
-      "command": "npx supabase stop"
+      "command": "npx supabase stop --yes"
     },
     {
       "label": "supabase status",
       "type": "shell",
-      "command": "npx supabase status"
+      "command": "npx supabase status --yes"
     }
   ],
   "inputs": [

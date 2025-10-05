@@ -1,7 +1,6 @@
 'use client';
 
 import { HeroContribution } from './HeroContribution';
-import { HouseholdSummary } from './HouseholdSummary';
 import { ContributionMembersList } from './ContributionMembersList';
 import { ConfigurationSection } from './ConfigurationSection';
 import { MyAdjustmentsPanel } from './MyAdjustmentsPanel';
@@ -68,14 +67,6 @@ export function ContributionsContent({
         userIncome={currentUserIncome}
         currency={currency}
         categories={categories}
-      />
-
-      {/* Resumen del hogar */}
-      <HouseholdSummary
-        monthlyGoal={monthlyGoal}
-        totalPaid={totalPaid}
-        calculationType={calculationType}
-        currency={currency}
       />
 
       {/* Lista de miembros */}

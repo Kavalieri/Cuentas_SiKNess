@@ -112,6 +112,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "contribution_adjustments_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contribution_adjustments_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
@@ -165,6 +172,13 @@ export type Database = {
             columns: ["movement_id"]
             isOneToOne: false
             referencedRelation: "v_transactions_with_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustments_rejected_by_fkey"
+            columns: ["rejected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
