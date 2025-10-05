@@ -568,10 +568,14 @@ export async function updatePendingAdjustment(formData: FormData): Promise<Resul
 }
 
 // =====================================================
-// 6. Helpers - Obtener Ajustes Pendientes (Owner)
+// 6. Helpers - Obtener Ajustes
 // =====================================================
 
-export async function getPendingAdjustments(): Promise<Result<AdjustmentRow[]>> {
+/**
+ * Obtener TODOS los ajustes del hogar (para owners)
+ * Incluye pending, approved y rejected
+ */
+export async function getAllHouseholdAdjustments(): Promise<Result<AdjustmentRow[]>> {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -600,10 +604,10 @@ export async function getPendingAdjustments(): Promise<Result<AdjustmentRow[]>> 
     .single();
 
   if (!membership || membership.role !== 'owner') {
-    return fail('Solo los owners pueden ver ajustes pendientes');
+    return fail('Solo los owners pueden ver todos los ajustes del hogar');
   }
 
-  // Obtener ajustes pendientes del hogar
+  // Obtener todos los ajustes del hogar
   const { data: adjustments, error } = await supabase
     .from('contribution_adjustments')
     .select(`
@@ -619,7 +623,6 @@ export async function getPendingAdjustments(): Promise<Result<AdjustmentRow[]>> 
       expense_category:categories!expense_category_id(name, type)
     `)
     .eq('contributions.household_id', householdId)
-    .eq('status', 'pending')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -627,4 +630,61 @@ export async function getPendingAdjustments(): Promise<Result<AdjustmentRow[]>> 
   }
 
   return ok(adjustments as unknown as AdjustmentRow[]);
+}
+
+/**
+ * Obtener ajustes del usuario actual (miembro)
+ * Incluye pending, approved y rejected
+ */
+export async function getMyAdjustments(): Promise<Result<AdjustmentRow[]>> {
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return fail('Usuario no autenticado');
+  }
+
+  // Obtener profile_id del usuario actual
+  const profileId = await getCurrentProfileId(supabase);
+  if (!profileId) {
+    return fail('Perfil de usuario no encontrado');
+  }
+
+  // Obtener household_id activo del usuario
+  const householdId = await import('@/lib/supabaseServer').then(m => m.getUserHouseholdId());
+  if (!householdId) {
+    return fail('No se pudo determinar el hogar activo');
+  }
+
+  // Obtener ajustes del usuario actual
+  const { data: adjustments, error } = await supabase
+    .from('contribution_adjustments')
+    .select(`
+      *,
+      contributions!inner(
+        household_id,
+        profile_id,
+        year,
+        month,
+        profiles!inner(display_name, email)
+      ),
+      category:categories!category_id(name, type),
+      expense_category:categories!expense_category_id(name, type)
+    `)
+    .eq('contributions.household_id', householdId)
+    .eq('contributions.profile_id', profileId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return fail('Error al obtener ajustes: ' + error.message);
+  }
+
+  return ok(adjustments as unknown as AdjustmentRow[]);
+}
+
+/**
+ * @deprecated Usar getAllHouseholdAdjustments() en su lugar
+ */
+export async function getPendingAdjustments(): Promise<Result<AdjustmentRow[]>> {
+  return getAllHouseholdAdjustments();
 }

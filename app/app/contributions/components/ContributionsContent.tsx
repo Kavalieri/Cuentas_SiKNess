@@ -4,7 +4,7 @@ import { HeroContribution } from './HeroContribution';
 import { HouseholdSummary } from './HouseholdSummary';
 import { ContributionMembersList } from './ContributionMembersList';
 import { ConfigurationSection } from './ConfigurationSection';
-import { PendingApprovalsPanel } from './PendingApprovalsPanel';
+import { MyAdjustmentsPanel } from './MyAdjustmentsPanel';
 import type { Database } from '@/types/database';
 import type { CalculationType } from '@/lib/contributionTypes';
 
@@ -22,6 +22,7 @@ type Member = {
 interface ContributionsContentProps {
   householdId: string;
   userEmail: string;
+  currentUserProfileId: string;
   currentUserIncome: number;
   currentUserContribution: Contribution | null;
   totalIncome: number;
@@ -37,6 +38,7 @@ interface ContributionsContentProps {
 export function ContributionsContent({
   householdId,
   userEmail,
+  currentUserProfileId,
   currentUserIncome,
   currentUserContribution,
   totalIncome,
@@ -50,6 +52,14 @@ export function ContributionsContent({
 }: ContributionsContentProps) {
   return (
     <div className="space-y-6">
+      {/* Panel de Ajustes (visible para todos, en la parte alta) */}
+      <MyAdjustmentsPanel
+        isOwner={isOwner}
+        currentUserProfileId={currentUserProfileId}
+        categories={categories}
+        currency={currency}
+      />
+
       {/* Hero: Tu contribución */}
       <HeroContribution
         contribution={currentUserContribution}
@@ -67,11 +77,6 @@ export function ContributionsContent({
         calculationType={calculationType}
         currency={currency}
       />
-
-      {/* Panel de Aprobaciones (solo owners) */}
-      {isOwner && (
-        <PendingApprovalsPanel categories={categories} currency={currency} />
-      )}
 
       {/* Lista de miembros */}
       <ContributionMembersList

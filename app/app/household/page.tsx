@@ -162,6 +162,7 @@ export default async function HouseholdPage() {
           <ContributionsContent
             householdId={householdId}
             userEmail={user.email || ''}
+            currentUserProfileId={currentProfile.id}
             currentUserIncome={currentUserIncome}
             currentUserContribution={currentUserContribution}
             totalIncome={totalIncome}
