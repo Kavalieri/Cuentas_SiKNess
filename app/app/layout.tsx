@@ -121,6 +121,33 @@ export default async function AppLayout({
       <main className="flex-1 bg-muted/30">
         <div className="container mx-auto px-4 py-8">{children}</div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t bg-background">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>© 2025 SiK</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">
+                Licencia <a href="https://github.com/Kavalieri/CuentasSiK/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">MIT</a>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono">v{process.env.npm_package_version || '0.1.0-alpha'}</span>
+              <span>•</span>
+              <a 
+                href="https://github.com/Kavalieri/CuentasSiK" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
