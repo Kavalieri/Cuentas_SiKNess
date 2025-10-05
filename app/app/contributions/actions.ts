@@ -6,14 +6,10 @@ import { supabaseServer } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 import { CALCULATION_TYPES } from '@/lib/contributionTypes';
-import type { Database } from '@/types/database';
 
 // =====================================================
 // Type Helpers
 // =====================================================
-
-// Helper type para inserts de transactions que evita problemas con tipos opcionales
-type MovementInsert = Database['public']['Tables']['transactions']['Insert'];
 
 // =====================================================
 // Schemas de Validación
@@ -357,18 +353,21 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
   const memberEmail = memberProfile?.email || 'Miembro desconocido';
 
   // 2. Crear movimiento de ingreso
-  const movementData: MovementInsert = {
+  const movementData = {
     household_id,
     profile_id,
     category_id: categoryId,
-    type: 'income',
+    type: 'income' as const,
     amount: expected_amount,
     currency: 'EUR',
     description: `Contribución mensual ${month}/${year} - ${memberEmail}`,
     occurred_at: new Date().toISOString().substring(0, 10),
+    // created_at y updated_at se manejan automáticamente por DEFAULT NOW()
   };
 
-  const { error: movementError } = await supabase.from('transactions').insert(movementData);
+  const { error: movementError } = await supabase
+    .from('transactions')
+    .insert(movementData as unknown as never); // Cast: created_at/updated_at auto-managed by DB
 
   if (movementError) return fail('Error al crear movimiento de ingreso');
 
@@ -452,20 +451,21 @@ export async function addContributionAdjustment(
     const today = new Date().toISOString().substring(0, 10);
 
     // 1. Crear movimiento de GASTO (el gasto real que hizo el miembro)
-    const expenseData: MovementInsert = {
+    const expenseData = {
       household_id: contribution.household_id,
       profile_id: contribution.profile_id,
       category_id: parsed.data.category_id,
-      type: 'expense',
+      type: 'expense' as const,
       amount: absoluteAmount,
       currency: 'EUR',
       description: `${parsed.data.reason} [Pre-pago]`,
       occurred_at: today,
+      // created_at y updated_at se manejan automáticamente por DEFAULT NOW()
     };
 
     const { data: expenseMovement, error: expenseError } = await supabase
       .from('transactions')
-      .insert(expenseData)
+      .insert(expenseData as unknown as never) // Cast: created_at/updated_at auto-managed by DB
       .select('id')
       .single();
 
@@ -476,20 +476,21 @@ export async function addContributionAdjustment(
     movementId = expenseMovement.id;
 
     // 2. Crear movimiento de INGRESO virtual (el aporte que representa ese gasto)
-    const incomeData: MovementInsert = {
+    const incomeData = {
       household_id: contribution.household_id,
       profile_id: contribution.profile_id,
       category_id: null, // Los ingresos virtuales no tienen categoría
-      type: 'income',
+      type: 'income' as const,
       amount: absoluteAmount,
       currency: 'EUR',
       description: `Aporte virtual ${contribution.month}/${contribution.year} - ${memberEmail} [Ajuste: ${parsed.data.reason}]`,
       occurred_at: today,
+      // created_at y updated_at se manejan automáticamente por DEFAULT NOW()
     };
 
     const { data: incomeMovement, error: incomeError } = await supabase
       .from('transactions')
-      .insert(incomeData)
+      .insert(incomeData as unknown as never) // Cast: created_at/updated_at auto-managed by DB
       .select('id')
       .single();
 
@@ -811,18 +812,21 @@ export async function recordContributionPayment(
   const memberEmail = memberProfile?.email || 'Miembro desconocido';
 
   // 2. Crear movimiento de ingreso
-  const movementData: MovementInsert = {
+  const movementData = {
     household_id,
     profile_id,
     category_id: categoryId,
-    type: 'income',
+    type: 'income' as const,
     amount,
     currency: 'EUR',
     description: `Contribución mensual ${month}/${year} - ${memberEmail}`,
     occurred_at: new Date().toISOString().substring(0, 10),
+    // created_at y updated_at se manejan automáticamente por DEFAULT NOW()
   };
 
-  const { error: movementError } = await supabase.from('transactions').insert(movementData);
+  const { error: movementError } = await supabase
+    .from('transactions')
+    .insert(movementData as unknown as never); // Cast: created_at/updated_at auto-managed by DB
 
   if (movementError) return fail('Error al crear movimiento de ingreso');
 

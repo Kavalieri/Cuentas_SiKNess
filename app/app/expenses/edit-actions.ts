@@ -31,7 +31,7 @@ export async function updateMovement(formData: FormData): Promise<Result> {
   } = await supabase.auth.getUser();
   if (!user) return fail('No autenticado');
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile } = await supabase
     .from('profiles')
     .select('id')
     .eq('auth_user_id', user.id)

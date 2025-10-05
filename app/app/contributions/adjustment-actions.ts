@@ -13,7 +13,6 @@ import type { Database } from '@/types/database';
 
 type AdjustmentRow = Database['public']['Tables']['contribution_adjustments']['Row'];
 type AdjustmentInsert = Database['public']['Tables']['contribution_adjustments']['Insert'];
-type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
 
 // =====================================================
 // Helper: Obtener Profile ID del usuario autenticado
@@ -233,7 +232,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
 
   const { data: expenseMovement, error: expenseError } = await supabase
     .from('transactions')
-    .insert(expenseData as any) // Cast needed: created_at/updated_at auto-managed by DB
+    .insert(expenseData as unknown as never) // Cast: created_at/updated_at auto-managed by DB
     .select('id')
     .single();
 
@@ -255,7 +254,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
 
   const { data: incomeMovement, error: incomeError } = await supabase
     .from('transactions')
-    .insert(incomeData as any) // Cast needed: created_at/updated_at auto-managed by DB
+    .insert(incomeData as unknown as never) // Cast: created_at/updated_at auto-managed by DB
     .select('id')
     .single();
 
@@ -443,7 +442,7 @@ export async function recordExtraIncome(formData: FormData): Promise<Result> {
 
   const { data: incomeMovement, error: incomeError } = await supabase
     .from('transactions')
-    .insert(incomeData as any) // Cast needed: created_at/updated_at auto-managed by DB
+    .insert(incomeData as unknown as never) // Cast: created_at/updated_at auto-managed by DB
     .select('id')
     .single();
 
