@@ -45,6 +45,11 @@ BEGIN
   ALTER TABLE user_settings DISABLE ROW LEVEL SECURITY;
   ALTER TABLE household_members DISABLE ROW LEVEL SECURITY;
   ALTER TABLE households DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE member_credits DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE household_savings DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE savings_transactions DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE monthly_periods DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE period_access_log DISABLE ROW LEVEL SECURITY;
   
   RAISE NOTICE 'RLS disabled for data deletion...';
   RAISE NOTICE '';
@@ -52,14 +57,18 @@ BEGIN
   -- Eliminar datos en orden correcto (respetando FKs)
   RAISE NOTICE 'Deleting data...';
   
-  -- 1. Transacciones
-  DELETE FROM transactions;
-  RAISE NOTICE '  ✓ Transactions deleted';
+  -- 1. Savings
+  DELETE FROM savings_transactions;
+  RAISE NOTICE '  ✓ Savings transactions deleted';
   
-  -- 2. Sistema de contribuciones
+  -- 2. Transacciones (DESPUÉS de adjustments)
   DELETE FROM contribution_adjustments;
   RAISE NOTICE '  ✓ Contribution adjustments deleted';
   
+  DELETE FROM transactions;
+  RAISE NOTICE '  ✓ Transactions deleted';
+  
+  -- 3. Sistema de contribuciones
   DELETE FROM contributions;
   RAISE NOTICE '  ✓ Contributions deleted';
   
@@ -69,19 +78,32 @@ BEGIN
   DELETE FROM household_settings;
   RAISE NOTICE '  ✓ Household settings deleted';
   
-  -- 3. Categorías
+  -- 4. Créditos y períodos
+  DELETE FROM member_credits;
+  RAISE NOTICE '  ✓ Member credits deleted';
+  
+  DELETE FROM period_access_log;
+  RAISE NOTICE '  ✓ Period access log deleted';
+  
+  DELETE FROM monthly_periods;
+  RAISE NOTICE '  ✓ Monthly periods deleted';
+  
+  -- 5. Savings y categorías
+  DELETE FROM household_savings;
+  RAISE NOTICE '  ✓ Household savings deleted';
+  
   DELETE FROM categories;
   RAISE NOTICE '  ✓ Categories deleted';
   
-  -- 4. Invitaciones
+  -- 6. Invitaciones
   DELETE FROM invitations;
   RAISE NOTICE '  ✓ Invitations deleted';
   
-  -- 5. Configuración de usuario (reset pero no borrar)
+  -- 7. Configuración de usuario (reset pero no borrar)
   UPDATE user_settings SET active_household_id = NULL, preferences = NULL;
   RAISE NOTICE '  ✓ User settings reset';
   
-  -- 6. Membresías y hogares
+  -- 8. Membresías y hogares
   DELETE FROM household_members;
   RAISE NOTICE '  ✓ Household members deleted';
   
@@ -103,6 +125,11 @@ BEGIN
   ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
   ALTER TABLE household_members ENABLE ROW LEVEL SECURITY;
   ALTER TABLE households ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE member_credits ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE household_savings ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE savings_transactions ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE monthly_periods ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE period_access_log ENABLE ROW LEVEL SECURITY;
   
   RAISE NOTICE 'RLS re-enabled!';
   RAISE NOTICE '';
@@ -121,8 +148,8 @@ BEGIN
   END IF;
   
   -- Crear hogar "Casa Test"
-  INSERT INTO households (name, currency)
-  VALUES ('Casa Test', 'EUR')
+  INSERT INTO households (name, status, settings)
+  VALUES ('Casa Test', 'active', '{"currency": "EUR"}'::jsonb)
   RETURNING id INTO v_household_id;
   
   RAISE NOTICE '  ✓ Household created: Casa Test (ID: %)', v_household_id;
@@ -183,8 +210,9 @@ BEGIN
   RAISE NOTICE '============================================================================';
   RAISE NOTICE '';
   RAISE NOTICE 'Data cleaned:';
-  RAISE NOTICE '  ✓ All transactions';
+  RAISE NOTICE '  ✓ All transactions and savings';
   RAISE NOTICE '  ✓ All contributions, adjustments, and incomes';
+  RAISE NOTICE '  ✓ All credits and periods';
   RAISE NOTICE '  ✓ All old categories and households';
   RAISE NOTICE '  ✓ All invitations';
   RAISE NOTICE '';
@@ -196,10 +224,16 @@ BEGIN
   RAISE NOTICE 'Fresh setup created:';
   RAISE NOTICE '  ✓ Household: Casa Test';
   RAISE NOTICE '  ✓ Members: 2 (1 owner, 1 member)';
-  RAISE NOTICE '  ✓ Categories: 10 default categories';
+  RAISE NOTICE '  ✓ Categories: 23 (auto-created by trigger)';
+  RAISE NOTICE '  ✓ Household savings: Created by trigger (balance 0)';
   RAISE NOTICE '  ✓ Active household set for both users';
+  
+  -- ⚠️ NO crear categorías manualmente - el trigger "on_household_created_create_categories" 
+  -- las crea automáticamente (23 categorías + household_savings)
   RAISE NOTICE '';
-  RAISE NOTICE 'Ready for testing! Login and start fresh.';
+  RAISE NOTICE 'Waiting for trigger to auto-create 23 categories + household_savings...';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Ready for testing! Login and create your own data.';
   RAISE NOTICE '============================================================================';
   
 END $$;

@@ -60,13 +60,18 @@ export type Database = {
           id: string
           income_description: string | null
           income_movement_id: string | null
+          locked_at: string | null
+          locked_by: string | null
           movement_id: string | null
+          original_amount: number | null
+          readjustment_transaction_id: string | null
           reason: string
           rejected_at: string | null
           rejected_by: string | null
           status: string
           type: string | null
           updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           amount: number
@@ -81,13 +86,18 @@ export type Database = {
           id?: string
           income_description?: string | null
           income_movement_id?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
           movement_id?: string | null
+          original_amount?: number | null
+          readjustment_transaction_id?: string | null
           reason: string
           rejected_at?: string | null
           rejected_by?: string | null
           status?: string
           type?: string | null
           updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           amount?: number
@@ -102,13 +112,18 @@ export type Database = {
           id?: string
           income_description?: string | null
           income_movement_id?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
           movement_id?: string | null
+          original_amount?: number | null
+          readjustment_transaction_id?: string | null
           reason?: string
           rejected_at?: string | null
           rejected_by?: string | null
           status?: string
           type?: string | null
           updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -161,6 +176,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contribution_adjustments_locked_by_fkey"
+            columns: ["locked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contribution_adjustments_movement_id_fkey"
             columns: ["movement_id"]
             isOneToOne: false
@@ -175,8 +197,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contribution_adjustments_readjustment_transaction_id_fkey"
+            columns: ["readjustment_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustments_readjustment_transaction_id_fkey"
+            columns: ["readjustment_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transactions_with_profile"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contribution_adjustments_rejected_by_fkey"
             columns: ["rejected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustments_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -276,6 +319,50 @@ export type Database = {
           },
         ]
       }
+      household_savings: {
+        Row: {
+          created_at: string
+          currency: string
+          current_balance: number
+          goal_amount: number | null
+          goal_deadline: string | null
+          goal_description: string | null
+          household_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          current_balance?: number
+          goal_amount?: number | null
+          goal_deadline?: string | null
+          goal_description?: string | null
+          household_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          current_balance?: number
+          goal_amount?: number | null
+          goal_deadline?: string | null
+          goal_description?: string | null
+          household_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_savings_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_settings: {
         Row: {
           calculation_type: string
@@ -316,16 +403,22 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          settings: Json
+          status: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
+          settings?: Json
+          status?: string
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
+          settings?: Json
+          status?: string
         }
         Relationships: []
       }
@@ -388,6 +481,139 @@ export type Database = {
           },
         ]
       }
+      member_credits: {
+        Row: {
+          amount: number
+          applied_at: string | null
+          applied_to_contribution_id: string | null
+          applied_to_period_id: string | null
+          auto_apply: boolean
+          created_at: string
+          created_by: string | null
+          currency: string
+          expires_at: string | null
+          household_id: string
+          id: string
+          monthly_decision: string | null
+          profile_id: string
+          savings_transaction_id: string | null
+          source_month: number
+          source_period_id: string | null
+          source_year: number
+          status: string
+          transferred_to_savings: boolean
+          transferred_to_savings_at: string | null
+        }
+        Insert: {
+          amount: number
+          applied_at?: string | null
+          applied_to_contribution_id?: string | null
+          applied_to_period_id?: string | null
+          auto_apply?: boolean
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expires_at?: string | null
+          household_id: string
+          id?: string
+          monthly_decision?: string | null
+          profile_id: string
+          savings_transaction_id?: string | null
+          source_month: number
+          source_period_id?: string | null
+          source_year: number
+          status?: string
+          transferred_to_savings?: boolean
+          transferred_to_savings_at?: string | null
+        }
+        Update: {
+          amount?: number
+          applied_at?: string | null
+          applied_to_contribution_id?: string | null
+          applied_to_period_id?: string | null
+          auto_apply?: boolean
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expires_at?: string | null
+          household_id?: string
+          id?: string
+          monthly_decision?: string | null
+          profile_id?: string
+          savings_transaction_id?: string | null
+          source_month?: number
+          source_period_id?: string | null
+          source_year?: number
+          status?: string
+          transferred_to_savings?: boolean
+          transferred_to_savings_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_credits_applied_to_contribution_id_fkey"
+            columns: ["applied_to_contribution_id"]
+            isOneToOne: false
+            referencedRelation: "contributions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_credits_applied_to_period_id_fkey"
+            columns: ["applied_to_period_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_credits_applied_to_period_id_fkey"
+            columns: ["applied_to_period_id"]
+            isOneToOne: false
+            referencedRelation: "v_period_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_credits_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_credits_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_credits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_credits_savings_transaction_id_fkey"
+            columns: ["savings_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "savings_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_credits_source_period_id_fkey"
+            columns: ["source_period_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_credits_source_period_id_fkey"
+            columns: ["source_period_id"]
+            isOneToOne: false
+            referencedRelation: "v_period_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_incomes: {
         Row: {
           created_at: string
@@ -432,15 +658,19 @@ export type Database = {
       }
       monthly_periods: {
         Row: {
+          auto_close_enabled: boolean
           closed_at: string | null
           closed_by: string | null
           closing_balance: number
           created_at: string
           household_id: string
           id: string
+          last_reopened_at: string | null
+          last_reopened_by: string | null
           month: number
           notes: string | null
           opening_balance: number
+          reopened_count: number
           status: string
           total_expenses: number
           total_income: number
@@ -448,15 +678,19 @@ export type Database = {
           year: number
         }
         Insert: {
+          auto_close_enabled?: boolean
           closed_at?: string | null
           closed_by?: string | null
           closing_balance?: number
           created_at?: string
           household_id: string
           id?: string
+          last_reopened_at?: string | null
+          last_reopened_by?: string | null
           month: number
           notes?: string | null
           opening_balance?: number
+          reopened_count?: number
           status?: string
           total_expenses?: number
           total_income?: number
@@ -464,15 +698,19 @@ export type Database = {
           year: number
         }
         Update: {
+          auto_close_enabled?: boolean
           closed_at?: string | null
           closed_by?: string | null
           closing_balance?: number
           created_at?: string
           household_id?: string
           id?: string
+          last_reopened_at?: string | null
+          last_reopened_by?: string | null
           month?: number
           notes?: string | null
           opening_balance?: number
+          reopened_count?: number
           status?: string
           total_expenses?: number
           total_income?: number
@@ -485,6 +723,81 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_periods_last_reopened_by_fkey"
+            columns: ["last_reopened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      period_access_log: {
+        Row: {
+          action: string
+          household_id: string
+          id: string
+          metadata: Json | null
+          new_status: string | null
+          old_status: string | null
+          performed_at: string
+          performed_by: string
+          period_id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          household_id: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          old_status?: string | null
+          performed_at?: string
+          performed_by: string
+          period_id: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          household_id?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          old_status?: string | null
+          performed_at?: string
+          performed_by?: string
+          period_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "period_access_log_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "period_access_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "period_access_log_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "period_access_log_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "v_period_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -521,6 +834,110 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      savings_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          destination_transaction_id: string | null
+          household_id: string
+          id: string
+          notes: string | null
+          savings_id: string
+          source_credit_id: string | null
+          source_profile_id: string | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          destination_transaction_id?: string | null
+          household_id: string
+          id?: string
+          notes?: string | null
+          savings_id: string
+          source_credit_id?: string | null
+          source_profile_id?: string | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          destination_transaction_id?: string | null
+          household_id?: string
+          id?: string
+          notes?: string | null
+          savings_id?: string
+          source_credit_id?: string | null
+          source_profile_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_transactions_destination_transaction_id_fkey"
+            columns: ["destination_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_transactions_destination_transaction_id_fkey"
+            columns: ["destination_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transactions_with_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_transactions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_transactions_savings_id_fkey"
+            columns: ["savings_id"]
+            isOneToOne: false
+            referencedRelation: "household_savings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_transactions_source_credit_id_fkey"
+            columns: ["source_credit_id"]
+            isOneToOne: false
+            referencedRelation: "member_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_transactions_source_profile_id_fkey"
+            columns: ["source_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_admins: {
         Row: {
@@ -645,43 +1062,73 @@ export type Database = {
           amount: number
           category_id: string | null
           created_at: string | null
+          created_by: string | null
           currency: string
           description: string | null
           household_id: string
           id: string
+          locked_at: string | null
+          locked_by: string | null
           occurred_at: string
+          paid_by: string | null
           period_id: string | null
           profile_id: string | null
+          source_id: string | null
+          source_type: string | null
+          split_data: Json | null
+          split_type: string
+          status: string
           type: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           amount: number
           category_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           currency?: string
           description?: string | null
           household_id: string
           id?: string
+          locked_at?: string | null
+          locked_by?: string | null
           occurred_at: string
+          paid_by?: string | null
           period_id?: string | null
           profile_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          split_data?: Json | null
+          split_type?: string
+          status?: string
           type: string
           updated_at: string
+          updated_by?: string | null
         }
         Update: {
           amount?: number
           category_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           currency?: string
           description?: string | null
           household_id?: string
           id?: string
+          locked_at?: string | null
+          locked_by?: string | null
           occurred_at?: string
+          paid_by?: string | null
           period_id?: string | null
           profile_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          split_data?: Json | null
+          split_type?: string
+          status?: string
           type?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -713,8 +1160,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_locked_by_fkey"
+            columns: ["locked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -910,6 +1385,10 @@ export type Database = {
         Args: { p_household_id: string; p_user_id: string }
         Returns: Json
       }
+      apply_member_credits: {
+        Args: { p_household_id: string; p_month: number; p_year: number }
+        Returns: undefined
+      }
       calculate_monthly_contributions: {
         Args: { p_household_id: string; p_month: number; p_year: number }
         Returns: {
@@ -922,50 +1401,32 @@ export type Database = {
         Returns: undefined
       }
       close_monthly_period: {
-        Args: { p_notes?: string; p_period_id: string }
-        Returns: {
-          closed_at: string | null
-          closed_by: string | null
-          closing_balance: number
-          created_at: string
-          household_id: string
-          id: string
-          month: number
-          notes: string | null
-          opening_balance: number
-          status: string
-          total_expenses: number
-          total_income: number
-          updated_at: string
-          year: number
-        }
+        Args: { p_closed_by: string; p_period_id: string; p_reason?: string }
+        Returns: undefined
       }
       create_default_categories: {
         Args: { p_household_id: string }
-        Returns: undefined
+        Returns: number
       }
       create_household_with_member: {
         Args: { p_household_name: string; p_profile_id: string }
         Returns: Json
       }
+      deposit_to_savings: {
+        Args: {
+          p_amount: number
+          p_category?: string
+          p_created_by?: string
+          p_description: string
+          p_household_id: string
+          p_notes?: string
+          p_source_profile_id: string
+        }
+        Returns: Json
+      }
       ensure_monthly_period: {
         Args: { p_household_id: string; p_month: number; p_year: number }
-        Returns: {
-          closed_at: string | null
-          closed_by: string | null
-          closing_balance: number
-          created_at: string
-          household_id: string
-          id: string
-          month: number
-          notes: string | null
-          opening_balance: number
-          status: string
-          total_expenses: number
-          total_income: number
-          updated_at: string
-          year: number
-        }
+        Returns: string
       }
       get_current_profile: {
         Args: Record<PropertyKey, never>
@@ -1020,23 +1481,8 @@ export type Database = {
         }[]
       }
       reopen_monthly_period: {
-        Args: { p_period_id: string }
-        Returns: {
-          closed_at: string | null
-          closed_by: string | null
-          closing_balance: number
-          created_at: string
-          household_id: string
-          id: string
-          month: number
-          notes: string | null
-          opening_balance: number
-          status: string
-          total_expenses: number
-          total_income: number
-          updated_at: string
-          year: number
-        }
+        Args: { p_period_id: string; p_reason?: string; p_reopened_by: string }
+        Returns: undefined
       }
       restore_to_stock: {
         Args: Record<PropertyKey, never>
@@ -1050,6 +1496,14 @@ export type Database = {
         Args: { p_options?: Json }
         Returns: Json
       }
+      transfer_credit_to_savings: {
+        Args: {
+          p_credit_id: string
+          p_notes?: string
+          p_transferred_by: string
+        }
+        Returns: Json
+      }
       update_contribution_status: {
         Args: { p_contribution_id: string }
         Returns: undefined
@@ -1057,15 +1511,19 @@ export type Database = {
       update_period_totals: {
         Args: { p_period_id: string }
         Returns: {
+          auto_close_enabled: boolean
           closed_at: string | null
           closed_by: string | null
           closing_balance: number
           created_at: string
           household_id: string
           id: string
+          last_reopened_at: string | null
+          last_reopened_by: string | null
           month: number
           notes: string | null
           opening_balance: number
+          reopened_count: number
           status: string
           total_expenses: number
           total_income: number
@@ -1079,6 +1537,18 @@ export type Database = {
       }
       wipe_system_data: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      withdraw_from_savings: {
+        Args: {
+          p_amount: number
+          p_category_id?: string
+          p_create_common_transaction?: boolean
+          p_household_id: string
+          p_notes?: string
+          p_reason: string
+          p_withdrawn_by: string
+        }
         Returns: Json
       }
     }
