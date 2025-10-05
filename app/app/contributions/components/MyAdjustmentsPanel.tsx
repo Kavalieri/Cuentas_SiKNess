@@ -147,7 +147,9 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
     formData.append('adjustment_id', selectedAdjustment.adjustment.id);
     formData.append('expense_category_id', expenseCategoryId);
     formData.append('expense_description', expenseDescription);
-    formData.append('income_category_id', incomeCategoryId);
+    if (incomeCategoryId) {
+      formData.append('income_category_id', incomeCategoryId);
+    }
     formData.append('income_description', incomeDescription);
 
     const result = await approvePrepayment(formData);
@@ -468,12 +470,11 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                   <div className="space-y-2">
                     <div>
                       <Label htmlFor="income-category">Categoría (opcional)</Label>
-                      <Select value={incomeCategoryId} onValueChange={setIncomeCategoryId}>
+                      <Select value={incomeCategoryId || undefined} onValueChange={setIncomeCategoryId}>
                         <SelectTrigger id="income-category">
                           <SelectValue placeholder="Sin categoría" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sin categoría</SelectItem>
                           {categories
                             .filter((c) => c.type === 'income')
                             .map((cat) => (
