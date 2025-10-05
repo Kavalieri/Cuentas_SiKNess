@@ -215,8 +215,9 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   const absoluteAmount = Math.abs(adjustment.amount);
 
   // Crear fecha del movimiento (usamos el primer día del mes de la contribución)
-  const movementDate = new Date(adjustment.contributions.year, adjustment.contributions.month - 1, 1);
-  const movementDateStr = movementDate.toISOString().split('T')[0]!;
+  // FIX: Construir string directamente para evitar bug de zona horaria
+  // new Date(year, month, 1).toISOString() puede dar fecha anterior por timezone offset
+  const movementDateStr = `${adjustment.contributions.year}-${String(adjustment.contributions.month).padStart(2, '0')}-01`;
 
   // 1. Crear movimiento de GASTO (expense)
   const expenseData: MovementInsert = {
