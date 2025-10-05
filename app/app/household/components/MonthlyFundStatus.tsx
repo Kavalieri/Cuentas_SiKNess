@@ -215,10 +215,45 @@ export function MonthlyFundStatus({
             )}
           </CardTitle>
           <CardDescription>
-            Fondo de partida para gastos del mes • {formatCurrency(totalPaid)} de {formatCurrency(totalExpected)} aportados
+            Fondo de partida para gastos del mes • {formatCurrency(totalContributed, currency)} de {formatCurrency(fundGoal, currency)} aportados
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Indicadores principales */}
+          <div className="grid gap-4 md:grid-cols-3 mb-6">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Total Aportado</p>
+              <p className="text-2xl font-bold">{formatCurrency(totalContributed, currency)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Gastos Realizados</p>
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(expenses, currency)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Balance</p>
+              <p className={`text-2xl font-bold ${fundBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(fundBalance, currency)}
+              </p>
+            </div>
+          </div>
+
+          {/* Información adicional */}
+          {remainingToGoal > 0 && (
+            <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                Faltan {formatCurrency(remainingToGoal, currency)} para completar el fondo objetivo
+              </p>
+            </div>
+          )}
+
+          {incomes > 0 && (
+            <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+              <p className="text-sm text-green-900 dark:text-green-100">
+                + {formatCurrency(incomes, currency)} en ingresos registrados este mes
+              </p>
+            </div>
+          )}
+
           {/* Barra de progreso */}
           <div className="w-full bg-muted rounded-full h-3 mb-6">
             <div
@@ -254,9 +289,11 @@ export function MonthlyFundStatus({
                 );
               }
 
-              const percentage = totalExpected > 0 
-                ? (contribution.expected_amount / totalExpected) * 100 
-                : 0;
+              // Cálculos por miembro
+              const adjustments = Math.abs(contribution.adjustments_total || 0);
+              const totalPaidByMember = contribution.paid_amount + adjustments;
+              const originalExpected = contribution.expected_amount + adjustments; // Expected sin ajustes
+              const percentageOfFund = fundGoal > 0 ? (originalExpected / fundGoal) * 100 : 0;
               const isPaid = contribution.status === 'paid' || contribution.paid_amount >= contribution.expected_amount;
 
               return (
@@ -281,7 +318,7 @@ export function MonthlyFundStatus({
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {percentage.toFixed(1)}% del fondo • {formatCurrency(contribution.expected_amount)}
+                        {percentageOfFund.toFixed(1)}% del fondo • Aportado: {formatCurrency(totalPaidByMember, currency)}
                       </p>
                       {contribution.paid_at && (
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
