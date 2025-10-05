@@ -142,20 +142,37 @@ BEGIN
   
   RAISE NOTICE '  ✓ Active household set for both users';
   
-  -- Crear categorías por defecto
+  -- Crear categorías por defecto (23 categorías: 15 gasto + 8 ingreso)
+  -- CATEGORÍAS DE GASTO
   INSERT INTO categories (household_id, name, icon, type) VALUES
     (v_household_id, 'Vivienda', '🏠', 'expense'),
     (v_household_id, 'Supermercado', '🛒', 'expense'),
     (v_household_id, 'Transporte', '🚗', 'expense'),
+    (v_household_id, 'Restaurantes', '🍽️', 'expense'),
+    (v_household_id, 'Ocio', '🎬', 'expense'),
     (v_household_id, 'Salud', '💊', 'expense'),
-    (v_household_id, 'Ocio', '🎉', 'expense'),
-    (v_household_id, 'Luz', '💡', 'expense'),
-    (v_household_id, 'Internet', '📡', 'expense'),
-    (v_household_id, 'Butano', '🔥', 'expense'),
-    (v_household_id, 'Nómina', '💰', 'income'),
-    (v_household_id, 'Extra', '💵', 'income');
+    (v_household_id, 'Educación', '📚', 'expense'),
+    (v_household_id, 'Menaje', '�', 'expense'),
+    (v_household_id, 'Ropa', '👕', 'expense'),
+    (v_household_id, 'Mascotas', '�', 'expense'),
+    (v_household_id, 'Regalos', '🎁', 'expense'),
+    (v_household_id, 'Suscripciones', '�', 'expense'),
+    (v_household_id, 'Deportes', '⚽', 'expense'),
+    (v_household_id, 'Belleza', '💅', 'expense'),
+    (v_household_id, 'Varios', '�', 'expense');
   
-  RAISE NOTICE '  ✓ Default categories created: 10 categories';
+  -- CATEGORÍAS DE INGRESO
+  INSERT INTO categories (household_id, name, icon, type) VALUES
+    (v_household_id, 'Nómina', '💰', 'income'),
+    (v_household_id, 'Freelance', '💼', 'income'),
+    (v_household_id, 'Inversiones', '📈', 'income'),
+    (v_household_id, 'Ventas', '🏷️', 'income'),
+    (v_household_id, 'Devoluciones', '↩️', 'income'),
+    (v_household_id, 'Aportación Cuenta Conjunta', '🏦', 'income'),
+    (v_household_id, 'Bonus', '🎉', 'income'),
+    (v_household_id, 'Varios', '💵', 'income');
+  
+  RAISE NOTICE '  ✓ Default categories created: 23 categories (15 expense + 8 income)';
   RAISE NOTICE '';
   
   -- ========================================================================
