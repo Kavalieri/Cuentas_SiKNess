@@ -237,7 +237,7 @@ export function DashboardContent({
                 <div>
                   <CardTitle>Últimos Movimientos</CardTitle>
                   <CardDescription>
-                    {recentMovements.length} {hasMoreMovements ? 'de' : ''} {movements.length} movimiento{movements.length !== 1 ? 's' : ''}
+                    {recentMovements.length} {hasMoreMovements ? `de ${movements.length}` : ''} movimiento{movements.length !== 1 ? 's' : ''}
                   </CardDescription>
                 </div>
                 {hasMoreMovements && (
