@@ -6,109 +6,167 @@ Aplicación web minimalista para gestionar gastos e ingresos compartidos en pare
 
 **🌐 Demo en producción**: https://cuentas-sik.vercel.app
 
-## ✅ Estado Actual
+## ✨ Características Principales
 
-### Core Features
-- ✅ **Autenticación**: Magic link funcionando
-- ✅ **Creación de Households**: RLS sin recursión (con SECURITY DEFINER)
-- ✅ **Múltiples Hogares**: Los usuarios pueden crear/unirse a ilimitados hogares ⭐ NEW
-- ✅ **Selector de Hogares**: Cambio de contexto con dropdown en header ⭐ NEW
-- ✅ **Gestión de Categorías**: CRUD completo con UI
-- ✅ **Movimientos (Gastos/Ingresos)**: Implementado
-- ✅ **Dashboard**: Vista mensual con resúmenes
-- ✅ **Modo Oscuro**: Dark/Light mode con persistencia y detección del sistema
+### 🔐 Autenticación & Multi-Hogar
+- ✅ **Magic Link**: Autenticación sin contraseña vía email
+- ✅ **Múltiples Hogares**: Crea/únete a ilimitados hogares compartidos
+- ✅ **Selector de Contexto**: Cambio rápido entre hogares activos
+- ✅ **Sistema de Invitaciones**: Enlaces seguros para invitar miembros
 
-### Sistema de Contribuciones ⭐ NEW
-- ✅ **UI Simplificada**: Vista única en lugar de 3 pestañas
-- ✅ **Tipos de Cálculo**: Proporcional, Partes Iguales, Personalizado
-- ✅ **Pagos Flexibles**: Parciales, completos o sobrepagos
-- ✅ **Auto-creación de Movimientos**: Los pagos crean movimientos de ingreso automáticamente
-- ✅ **Estados de Pago**: pending, partial, paid, overpaid
-- ✅ **Balance Correcto**: Total recaudado incluye pre-pagos + pagos al fondo
+### 💸 Gestión de Finanzas
+- ✅ **Movimientos**: Registro de gastos e ingresos con categorías personalizadas
+- ✅ **Edición con Historial**: Modifica movimientos con auditoría automática ⭐ NEW
+- ✅ **Categorías Personalizadas**: CRUD completo con iconos y tipos (gasto/ingreso)
+- ✅ **Dashboard Mensual**: Resúmenes visuales con gráficos (Recharts)
+- ✅ **Privacy Mode**: Ocultar cantidades en lugares públicos (toggle Eye/EyeOff)
 
-### Sistema de Ajustes con Aprobación ⭐⭐ NEW (Oct 2025)
-
-Sistema completo de gestión de contribuciones con workflow de aprobación:
-
-**Flujo de Pre-pagos**:
-1. **Solicitud (Miembro)**: Miembro crea solicitud de pre-pago desde QuickActions
-   - Selecciona categoría de gasto (ej. "Supermercado")
-   - Indica monto y descripción
-   - Estado inicial: `pending`
-2. **Review (Owner)**: Owner ve solicitud en Panel de Aprobaciones
-   - Preview detallado del impacto en contribución (bloque azul)
-   - Puede editar categoría y descripciones antes de aprobar
-3. **Confirmación (Owner)**: Dialog de confirmación final
-   - Resumen del ajuste (miembro, monto, mes/año)
-   - Lista de movimientos que se crearán
-   - Advertencia: "Esta acción no se puede deshacer fácilmente"
-4. **Aprobación/Rechazo**:
-   - ✅ **Aprobar**: Crea 2 movimientos automáticamente + actualiza `paid_amount`
-   - ❌ **Rechazar**: Cambia estado a `rejected` + notifica al miembro
-5. **Update Optimista**: UI se actualiza inmediatamente sin recarga completa
-
-**Funcionalidades Clave**:
-- ✅ **Pre-pagos con Validación**: Los miembros solicitan, los owners aprueban
-- ✅ **Estados de Ajustes**: `pending` → `approved` / `rejected` con trazabilidad completa
-- ✅ **Movimientos Duales Automáticos**: Pre-pagos aprobados crean:
-  * Movimiento de gasto en la categoría seleccionada
-  * Movimiento de ingreso virtual representando el aporte del miembro
+### 🤝 Sistema de Contribuciones Proporcionales
+- ✅ **Cálculo Inteligente**: Proporcional a ingresos, partes iguales o personalizado
+- ✅ **Pre-pagos con Aprobación**: Workflow completo miembro → owner
+- ✅ **Movimientos Duales Automáticos**: Pre-pagos crean gasto + ingreso virtual
+- ✅ **Estados de Pago**: pending, partial, paid, overpaid con seguimiento en tiempo real
 - ✅ **Panel de Aprobaciones**: Interface dedicada para owners con contador de pendientes
-- ✅ **Edición Pre-aprobación**: Owners pueden modificar categoría y descripciones
-- ✅ **Confirmación de Seguridad**: Diálogo de dos pasos antes de aprobar
-- ✅ **Preview de Impacto**: Muestra cómo aumentará `paid_amount` y afectará al mes/año
-- ✅ **Ingresos Extra**: Aportes voluntarios con aprobación automática (no requieren owner)
-- ✅ **Updates Optimistas**: UI se actualiza inmediatamente, recarga en background después de 1s
-- ✅ **Notificaciones Mejoradas**: Toasts con descripciones y duración 5000ms
-- ✅ **Eliminación Inteligente**: Al eliminar ajuste → elimina automáticamente movimientos relacionados
 
-**Archivos del Sistema**:
-- Migration: `supabase/migrations/20251004_restructure_adjustments_approval_system.sql`
-- Server Actions: `app/app/contributions/adjustment-actions.ts` (565 líneas)
-- Panel Aprobaciones: `app/app/contributions/components/PendingApprovalsPanel.tsx` (597 líneas)
-- Formularios: `app/app/contributions/components/QuickActions.tsx` (411 líneas)
-- Testing Checklist: `docs/TESTING_CHECKLIST_ADJUSTMENTS.md` (570+ líneas)
-- Documentación: `docs/ADJUSTMENTS_REDESIGN.md`
+### 🎨 Experiencia de Usuario
+- ✅ **Dark/Light Mode**: Persistencia con detección del sistema (next-themes)
+- ✅ **Responsive Design**: Optimizado para móvil y escritorio
+- ✅ **Updates Optimistas**: UI instantánea con sincronización en background
+- ✅ **Notificaciones**: Toast messages con Sonner
 
-### Privacy & UX ⭐ NEW
-- ✅ **Privacy Mode**: Ocultar cantidades en lugares públicos con toggle Eye/EyeOff
-- ✅ **Persistencia**: Preferencia guardada en localStorage
-- ✅ **Contexto Global**: PrivacyProvider + hook usePrivateFormat()
-
-### Administración
-- ✅ **Panel de Administración**: Dashboard + Wipe + Gestión de Miembros + System Admins
-- ✅ **Perfil Personal**: Cada usuario puede editar su ingreso
-- ✅ **Gestión de Miembros**: Cambiar roles, eliminar miembros (admin)
-- ✅ **Función Wipe**: Limpiar datos de testing con protección anti-wipe
-
-### Sistema de Invitaciones ⭐ NEW
-- ✅ **Invitaciones Públicas**: Enlaces funcionan sin login (RLS fix)
-- ✅ **Constraint Fix**: Permite recrear invitaciones después de cancelar
-- ✅ **Cookie Cleanup**: Eliminación automática tras aceptar
-- ✅ **Auto-activación**: Hogares nuevos/aceptados se activan automáticamente
-
-### DevOps
-- ✅ **Supabase CLI**: Workflow de migraciones automatizado
-- ✅ **Build**: Producción funcionando (20 páginas)
-- ✅ **CI/CD**: GitHub Actions + Auto-deploy en Vercel
-- ✅ **Release Please**: Versionado automático con pre-releases alpha
+### 🛠️ Administración
+- ✅ **Panel de Admin**: Dashboard completo para system admins
+- ✅ **Gestión de Miembros**: Cambiar roles, eliminar miembros
+- ✅ **Wipe con Protección**: Limpiar datos de testing con anti-wipe
+- ✅ **Perfil Personal**: Edición de ingresos y preferencias
 
 ## 🚀 Stack Tecnológico
 
 - **Framework**: Next.js 15 (App Router, Server Actions, React 18+)
 - **Lenguaje**: TypeScript estricto
-- **UI**: Tailwind CSS + shadcn/ui + next-themes
+- **UI**: Tailwind CSS + shadcn/ui
+- **Tema**: next-themes (dark/light mode)
 - **Formularios**: React Hook Form + Zod
-- **Backend**: Supabase (PostgreSQL + Auth con magic link)
+- **Backend**: Supabase (PostgreSQL + Auth)
 - **Gráficas**: Recharts
 - **Testing**: Vitest
+- **Deploy**: Vercel (automático desde main)
 - **CI/CD**: GitHub Actions + Release Please
+
+## 🔧 Gestión del Proyecto con MCPs
+
+Este proyecto utiliza **Model Context Protocols (MCPs)** para automatización completa del desarrollo:
+
+### 🗄️ Supabase MCP
+```bash
+# Aplicar migraciones sin CLI manual
+mcp_supabase_apply_migration(project_id, name, query)
+
+# Validar estructura de tablas
+mcp_supabase_list_tables(project_id, schemas)
+
+# Ejecutar queries de validación
+mcp_supabase_execute_sql(project_id, query)
+
+# Obtener logs para debugging
+mcp_supabase_get_logs(project_id, service) # postgres, api, auth
+
+# Verificar seguridad y performance
+mcp_supabase_get_advisors(project_id, type) # security, performance
+```
+
+### 🐙 GitHub MCP
+```bash
+# Gestión de branches
+mcp_github_github_create_branch(owner, repo, branch, from_branch)
+mcp_github_github_list_branches(owner, repo)
+
+# Push directo de archivos
+mcp_github_github_push_files(owner, repo, branch, files, message)
+mcp_github_github_create_or_update_file(owner, repo, path, content, message, branch, sha)
+
+# Pull Requests (activar con activate_github_pull_request_management)
+# Issues (activar con activate_github_issue_management)
+# Workflows (activar con activate_github_workflow_management)
+```
+
+### 🌿 Git MCP (GitKraken)
+```bash
+# Operaciones Git sin CLI
+mcp_gitkraken_bun_git_status(directory)
+mcp_gitkraken_bun_git_add_or_commit(directory, action, files, message)
+mcp_gitkraken_bun_git_push(directory)
+mcp_gitkraken_bun_git_branch(directory, action, branch_name)
+mcp_gitkraken_bun_git_checkout(directory, branch)
+```
+
+### 🔺 Vercel MCP
+```bash
+# Deploy automático (ya configurado en GitHub → Vercel)
+mcp_vercel_deploy_to_vercel()
+
+# Monitoreo de deployments
+mcp_vercel_list_deployments(projectId, teamId)
+mcp_vercel_get_deployment(idOrUrl, teamId)
+
+# Debugging de builds
+mcp_vercel_get_deployment_build_logs(idOrUrl, teamId)
+```
+
+### 🎯 Workflow Completo con MCPs
+```typescript
+// 1. Crear y aplicar migración
+await mcp_supabase_apply_migration({
+  project_id: "fizxvvtakvmmeflmbwud",
+  name: "add_new_feature",
+  query: "CREATE TABLE..."
+});
+
+// 2. Validar estructura
+await mcp_supabase_list_tables({
+  project_id: "fizxvvtakvmmeflmbwud",
+  schemas: ["public"]
+});
+
+// 3. Verificar con SQL
+await mcp_supabase_execute_sql({
+  project_id: "fizxvvtakvmmeflmbwud",
+  query: "SELECT * FROM new_table LIMIT 1;"
+});
+
+// 4. Build local
+npm run build
+
+// 5. Commit y push con Git MCP
+await mcp_gitkraken_bun_git_add_or_commit({
+  directory: "e:\\GitHub\\CuentasSiK",
+  action: "add"
+});
+await mcp_gitkraken_bun_git_add_or_commit({
+  directory: "e:\\GitHub\\CuentasSiK",
+  action: "commit",
+  message: "feat: add new feature"
+});
+await mcp_gitkraken_bun_git_push({
+  directory: "e:\\GitHub\\CuentasSiK"
+});
+
+// 6. Deploy automático a Vercel (GitHub → Vercel)
+// 7. Verificar deployment
+await mcp_vercel_list_deployments({
+  projectId: "prj_ZJ6pJXvJGeiEgZ4Qf78HDPdax8TE",
+  teamId: "team_T54lgj5g3MGRCT6d4mFrqrNY"
+});
+```
+
+**⚠️ Regla Crítica**: SIEMPRE usar MCPs en lugar de acciones manuales o CLI. Ver `.github/copilot-instructions.md` para workflows completos.
 
 ## 📋 Requisitos Previos
 
 - Node.js 20.x o superior
 - npm
 - Cuenta en Supabase (gratuita)
+- (Opcional) MCPs configurados para automatización completa
 
 ## 🛠️ Setup Local
 
@@ -127,17 +185,50 @@ npm install
 
 ### 3. Configurar Supabase
 
+#### Opción A: Con Supabase MCP (Recomendado)
+```typescript
+// 1. Aplicar schema completo
+await mcp_supabase_apply_migration({
+  project_id: "tu_project_id",
+  name: "initial_schema",
+  query: fs.readFileSync("db/schema.sql", "utf-8")
+});
+
+// 2. Aplicar contribuciones
+await mcp_supabase_apply_migration({
+  project_id: "tu_project_id",
+  name: "contributions_schema",
+  query: fs.readFileSync("db/contributions-schema.sql", "utf-8")
+});
+
+// 3. Aplicar historial de transacciones
+await mcp_supabase_apply_migration({
+  project_id: "tu_project_id",
+  name: "transaction_history_schema",
+  query: fs.readFileSync("supabase/migrations/20251005113647_add_transaction_history_system.sql", "utf-8")
+});
+
+// 4. Validar estructura
+await mcp_supabase_list_tables({
+  project_id: "tu_project_id",
+  schemas: ["public"]
+});
+```
+
+#### Opción B: Manual (tradicional)
 1. Crea un proyecto en [Supabase](https://supabase.com)
-2. En el SQL Editor de Supabase, ejecuta:
-   - Primero: `db/schema.sql`
-   - Después: `db/seed.sql`
+2. En el SQL Editor de Supabase, ejecuta en orden:
+   - `db/schema.sql`
+   - `db/contributions-schema.sql`
+   - `supabase/migrations/20251005113647_add_transaction_history_system.sql`
+   - `db/seed.sql` (datos de prueba)
 3. Obtén tus credenciales:
    - Ve a Settings → API
    - Copia `Project URL` y `anon public` key
 
 ### 4. Configurar variables de entorno
 
-Crea un archivo `.env.local` en la raíz del proyecto:
+Crea un archivo `.env.local` en la raíz:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
@@ -244,19 +335,59 @@ La aplicación usa **magic links** de Supabase. Los usuarios reciben un enlace p
 
 ### Modelo de Datos
 
-#### Tablas Core
-- **households**: Hogar compartido (1 pareja = 1 household)
-- **household_members**: Relación usuarios-hogares con roles (owner/member)
-- **categories**: Categorías personalizadas por hogar (expense/income)
-- **movements**: Transacciones (gastos/ingresos)
+#### Tablas Core (12 tablas principales)
+1. **households**: Hogar compartido (multi-hogar por usuario)
+2. **household_members**: Relación many-to-many usuarios-hogares con roles (owner/member)
+3. **categories**: Categorías personalizadas por hogar (expense/income)
+4. **transactions**: Movimientos (gastos/ingresos) con descripción y categoría
+5. **transaction_history**: Auditoría de cambios en movimientos ⭐ NEW (Oct 2025)
 
-#### Sistema de Contribuciones ⭐
-- **member_incomes**: Historial de ingresos mensuales por miembro
-- **household_settings**: Meta de contribución mensual + tipo de cálculo
-- **contributions**: Contribuciones calculadas y rastreadas por miembro/mes
-- **contribution_adjustments**: Ajustes con sistema de aprobación (pending/approved/rejected) ⭐⭐ NEW
+#### Sistema de Contribuciones (4 tablas) ⭐
+6. **member_incomes**: Historial de ingresos mensuales por miembro
+7. **household_settings**: Meta de contribución mensual + tipo de cálculo
+8. **contributions**: Contribuciones calculadas y rastreadas por miembro/mes
+9. **contribution_adjustments**: Ajustes con workflow de aprobación (pending/approved/rejected)
 
-#### Sistema de Múltiples Hogares ⭐ NEW
+#### Sistema de Múltiples Hogares (2 tablas) ⭐ NEW
+10. **user_settings**: Configuración del usuario (active_household_id, preferences)
+11. **invitations**: Sistema de invitaciones con RLS público para acceso sin login
+
+#### Sistema de Privacidad (1 tabla) ⭐ NEW
+12. **PrivacyProvider**: Contexto React con estado hideAmounts persistido en localStorage
+
+### Sistema de Historial de Transacciones ⭐ NEW (Oct 2025)
+
+**Características**:
+- **Trigger Automático**: `save_transaction_history()` se ejecuta AFTER UPDATE en `transactions`
+- **Campos Rastreados**: description, occurred_at, category_id, amount
+- **Metadatos**: changed_by (profile_id), changed_at, change_reason, household_id
+- **RLS**: Solo miembros del household pueden ver su historial
+- **Cascade Delete**: Si se borra transaction, su historial también
+- **UI**: EditMovementDialog con validaciones y toast notifications
+
+**Uso**:
+```typescript
+// Editar movimiento (trigger guarda historial automáticamente)
+await updateMovement(formData);
+
+// Obtener historial de un movimiento
+const history = await getMovementHistory(movementId);
+// Retorna: old/new values + changed_by profile + old/new categories
+```
+
+### Row Level Security (RLS)
+
+**Todas las tablas** tienen RLS habilitado desde el día 1. Las políticas verifican que `auth.uid()` pertenezca al `household_id` del recurso consultado mediante funciones helper:
+- `get_profile_id_from_auth()`: Obtiene profile_id del usuario autenticado
+- `getUserHouseholdId()`: Obtiene el household_id activo del usuario
+- Verificación de membresía en `household_members`
+
+### Patrones de Autenticación
+
+- **Auth**: Magic link por email (sin contraseña) vía Supabase Auth
+- **Sesión**: Validar en Server Components con `lib/supabaseServer.ts`
+- **Server Actions**: Validación con Zod schemas antes de mutaciones
+- **Result Pattern**: `ok()` y `fail()` para manejo de errores consistente
 - **user_settings**: Configuración del usuario (active_household_id, preferences)
 - **invitations**: Sistema de invitaciones con constraint parcial y RLS público
 

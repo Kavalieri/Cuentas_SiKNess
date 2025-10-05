@@ -137,12 +137,12 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
             />
           </div>
 
-          {/* Nota */}
+          {/* Descripción */}
           <div className="space-y-2">
-            <Label htmlFor="note">Nota (opcional)</Label>
+            <Label htmlFor="description">Descripción (opcional)</Label>
             <Input
-              id="note"
-              name="note"
+              id="description"
+              name="description"
               placeholder="Ej: Compra del supermercado"
               disabled={isLoading}
             />
