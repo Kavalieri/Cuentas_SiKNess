@@ -1,10 +1,26 @@
-# CuentasSiK 💰
+<div align="center">
 
-Aplicación web minimalista para gestionar gastos e ingresos compartidos en pareja.
+# 💰 CuentasSiK
 
-[![Deploy on Vercel](https://vercel.com/button)](https://cuentas-sik.vercel.app)
+**Gestión de gastos compartidos para parejas**
 
-**🌐 Demo en producción**: https://cuentas-sik.vercel.app
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green?logo=supabase)](https://supabase.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com)
+
+[🌐 **Demo en Vivo**](https://cuentas-sik.vercel.app) · [📖 **Documentación**](./docs) · [🐛 **Reportar Bug**](https://github.com/Kavalieri/CuentasSiK/issues) · [💡 **Solicitar Feature**](https://github.com/Kavalieri/CuentasSiK/issues)
+
+</div>
+
+---
+
+## 📖 Sobre el Proyecto
+
+CuentasSiK es una aplicación web moderna y minimalista diseñada para parejas que desean llevar un control transparente de sus finanzas compartidas. Con un sistema de contribuciones proporcionales a los ingresos, facilita la equidad en los gastos del hogar sin complicaciones.
+
+**🎯 Filosofía**: Simplicidad, transparencia y justicia financiera en pareja.
 
 ## ✨ Características Principales
 
@@ -117,20 +133,20 @@ mcp_vercel_get_deployment_build_logs(idOrUrl, teamId)
 ```typescript
 // 1. Crear y aplicar migración
 await mcp_supabase_apply_migration({
-  project_id: "fizxvvtakvmmeflmbwud",
+  project_id: "your-supabase-project-id",
   name: "add_new_feature",
   query: "CREATE TABLE..."
 });
 
 // 2. Validar estructura
 await mcp_supabase_list_tables({
-  project_id: "fizxvvtakvmmeflmbwud",
+  project_id: "your-supabase-project-id",
   schemas: ["public"]
 });
 
 // 3. Verificar con SQL
 await mcp_supabase_execute_sql({
-  project_id: "fizxvvtakvmmeflmbwud",
+  project_id: "your-supabase-project-id",
   query: "SELECT * FROM new_table LIMIT 1;"
 });
 
@@ -154,8 +170,8 @@ await mcp_gitkraken_bun_git_push({
 // 6. Deploy automático a Vercel (GitHub → Vercel)
 // 7. Verificar deployment
 await mcp_vercel_list_deployments({
-  projectId: "prj_ZJ6pJXvJGeiEgZ4Qf78HDPdax8TE",
-  teamId: "team_T54lgj5g3MGRCT6d4mFrqrNY"
+  projectId: "your-vercel-project-id",
+  teamId: "your-vercel-team-id"
 });
 ```
 
@@ -583,25 +599,134 @@ Ver [docs/SUPABASE_CLI.md](docs/SUPABASE_CLI.md) para más detalles.
 - [ ] Testing manual de múltiples hogares en producción
 - [ ] Verificar flujo de invitaciones sin login
 
-### 📋 Próximas Features (v0.1.0)
-- [ ] Sistema de notificaciones
-- [ ] Gráficos con Recharts
-- [ ] Edición de categorías
-- [ ] Filtros avanzados en movimientos
-- [ ] Export/Import CSV
-- [ ] Import desde Excel existente
-- [ ] History tab en contribuciones
+### 📋 Próximas Features (v1.1.0)
+- [ ] Sistema de notificaciones push
+- [ ] Gráficos avanzados con análisis histórico
+- [ ] Export/Import CSV/Excel
+- [ ] Import desde Excel existente (`Cuentas Casa SiK.xlsx`)
+- [ ] History tab visual de contribuciones
+- [ ] Filtros avanzados en movimientos (búsqueda, rango de fechas)
 - [ ] Gestión avanzada de múltiples hogares (favoritos, recientes)
 
-### 🔮 Futuro (v0.2.0+)
+### 🔮 Futuro (v2.0.0+)
 - [ ] Integración con Google Sheets
-- [ ] PWA (Progressive Web App)
-- [ ] Notificaciones push
-- [ ] Múltiples households por usuario
+- [ ] PWA (Progressive Web App) con soporte offline
+- [ ] Notificaciones push en dispositivos
+- [ ] Dashboard de analytics con tendencias
+- [ ] API REST para integraciones externas
+- [ ] App móvil nativa (React Native)
+
+---
+
+## 🤝 Contribuir
+
+¡Las contribuciones son bienvenidas! Este es un proyecto open source y agradecemos cualquier ayuda.
+
+### 📝 Cómo Contribuir
+
+1. **Fork** el proyecto
+2. **Crea una rama** para tu feature (`git checkout -b feat/amazing-feature`)
+3. **Commit** tus cambios (`git commit -m 'feat: add amazing feature'`)
+4. **Push** a la rama (`git push origin feat/amazing-feature`)
+5. **Abre un Pull Request**
+
+### 🎯 Conventional Commits
+
+Usamos [Conventional Commits](https://www.conventionalcommits.org/) para mensajes claros:
+
+```bash
+feat: nueva funcionalidad
+fix: corrección de bug
+docs: cambios en documentación
+chore: tareas de mantenimiento
+refactor: refactorización de código
+test: añadir o mejorar tests
+```
+
+### 🐛 Reportar Bugs
+
+Si encuentras un bug, por favor [abre un issue](https://github.com/Kavalieri/CuentasSiK/issues/new) con:
+- Descripción clara del problema
+- Pasos para reproducirlo
+- Comportamiento esperado vs actual
+- Screenshots (si aplica)
+- Entorno (navegador, OS)
+
+### 💡 Solicitar Features
+
+¿Tienes una idea? [Abre un issue](https://github.com/Kavalieri/CuentasSiK/issues/new) con la etiqueta `enhancement`:
+- Descripción detallada de la feature
+- Casos de uso
+- Mockups o wireframes (opcional)
+
+---
 
 ## 📄 Licencia
 
-MIT
+Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](./LICENSE) para más detalles.
+
+```
+MIT License
+
+Copyright (c) 2025 CuentasSiK Contributors
+
+Se concede permiso, de forma gratuita, a cualquier persona que obtenga una copia
+de este software y archivos de documentación asociados (el "Software"), para usar
+el Software sin restricción, incluyendo sin limitación los derechos de uso, copia,
+modificación, fusión, publicación, distribución, sublicencia y/o venta de copias
+del Software.
+```
+
+---
+
+## 👥 Autores y Reconocimientos
+
+### 💻 Mantenedores
+
+- **[Kavalieri](https://github.com/Kavalieri)** - *Creador y desarrollador principal*
+
+### 🙏 Agradecimientos
+
+- **[Supabase](https://supabase.com)** - Por el increíble backend-as-a-service
+- **[Vercel](https://vercel.com)** - Por el hosting y deployment automático
+- **[shadcn/ui](https://ui.shadcn.com/)** - Por los componentes UI de calidad
+- **[Next.js Team](https://nextjs.org/)** - Por el framework más potente de React
+- Comunidad de **GitHub Copilot** por las herramientas de AI y MCPs
+
+### 🌟 Inspiración
+
+Este proyecto nació de la necesidad real de gestionar gastos compartidos de forma justa y transparente en pareja. Inspirado en el principio de que cada uno debe aportar según sus posibilidades, manteniendo la equidad y el respeto mutuo.
+
+---
+
+## 📞 Contacto y Soporte
+
+- **Issues**: [GitHub Issues](https://github.com/Kavalieri/CuentasSiK/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Kavalieri/CuentasSiK/discussions)
+- **Demo en Vivo**: [cuentas-sik.vercel.app](https://cuentas-sik.vercel.app)
+
+---
+
+## 📊 Estado del Proyecto
+
+![GitHub last commit](https://img.shields.io/github/last-commit/Kavalieri/CuentasSiK)
+![GitHub issues](https://img.shields.io/github/issues/Kavalieri/CuentasSiK)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/Kavalieri/CuentasSiK)
+
+**Versión actual**: v1.0.0  
+**Estado**: ✅ Production Ready  
+**Última actualización**: Octubre 2025
+
+---
+
+<div align="center">
+
+**Hecho con ❤️ para mejorar la transparencia financiera en pareja**
+
+[⬆ Volver arriba](#-cuentassik)
+
+</div>
+
 
 ## 👥 Contribuir
 

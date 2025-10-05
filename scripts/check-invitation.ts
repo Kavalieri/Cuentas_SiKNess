@@ -20,7 +20,8 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkInvitation() {
-  const email = 'fumetas.sik@gmail.com';
+  // NOTA: Reemplazar con el email a verificar
+  const email = 'user@example.com';
   
   console.log('🔍 Buscando invitaciones para:', email);
   console.log('----------------------------------------');
