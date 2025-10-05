@@ -54,6 +54,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
   // Formulario de aprobación
   const [expenseCategoryId, setExpenseCategoryId] = useState('');
   const [expenseDescription, setExpenseDescription] = useState('');
+  const [incomeCategoryId, setIncomeCategoryId] = useState('');
   const [incomeDescription, setIncomeDescription] = useState('');
 
   // Formulario de rechazo
@@ -121,6 +122,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
       data.adjustment.expense_description || 
       `${data.category?.name || 'Gasto común'} - ${data.member.display_name || data.member.email}`
     );
+    setIncomeCategoryId(''); // Usuario debe seleccionarlo
     setIncomeDescription(
       data.adjustment.income_description || 
       `Aporte de ${data.member.display_name || data.member.email} - ${data.adjustment.reason}`
@@ -145,6 +147,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
     formData.append('adjustment_id', selectedAdjustment.adjustment.id);
     formData.append('expense_category_id', expenseCategoryId);
     formData.append('expense_description', expenseDescription);
+    formData.append('income_category_id', incomeCategoryId);
     formData.append('income_description', incomeDescription);
 
     const result = await approvePrepayment(formData);
@@ -462,18 +465,38 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                 {/* Movimiento 2: Ingreso virtual */}
                 <div className="space-y-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                   <Label className="text-sm font-medium text-green-600 dark:text-green-400">2️⃣ Ingreso Virtual (Aporte)</Label>
-                  <div>
-                    <Label htmlFor="income-desc">Descripción</Label>
-                    <Input
-                      id="income-desc"
-                      value={incomeDescription}
-                      onChange={(e) => setIncomeDescription(e.target.value)}
-                      placeholder="Descripción del aporte"
-                    />
+                  <div className="space-y-2">
+                    <div>
+                      <Label htmlFor="income-category">Categoría (opcional)</Label>
+                      <Select value={incomeCategoryId} onValueChange={setIncomeCategoryId}>
+                        <SelectTrigger id="income-category">
+                          <SelectValue placeholder="Sin categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sin categoría</SelectItem>
+                          {categories
+                            .filter((c) => c.type === 'income')
+                            .map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                {cat.icon} {cat.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="income-desc">Descripción</Label>
+                      <Input
+                        id="income-desc"
+                        value={incomeDescription}
+                        onChange={(e) => setIncomeDescription(e.target.value)}
+                        placeholder="Descripción del aporte"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Monto: {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Monto: {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)} • Sin categoría
-                  </p>
                 </div>
               </div>
             </div>
