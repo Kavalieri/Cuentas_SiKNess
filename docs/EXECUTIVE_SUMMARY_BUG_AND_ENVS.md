@@ -1,27 +1,50 @@
 # 📋 Resumen Ejecutivo - Bug Dashboard + Multi-Entorno
 
-## 🐛 Problema 1: Bug del Dashboard en Producción
+## 🐛 Problema 1: Bug del Dashboard en Producción ✅ RESUELTO
 
 ### Síntoma
-- **Local**: Dashboard muestra `431,45€` en gastos (incluye Vivienda 350€)
-- **Producción**: Dashboard muestra `81,45€` (falta Vivienda 350€)
+- **Local**: Dashboard mostraba `431,45€` en gastos (incluye Vivienda 350€)
+- **Producción**: Dashboard mostraba `81,45€` (falta Vivienda 350€)
 - **Diferencia**: 350€ exactos (el ajuste de Vivienda)
 
-### Diagnóstico
-📁 **Archivo creado**: `docs/DASHBOARD_BUG_DIAGNOSIS.md`
+### Causa Raíz Identificada ✅
+**Bug de zona horaria** en `adjustment-actions.ts` línea 227-229:
 
-**Ejecuta las 5 queries SQL** en Supabase Production SQL Editor para identificar:
-1. ¿Existen los movimientos de ajustes en `transactions`?
-2. ¿Los ajustes tienen `movement_id` vinculado?
-3. ¿El `household_id` es correcto?
+```typescript
+// ❌ CÓDIGO ANTERIOR (con bug)
+const movementDate = new Date(adjustment.contributions.year, adjustment.contributions.month - 1, 1);
+const movementDateStr = movementDate.toISOString().split('T')[0]!;
+// Resultado: "2025-09-30" en lugar de "2025-10-01"
+```
 
-### Posibles Causas
-1. **Movimientos no creados**: Los ajustes aprobados NO generaron movimientos en `transactions`
-2. **Cache de Vercel**: Código correcto pero cache desactualizado
-3. **Filtro incorrecto**: Query excluye movimientos con `adjustment_id`
+**Problema**: `new Date(2025, 9, 1)` → `2025-10-01 00:00 CEST (UTC+2)` → `toISOString()` → `2025-09-30 22:00 UTC` → fecha del día anterior ❌
 
-### Solución
-Dependiendo del diagnóstico, el fix está documentado en `DASHBOARD_BUG_DIAGNOSIS.md`.
+### Solución Aplicada ✅
+```typescript
+// ✅ CÓDIGO NUEVO (fix)
+const movementDateStr = `${adjustment.contributions.year}-${String(adjustment.contributions.month).padStart(2, '0')}-01`;
+// Resultado: "2025-10-01" siempre ✅
+```
+
+### Fix Completo ✅
+1. ✅ **Código corregido**: `app/app/contributions/adjustment-actions.ts`
+2. ✅ **Datos en producción corregidos**: 2 movimientos actualizados de `2025-09-30` a `2025-10-01`
+3. ✅ **Build exitoso**: 26 páginas compiladas sin errores
+4. ✅ **Commit**: `ab33c9a` - "fix: corregir bug de zona horaria en fechas de movimientos de ajustes"
+5. ✅ **Push a main**: Deploy automático en Vercel iniciado
+6. ✅ **Documentación completa**: `docs/BUG_FIX_TIMEZONE_2025-10-05.md`
+
+### Verificación ✅
+```sql
+-- Totales de octubre 2025 DESPUÉS del fix
+SELECT type, SUM(amount) as total FROM transactions
+WHERE occurred_at >= '2025-10-01' AND occurred_at < '2025-11-01'
+GROUP BY type;
+
+-- Resultado:
+-- expense:  431.45€ ✅ (incluye 350€ Alquiler)
+-- income:  1200.75€ ✅
+```
 
 ---
 
@@ -91,21 +114,24 @@ Dependiendo del diagnóstico, el fix está documentado en `DASHBOARD_BUG_DIAGNOS
 
 ## 🎯 Plan de Acción Recomendado
 
-### HOY (Urgente)
-1. ✅ **Fix bug dashboard**
-   - Ejecutar diagnóstico SQL (10 min)
-   - Aplicar fix según resultado (30 min)
-   - Verificar en producción (5 min)
+### ✅ HOY (Completado)
+1. ✅ **Fix bug dashboard** 
+   - Diagnóstico con MCP Supabase (10 min)
+   - Bug identificado: timezone en fecha de movimientos (5 min)
+   - Fix aplicado en código (5 min)
+   - Datos corregidos en producción (10 min)
+   - Build, commit, push a main (10 min)
+   - **Total**: 40 minutos ✅
 
-### DÍA 1 (4-6 horas)
-2. ✅ **Crear Supabase Development**
+### DÍA 1 (4-6 horas) - Entornos Separados
+2. ⏳ **Crear Supabase Development**
    - Crear proyecto en Supabase Dashboard (5 min)
    - Exportar schema de producción (10 min)
    - Aplicar migraciones a development (15 min)
    - Ejecutar seed data (10 min)
    - Validar (10 min)
 
-3. ✅ **Configurar Vercel**
+3. ⏳ **Configurar Vercel**
    - Añadir variables de entorno para Preview (20 min)
    - Configurar deploy triggers (10 min)
    - Verificar configuración (10 min)
@@ -136,15 +162,24 @@ Dependiendo del diagnóstico, el fix está documentado en `DASHBOARD_BUG_DIAGNOS
 
 ## 🚀 Próximos Pasos Inmediatos
 
-### Paso 1: Diagnosticar Bug Dashboard (AHORA)
+### ~~Paso 1: Diagnosticar Bug Dashboard~~ ✅ COMPLETADO
 ```bash
-# 1. Abrir Supabase Dashboard Production
-# 2. Ir a SQL Editor
-# 3. Ejecutar queries de docs/DASHBOARD_BUG_DIAGNOSIS.md
-# 4. Enviarme los resultados
+# ✅ Bug identificado: timezone en fecha de movimientos
+# ✅ Causa: new Date().toISOString() con offset negativo
+# ✅ Fix: Construcción directa de string
+# ✅ Datos corregidos: 2 movimientos actualizados
+# ✅ Deploy: commit ab33c9a pushed a main
 ```
 
-### Paso 2: Implementar Entornos (DESPUÉS del fix)
+### Paso 2: Validar Fix en Producción (AHORA)
+```bash
+# 1. Esperar deploy de Vercel (2-3 minutos)
+# 2. Abrir https://cuentas-sik.vercel.app
+# 3. Verificar dashboard muestra 431,45€
+# 4. Verificar Alquiler (350€) aparece en listado
+```
+
+### Paso 3: Implementar Entornos Separados (DÍA 1-2)
 ```bash
 # Seguir guía completa en:
 # docs/SETUP_MULTI_ENVIRONMENT.md

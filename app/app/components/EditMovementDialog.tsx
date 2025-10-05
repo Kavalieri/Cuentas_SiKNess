@@ -61,9 +61,9 @@ export function EditMovementDialog({
   const [occurredAt, setOccurredAt] = useState(
     movement.occurred_at ? movement.occurred_at.split('T')[0] : ''
   );
-  // Convertir null a string vacío para el Select
+  // FIX: Usar "none" en lugar de "" (SelectItem no acepta value vacío)
   const [categoryId, setCategoryId] = useState<string>(
-    movement.category_id || ''
+    movement.category_id || 'none'
   );
   const [amount, setAmount] = useState(movement.amount.toString());
 
@@ -71,7 +71,7 @@ export function EditMovementDialog({
   useEffect(() => {
     setDescription(movement.description || '');
     setOccurredAt(movement.occurred_at ? movement.occurred_at.split('T')[0] : '');
-    setCategoryId(movement.category_id || '');
+    setCategoryId(movement.category_id || 'none');
     setAmount(movement.amount.toString());
   }, [movement]);
 
@@ -93,8 +93,8 @@ export function EditMovementDialog({
       formData.append('movementId', movement.id);
       formData.append('description', description);
       formData.append('occurred_at', occurredAt);
-      // Solo enviar category_id si hay una seleccionada (no string vacío)
-      if (categoryId && categoryId !== '') {
+      // FIX: Convertir "none" a string vacío para que el schema lo transforme a null
+      if (categoryId && categoryId !== 'none') {
         formData.append('category_id', categoryId);
       } else {
         formData.append('category_id', '');
@@ -169,8 +169,8 @@ export function EditMovementDialog({
                 <SelectValue placeholder="Sin categoría" />
               </SelectTrigger>
               <SelectContent>
-                {/* Opción "Sin categoría" */}
-                <SelectItem value="">Sin categoría</SelectItem>
+                {/* FIX: Usar "none" en lugar de "" (SelectItem no acepta value vacío) */}
+                <SelectItem value="none">Sin categoría</SelectItem>
                 {filteredCategories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.icon} {cat.name}

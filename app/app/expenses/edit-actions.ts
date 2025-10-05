@@ -14,7 +14,11 @@ const EditMovementSchema = z.object({
   movementId: z.string().uuid(),
   description: z.string().min(1, 'La descripción es requerida'),
   occurred_at: z.coerce.date(),
-  category_id: z.string().uuid().nullable(),
+  // FIX: Transformar "none" y "" a null automáticamente
+  category_id: z
+    .string()
+    .transform((val) => (val === '' || val === 'none' ? null : val))
+    .pipe(z.string().uuid().nullable()),
   amount: z.coerce.number().positive('El monto debe ser positivo'),
 });
 
