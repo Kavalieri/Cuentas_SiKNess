@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -37,7 +37,7 @@ interface Movement {
   occurred_at: string;
   category_id: string | null;
   amount: number;
-  type: string;
+  type: 'expense' | 'income';
 }
 
 interface EditMovementDialogProps {
@@ -61,10 +61,19 @@ export function EditMovementDialog({
   const [occurredAt, setOccurredAt] = useState(
     movement.occurred_at ? movement.occurred_at.split('T')[0] : ''
   );
-  const [categoryId, setCategoryId] = useState(
-    movement.category_id || undefined
+  // Convertir null a string vacío para el Select
+  const [categoryId, setCategoryId] = useState<string>(
+    movement.category_id || ''
   );
   const [amount, setAmount] = useState(movement.amount.toString());
+
+  // Actualizar estado cuando cambia el movimiento
+  useEffect(() => {
+    setDescription(movement.description || '');
+    setOccurredAt(movement.occurred_at ? movement.occurred_at.split('T')[0] : '');
+    setCategoryId(movement.category_id || '');
+    setAmount(movement.amount.toString());
+  }, [movement]);
 
   // Filtrar categorías por tipo del movimiento
   const filteredCategories = categories.filter(
@@ -84,7 +93,8 @@ export function EditMovementDialog({
       formData.append('movementId', movement.id);
       formData.append('description', description);
       formData.append('occurred_at', occurredAt);
-      if (categoryId) {
+      // Solo enviar category_id si hay una seleccionada (no string vacío)
+      if (categoryId && categoryId !== '') {
         formData.append('category_id', categoryId);
       } else {
         formData.append('category_id', '');
@@ -159,6 +169,8 @@ export function EditMovementDialog({
                 <SelectValue placeholder="Sin categoría" />
               </SelectTrigger>
               <SelectContent>
+                {/* Opción "Sin categoría" */}
+                <SelectItem value="">Sin categoría</SelectItem>
                 {filteredCategories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.icon} {cat.name}

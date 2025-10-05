@@ -104,6 +104,7 @@ export async function getMovements(params?: {
       description,
       occurred_at,
       created_at,
+      category_id,
       categories (
         id,
         name,
