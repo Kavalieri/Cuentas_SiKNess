@@ -22,6 +22,9 @@ interface OverviewTabProps {
   selectedMonth: Date;
   onMonthChange: (date: Date) => void;
   currentUserId: string;
+  currency: string;
+  expenses: number;
+  incomes: number;
 }
 
 export function OverviewTab({
@@ -32,6 +35,9 @@ export function OverviewTab({
   selectedMonth,
   onMonthChange,
   currentUserId,
+  currency,
+  expenses,
+  incomes,
 }: OverviewTabProps) {
   return (
     <div className="space-y-6">
@@ -54,6 +60,9 @@ export function OverviewTab({
         monthlyFund={goalAmount}
         currentUserId={currentUserId}
         selectedMonth={selectedMonth}
+        currency={currency}
+        expenses={expenses}
+        incomes={incomes}
       />
     </div>
   );

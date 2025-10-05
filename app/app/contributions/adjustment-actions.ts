@@ -185,12 +185,20 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   }
 
   // Verificar que el usuario sea owner del hogar
-  const { data: membership } = await supabase
+  const { data: membership, error: membershipError } = await supabase
     .from('household_members')
     .select('role')
     .eq('household_id', adjustment.contributions.household_id)
     .eq('profile_id', profileId)
     .single();
+
+  // DEBUG: Log para diagnosticar
+  console.log('🔍 DEBUG approvePrepayment:', {
+    profileId,
+    household_id: adjustment.contributions.household_id,
+    membership,
+    membershipError,
+  });
 
   if (!membership || membership.role !== 'owner') {
     return fail('Solo los owners pueden aprobar pre-pagos');
@@ -263,6 +271,13 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   }
 
   // 3. Actualizar ajuste a aprobado y vincular movimientos
+  console.log('🔍 DEBUG antes del UPDATE:', {
+    adjustment_id: parsed.data.adjustment_id,
+    profileId,
+    expenseMovementId: expenseMovement.id,
+    incomeMovementId: incomeMovement.id,
+  });
+
   const { error: updateError } = await supabase
     .from('contribution_adjustments')
     .update({
@@ -276,6 +291,10 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
       income_movement_id: incomeMovement.id,
     })
     .eq('id', parsed.data.adjustment_id);
+
+  console.log('🔍 DEBUG después del UPDATE:', {
+    updateError,
+  });
 
   if (updateError) {
     // Rollback: eliminar ambos movimientos

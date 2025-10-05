@@ -97,6 +97,23 @@ export default async function HouseholdPage() {
   const currency = settings?.currency || 'EUR';
   const calculationType = (settings?.calculation_type as CalculationType) || CALCULATION_TYPES.PROPORTIONAL;
 
+  // Obtener gastos e ingresos del mes actual para el resumen
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  const { data: monthTransactions } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('household_id', householdId)
+    .gte('occurred_at', startOfMonth.toISOString().split('T')[0])
+    .lte('occurred_at', endOfMonth.toISOString().split('T')[0]);
+
+  const expenses = monthTransactions?.filter(t => t.type === 'expense') || [];
+  const incomes = monthTransactions?.filter(t => t.type === 'income') || [];
+  
+  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalIncomes = incomes.reduce((sum, i) => sum + i.amount, 0);
+
   // Preparar datos para ContributionsContent
   const totalIncome = members.reduce((sum, m) => sum + m.currentIncome, 0);
   const contributionsMap = new Map(
@@ -153,6 +170,9 @@ export default async function HouseholdPage() {
             initialContributions={contributions || []}
             initialGoalAmount={goalAmount}
             currentUserId={currentProfile.id}
+            currency={currency}
+            initialExpenses={totalExpenses}
+            initialIncomes={totalIncomes}
           />
         </TabsContent>
 

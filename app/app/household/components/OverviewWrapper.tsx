@@ -21,6 +21,9 @@ interface OverviewWrapperProps {
   initialContributions: Contribution[];
   initialGoalAmount: number;
   currentUserId: string;
+  currency: string;
+  initialExpenses: number;
+  initialIncomes: number;
 }
 
 export function OverviewWrapper({
@@ -29,9 +32,14 @@ export function OverviewWrapper({
   initialContributions,
   initialGoalAmount,
   currentUserId,
+  currency,
+  initialExpenses,
+  initialIncomes,
 }: OverviewWrapperProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [contributions, setContributions] = useState(initialContributions);
+  const [expenses, setExpenses] = useState(initialExpenses);
+  const [incomes, setIncomes] = useState(initialIncomes);
 
   // Fetch data cuando cambia el mes
   useEffect(() => {
@@ -49,6 +57,23 @@ export function OverviewWrapper({
       if (newContributions) {
         setContributions(newContributions);
       }
+
+      // Obtener transacciones del mes seleccionado
+      const startOfMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
+      const endOfMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
+
+      const { data: monthTransactions } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('household_id', householdId)
+        .gte('occurred_at', startOfMonth.toISOString().split('T')[0])
+        .lte('occurred_at', endOfMonth.toISOString().split('T')[0]);
+
+      const expensesList = monthTransactions?.filter(t => t.type === 'expense') || [];
+      const incomesList = monthTransactions?.filter(t => t.type === 'income') || [];
+      
+      setExpenses(expensesList.reduce((sum, e) => sum + e.amount, 0));
+      setIncomes(incomesList.reduce((sum, i) => sum + i.amount, 0));
     };
 
     fetchMonthData();
@@ -63,6 +88,9 @@ export function OverviewWrapper({
       selectedMonth={selectedMonth}
       onMonthChange={setSelectedMonth}
       currentUserId={currentUserId}
+      currency={currency}
+      expenses={expenses}
+      incomes={incomes}
     />
   );
 }

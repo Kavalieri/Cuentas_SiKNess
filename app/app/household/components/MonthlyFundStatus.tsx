@@ -25,15 +25,19 @@ interface Contribution {
   paid_amount: number;
   status: string;
   paid_at: string | null;
+  adjustments_total: number | null;
 }
 
 interface MonthlyFundStatusProps {
   householdId: string;
   members: Member[];
   contributions: Contribution[];
-  monthlyFund: number;
+  monthlyFund: number; // Meta configurada (SIEMPRE fija, ej: 1200€)
   currentUserId: string;
   selectedMonth: Date;
+  currency: string;
+  expenses: number; // Gastos del mes
+  incomes: number; // Ingresos del mes (movimientos de ingreso)
 }
 
 export function MonthlyFundStatus({
@@ -43,6 +47,9 @@ export function MonthlyFundStatus({
   monthlyFund,
   currentUserId,
   selectedMonth,
+  currency,
+  expenses,
+  incomes,
 }: MonthlyFundStatusProps) {
   const router = useRouter();
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
@@ -57,10 +64,30 @@ export function MonthlyFundStatus({
   const hasGoalConfigured = monthlyFund > 0;
   const needsConfiguration = !hasIncomesConfigured || !hasGoalConfigured;
 
-  // Calcular totales
-  const totalExpected = contributions.reduce((sum, c) => sum + c.expected_amount, 0);
-  const totalPaid = contributions.reduce((sum, c) => sum + c.paid_amount, 0);
-  const fundProgress = totalExpected > 0 ? (totalPaid / totalExpected) * 100 : 0;
+  // LÓGICA CORRECTA DE CÁLCULOS
+  // ============================================
+  
+  // 1. El fondo objetivo SIEMPRE es el configurado (ej: 1200€)
+  const fundGoal = monthlyFund;
+
+  // 2. Calcular total aportado considerando:
+  //    - paid_amount de cada miembro
+  //    - adjustments_total (pre-pagos ya realizados)
+  const totalContributed = contributions.reduce((sum, c) => {
+    // paid_amount: lo que han marcado como pagado manualmente
+    // adjustments_total: pre-pagos aprobados (valor negativo que suma al aporte)
+    const adjustments = Math.abs(c.adjustments_total || 0);
+    return sum + c.paid_amount + adjustments;
+  }, 0);
+
+  // 3. Balance del fondo = Aportado - Gastado
+  const fundBalance = totalContributed - expenses;
+
+  // 4. Progreso del fondo basado en la meta (NO en expected_amount reducido)
+  const fundProgress = fundGoal > 0 ? (totalContributed / fundGoal) * 100 : 0;
+
+  // 5. Proyección: ¿Cuánto falta para completar el fondo?
+  const remainingToGoal = Math.max(0, fundGoal - totalContributed);
 
   const handleMarkAsPaid = async (contributionId: string, userId: string) => {
     setLoadingUserId(userId);
