@@ -8,6 +8,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { deleteMovement } from '@/app/app/expenses/actions';
+import { EditMovementDialog } from '@/app/app/components/EditMovementDialog';
 import { useRouter } from 'next/navigation';
 
 interface Movement {
@@ -17,20 +18,30 @@ interface Movement {
   type: 'expense' | 'income';
   description: string | null;
   occurred_at: string;
+  category_id: string | null;
   categories: {
     name: string;
     icon: string | null;
   } | null;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  icon: string | null;
+  type: string;
+}
+
 interface MovementsListProps {
   movements: Movement[];
+  categories?: Category[];
   showActions?: boolean;
 }
 
-export function MovementsList({ movements, showActions = true }: MovementsListProps) {
+export function MovementsList({ movements, categories = [], showActions = true }: MovementsListProps) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este movimiento?')) return;
@@ -109,6 +120,7 @@ export function MovementsList({ movements, showActions = true }: MovementsListPr
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => setEditingId(movement.id)}
                       disabled={deletingId === movement.id}
                     >
                       <Pencil className="h-4 w-4" />
@@ -128,6 +140,16 @@ export function MovementsList({ movements, showActions = true }: MovementsListPr
           </CardContent>
         </Card>
       ))}
+
+      {/* Dialog de edición */}
+      {editingId && (
+        <EditMovementDialog
+          movement={movements.find((m) => m.id === editingId)!}
+          categories={categories}
+          open={editingId !== null}
+          onClose={() => setEditingId(null)}
+        />
+      )}
     </div>
   );
 }

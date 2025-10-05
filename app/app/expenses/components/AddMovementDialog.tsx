@@ -39,7 +39,8 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
     e.preventDefault();
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     formData.append('type', type);
 
     const result = await createMovement(formData);
@@ -56,7 +57,7 @@ export function AddMovementDialog({ categories }: AddMovementDialogProps) {
     }
 
     // Éxito: resetear formulario antes de cerrar
-    e.currentTarget.reset();
+    form.reset();
     toast.success('Movimiento creado exitosamente');
     setIsLoading(false);
     setOpen(false);

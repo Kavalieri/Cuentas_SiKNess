@@ -543,6 +543,103 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string | null
+          changed_by: string
+          created_at: string | null
+          household_id: string
+          id: string
+          new_amount: number | null
+          new_category_id: string | null
+          new_description: string | null
+          new_occurred_at: string | null
+          old_amount: number | null
+          old_category_id: string | null
+          old_description: string | null
+          old_occurred_at: string | null
+          transaction_id: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string | null
+          changed_by: string
+          created_at?: string | null
+          household_id: string
+          id?: string
+          new_amount?: number | null
+          new_category_id?: string | null
+          new_description?: string | null
+          new_occurred_at?: string | null
+          old_amount?: number | null
+          old_category_id?: string | null
+          old_description?: string | null
+          old_occurred_at?: string | null
+          transaction_id: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string | null
+          changed_by?: string
+          created_at?: string | null
+          household_id?: string
+          id?: string
+          new_amount?: number | null
+          new_category_id?: string | null
+          new_description?: string | null
+          new_occurred_at?: string | null
+          old_amount?: number | null
+          old_category_id?: string | null
+          old_description?: string | null
+          old_occurred_at?: string | null
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_history_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_history_new_category_id_fkey"
+            columns: ["new_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_history_old_category_id_fkey"
+            columns: ["old_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_history_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_history_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "v_transactions_with_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -894,6 +991,10 @@ export type Database = {
       get_member_income: {
         Args: { p_date?: string; p_household_id: string; p_profile_id: string }
         Returns: number
+      }
+      get_profile_id_from_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       is_contribution_owner: {
         Args: { p_contribution_id: string }
