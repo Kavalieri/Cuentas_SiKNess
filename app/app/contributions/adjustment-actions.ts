@@ -184,9 +184,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
     return fail('Este ajuste ya fue procesado');
   }
 
-  // TODO: Este check está comentado temporalmente hasta que se ejecute FIX_ALL_ADJUSTMENTS.sql
   // Verificar que el usuario sea owner del hogar
-  /*
   const { data: membership } = await supabase
     .from('household_members')
     .select('role')
@@ -197,7 +195,6 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   if (!membership || membership.role !== 'owner') {
     return fail('Solo los owners pueden aprobar pre-pagos');
   }
-  */
 
   // Obtener categoría para validar
   const { data: category } = await supabase
