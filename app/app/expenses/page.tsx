@@ -63,19 +63,22 @@ export default async function ExpensesPage() {
                           <p className="text-sm text-gray-500">{m.description as string}</p>
                         ) : null}
                         <p className="text-xs text-gray-400">
-                          {new Date(m.occurred_at as string).toLocaleDateString('es-ES', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            timeZone: 'Europe/Madrid',
-                          })}
+                          {(() => {
+                            // occurred_at es DATE sin hora - agregar T00:00:00 para interpretación local
+                            const dateStr = m.occurred_at as string;
+                            const localDate = new Date(dateStr + 'T00:00:00');
+                            return localDate.toLocaleDateString('es-ES', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            });
+                          })()}
                           {(m.created_at as string | undefined) && (
                             <span className="ml-2">
                               •{' '}
                               {new Date(m.created_at as string).toLocaleTimeString('es-ES', {
                                 hour: '2-digit',
                                 minute: '2-digit',
-                                timeZone: 'Europe/Madrid',
                               })}
                             </span>
                           )}
