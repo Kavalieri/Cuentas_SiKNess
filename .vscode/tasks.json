@@ -2,71 +2,128 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "supabase db push",
+      "label": "🧹 Clear All Caches",
       "type": "shell",
-      "command": "npx supabase db push --yes"
+      "command": "Remove-Item -Recurse -Force -ErrorAction SilentlyContinue .next,node_modules/.cache,tsconfig.tsbuildinfo; Write-Host '✅ Caches limpiadas: .next/, node_modules/.cache/, tsconfig.tsbuildinfo' -ForegroundColor Green",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
     },
     {
-      "label": "build-compile",
+      "label": "🚀 Dev Server",
       "type": "shell",
-      "command": "npm run build"
+      "command": "npm run dev",
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": {
+        "owner": "typescript",
+        "source": "ts",
+        "applyTo": "closedDocuments",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^([^\\s].*)[\\(:](\\d+)[,:](\\d+)(?:\\):\\s+|\\s+-\\s+)(error|warning|info)\\s+TS(\\d+)\\s*:\\s*(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "code": 5,
+          "message": 6
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\s*- (wait|event)\\s+-\\s+",
+          "endsPattern": "^\\s*✓ Compiled|✓ Ready"
+        }
+      }
     },
     {
-      "label": "arrancar",
+      "label": "🔨 Build Production",
       "type": "shell",
-      "command": "npm run dev"
+      "command": "npm run build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": [
+        "$tsc",
+        {
+          "owner": "eslint",
+          "pattern": [
+            {
+              "regexp": "^(.+):(\\d+):(\\d+):\\s+(warning|error)\\s+-\\s+(.+)\\s+\\((.+)\\)$",
+              "file": 1,
+              "line": 2,
+              "column": 3,
+              "severity": 4,
+              "message": 5,
+              "code": 6
+            }
+          ]
+        }
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
-      "label": "supabase gen types",
+      "label": "🧪 Test",
       "type": "shell",
-      "command": "npx supabase gen types typescript --project-id fizxvvtakvmmeflmbwud | Out-File -FilePath types/database.ts -Encoding utf8"
+      "command": "npm test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
     },
     {
-      "label": "supabase db push + gen types",
-      "dependsOn": ["supabase db push", "supabase gen types"],
-      "dependsOrder": "sequence"
+      "label": "🔍 Lint",
+      "type": "shell",
+      "command": "npm run lint",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": ["$eslint-stylish"]
     },
     {
-      "label": "supabase db pull",
-      "type": "shell",
-      "command": "npx supabase db pull --yes"
-    },
-    {
-      "label": "supabase migration new",
-      "type": "shell",
-      "command": "npx supabase migration new ${input:migrationName}"
-    },
-    {
-      "label": "supabase link",
-      "type": "shell",
-      "command": "npx supabase link --project-ref fizxvvtakvmmeflmbwud --yes"
-    },
-    {
-      "label": "supabase db reset",
-      "type": "shell",
-      "command": "npx supabase db reset --yes"
-    },
-    {
-      "label": "supabase start",
-      "type": "shell",
-      "command": "npx supabase start --yes"
-    },
-    {
-      "label": "supabase stop",
-      "type": "shell",
-      "command": "npx supabase stop --yes"
-    },
-    {
-      "label": "supabase status",
-      "type": "shell",
-      "command": "npx supabase status --yes"
-    }
-  ],
-  "inputs": [
-    {
-      "id": "migrationName",
-      "type": "promptString",
-      "description": "Nombre de la migración (ej: add_user_preferences)"
+      "label": "🔄 Full Clean + Build",
+      "dependsOn": ["🧹 Clear All Caches", "🔨 Build Production"],
+      "dependsOrder": "sequence",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
     }
   ]
 }

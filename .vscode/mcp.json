@@ -28,7 +28,7 @@
       "command": "npx",
       "args": ["-y", "shell-command-mcp"],
       "env": {
-        "ALLOWED_COMMANDS": "npm,npx"
+        "ALLOWED_COMMANDS": "npm,npx,node,git,gh,vercel,supabase,pwsh,powershell,cmd,python,py,pip,docker,docker-compose,tar,zip"
       }
     }
   }

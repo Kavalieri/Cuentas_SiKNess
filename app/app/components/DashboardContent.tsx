@@ -8,6 +8,7 @@ import { AddTransactionDialog } from '@/app/app/expenses/components/AddTransacti
 import { TransactionsList } from '@/app/app/components/TransactionsList';
 import { ExpensesByCategoryChart } from '@/app/app/components/charts/ExpensesByCategoryChart';
 import { IncomeVsExpensesChart } from '@/app/app/components/charts/IncomeVsExpensesChart';
+import { SavingsEvolutionChart } from '@/components/savings/SavingsEvolutionChart';
 import { formatCurrency } from '@/lib/format';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
 import { toast } from 'sonner';
@@ -88,6 +89,8 @@ interface DashboardContentProps {
   initialCategoryExpenses: CategoryExpense[];
   initialComparison?: MonthComparison;
   initialMembers: Member[];
+  initialSavingsEvolution: Array<{ date: string; balance: number }>;
+  initialSavingsGoal?: number | null;
 }
 
 export function DashboardContent({
@@ -97,6 +100,8 @@ export function DashboardContent({
   initialCategoryExpenses,
   initialComparison,
   initialMembers,
+  initialSavingsEvolution,
+  initialSavingsGoal,
 }: DashboardContentProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [summary, setSummary] = useState(initialSummary);
@@ -254,10 +259,7 @@ export function DashboardContent({
 
       {/* Gráficos */}
       <div className="grid gap-6 md:grid-cols-2">
-        <ExpensesByCategoryChart
-          data={categoryExpenses}
-          currency="EUR"
-        />
+        <ExpensesByCategoryChart data={categoryExpenses} currency="EUR" />
         <IncomeVsExpensesChart
           current={summary}
           previous={comparison?.previous}
@@ -265,6 +267,11 @@ export function DashboardContent({
           currency="EUR"
         />
       </div>
+
+      {/* Gráfico de Evolución de Ahorro */}
+      {initialSavingsEvolution.length > 0 && (
+        <SavingsEvolutionChart data={initialSavingsEvolution} goalAmount={initialSavingsGoal} />
+      )}
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-3">

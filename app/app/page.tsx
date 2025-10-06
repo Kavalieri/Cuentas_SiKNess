@@ -4,6 +4,7 @@ import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparis
 import { getCategories } from './categories/actions';
 import { getInvitationDetails, getUserPendingInvitations } from './household/invitations/actions';
 import { getHouseholdMembers } from './household/actions';
+import { getSavingsTransactions, getHouseholdSavings } from './savings/actions';
 import { DashboardOnboarding } from './components/DashboardOnboarding';
 import { PendingInvitationsCard } from './components/PendingInvitationsCard';
 import { DashboardContent } from './components/DashboardContent';
@@ -74,24 +75,53 @@ export default async function DashboardPage() {
   const pendingInvitations = pendingInvitationsResult.ok ? pendingInvitationsResult.data || [] : [];
 
   // Obtener datos en paralelo
-  const [summaryResult, transactionsResult, categoriesResult, categoryExpensesResult, comparisonResult, membersResult] = await Promise.all([
+  const [
+    summaryResult,
+    transactionsResult,
+    categoriesResult,
+    categoryExpensesResult,
+    comparisonResult,
+    membersResult,
+    savingsTransactionsResult,
+    savingsBalanceResult,
+  ] = await Promise.all([
     getMonthSummary(year, month),
     getTransactions(),
     getCategories(),
     getCategoryExpenses({ startDate, endDate }),
     getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
     getHouseholdMembers(),
+    getSavingsTransactions(),
+    getHouseholdSavings(),
   ]);
 
-  const summary = summaryResult.ok
-    ? summaryResult.data!
-    : { expenses: 0, income: 0, balance: 0 };
-
+  const summary = summaryResult.ok ? summaryResult.data! : { expenses: 0, income: 0, balance: 0 };
   const allTransactions = transactionsResult.ok ? (transactionsResult.data || []) : [];
   const categories = categoriesResult.ok ? (categoriesResult.data || []) : [];
   const categoryExpenses = categoryExpensesResult.ok ? (categoryExpensesResult.data || []) : [];
   const comparison = comparisonResult.ok ? comparisonResult.data : undefined;
   const members = membersResult.ok ? (membersResult.data || []) : [];
+  const savingsTransactions = savingsTransactionsResult.ok ? (savingsTransactionsResult.data || []) : [];
+  const savingsBalance = savingsBalanceResult.ok
+    ? (savingsBalanceResult.data as { goal_amount?: number | null } | undefined)
+    : undefined;
+
+  // Preparar datos para gráfico de evolución de ahorro
+  // Agrupar por mes y obtener el balance final de cada mes
+  const savingsEvolutionMap = new Map<string, number>();
+
+  (savingsTransactions as Array<{ created_at: string; balance_after: number }>).forEach((tx) => {
+    const month = tx.created_at.substring(0, 7); // 'YYYY-MM'
+    // Sobrescribir con el último balance del mes (ya están ordenados por created_at desc)
+    if (!savingsEvolutionMap.has(month)) {
+      savingsEvolutionMap.set(month, tx.balance_after);
+    }
+  });
+
+  // Convertir a array y ordenar por fecha ascendente
+  const savingsEvolutionData = Array.from(savingsEvolutionMap.entries())
+    .map(([date, balance]) => ({ date, balance }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   return (
     <div className="space-y-8">
@@ -107,6 +137,8 @@ export default async function DashboardPage() {
         initialCategoryExpenses={categoryExpenses as never[]}
         initialComparison={comparison as never}
         initialMembers={members as never[]}
+        initialSavingsEvolution={savingsEvolutionData}
+        initialSavingsGoal={savingsBalance?.goal_amount}
       />
     </div>
   );
