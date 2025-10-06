@@ -102,8 +102,14 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
       occurred_at: parsed.data.occurred_at,
       // ⭐ Nuevas columnas de auditoría y estado
       period_id: periodId,
-      paid_by: paidBy, // NULL = cuenta común, UUID = usuario específico
-      created_by: profile.id,
+      
+      // ⭐ RESPONSABILIDAD FINANCIERA (quién se beneficia/contribuye)
+      paid_by: paidBy, // NULL = cuenta común (ambos), UUID = usuario específico
+      
+      // ⭐ AUDITORÍA (trazabilidad administrativa)
+      created_by: profile.id, // Quien registró la transacción (inmutable)
+      updated_by: null, // Se establece en updateTransaction
+      
       source_type: 'manual',
       status: 'confirmed',
     })
@@ -207,8 +213,13 @@ export async function updateTransaction(formData: FormData): Promise<Result<{ id
       currency: parsed.data.currency,
       description: parsed.data.description || null,
       occurred_at: parsed.data.occurred_at,
-      paid_by: paidBy,
-      updated_by: profile.id,
+      
+      // ⭐ RESPONSABILIDAD FINANCIERA (quién se beneficia/contribuye)
+      paid_by: paidBy, // Puede cambiar según quién asuma el gasto/ingreso
+      
+      // ⭐ AUDITORÍA (trazabilidad administrativa)
+      // created_by NO se modifica (campo inmutable - quien registró originalmente)
+      updated_by: profile.id, // Quien realiza esta edición
       updated_at: new Date().toISOString(),
     })
     .eq('id', transactionId)
