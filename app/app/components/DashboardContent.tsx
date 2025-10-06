@@ -9,6 +9,7 @@ import { TransactionsList } from '@/app/app/components/TransactionsList';
 import { ExpensesByCategoryChart } from '@/app/app/components/charts/ExpensesByCategoryChart';
 import { IncomeVsExpensesChart } from '@/app/app/components/charts/IncomeVsExpensesChart';
 import { SavingsEvolutionChart } from '@/components/savings/SavingsEvolutionChart';
+import { PendingCreditsWidget } from '@/components/credits/PendingCreditsWidget';
 import { formatCurrency } from '@/lib/format';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
 import { toast } from 'sonner';
@@ -256,6 +257,9 @@ export function DashboardContent({
           </CardContent>
         </Card>
       </div>
+
+      {/* Widget de Créditos Pendientes */}
+      <PendingCreditsWidget onRefresh={refreshData} />
 
       {/* Gráficos */}
       <div className="grid gap-6 md:grid-cols-2">

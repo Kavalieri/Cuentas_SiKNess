@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MonthStatusBadge } from '@/components/shared/MonthStatusBadge';
+import { PeriodActions } from '@/components/periods/PeriodActions';
 import { formatCurrency } from '@/lib/format';
 import { formatPeriodMonth, calculateMonthlySavings } from '@/lib/periods';
 import type { MonthlyPeriod } from '@/lib/periods';
@@ -10,9 +11,20 @@ import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 interface MonthlyPeriodCardProps {
   period: MonthlyPeriod;
   onClick?: () => void;
+  showActions?: boolean;
+  hasDescuadre?: boolean;
+  descuadreAmount?: number;
+  onRefresh?: () => void;
 }
 
-export function MonthlyPeriodCard({ period, onClick }: MonthlyPeriodCardProps) {
+export function MonthlyPeriodCard({
+  period,
+  onClick,
+  showActions = false,
+  hasDescuadre = false,
+  descuadreAmount = 0,
+  onRefresh,
+}: MonthlyPeriodCardProps) {
   const savings = calculateMonthlySavings(period);
   const isSavings = savings >= 0;
 
@@ -90,6 +102,18 @@ export function MonthlyPeriodCard({ period, onClick }: MonthlyPeriodCardProps) {
           {period.status === 'closed' && period.notes && (
             <div className="text-xs text-muted-foreground">
               <span className="font-medium">Notas:</span> {period.notes}
+            </div>
+          )}
+
+          {/* Acciones de período */}
+          {showActions && (
+            <div className="pt-2 border-t">
+              <PeriodActions
+                period={period}
+                hasDescuadre={hasDescuadre}
+                descuadreAmount={descuadreAmount}
+                onRefresh={onRefresh}
+              />
             </div>
           )}
         </div>
