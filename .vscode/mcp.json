@@ -7,6 +7,29 @@
     "vercel": {
       "type": "http",
       "url": "https://mcp.vercel.com"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${workspaceFolder}"]
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "fetch-mcp"]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@mseep/git-mcp-server"]
+    },
+    "shell": {
+      "command": "npx",
+      "args": ["-y", "shell-command-mcp"],
+      "env": {
+        "ALLOWED_COMMANDS": "npm,npx"
+      }
     }
   }
 }

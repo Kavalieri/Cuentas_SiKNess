@@ -51,15 +51,20 @@ export async function updateTransaction(formData: FormData): Promise<Result> {
   const { movementId, description, occurred_at, category_id, amount } =
     parsed.data;
 
-  // 3. Obtener transacción actual para verificar household y valores
+  // 3. Obtener transacción actual para verificar household, valores y estado locked
   const { data: currentMovement, error: fetchError } = await supabase
     .from('transactions')
-    .select('*, household_id')
+    .select('*, household_id, status, locked_at, locked_by')
     .eq('id', movementId)
     .single();
 
   if (fetchError || !currentMovement) {
-    return fail('Movimiento no encontrado');
+    return fail('Transacción no encontrada');
+  }
+
+  // ⭐ 3.1. VALIDAR QUE NO ESTÉ BLOQUEADA (período cerrado)
+  if (currentMovement.status === 'locked' || currentMovement.locked_at) {
+    return fail('No se puede editar una transacción de un período cerrado. Reabre el período primero.');
   }
 
   // 4. Verificar que el usuario pertenece al hogar
@@ -71,7 +76,7 @@ export async function updateTransaction(formData: FormData): Promise<Result> {
     .single();
 
   if (!membership) {
-    return fail('No tienes permiso para editar este movimiento');
+    return fail('No tienes permiso para editar esta transacción');
   }
 
   // 5. Verificar si hubo cambios reales
@@ -93,11 +98,14 @@ export async function updateTransaction(formData: FormData): Promise<Result> {
       occurred_at: occurred_at.toISOString().split('T')[0], // Solo fecha
       category_id,
       amount,
+      // ⭐ Auditoría: quién actualizó y cuándo
+      updated_by: profile.id,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', movementId);
 
   if (updateError) {
-    console.error('❌ Error al actualizar movimiento:', updateError);
+    console.error('❌ Error al actualizar transacción:', updateError);
     return fail('Error al actualizar: ' + updateError.message);
   }
 

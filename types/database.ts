@@ -568,7 +568,7 @@ export type Database = {
             columns: ["applied_to_period_id"]
             isOneToOne: false
             referencedRelation: "v_period_stats"
-            referencedColumns: ["id"]
+            referencedColumns: ["period_id"]
           },
           {
             foreignKeyName: "member_credits_created_by_fkey"
@@ -610,7 +610,7 @@ export type Database = {
             columns: ["source_period_id"]
             isOneToOne: false
             referencedRelation: "v_period_stats"
-            referencedColumns: ["id"]
+            referencedColumns: ["period_id"]
           },
         ]
       }
@@ -798,7 +798,7 @@ export type Database = {
             columns: ["period_id"]
             isOneToOne: false
             referencedRelation: "v_period_stats"
-            referencedColumns: ["id"]
+            referencedColumns: ["period_id"]
           },
         ]
       }
@@ -1157,7 +1157,7 @@ export type Database = {
             columns: ["period_id"]
             isOneToOne: false
             referencedRelation: "v_period_stats"
-            referencedColumns: ["id"]
+            referencedColumns: ["period_id"]
           },
           {
             foreignKeyName: "transactions_created_by_fkey"
@@ -1239,67 +1239,15 @@ export type Database = {
     Views: {
       v_period_stats: {
         Row: {
-          closed_at: string | null
-          closed_by: string | null
-          closing_balance: number | null
-          created_at: string | null
-          expense_count: number | null
+          balance: number | null
           household_id: string | null
-          id: string | null
-          income_count: number | null
           month: number | null
-          monthly_savings: number | null
-          movement_count: number | null
-          opening_balance: number | null
-          savings_percentage: number | null
+          period_id: string | null
           status: string | null
-          top_expense_category: string | null
           total_expenses: number | null
           total_income: number | null
-          updated_at: string | null
+          transaction_count: number | null
           year: number | null
-        }
-        Insert: {
-          closed_at?: string | null
-          closed_by?: string | null
-          closing_balance?: number | null
-          created_at?: string | null
-          expense_count?: never
-          household_id?: string | null
-          id?: string | null
-          income_count?: never
-          month?: number | null
-          monthly_savings?: never
-          movement_count?: never
-          opening_balance?: number | null
-          savings_percentage?: never
-          status?: string | null
-          top_expense_category?: never
-          total_expenses?: number | null
-          total_income?: number | null
-          updated_at?: string | null
-          year?: number | null
-        }
-        Update: {
-          closed_at?: string | null
-          closed_by?: string | null
-          closing_balance?: number | null
-          created_at?: string | null
-          expense_count?: never
-          household_id?: string | null
-          id?: string | null
-          income_count?: never
-          month?: number | null
-          monthly_savings?: never
-          movement_count?: never
-          opening_balance?: number | null
-          savings_percentage?: never
-          status?: string | null
-          top_expense_category?: never
-          total_expenses?: number | null
-          total_income?: number | null
-          updated_at?: string | null
-          year?: number | null
         }
         Relationships: [
           {
@@ -1316,17 +1264,28 @@ export type Database = {
           amount: number | null
           category_id: string | null
           created_at: string | null
+          created_by: string | null
           currency: string | null
           description: string | null
           household_id: string | null
           id: string | null
+          locked_at: string | null
+          locked_by: string | null
           occurred_at: string | null
+          paid_by: string | null
           period_id: string | null
           profile_avatar: string | null
           profile_email: string | null
           profile_id: string | null
           profile_name: string | null
+          source_id: string | null
+          source_type: string | null
+          split_data: Json | null
+          split_type: string | null
+          status: string | null
           type: string | null
+          updated_at: string | null
+          updated_by: string | null
         }
         Relationships: [
           {
@@ -1355,11 +1314,39 @@ export type Database = {
             columns: ["period_id"]
             isOneToOne: false
             referencedRelation: "v_period_stats"
+            referencedColumns: ["period_id"]
+          },
+          {
+            foreignKeyName: "transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_locked_by_fkey"
+            columns: ["locked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "transactions_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

@@ -190,22 +190,18 @@ export async function updatePeriodTotals(periodId: string): Promise<Result> {
  */
 export async function getPeriodStats(periodId: string): Promise<
   Result<{
-    monthly_savings: number | null;
-    savings_percentage: number | null;
-    movement_count: number | null;
-    income_count: number | null;
-    expense_count: number | null;
-    top_expense_category: string | null;
+    transaction_count: number | null;
+    total_expenses: number | null;
+    total_income: number | null;
+    balance: number | null;
   } | null>
 > {
   const supabase = await supabaseServer();
 
   const { data, error } = await supabase
     .from('v_period_stats')
-    .select(
-      'monthly_savings, savings_percentage, movement_count, income_count, expense_count, top_expense_category'
-    )
-    .eq('id', periodId)
+    .select('transaction_count, total_expenses, total_income, balance')
+    .eq('period_id', periodId)
     .maybeSingle();
 
   if (error) {

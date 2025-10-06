@@ -20,6 +20,8 @@ const TransactionSchema = z.object({
 
 /**
  * Crea una nueva transacción (gasto o ingreso)
+ * Con auditoría completa: paid_by, created_by, source_type, status
+ * Asegura que exista el período mensual antes de insertar
  */
 export async function createTransaction(formData: FormData): Promise<Result<{ id: string }>> {
   const parsed = TransactionSchema.safeParse(Object.fromEntries(formData));
@@ -51,6 +53,22 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
     return fail('Usuario no encontrado');
   }
 
+  // Extraer año y mes de occurred_at para asegurar período mensual
+  const occurredDate = new Date(parsed.data.occurred_at);
+  const year = occurredDate.getFullYear();
+  const month = occurredDate.getMonth() + 1;
+
+  // Asegurar que existe el período mensual
+  const { data: periodId, error: periodError } = await supabase.rpc('ensure_monthly_period', {
+    p_household_id: householdId,
+    p_year: year,
+    p_month: month,
+  });
+
+  if (periodError) {
+    return fail(`Error al crear período mensual: ${periodError.message}`);
+  }
+
   // @ts-ignore - Supabase types issue
   const { data, error } = await supabase
     .from('transactions')
@@ -64,6 +82,12 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
       currency: parsed.data.currency,
       description: parsed.data.description || null,
       occurred_at: parsed.data.occurred_at,
+      // ⭐ Nuevas columnas de auditoría y estado
+      period_id: periodId,
+      paid_by: profile.id, // Por defecto, quien crea la transacción es quien pagó
+      created_by: profile.id,
+      source_type: 'manual',
+      status: 'confirmed',
     })
     .select()
     .single();
@@ -148,11 +172,33 @@ export async function deleteTransaction(transactionId: string): Promise<Result> 
 
   const supabase = await supabaseServer();
 
+  // 1. Obtener transacción actual para verificar household y estado locked
+  const { data: currentTransaction, error: fetchError } = await supabase
+    .from('transactions')
+    .select('*, household_id, status, locked_at, locked_by')
+    .eq('id', transactionId)
+    .single();
+
+  if (fetchError || !currentTransaction) {
+    return fail('Transacción no encontrada');
+  }
+
+  // 2. Verificar que pertenece al household
+  if (currentTransaction.household_id !== householdId) {
+    return fail('No tienes permisos para eliminar esta transacción');
+  }
+
+  // 3. ⭐ VALIDAR QUE NO ESTÉ BLOQUEADA (período cerrado)
+  if (currentTransaction.status === 'locked' || currentTransaction.locked_at) {
+    return fail('No se puede eliminar una transacción de un período cerrado. Reabre el período primero.');
+  }
+
+  // 4. Eliminar transacción
   const { error } = await supabase
     .from('transactions')
     .delete()
     .eq('id', transactionId)
-    .eq('household_id', householdId); // Verificar que pertenece al household
+    .eq('household_id', householdId);
 
   if (error) {
     return fail(error.message);
