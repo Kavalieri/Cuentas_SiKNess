@@ -314,34 +314,34 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
   // @ts-ignore - Supabase type inference
   const { expected_amount, household_id, profile_id, month, year } = contribution;
 
-  // 1. Buscar o crear categoría "Nómina" (tipo income)
-  let { data: nominaCategoryData } = await supabase
+  // 1. Buscar o crear categoría "Aportación Cuenta Conjunta" (tipo income)
+  let { data: aportacionCategoryData } = await supabase
     .from('categories')
     .select('id')
     .eq('household_id', household_id)
-    .eq('name', 'Nómina')
+    .eq('name', 'Aportación Cuenta Conjunta')
     .eq('type', 'income')
     .maybeSingle();
 
   // Si no existe, crearla
-  if (!nominaCategoryData) {
+  if (!aportacionCategoryData) {
     const { data: newCategory, error: createCatError } = await supabase
       .from('categories')
       .insert({
         household_id,
-        name: 'Nómina',
+        name: 'Aportación Cuenta Conjunta',
         type: 'income',
-        icon: '💰',
+        icon: '🏦',
       })
       .select('id')
       .single();
 
-    if (createCatError || !newCategory) return fail('Error al crear categoría Nómina');
-    nominaCategoryData = newCategory;
+    if (createCatError || !newCategory) return fail('Error al crear categoría Aportación Cuenta Conjunta');
+    aportacionCategoryData = newCategory;
   }
 
   // @ts-ignore - Supabase type inference
-  const categoryId: string = nominaCategoryData.id;
+  const categoryId: string = aportacionCategoryData.id;
 
   // 1.5. Obtener email del miembro para incluirlo en la descripción
   const { data: memberProfile } = await supabase
@@ -779,33 +779,33 @@ export async function recordContributionPayment(
     return fail('El monto debe ser mayor a cero');
   }
 
-  // 1. Buscar o crear categoría "Nómina" (tipo income)
-  let { data: nominaCategoryData } = await supabase
+  // 1. Buscar o crear categoría "Aportación Cuenta Conjunta" (tipo income)
+  let { data: aportacionCategoryData } = await supabase
     .from('categories')
     .select('id')
     .eq('household_id', household_id)
-    .eq('name', 'Nómina')
+    .eq('name', 'Aportación Cuenta Conjunta')
     .eq('type', 'income')
     .maybeSingle();
 
   // Si no existe, crearla
-  if (!nominaCategoryData) {
+  if (!aportacionCategoryData) {
     const { data: newCategory, error: createCatError } = await supabase
       .from('categories')
       .insert({
         household_id,
-        name: 'Nómina',
+        name: 'Aportación Cuenta Conjunta',
         type: 'income',
-        icon: '💰',
+        icon: '🏦',
       })
       .select('id')
       .single();
 
-    if (createCatError || !newCategory) return fail('Error al crear categoría Nómina');
-    nominaCategoryData = newCategory;
+    if (createCatError || !newCategory) return fail('Error al crear categoría Aportación Cuenta Conjunta');
+    aportacionCategoryData = newCategory;
   }
 
-  const categoryId: string = nominaCategoryData.id;
+  const categoryId: string = aportacionCategoryData.id;
 
   // 1.5. Obtener email del miembro para incluirlo en la descripción
   const { data: memberProfile } = await supabase
