@@ -9,11 +9,14 @@ import { formatCurrency } from '@/lib/format';
 import { getActiveCredits, getCreditsSummary } from '@/lib/actions/credits';
 import type { MemberCredit, CreditsSummary } from '@/lib/actions/credits';
 import { AlertCircle, CheckCircle2, Clock, Coins } from 'lucide-react';
+import { ManageCreditDialog } from './ManageCreditDialog';
 
 export function CreditsPanel() {
   const [credits, setCredits] = useState<MemberCredit[]>([]);
   const [summary, setSummary] = useState<CreditsSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCredit, setSelectedCredit] = useState<MemberCredit | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     async function loadCredits() {
@@ -135,7 +138,14 @@ export function CreditsPanel() {
                     </Badge>
                   )}
                 </div>
-                <Button variant="outline" size="sm" disabled>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedCredit(credit);
+                    setDialogOpen(true);
+                  }}
+                >
                   Gestionar
                 </Button>
               </div>
@@ -162,6 +172,15 @@ export function CreditsPanel() {
           </ul>
         </div>
       </CardContent>
+
+      {/* Dialog de gestión */}
+      {selectedCredit && (
+        <ManageCreditDialog
+          credit={selectedCredit}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
+      )}
     </Card>
   );
 }
