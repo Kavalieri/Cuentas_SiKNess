@@ -158,3 +158,36 @@ export const getUserHouseholds = async (): Promise<
     created_at: m.households.created_at,
   }));
 };
+
+/**
+ * Obtiene el rol del usuario en su household activo
+ * Retorna 'owner' | 'member' | null
+ */
+export const getUserRoleInActiveHousehold = async (): Promise<'owner' | 'member' | null> => {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const householdId = await getUserHouseholdId();
+  if (!householdId) return null;
+
+  const supabase = await supabaseServer();
+
+  // Obtener el profile_id del usuario autenticado
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return null;
+
+  // Obtener el rol en el household activo
+  const { data: membership } = await supabase
+    .from('household_members')
+    .select('role')
+    .eq('profile_id', profile.id)
+    .eq('household_id', householdId)
+    .single();
+
+  return membership?.role as 'owner' | 'member' | null;
+};

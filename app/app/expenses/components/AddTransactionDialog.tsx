@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { createTransaction } from '@/app/app/expenses/actions';
+import { createTransaction, getHouseholdMembersWithRole } from '@/app/app/expenses/actions';
 
 interface AddTransactionDialogProps {
   categories: Array<{ id: string; name: string; icon: string | null; type: string }>;
@@ -33,8 +33,32 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [type, setType] = useState<'expense' | 'income'>('expense');
+  
+  // ⭐ NEW: Estado para miembros y rol
+  const [members, setMembers] = useState<Array<{ id: string; display_name: string }>>([]);
+  const [userRole, setUserRole] = useState<'owner' | 'member'>('member');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [membersLoading, setMembersLoading] = useState(false);
 
   const filteredCategories = categories.filter((c) => c.type === type);
+
+  // ⭐ NEW: Cargar miembros cuando se abre el diálogo
+  useEffect(() => {
+    if (open && members.length === 0) {
+      setMembersLoading(true);
+      getHouseholdMembersWithRole().then((result) => {
+        if (result.ok && result.data) {
+          setMembers(result.data.members);
+          setUserRole(result.data.userRole);
+          setCurrentUserId(result.data.currentUserId);
+        } else {
+          // Type narrowing: si !result.ok, entonces es Fail y tiene message
+          toast.error(!result.ok ? result.message : 'Error al cargar miembros');
+        }
+        setMembersLoading(false);
+      });
+    }
+  }, [open, members.length]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -124,6 +148,26 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
               </SelectContent>
             </Select>
           </div>
+
+          {/* ⭐ NEW: Selector de quién pagó (solo para owners) */}
+          {userRole === 'owner' && (
+            <div className="space-y-2">
+              <Label htmlFor="paid_by">¿Quién pagó?</Label>
+              <Select name="paid_by" defaultValue={currentUserId} disabled={membersLoading}>
+                <SelectTrigger>
+                  <SelectValue placeholder={membersLoading ? "Cargando..." : "Seleccionar miembro"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.display_name}
+                      {member.id === currentUserId && ' (tú)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Fecha */}
           <div className="space-y-2">

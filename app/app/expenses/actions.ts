@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { supabaseServer, getCurrentUser, getUserHouseholdId } from '@/lib/supabaseServer';
+import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserRoleInActiveHousehold } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 
@@ -69,6 +69,11 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
     return fail(`Error al crear período mensual: ${periodError.message}`);
   }
 
+  // Obtener paid_by del FormData (si el usuario es owner puede elegir)
+  // Si no viene, usar el profile_id del usuario actual
+  const paidByFormValue = formData.get('paid_by') as string | null;
+  const paidBy = paidByFormValue && paidByFormValue !== '' ? paidByFormValue : profile.id;
+
   // @ts-ignore - Supabase types issue
   const { data, error } = await supabase
     .from('transactions')
@@ -84,7 +89,7 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
       occurred_at: parsed.data.occurred_at,
       // ⭐ Nuevas columnas de auditoría y estado
       period_id: periodId,
-      paid_by: profile.id, // Por defecto, quien crea la transacción es quien pagó
+      paid_by: paidBy, // Usa el valor del form o default al usuario actual
       created_by: profile.id,
       source_type: 'manual',
       status: 'confirmed',
@@ -531,5 +536,72 @@ export async function getMonthComparison(params?: {
       expenses: calculateChange(current.expenses, previous.expenses),
       balance: calculateChange(current.balance, previous.balance),
     },
+  });
+}
+
+/**
+ * Obtiene los miembros del household activo y el rol del usuario actual
+ * Usado para el selector de "¿Quién pagó?" en el formulario de transacciones
+ */
+export async function getHouseholdMembersWithRole(): Promise<
+  Result<{
+    members: Array<{ id: string; display_name: string }>;
+    userRole: 'owner' | 'member';
+    currentUserId: string;
+  }>
+> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return fail('No autenticado');
+  }
+
+  const householdId = await getUserHouseholdId();
+  if (!householdId) {
+    return fail('No tienes un hogar configurado');
+  }
+
+  const role = await getUserRoleInActiveHousehold();
+  if (!role) {
+    return fail('No se pudo determinar tu rol en el hogar');
+  }
+
+  const supabase = await supabaseServer();
+
+  // Obtener profile_id del usuario actual
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!currentProfile) {
+    return fail('Usuario no encontrado');
+  }
+
+  // Obtener todos los miembros del household
+  const { data: members, error } = await supabase
+    .from('household_members')
+    .select(`
+      profile_id,
+      profiles (
+        id,
+        display_name
+      )
+    `)
+    .eq('household_id', householdId);
+
+  if (error || !members) {
+    return fail('Error al obtener miembros del hogar');
+  }
+
+  return ok({
+    members: members.map((m) => ({
+      // @ts-ignore - Nested select returns object
+      id: m.profiles.id,
+      // @ts-ignore - Nested select returns object
+      display_name: m.profiles.display_name,
+    })),
+    userRole: role,
+    currentUserId: currentProfile.id,
   });
 }
