@@ -73,7 +73,7 @@ export async function getPendingCredits(): Promise<
 export async function getCurrentContribution(
   year: number,
   month: number
-): Promise<Result<{ expected_amount: number; paid_amount: number } | null>> {
+): Promise<Result<{ expected_amount: number | null; paid_amount: number } | null>> {
   const householdId = await getUserHouseholdId();
   if (!householdId) {
     return fail('No tienes un hogar activo');

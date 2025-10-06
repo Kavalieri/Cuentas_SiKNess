@@ -13,7 +13,7 @@ type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | '
 type Member = {
   profile_id: string;
   email: string;
-  income: number;
+  income: number | null; // NULL si no está configurado
   contribution: Contribution | null;
   role: 'owner' | 'member';
 };
@@ -22,7 +22,7 @@ interface ContributionsContentProps {
   householdId: string;
   userEmail: string;
   currentUserProfileId: string;
-  currentUserIncome: number;
+  currentUserIncome: number | null; // NULL si no está configurado
   currentUserContribution: Contribution | null;
   totalIncome: number;
   membersWithIncomes: Member[];

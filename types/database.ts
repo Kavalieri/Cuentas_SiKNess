@@ -230,7 +230,7 @@ export type Database = {
         Row: {
           adjustments_total: number | null
           created_at: string
-          expected_amount: number
+          expected_amount: number | null
           household_id: string
           id: string
           month: number
@@ -244,7 +244,7 @@ export type Database = {
         Insert: {
           adjustments_total?: number | null
           created_at?: string
-          expected_amount: number
+          expected_amount?: number | null
           household_id: string
           id?: string
           month: number
@@ -258,7 +258,7 @@ export type Database = {
         Update: {
           adjustments_total?: number | null
           created_at?: string
-          expected_amount?: number
+          expected_amount?: number | null
           household_id?: string
           id?: string
           month?: number

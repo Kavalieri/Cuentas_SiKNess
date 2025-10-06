@@ -15,13 +15,13 @@ interface Member {
   profile_id: string;
   email: string;
   role: 'owner' | 'member';
-  currentIncome: number;
+  currentIncome: number | null; // NULL si no está configurado
 }
 
 interface Contribution {
   id: string;
   profile_id: string;
-  expected_amount: number;
+  expected_amount: number | null; // NULL si income no configurado
   paid_amount: number;
   status: string;
   paid_at: string | null;
@@ -60,7 +60,7 @@ export function MonthlyFundStatus({
     selectedMonth.getMonth() === new Date().getMonth();
 
   // Verificar si hay configuración necesaria
-  const hasIncomesConfigured = members.every(m => m.currentIncome > 0);
+  const hasIncomesConfigured = members.every(m => m.currentIncome !== null && m.currentIncome > 0);
   const hasGoalConfigured = monthlyFund > 0;
   const needsConfiguration = !hasIncomesConfigured || !hasGoalConfigured;
 
@@ -292,9 +292,14 @@ export function MonthlyFundStatus({
               // Cálculos por miembro
               const adjustments = Math.abs(contribution.adjustments_total || 0);
               const totalPaidByMember = contribution.paid_amount + adjustments;
-              const originalExpected = contribution.expected_amount + adjustments; // Expected sin ajustes
+              const expectedAmount = contribution.expected_amount ?? 0; // Usar 0 si NULL
+              const originalExpected = expectedAmount + adjustments; // Expected sin ajustes
               const percentageOfFund = fundGoal > 0 ? (originalExpected / fundGoal) * 100 : 0;
-              const isPaid = contribution.status === 'paid' || contribution.paid_amount >= contribution.expected_amount;
+              
+              // ⚠️ FIX: Si expected_amount es NULL (sin configurar), NUNCA marcar como aportado
+              // aunque paid_amount sea 0. Solo marcar como aportado si está configurado Y pagado.
+              const isPaid = contribution.expected_amount !== null && 
+                (contribution.status === 'paid' || contribution.paid_amount >= expectedAmount);
 
               return (
                 <div

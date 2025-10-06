@@ -11,6 +11,7 @@ import { IncomeVsExpensesChart } from '@/app/app/components/charts/IncomeVsExpen
 import { SavingsEvolutionChart } from '@/components/savings/SavingsEvolutionChart';
 import { SavingsTab } from '@/components/savings/SavingsTab';
 import { PendingCreditsWidget } from '@/components/credits/PendingCreditsWidget';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatCurrency } from '@/lib/format';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
 import { toast } from 'sonner';
@@ -307,7 +308,9 @@ export function DashboardContent({
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <p className="text-muted-foreground text-center py-8">Cargando...</p>
+                <div className="py-12">
+                  <LoadingSpinner size="lg" text="Cargando transacciones..." />
+                </div>
               ) : (
                 /* @ts-ignore - complex transactions typing */
                 <TransactionsList

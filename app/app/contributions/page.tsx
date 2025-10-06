@@ -10,7 +10,7 @@ type Contribution = Database['public']['Tables']['contributions']['Row'];
 type Member = {
   profile_id: string;
   email: string;
-  income: number;
+  income: number | null; // NULL si no está configurado
   contribution: Contribution | null;
   role: 'owner' | 'member';
 };
@@ -70,15 +70,15 @@ export default async function ContributionsPage() {
       return {
         profile_id: member.profile_id,
         email: member.email || 'Sin email',
-        income: (income as number) || 0,
+        income: income as number | null, // ✅ Preserve NULL (sin configurar)
         contribution: null,
         role: member.role as 'owner' | 'member', // Incluir el rol del miembro
       };
     })
   );
 
-  // Calcular total de ingresos
-  const totalIncome = membersWithIncomes.reduce((sum, m) => sum + m.income, 0);
+  // Calcular total de ingresos (solo miembros configurados)
+  const totalIncome = membersWithIncomes.reduce((sum, m) => sum + (m.income ?? 0), 0);
 
   // Obtener contribuciones del mes actual
   const now = new Date();

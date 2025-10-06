@@ -36,7 +36,7 @@ export function PendingCreditsWidget({ initialCredits = [], onRefresh }: Pending
   >(initialCredits);
   const [selectedCredit, setSelectedCredit] = useState<typeof credits[0] | null>(null);
   const [currentContribution, setCurrentContribution] = useState<{
-    expected_amount: number;
+    expected_amount: number | null; // NULL si income no configurado
     paid_amount: number;
   } | null>(null);
   const [loading, setLoading] = useState(false); // Solo cargar si se hace refresh

@@ -27,6 +27,9 @@ export async function POST() {
     let resetCount = 0;
     if (contribs) {
       for (const contrib of contribs) {
+        // Skip if expected_amount is NULL (member not configured)
+        if (contrib.expected_amount === null) continue;
+        
         if (contrib.adjustments_total !== 0) {
           // Resetear: quitar el adjustments_total del expected_amount
           const newExpectedAmount = contrib.expected_amount - (contrib.adjustments_total || 0);
@@ -68,7 +71,7 @@ export async function POST() {
         .eq('id', contributionId)
         .single();
 
-      if (contrib) {
+      if (contrib && contrib.expected_amount !== null) {
         await supabase
           .from('contributions')
           .update({

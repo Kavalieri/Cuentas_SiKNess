@@ -762,6 +762,11 @@ export async function recordContributionPayment(
 
   if (fetchError) return fail(fetchError.message);
   if (!contribution) return fail('Contribución no encontrada');
+  
+  // Validar que la contribución tenga expected_amount configurado
+  if (contribution.expected_amount === null) {
+    return fail('No se puede registrar pago: el miembro debe configurar sus ingresos primero');
+  }
 
   const { expected_amount, paid_amount, household_id, profile_id, month, year } =
     contribution;

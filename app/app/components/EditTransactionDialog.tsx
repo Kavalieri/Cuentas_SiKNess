@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -211,6 +212,7 @@ export function EditTransactionDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isPending ? 'Guardando...' : 'Guardar Cambios'}
             </Button>
           </DialogFooter>

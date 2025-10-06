@@ -29,7 +29,7 @@ interface MonthlyDecisionModalProps {
     source_year: number;
   };
   currentContribution?: {
-    expected_amount: number;
+    expected_amount: number | null; // NULL si income no configurado
     paid_amount: number;
   } | null;
   onSuccess?: () => void;
@@ -67,8 +67,8 @@ export function MonthlyDecisionModal({
 
   // Calcular preview según la decisión
   const getPreview = () => {
-    if (!currentContribution) {
-      return null;
+    if (!currentContribution || currentContribution.expected_amount === null) {
+      return null; // No mostrar preview si no hay configuración
     }
 
     const { expected_amount, paid_amount } = currentContribution;

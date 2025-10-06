@@ -15,7 +15,7 @@ import { useState } from 'react';
 
 type Contribution = {
   id: string;
-  expected_amount: number;
+  expected_amount: number | null; // NULL si income no configurado
   paid_amount: number;
   adjustments_total: number | null;
   status: string;
@@ -33,7 +33,7 @@ type HeroContributionProps = {
   contribution: Contribution | null;
   userEmail: string;
   totalIncome: number;
-  userIncome: number;
+  userIncome: number | null; // NULL si no está configurado
   currency?: string;
   categories: Category[];
 };
@@ -76,8 +76,32 @@ export function HeroContribution({
       </Card>
     );
   }
+  
+  // Si expected_amount es NULL, el usuario NO ha configurado sus ingresos
+  if (contribution.expected_amount === null) {
+    return (
+      <Card className="border-2 border-orange-500">
+        <CardHeader>
+          <CardTitle className="text-2xl">⚠️ Configuración Pendiente</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">
+            No puedes calcular tu contribución hasta configurar tus ingresos mensuales.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Ve a la pestaña <strong>&ldquo;Configuración&rdquo;</strong> y establece tu ingreso mensual.
+          </p>
+          <div className="pt-4">
+            <Badge variant="outline" className="border-orange-500 text-orange-700">
+              Sin configurar
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const percentage = totalIncome > 0 ? (userIncome / totalIncome) * 100 : 0;
+  const percentage = totalIncome > 0 ? (userIncome ?? 0) / totalIncome * 100 : 0;
   
   // adjustments_total puede ser positivo (cargos extra) o negativo (descuentos)
   const hasAdjustments = (contribution.adjustments_total || 0) !== 0;
@@ -500,7 +524,7 @@ export function HeroContribution({
         )}
 
         <p className="text-xs text-muted-foreground">
-          Basado en tu ingreso mensual de {formatCurrency(userIncome, currency)}
+          Basado en tu ingreso mensual de {formatCurrency(userIncome ?? 0, currency)}
         </p>
       </CardContent>
     </Card>

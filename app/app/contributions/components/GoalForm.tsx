@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 import { setContributionGoal } from '@/app/app/contributions/actions';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/format';
@@ -55,6 +56,7 @@ export function GoalForm({ householdId, currentGoal, currency }: GoalFormProps) 
           />
         </div>
         <Button type="submit" disabled={isLoading || goal === currentGoal}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLoading ? 'Guardando...' : 'Guardar Fondo'}
         </Button>
       </div>
