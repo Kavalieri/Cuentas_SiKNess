@@ -81,10 +81,21 @@ export async function getActiveCredits(): Promise<Result<MemberCredit[]>> {
       return fail('No autenticado');
     }
 
+    // Obtener profile_id del usuario autenticado
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!profile) {
+      return fail('Perfil no encontrado');
+    }
+
     const { data: credits, error } = await supabase
       .from('member_credits')
       .select('*')
-      .eq('profile_id', user.id)
+      .eq('profile_id', profile.id)
       .eq('status', 'active')
       .order('created_at', { ascending: false });
 
@@ -114,10 +125,21 @@ export async function getAllCredits(): Promise<Result<MemberCredit[]>> {
       return fail('No autenticado');
     }
 
+    // Obtener profile_id del usuario autenticado
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!profile) {
+      return fail('Perfil no encontrado');
+    }
+
     const { data: credits, error } = await supabase
       .from('member_credits')
       .select('*')
-      .eq('profile_id', user.id)
+      .eq('profile_id', profile.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -146,11 +168,22 @@ export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
       return fail('No autenticado');
     }
 
+    // Obtener profile_id del usuario autenticado
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!profile) {
+      return fail('Perfil no encontrado');
+    }
+
     // Obtener household_id del usuario
     const { data: userSettings } = await supabase
       .from('user_settings')
       .select('active_household_id')
-      .eq('profile_id', user.id)
+      .eq('profile_id', profile.id)
       .single();
 
     if (!userSettings?.active_household_id) {
@@ -160,7 +193,7 @@ export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
     // Ejecutar resumen via RPC
     const { data, error } = (await supabase.rpc('get_member_credits_summary', {
       p_household_id: userSettings.active_household_id,
-      p_profile_id: user.id,
+      p_profile_id: profile.id,
     })) as unknown as { data: CreditsSummary | null; error: Error | null };
 
     if (error) {

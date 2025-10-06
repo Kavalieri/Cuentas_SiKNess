@@ -65,9 +65,20 @@ export default async function ExpensesPage() {
                         <p className="text-xs text-gray-400">
                           {new Date(m.occurred_at as string).toLocaleDateString('es-ES', {
                             day: 'numeric',
-                            month: 'long',
+                            month: 'short',
                             year: 'numeric',
+                            timeZone: 'Europe/Madrid',
                           })}
+                          {(m.created_at as string | undefined) && (
+                            <span className="ml-2">
+                              •{' '}
+                              {new Date(m.created_at as string).toLocaleTimeString('es-ES', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'Europe/Madrid',
+                              })}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
