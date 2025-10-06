@@ -102,9 +102,7 @@ export default async function DashboardPage() {
   const comparison = comparisonResult.ok ? comparisonResult.data : undefined;
   const members = membersResult.ok ? (membersResult.data || []) : [];
   const savingsTransactions = savingsTransactionsResult.ok ? (savingsTransactionsResult.data || []) : [];
-  const savingsBalance = savingsBalanceResult.ok
-    ? (savingsBalanceResult.data as { goal_amount?: number | null } | undefined)
-    : undefined;
+  const savingsBalance = savingsBalanceResult.ok ? savingsBalanceResult.data : undefined;
 
   // Preparar datos para gráfico de evolución de ahorro
   // Agrupar por mes y obtener el balance final de cada mes
@@ -138,7 +136,9 @@ export default async function DashboardPage() {
         initialComparison={comparison as never}
         initialMembers={members as never[]}
         initialSavingsEvolution={savingsEvolutionData}
-        initialSavingsGoal={savingsBalance?.goal_amount}
+        initialSavingsGoal={(savingsBalance as { goal_amount?: number | null })?.goal_amount}
+        initialSavingsBalance={savingsBalance as never}
+        initialSavingsTransactions={savingsTransactions as never[]}
       />
     </div>
   );

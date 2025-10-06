@@ -9,12 +9,14 @@ import { TransactionsList } from '@/app/app/components/TransactionsList';
 import { ExpensesByCategoryChart } from '@/app/app/components/charts/ExpensesByCategoryChart';
 import { IncomeVsExpensesChart } from '@/app/app/components/charts/IncomeVsExpensesChart';
 import { SavingsEvolutionChart } from '@/components/savings/SavingsEvolutionChart';
+import { SavingsTab } from '@/components/savings/SavingsTab';
 import { PendingCreditsWidget } from '@/components/credits/PendingCreditsWidget';
 import { formatCurrency } from '@/lib/format';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, TrendingUp, PiggyBank, BarChart3 } from 'lucide-react';
+import type { SavingsBalance, SavingsTransaction } from '@/types/savings';
 
 type Category = {
   id: string;
@@ -92,6 +94,8 @@ interface DashboardContentProps {
   initialMembers: Member[];
   initialSavingsEvolution: Array<{ date: string; balance: number }>;
   initialSavingsGoal?: number | null;
+  initialSavingsBalance?: SavingsBalance;
+  initialSavingsTransactions?: SavingsTransaction[];
 }
 
 export function DashboardContent({
@@ -103,6 +107,8 @@ export function DashboardContent({
   initialMembers,
   initialSavingsEvolution,
   initialSavingsGoal,
+  initialSavingsBalance,
+  initialSavingsTransactions,
 }: DashboardContentProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [summary, setSummary] = useState(initialSummary);
@@ -261,138 +267,180 @@ export function DashboardContent({
       {/* Widget de Créditos Pendientes */}
       <PendingCreditsWidget onRefresh={refreshData} />
 
-      {/* Gráficos */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <ExpensesByCategoryChart data={categoryExpenses} currency="EUR" />
-        <IncomeVsExpensesChart
-          current={summary}
-          previous={comparison?.previous}
-          change={comparison?.change}
-          currency="EUR"
-        />
-      </div>
-
-      {/* Gráfico de Evolución de Ahorro */}
-      {initialSavingsEvolution.length > 0 && (
-        <SavingsEvolutionChart data={initialSavingsEvolution} goalAmount={initialSavingsGoal} />
-      )}
-
-      <Tabs defaultValue="all" className="w-full">
+      {/* PESTAÑAS PRINCIPALES */}
+      <Tabs defaultValue="balance" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">Todos</TabsTrigger>
-          <TabsTrigger value="income">Ingresos</TabsTrigger>
-          <TabsTrigger value="expenses">Gastos</TabsTrigger>
+          <TabsTrigger value="balance" className="gap-2">
+            <TrendingUp className="h-4 w-4" />
+            <span className="hidden sm:inline">Balance</span>
+          </TabsTrigger>
+          <TabsTrigger value="savings" className="gap-2">
+            <PiggyBank className="h-4 w-4" />
+            <span className="hidden sm:inline">Ahorro</span>
+          </TabsTrigger>
+          <TabsTrigger value="stats" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Estadísticas</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Últimos transaccións</CardTitle>
-                  <CardDescription>
-                    {recentTransactions.length} {hasMoreTransactions ? `de ${transactions.length}` : ''} transacción{transactions.length !== 1 ? 's' : ''}
-                  </CardDescription>
-                </div>
-                {hasMoreTransactions && (
-                  <Link
-                    href="/app/expenses"
-                    className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                  >
-                    Ver todas
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <p className="text-muted-foreground text-center py-8">Cargando...</p>
-              ) : (
-                /* @ts-ignore - complex transactions typing */
-                <TransactionsList
-                  transactions={recentTransactions}
-                  categories={initialCategories}
-                  members={initialMembers}
-                  onUpdate={refreshData}
-                />
-              )}
-            </CardContent>
-          </Card>
+        {/* TAB BALANCE: Transacciones con filtros */}
+        <TabsContent value="balance" className="mt-6 space-y-6">
+          {/* Sub-tabs: Todos/Ingresos/Gastos */}
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="income">Ingresos</TabsTrigger>
+              <TabsTrigger value="expenses">Gastos</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Últimas transacciones</CardTitle>
+                      <CardDescription>
+                        {recentTransactions.length} {hasMoreTransactions ? `de ${transactions.length}` : ''} transacción{transactions.length !== 1 ? 'es' : ''}
+                      </CardDescription>
+                    </div>
+                    {hasMoreTransactions && (
+                      <Link
+                        href="/app/expenses"
+                        className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                      >
+                        Ver todas
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <p className="text-muted-foreground text-center py-8">Cargando...</p>
+                  ) : (
+                    /* @ts-ignore - complex transactions typing */
+                    <TransactionsList
+                      transactions={recentTransactions}
+                      categories={initialCategories}
+                      members={initialMembers}
+                      onUpdate={refreshData}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="income" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Ingresos Recientes</CardTitle>
+                      <CardDescription>
+                        {recentIncome.length} {hasMoreIncome ? 'de' : ''} {incomeTransactions.length} ingreso{incomeTransactions.length !== 1 ? 's' : ''}
+                      </CardDescription>
+                    </div>
+                    {hasMoreIncome && (
+                      <Link
+                        href="/app/expenses"
+                        className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                      >
+                        Ver todos
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <p className="text-muted-foreground text-center py-8">Cargando...</p>
+                  ) : (
+                    /* @ts-ignore - complex transactions typing */
+                    <TransactionsList
+                      transactions={recentIncome}
+                      categories={initialCategories}
+                      members={initialMembers}
+                      onUpdate={refreshData}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="expenses" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Gastos Recientes</CardTitle>
+                      <CardDescription>
+                        {recentExpenses.length} {hasMoreExpenses ? 'de' : ''} {expenseTransactions.length} gasto{expenseTransactions.length !== 1 ? 's' : ''}
+                      </CardDescription>
+                    </div>
+                    {hasMoreExpenses && (
+                      <Link
+                        href="/app/expenses"
+                        className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                      >
+                        Ver todos
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <p className="text-muted-foreground text-center py-8">Cargando...</p>
+                  ) : (
+                    /* @ts-ignore - complex transactions typing */
+                    <TransactionsList
+                      transactions={recentExpenses}
+                      categories={initialCategories}
+                      members={initialMembers}
+                      onUpdate={refreshData}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
-        <TabsContent value="income" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Ingresos Recientes</CardTitle>
-                  <CardDescription>
-                    {recentIncome.length} {hasMoreIncome ? 'de' : ''} {incomeTransactions.length} ingreso{incomeTransactions.length !== 1 ? 's' : ''}
-                  </CardDescription>
-                </div>
-                {hasMoreIncome && (
-                  <Link
-                    href="/app/expenses"
-                    className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                  >
-                    Ver todos
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <p className="text-muted-foreground text-center py-8">Cargando...</p>
-              ) : (
-                /* @ts-ignore - complex transactions typing */
-                <TransactionsList
-                  transactions={recentIncome}
-                  categories={initialCategories}
-                  members={initialMembers}
-                  onUpdate={refreshData}
-                />
-              )}
-            </CardContent>
-          </Card>
+        {/* TAB AHORRO: Módulo completo de ahorro */}
+        <TabsContent value="savings" className="mt-6">
+          {initialSavingsBalance && initialSavingsTransactions ? (
+            <SavingsTab
+              initialBalance={initialSavingsBalance}
+              initialTransactions={initialSavingsTransactions}
+            />
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">
+                  No hay información de ahorro disponible
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
-        <TabsContent value="expenses" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Gastos Recientes</CardTitle>
-                  <CardDescription>
-                    {recentExpenses.length} {hasMoreExpenses ? 'de' : ''} {expenseTransactions.length} gasto{expenseTransactions.length !== 1 ? 's' : ''}
-                  </CardDescription>
-                </div>
-                {hasMoreExpenses && (
-                  <Link
-                    href="/app/expenses"
-                    className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                  >
-                    Ver todos
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <p className="text-muted-foreground text-center py-8">Cargando...</p>
-              ) : (
-                /* @ts-ignore - complex transactions typing */
-                <TransactionsList
-                  transactions={recentExpenses}
-                  categories={initialCategories}
-                  members={initialMembers}
-                  onUpdate={refreshData}
-                />
-              )}
-            </CardContent>
-          </Card>
+        {/* TAB ESTADÍSTICAS: Gráficos */}
+        <TabsContent value="stats" className="mt-6 space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <ExpensesByCategoryChart data={categoryExpenses} currency="EUR" />
+            <IncomeVsExpensesChart
+              current={summary}
+              previous={comparison?.previous}
+              change={comparison?.change}
+              currency="EUR"
+            />
+          </div>
+
+          {/* Gráfico de Evolución de Ahorro */}
+          {initialSavingsEvolution.length > 0 && (
+            <SavingsEvolutionChart data={initialSavingsEvolution} goalAmount={initialSavingsGoal} />
+          )}
         </TabsContent>
       </Tabs>
     </div>
