@@ -1,8 +1,35 @@
 # 🏗️ Major Refactor: Sistema de Transacciones Robusto
 
 **Fecha**: 5 de octubre de 2025  
-**Estado**: 🎯 DISEÑO - Pendiente aprobación  
-**Impacto**: 🔴 BREAKING CHANGES - Requiere wipe completo de datos  
+**Última actualización**: 6 de octubre de 2025  
+**Estado**: ✅ **IMPLEMENTADO (7 de 9 problemas resueltos)** ⭐  
+**Impacto**: 🔴 BREAKING CHANGES - Wipe completo ejecutado el 5 oct  
+
+---
+
+## 📊 Estado de Implementación (6 octubre 2025)
+
+### ✅ Problemas RESUELTOS (7/9)
+
+1. ✅ **Campo description para usuario** → SOLVED via columna `paid_by` (UUID → profiles.id)
+2. ✅ **Sistema de ownership robusto** → SOLVED via `paid_by`, `created_by`, `updated_by`
+3. ✅ **Estados no robustos** → SOLVED via `status` (draft/pending/confirmed/locked)
+4. ✅ **Nomenclatura inconsistente** → SOLVED via FASE 5 (movements → transactions en 50+ archivos)
+5. ✅ **Auditoría incompleta** → SOLVED via columnas `created_by`, `updated_by`, `locked_at`, `locked_by`
+6. ✅ **Conexión ajustes débil** → SOLVED via `source_type` (manual/adjustment/recurring/import) + `source_id`
+7. ✅ **Cierre mensual** → SOLVED via FASE 8 (ClosePeriodModal, ReopenPeriodModal, PeriodActions)
+
+### ⚠️ Problemas PENDIENTES (2/9)
+
+8. ⏳ **Split de gastos** → Decisión "B - Complejo/Flexible" aprobada pero NO implementada
+   - Columnas existen: `split_type` (none/equal/proportional/custom), `split_data` JSONB
+   - Falta: UI para configurar split, lógica para calcular shares, reportes por miembro
+   - **Recomendación**: Posponer a core adjustments después de testing manual
+
+9. ⏳ **RLS policies exhaustivo** → Policies existen pero NO testeadas con múltiples usuarios
+   - Políticas implementadas: Transactions locked NO editables, household_id validation
+   - Falta: Testing exhaustivo con 2+ usuarios, intentos de acceso cross-household
+   - **Recomendación**: Validar durante testing manual con fumetas.sik + caballeropomes  
 
 ---
 
