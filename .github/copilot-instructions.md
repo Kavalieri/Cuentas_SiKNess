@@ -1,6 +1,25 @@
 # CuentasSiK - AI Coding Agent Instructions
 
-## 🔧 Model Context Protocol (MCP) - PRIORIDAD ABSOLUTA
+## � REGLAS CRÍTICAS - LEER PRIMERO 🚨
+
+### ⚠️ **REGLA #1: SIEMPRE USAR MCPs (Model Context Protocol)**
+
+**PROHIBIDO** usar comandos CLI manuales cuando existe un MCP equivalente:
+
+| ❌ NUNCA USAR | ✅ SIEMPRE USAR MCP |
+|---------------|---------------------|
+| `run_in_terminal("supabase db push")` | `mcp_supabase_apply_migration()` |
+| `run_in_terminal("git commit ...")` | `mcp_git_git_commit()` |
+| `run_in_terminal("git push")` | `mcp_git_git_push()` |
+| `run_in_terminal("npm run build")` | `mcp_shell_execute_command("npm run build")` |
+| Pedir al usuario ejecutar SQL | `mcp_supabase_execute_sql()` |
+| Pedir al usuario verificar Vercel | `mcp_vercel_get_deployment()` |
+
+**Si el usuario te dice "usa el MCP"**, significa que olvidaste esta regla. **Disculpate y corrígelo inmediatamente**.
+
+---
+
+## �🔧 Model Context Protocol (MCP) - PRIORIDAD ABSOLUTA
 
 **⚠️ REGLA CRÍTICA**: Usar SIEMPRE los MCPs disponibles en lugar de comandos CLI o acciones manuales.
 

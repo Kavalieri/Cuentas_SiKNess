@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AdvancedFilters } from '@/app/app/components/AdvancedFilters';
 import {
   Table,
   TableBody,
@@ -12,14 +13,13 @@ import {
 } from '@/components/ui/table';
 import { usePrivateFormat } from '@/lib/hooks/usePrivateFormat';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, ArrowUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { deleteTransaction } from '@/app/app/expenses/actions';
 import { EditTransactionDialog } from '@/app/app/components/EditTransactionDialog';
 import { useRouter } from 'next/navigation';
 import { TransactionStatusBadge, type TransactionStatus } from '@/components/shared/TransactionStatusBadge';
-import { TransactionFilters } from '@/app/app/components/TransactionFilters';
 import Image from 'next/image';
 
 interface Transaction {
@@ -63,6 +63,8 @@ interface TransactionsListProps {
   members?: Member[];
   showActions?: boolean;
   onUpdate?: () => void | Promise<void>;
+  showFilters?: boolean;
+  showSearch?: boolean;
 }
 
 export function TransactionsList({
@@ -71,13 +73,26 @@ export function TransactionsList({
   members = [],
   showActions = true,
   onUpdate,
+  showFilters = false,
+  showSearch = false,
 }: TransactionsListProps) {
   const router = useRouter();
   const { formatPrivateCurrency } = usePrivateFormat();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Estados de filtros
+  const [searchText, setSearchText] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'expense' | 'income'>('all');
+  const [filterCategory, setFilterCategory] = useState<string | 'all'>('all');
   const [filterPaidBy, setFilterPaidBy] = useState<string | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<TransactionStatus | 'all'>('all');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  
+  // Estados de ordenamiento
+  const [sortField, setSortField] = useState<'date' | 'amount' | 'category' | 'description' | 'paid_by' | 'status'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar esta transacción?')) return;
@@ -94,15 +109,105 @@ export function TransactionsList({
     setDeletingId(null);
   };
 
-  // Filtrar transacciones
+  // Función para limpiar todos los filtros
+  const handleClearFilters = () => {
+    setSearchText('');
+    setFilterType('all');
+    setFilterCategory('all');
+    setFilterPaidBy('all');
+    setFilterStatus('all');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+  };
+
+  // Función para cambiar ordenamiento
+  const toggleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  // Filtrar transacciones con todos los criterios
   const filteredTransactions = transactions.filter((transaction) => {
+    // Búsqueda por descripción
+    if (searchText && !transaction.description?.toLowerCase().includes(searchText.toLowerCase())) {
+      return false;
+    }
+    
+    // Filtro por tipo
+    if (filterType !== 'all' && transaction.type !== filterType) {
+      return false;
+    }
+    
+    // Filtro por categoría
+    if (filterCategory !== 'all' && transaction.category_id !== filterCategory) {
+      return false;
+    }
+    
+    // Filtro por pagador
     if (filterPaidBy !== 'all' && transaction.paid_by !== filterPaidBy) {
       return false;
     }
+    
+    // Filtro por estado
     if (filterStatus !== 'all' && (transaction.status || 'confirmed') !== filterStatus) {
       return false;
     }
+    
+    // Filtro por rango de fechas
+    const txDate = new Date(transaction.occurred_at);
+    if (filterDateFrom) {
+      const fromDate = new Date(filterDateFrom);
+      if (txDate < fromDate) return false;
+    }
+    if (filterDateTo) {
+      const toDate = new Date(filterDateTo);
+      toDate.setHours(23, 59, 59, 999); // Incluir todo el día
+      if (txDate > toDate) return false;
+    }
+    
     return true;
+  });
+
+  // Ordenar transacciones
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    let aVal: string | number | Date;
+    let bVal: string | number | Date;
+
+    switch (sortField) {
+      case 'date':
+        aVal = new Date(a.occurred_at).getTime();
+        bVal = new Date(b.occurred_at).getTime();
+        break;
+      case 'amount':
+        aVal = a.amount;
+        bVal = b.amount;
+        break;
+      case 'category':
+        aVal = a.categories?.name || '';
+        bVal = b.categories?.name || '';
+        break;
+      case 'description':
+        aVal = a.description || '';
+        bVal = b.description || '';
+        break;
+      case 'paid_by':
+        aVal = a.profile?.display_name || '';
+        bVal = b.profile?.display_name || '';
+        break;
+      case 'status':
+        aVal = a.status || 'confirmed';
+        bVal = b.status || 'confirmed';
+        break;
+      default:
+        return 0;
+    }
+
+    const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    return sortDirection === 'asc' ? comparison : -comparison;
   });
 
   if (transactions.length === 0) {
@@ -124,20 +229,50 @@ export function TransactionsList({
 
   return (
     <>
-      {/* Filtros */}
-      {members.length > 0 && (
-        <TransactionFilters
+      {/* Filtros avanzados */}
+      {(showFilters || showSearch) && (
+        <AdvancedFilters
+          categories={categories}
           members={members}
+          searchText={searchText}
+          filterType={filterType}
+          filterCategory={filterCategory}
           filterPaidBy={filterPaidBy}
           filterStatus={filterStatus}
+          filterDateFrom={filterDateFrom}
+          filterDateTo={filterDateTo}
+          onSearchTextChange={setSearchText}
+          onFilterTypeChange={setFilterType}
+          onFilterCategoryChange={setFilterCategory}
           onFilterPaidByChange={setFilterPaidBy}
           onFilterStatusChange={setFilterStatus}
+          onFilterDateFromChange={setFilterDateFrom}
+          onFilterDateToChange={setFilterDateTo}
+          onClearFilters={handleClearFilters}
         />
       )}
 
+      {sortedTransactions.length === 0 && (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center text-muted-foreground">
+              <p className="text-lg font-medium mb-2">
+                No se encontraron transacciones
+              </p>
+              <p className="text-sm">
+                {searchText || filterType !== 'all' || filterCategory !== 'all' || filterPaidBy !== 'all' || filterStatus !== 'all' || filterDateFrom || filterDateTo
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'Haz click en "+ Nueva Transacción" para empezar'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Vista Móvil - Cards */}
-      <div className="space-y-3 md:hidden">
-        {filteredTransactions.map((transaction) => (
+      {sortedTransactions.length > 0 && (
+        <div className="space-y-3 md:hidden">
+          {sortedTransactions.map((transaction) => (
           <Card key={transaction.id}>
             <CardContent className="py-4">
               <div className="space-y-3">
@@ -197,25 +332,87 @@ export function TransactionsList({
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Vista Desktop - Tabla */}
-      <Card className="hidden md:block">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Categoría</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead className="text-right">Monto</TableHead>
-                <TableHead>Pagado por</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Fecha</TableHead>
-                {showActions && <TableHead className="text-right">Acciones</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTransactions.map((transaction) => (
+      {sortedTransactions.length > 0 && (
+        <Card className="hidden md:block">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => toggleSort('category')}
+                    >
+                      Categoría
+                      {sortField === 'category' && <ArrowUpDown className="ml-2 h-4 w-4" />}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => toggleSort('description')}
+                    >
+                      Descripción
+                      {sortField === 'description' && <ArrowUpDown className="ml-2 h-4 w-4" />}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => toggleSort('amount')}
+                    >
+                      Monto
+                      {sortField === 'amount' && <ArrowUpDown className="ml-2 h-4 w-4" />}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => toggleSort('paid_by')}
+                    >
+                      Pagado por
+                      {sortField === 'paid_by' && <ArrowUpDown className="ml-2 h-4 w-4" />}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => toggleSort('status')}
+                    >
+                      Estado
+                      {sortField === 'status' && <ArrowUpDown className="ml-2 h-4 w-4" />}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => toggleSort('date')}
+                    >
+                      Fecha
+                      {sortField === 'date' && <ArrowUpDown className="ml-2 h-4 w-4" />}
+                    </Button>
+                  </TableHead>
+                  {showActions && <TableHead className="text-right">Acciones</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -306,7 +503,8 @@ export function TransactionsList({
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
       {/* Dialog de edición */}
       {editingId && (
