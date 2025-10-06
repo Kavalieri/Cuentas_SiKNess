@@ -8,10 +8,10 @@ import { Users, CheckCircle2, Clock, AlertCircle, TrendingDown } from 'lucide-re
 type Member = {
   profile_id: string;
   email: string;
-  income: number;
+  income: number | null; // NULL si no está configurado
   contribution: {
     id: string;
-    expected_amount: number;
+    expected_amount: number | null; // NULL si income no configurado
     paid_amount: number;
     adjustments_total: number | null;
     status: string;
@@ -29,7 +29,19 @@ export function ContributionMembersList({
   totalIncome,
   currency = 'EUR',
 }: ContributionMembersListProps) {
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (contribution: Member['contribution']) => {
+    // Si expected_amount es NULL, el miembro NO ha configurado sus ingresos
+    if (!contribution || contribution.expected_amount === null) {
+      return (
+        <Badge variant="outline" className="border-orange-500 text-orange-700">
+          <AlertCircle className="mr-1 h-3 w-3" />
+          Sin configurar
+        </Badge>
+      );
+    }
+
+    const status = contribution.status;
+    
     switch (status) {
       case 'paid':
         return (
@@ -63,7 +75,7 @@ export function ContributionMembersList({
         return (
           <Badge variant="outline">
             <AlertCircle className="mr-1 h-3 w-3" />
-            Sin configurar
+            Sin estado
           </Badge>
         );
     }
@@ -85,11 +97,21 @@ export function ContributionMembersList({
         )}
 
         {members.map((member) => {
-          const percentage = totalIncome > 0 ? (member.income / totalIncome) * 100 : 0;
           const contribution = member.contribution;
+          
+          // Si el miembro NO ha configurado sus ingresos
+          const isNotConfigured = member.income === null || 
+                                  !contribution || 
+                                  contribution.expected_amount === null;
+          
+          const percentage = !isNotConfigured && totalIncome > 0 
+            ? ((member.income || 0) / totalIncome) * 100 
+            : 0;
+          
           const hasAdjustments = contribution && (contribution.adjustments_total || 0) !== 0;
+          
           // expected_amount YA incluye adjustments_total
-          const remainingAmount = contribution
+          const remainingAmount = contribution && contribution.expected_amount !== null
             ? contribution.expected_amount - (contribution.paid_amount || 0)
             : 0;
 
@@ -102,18 +124,24 @@ export function ContributionMembersList({
                       👤 {member.email}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Ingreso mensual: {formatCurrency(member.income, currency)}
+                      Ingreso mensual: {isNotConfigured ? 'Sin configurar' : formatCurrency(member.income || 0, currency)}
                     </p>
                   </div>
-                  {contribution && getStatusBadge(contribution.status)}
+                  {getStatusBadge(contribution)}
                 </div>
 
-                {contribution ? (
+                {isNotConfigured ? (
+                  <div className="pt-2 border-t">
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Este miembro debe configurar sus ingresos en la pestaña <strong>&ldquo;Configuración&rdquo;</strong> antes de calcular su contribución.
+                    </p>
+                  </div>
+                ) : contribution ? (
                   <div className="space-y-1 pt-2 border-t">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Contribución base:</span>
                       <span className="font-semibold">
-                        {formatCurrency(contribution.expected_amount - (contribution.adjustments_total || 0), currency)}
+                        {formatCurrency((contribution.expected_amount || 0) - (contribution.adjustments_total || 0), currency)}
                       </span>
                     </div>
                     
@@ -142,7 +170,7 @@ export function ContributionMembersList({
                     <div className="flex justify-between text-base font-bold pt-2 border-t">
                       <span>Total esperado:</span>
                       <span>
-                        {formatCurrency(contribution.expected_amount, currency)}
+                        {formatCurrency(contribution.expected_amount || 0, currency)}
                       </span>
                     </div>
                     
