@@ -195,3 +195,50 @@ export async function removeMember(memberId: string): Promise<Result> {
   revalidatePath('/app/household');
   return ok();
 }
+
+/**
+ * Obtiene los miembros del hogar actual
+ */
+export async function getHouseholdMembers(): Promise<
+  Result<Array<{ id: string; display_name: string; avatar_url: string | null }>>
+> {
+  const householdId = await getUserHouseholdId();
+
+  if (!householdId) {
+    return fail('No perteneces a ningún hogar');
+  }
+
+  const supabase = await supabaseServer();
+
+  const { data, error } = await supabase
+    .from('household_members')
+    .select(
+      `
+      profile_id,
+      profiles (
+        id,
+        display_name,
+        avatar_url
+      )
+    `,
+    )
+    .eq('household_id', householdId);
+
+  if (error) {
+    return fail(error.message);
+  }
+
+  // Transformar datos
+  const members = (data || [])
+    .filter((m) => m.profiles)
+    .map((m) => {
+      const profile = m.profiles as { id: string; display_name: string; avatar_url: string | null } | null;
+      return {
+        id: profile?.id || '',
+        display_name: profile?.display_name || 'Sin nombre',
+        avatar_url: profile?.avatar_url || null,
+      };
+    });
+
+  return ok(members);
+}

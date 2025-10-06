@@ -30,10 +30,17 @@ type Transaction = {
   occurred_at: string;
   created_at: string | null;
   updated_at?: string | null;
+  category_id: string | null;
+  paid_by?: string | null;
+  status?: 'draft' | 'pending' | 'confirmed' | 'locked';
   categories: {
     id: string;
     name: string;
     icon: string | null;
+  } | null;
+  profile?: {
+    display_name: string;
+    avatar_url: string | null;
   } | null;
 };
 
@@ -44,6 +51,12 @@ type CategoryExpense = {
   total: number;
   count: number;
   percentage: number;
+};
+
+type Member = {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
 };
 
 type MonthComparison = {
@@ -74,6 +87,7 @@ interface DashboardContentProps {
   };
   initialCategoryExpenses: CategoryExpense[];
   initialComparison?: MonthComparison;
+  initialMembers: Member[];
 }
 
 export function DashboardContent({
@@ -82,6 +96,7 @@ export function DashboardContent({
   initialSummary,
   initialCategoryExpenses,
   initialComparison,
+  initialMembers,
 }: DashboardContentProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [summary, setSummary] = useState(initialSummary);
@@ -284,7 +299,12 @@ export function DashboardContent({
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
                 /* @ts-ignore - complex transactions typing */
-                <TransactionsList transactions={recentTransactions} categories={initialCategories} onUpdate={refreshData} />
+                <TransactionsList
+                  transactions={recentTransactions}
+                  categories={initialCategories}
+                  members={initialMembers}
+                  onUpdate={refreshData}
+                />
               )}
             </CardContent>
           </Card>
@@ -316,7 +336,12 @@ export function DashboardContent({
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
                 /* @ts-ignore - complex transactions typing */
-                <TransactionsList transactions={recentIncome} categories={initialCategories} onUpdate={refreshData} />
+                <TransactionsList
+                  transactions={recentIncome}
+                  categories={initialCategories}
+                  members={initialMembers}
+                  onUpdate={refreshData}
+                />
               )}
             </CardContent>
           </Card>
@@ -348,7 +373,12 @@ export function DashboardContent({
                 <p className="text-muted-foreground text-center py-8">Cargando...</p>
               ) : (
                 /* @ts-ignore - complex transactions typing */
-                <TransactionsList transactions={recentExpenses} categories={initialCategories} onUpdate={refreshData} />
+                <TransactionsList
+                  transactions={recentExpenses}
+                  categories={initialCategories}
+                  members={initialMembers}
+                  onUpdate={refreshData}
+                />
               )}
             </CardContent>
           </Card>

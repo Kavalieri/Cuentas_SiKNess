@@ -3,6 +3,7 @@ import { getUserHouseholdId } from '@/lib/supabaseServer';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from './expenses/actions';
 import { getCategories } from './categories/actions';
 import { getInvitationDetails, getUserPendingInvitations } from './household/invitations/actions';
+import { getHouseholdMembers } from './household/actions';
 import { DashboardOnboarding } from './components/DashboardOnboarding';
 import { PendingInvitationsCard } from './components/PendingInvitationsCard';
 import { DashboardContent } from './components/DashboardContent';
@@ -73,12 +74,13 @@ export default async function DashboardPage() {
   const pendingInvitations = pendingInvitationsResult.ok ? pendingInvitationsResult.data || [] : [];
 
   // Obtener datos en paralelo
-  const [summaryResult, transactionsResult, categoriesResult, categoryExpensesResult, comparisonResult] = await Promise.all([
+  const [summaryResult, transactionsResult, categoriesResult, categoryExpensesResult, comparisonResult, membersResult] = await Promise.all([
     getMonthSummary(year, month),
     getTransactions(),
     getCategories(),
     getCategoryExpenses({ startDate, endDate }),
     getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
+    getHouseholdMembers(),
   ]);
 
   const summary = summaryResult.ok
@@ -89,6 +91,7 @@ export default async function DashboardPage() {
   const categories = categoriesResult.ok ? (categoriesResult.data || []) : [];
   const categoryExpenses = categoryExpensesResult.ok ? (categoryExpensesResult.data || []) : [];
   const comparison = comparisonResult.ok ? comparisonResult.data : undefined;
+  const members = membersResult.ok ? (membersResult.data || []) : [];
 
   return (
     <div className="space-y-8">
@@ -103,6 +106,7 @@ export default async function DashboardPage() {
         initialSummary={summary}
         initialCategoryExpenses={categoryExpenses as never[]}
         initialComparison={comparison as never}
+        initialMembers={members as never[]}
       />
     </div>
   );

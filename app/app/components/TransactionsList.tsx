@@ -19,6 +19,7 @@ import { deleteTransaction } from '@/app/app/expenses/actions';
 import { EditTransactionDialog } from '@/app/app/components/EditTransactionDialog';
 import { useRouter } from 'next/navigation';
 import { TransactionStatusBadge, type TransactionStatus } from '@/components/shared/TransactionStatusBadge';
+import { TransactionFilters } from '@/app/app/components/TransactionFilters';
 import Image from 'next/image';
 
 interface Transaction {
@@ -50,18 +51,33 @@ interface Category {
   type: string;
 }
 
+interface Member {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+}
+
 interface TransactionsListProps {
   transactions: Transaction[];
   categories?: Category[];
+  members?: Member[];
   showActions?: boolean;
   onUpdate?: () => void | Promise<void>;
 }
 
-export function TransactionsList({ transactions, categories = [], showActions = true, onUpdate }: TransactionsListProps) {
+export function TransactionsList({
+  transactions,
+  categories = [],
+  members = [],
+  showActions = true,
+  onUpdate,
+}: TransactionsListProps) {
   const router = useRouter();
   const { formatPrivateCurrency } = usePrivateFormat();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [filterPaidBy, setFilterPaidBy] = useState<string | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<TransactionStatus | 'all'>('all');
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar esta transacción?')) return;
@@ -77,6 +93,17 @@ export function TransactionsList({ transactions, categories = [], showActions = 
     }
     setDeletingId(null);
   };
+
+  // Filtrar transacciones
+  const filteredTransactions = transactions.filter((transaction) => {
+    if (filterPaidBy !== 'all' && transaction.paid_by !== filterPaidBy) {
+      return false;
+    }
+    if (filterStatus !== 'all' && (transaction.status || 'confirmed') !== filterStatus) {
+      return false;
+    }
+    return true;
+  });
 
   if (transactions.length === 0) {
     return (
@@ -97,9 +124,20 @@ export function TransactionsList({ transactions, categories = [], showActions = 
 
   return (
     <>
+      {/* Filtros */}
+      {members.length > 0 && (
+        <TransactionFilters
+          members={members}
+          filterPaidBy={filterPaidBy}
+          filterStatus={filterStatus}
+          onFilterPaidByChange={setFilterPaidBy}
+          onFilterStatusChange={setFilterStatus}
+        />
+      )}
+
       {/* Vista Móvil - Cards */}
       <div className="space-y-3 md:hidden">
-        {transactions.map((transaction) => (
+        {filteredTransactions.map((transaction) => (
           <Card key={transaction.id}>
             <CardContent className="py-4">
               <div className="space-y-3">
@@ -177,7 +215,7 @@ export function TransactionsList({ transactions, categories = [], showActions = 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => (
+              {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
