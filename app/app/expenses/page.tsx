@@ -59,8 +59,8 @@ export default async function ExpensesPage() {
                         <p className="font-medium">
                           {(categories?.name as string) || 'Sin categoría'}
                         </p>
-                        {m.note ? (
-                          <p className="text-sm text-gray-500">{m.note as string}</p>
+                        {m.description ? (
+                          <p className="text-sm text-gray-500">{m.description as string}</p>
                         ) : null}
                         <p className="text-xs text-gray-400">
                           {new Date(m.occurred_at as string).toLocaleDateString('es-ES', {

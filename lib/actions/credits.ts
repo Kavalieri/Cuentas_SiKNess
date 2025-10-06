@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { supabaseServer } from '@/lib/supabaseServer';
+import { supabaseServer, getCurrentUser, getUserHouseholdId } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 
@@ -160,12 +160,15 @@ export async function getAllCredits(): Promise<Result<MemberCredit[]>> {
 export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
   try {
     const supabase = await supabaseServer();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
       return fail('No autenticado');
+    }
+
+    const householdId = await getUserHouseholdId();
+    if (!householdId) {
+      return fail('No tienes un hogar activo');
     }
 
     // Obtener profile_id del usuario autenticado
@@ -179,20 +182,9 @@ export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
       return fail('Perfil no encontrado');
     }
 
-    // Obtener household_id del usuario
-    const { data: userSettings } = await supabase
-      .from('user_settings')
-      .select('active_household_id')
-      .eq('profile_id', profile.id)
-      .single();
-
-    if (!userSettings?.active_household_id) {
-      return fail('No tienes un hogar activo');
-    }
-
     // Ejecutar resumen via RPC
     const { data, error } = (await supabase.rpc('get_member_credits_summary', {
-      p_household_id: userSettings.active_household_id,
+      p_household_id: householdId,
       p_profile_id: profile.id,
     })) as unknown as { data: CreditsSummary | null; error: Error | null };
 
