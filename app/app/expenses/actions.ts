@@ -121,6 +121,111 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
 }
 
 /**
+ * Actualiza una transacción existente
+ * Solo el owner puede editar. Members solo pueden editar sus propias transacciones.
+ */
+export async function updateTransaction(formData: FormData): Promise<Result<{ id: string }>> {
+  const transactionId = formData.get('id') as string;
+  if (!transactionId) {
+    return fail('ID de transacción requerido');
+  }
+
+  // Validar datos
+  const parsed = TransactionSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
+  }
+
+  const user = await getCurrentUser();
+  if (!user) {
+    return fail('No autenticado');
+  }
+
+  const householdId = await getUserHouseholdId();
+  if (!householdId) {
+    return fail('No tienes un hogar configurado');
+  }
+
+  const role = await getUserRoleInActiveHousehold();
+  if (!role) {
+    return fail('No se pudo determinar tu rol en el hogar');
+  }
+
+  const supabase = await supabaseServer();
+
+  // Obtener profile_id del usuario
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) {
+    return fail('Usuario no encontrado');
+  }
+
+  // Verificar que la transacción existe y pertenece al household
+  const { data: existingTransaction } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('id', transactionId)
+    .eq('household_id', householdId)
+    .single();
+
+  if (!existingTransaction) {
+    return fail('Transacción no encontrada');
+  }
+
+  // Validación de permisos
+  if (role === 'member' && existingTransaction.paid_by !== profile.id) {
+    return fail('Los miembros solo pueden editar sus propias transacciones');
+  }
+
+  // Procesar paid_by
+  const paidByFormValue = formData.get('paid_by') as string | null;
+  let paidBy: string | null = existingTransaction.paid_by; // Mantener el actual si no se cambia
+  
+  if (paidByFormValue === 'common') {
+    paidBy = null; // Común
+  } else if (paidByFormValue && paidByFormValue !== '') {
+    paidBy = paidByFormValue; // Usuario específico
+  }
+
+  // Validación: Si es ingreso, paid_by NO puede ser NULL
+  if (parsed.data.type === 'income' && paidBy === null) {
+    return fail('Los ingresos deben tener un usuario asignado para trazabilidad');
+  }
+
+  // Actualizar transacción
+  // @ts-ignore
+  const { data, error } = await supabase
+    .from('transactions')
+    // @ts-ignore
+    .update({
+      category_id: parsed.data.category_id,
+      amount: parsed.data.amount,
+      currency: parsed.data.currency,
+      description: parsed.data.description || null,
+      occurred_at: parsed.data.occurred_at,
+      paid_by: paidBy,
+      updated_by: profile.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', transactionId)
+    .select()
+    .single();
+
+  if (error) {
+    return fail(error.message);
+  }
+
+  revalidatePath('/app');
+  revalidatePath('/app/expenses');
+  // @ts-ignore
+  return ok({ id: data.id });
+}
+
+/**
  * Obtiene todas las transacciones del household
  */
 export async function getTransactions(params?: {

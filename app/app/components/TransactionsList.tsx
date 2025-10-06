@@ -17,7 +17,7 @@ import { Pencil, Trash2, ArrowUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { deleteTransaction } from '@/app/app/expenses/actions';
-import { EditTransactionDialog } from '@/app/app/components/EditTransactionDialog';
+import { EditTransactionDialog } from '@/app/app/expenses/components/EditTransactionDialog';
 import { useRouter } from 'next/navigation';
 import { TransactionStatusBadge, type TransactionStatus } from '@/components/shared/TransactionStatusBadge';
 import Image from 'next/image';
@@ -72,7 +72,6 @@ export function TransactionsList({
   categories = [],
   members = [],
   showActions = true,
-  onUpdate,
   showFilters = false,
   showSearch = false,
 }: TransactionsListProps) {
@@ -548,8 +547,9 @@ export function TransactionsList({
           transaction={transactions.find((t) => t.id === editingId)!}
           categories={categories}
           open={editingId !== null}
-          onClose={() => setEditingId(null)}
-          onUpdate={onUpdate}
+          onOpenChange={(open) => {
+            if (!open) setEditingId(null);
+          }}
         />
       )}
     </>
