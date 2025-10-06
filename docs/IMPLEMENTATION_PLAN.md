@@ -1,8 +1,76 @@
 # 🚀 Implementación: Sistema de Transacciones Robusto
 
 **Fecha inicio**: 5 de octubre de 2025  
-**Estado**: 🟢 EN PROGRESO  
+**Fecha actualización**: 6 de octubre de 2025  
+**Estado**: 🟢 FASE 6 COMPLETADA - Avanzando a FASE 7  
 **Responsable**: AI Agent con MCP Supabase  
+
+---
+
+## 📊 Estado de Fases
+
+- ✅ **FASE 1**: Migraciones Base de Datos (5 oct) - COMPLETADO
+- ✅ **FASE 2**: Aplicar Migraciones con MCP (5 oct) - COMPLETADO  
+- ✅ **FASE 3**: Wipe y Seed (5 oct) - COMPLETADO
+- ✅ **FASE 4**: Generar Tipos TypeScript (5 oct) - COMPLETADO
+- ✅ **FASE 5**: Renombrar movements → transactions (6 oct) - COMPLETADO
+- ✅ **FASE 6**: Actualizar Server Actions con Auditoría (6 oct) - COMPLETADO ⭐ NEW
+- 🔄 **FASE 7**: UI Dashboard 3 Pestañas (6-8 oct) - EN PROGRESO
+- ⏳ **FASE 8**: UI Créditos y Períodos (9 oct) - PENDIENTE
+- ⏳ **FASE 9**: Testing E2E (10 oct) - PENDIENTE
+
+---
+
+## ✅ FASE 6 COMPLETADA (6 octubre 2025)
+
+### Server Actions con Auditoría Completa ⭐
+
+**Archivos modificados**: 4 archivos, 492 inserciones, 75 eliminaciones
+
+1. **`expenses/actions.ts` - createTransaction() mejorado**:
+   - ✅ Llamada automática a `ensure_monthly_period(household_id, year, month)`
+   - ✅ Columnas auditoría: `paid_by`, `created_by`, `source_type='manual'`, `status='confirmed'`, `period_id`
+   - ✅ Validación: Período debe existir antes de INSERT
+
+2. **`expenses/edit-actions.ts` - updateTransaction() mejorado**:
+   - ✅ SELECT adicional: `status, locked_at, locked_by`
+   - ✅ Validación locked: `if (status === 'locked' || locked_at) → fail()`
+   - ✅ Columnas auditoría: `updated_by`, `updated_at`
+   - ✅ Error amigable: "No se puede editar una transacción de un período cerrado"
+
+3. **`expenses/actions.ts` - deleteTransaction() mejorado** ⭐ NEW:
+   - ✅ SELECT verificación: household, status, locked_at
+   - ✅ Validación locked antes de DELETE
+   - ✅ Same pattern que updateTransaction
+
+4. **`app/savings/actions.ts` - Módulo completo nuevo (266 líneas)**:
+   - ✅ 8 Server Actions: transfer, withdraw, deposit, getSavingsTransactions, getSavingsBalance, updateSavingsGoal, getSavingsHistory, interestAccrualCheck
+   - ✅ 4 Schemas Zod: TransferSchema, WithdrawSchema, DepositSchema, SavingsGoalSchema
+   - ✅ 3 RPCs integrados: transfer_credit_to_savings, withdraw_from_savings, deposit_to_savings
+   - ✅ Type assertions para TypeScript strict mode
+
+### Fixes Seguridad Supabase ⚠️ CRÍTICO
+
+**3 migraciones aplicadas via MCP**:
+
+1. ✅ `fix_security_definer_views`: Eliminado SECURITY DEFINER
+   - v_transactions_with_profile recreada SIN security definer
+   - v_period_stats recreada SIN security definer
+   - **Impacto**: 2 ERRORES nivel ERROR eliminados
+
+2. ✅ `fix_all_functions_search_path_correct`: Agregado search_path
+   - 41 funciones SQL con `SET search_path = public, pg_temp`
+   - **Impacto**: 36 WARNINGS eliminados (previene SQL injection via schema poisoning)
+
+3. ⏳ `auth_leaked_password_protection`: Pending habilitar en dashboard
+   - **Impacto**: Bajo (usamos magic link sin contraseñas)
+
+### Build & Compilación
+
+- ✅ 26 rutas compiladas exitosamente
+- ✅ 0 errores TypeScript
+- ✅ Linting passed
+- ✅ Commit `35511ee` + push GitHub exitoso
 
 ---
 

@@ -354,10 +354,125 @@ El sistema ha sido completamente refactorizado con 12 migraciones SQL que implem
     - `withdraw_from_savings(household_id, amount, reason, withdrawn_by, ...)`: Retira con validación balance (150 LOC)
     - `deposit_to_savings(household_id, amount, profile_id, description, ...)`: Depósito manual (100 LOC)
 
+### FASE 6: Server Actions con Auditoría Completa ⭐ COMPLETADA (6 oct)
+
+**Estado**: ✅ 100% IMPLEMENTADO (commit 35511ee)
+
+#### **Auditoría Transacciones** - expenses/actions.ts
+
+**createTransaction() mejorado**:
+```typescript
+// 1. ensure_monthly_period automático ANTES de INSERT
+const occurredDate = new Date(parsed.data.occurred_at);
+const { data: periodId } = await supabase.rpc('ensure_monthly_period', {
+  p_household_id: householdId,
+  p_year: occurredDate.getFullYear(),
+  p_month: occurredDate.getMonth() + 1,
+});
+
+// 2. INSERT con columnas auditoría
+await supabase.from('transactions').insert({
+  ...parsed.data,
+  period_id: periodId,          // ⭐ Asocia a período mensual
+  paid_by: profile.id,          // ⭐ Quién pagó realmente
+  created_by: profile.id,       // ⭐ Auditoría
+  source_type: 'manual',        // ⭐ Rastreo origen
+  status: 'confirmed',          // ⭐ Estado inicial
+});
+```
+
+**updateTransaction() mejorado** - expenses/edit-actions.ts:
+```typescript
+// 1. SELECT verificación estado locked
+const { data: currentMovement } = await supabase
+  .from('transactions')
+  .select('*, household_id, status, locked_at, locked_by')
+  .eq('id', transactionId)
+  .single();
+
+// 2. Validación locked (período cerrado)
+if (currentMovement.status === 'locked' || currentMovement.locked_at) {
+  return fail('No se puede editar una transacción de un período cerrado. Reabre el período primero.');
+}
+
+// 3. UPDATE con auditoría
+await supabase.from('transactions').update({
+  ...parsed.data,
+  updated_by: profile.id,           // ⭐ Auditoría
+  updated_at: new Date().toISOString()
+});
+```
+
+**deleteTransaction() mejorado** ⭐ NEW - expenses/actions.ts:
+```typescript
+// Same pattern que updateTransaction:
+// 1. SELECT verificación household + locked
+// 2. Validación locked (fail si período cerrado)
+// 3. DELETE solo si validaciones pasan
+```
+
+#### **Módulo Ahorro Completo** - app/savings/actions.ts (266 líneas)
+
+**8 Server Actions implementadas**:
+
+1. **transferCreditToSavings(creditId, notes?)**
+   - RPC: `transfer_credit_to_savings(p_credit_id, p_transferred_by, p_notes)`
+   - Schema: `TransferSchema`
+   - Retorna: `{ savingsTransactionId: string }`
+
+2. **withdrawFromSavings(amount, reason, categoryId?, createTransaction?)**
+   - RPC: `withdraw_from_savings(p_household_id, p_amount, p_reason, p_withdrawn_by, p_create_common_transaction, p_category_id?, p_notes?)`
+   - Schema: `WithdrawSchema`
+   - Retorna: `{ savingsTransactionId: string, transactionId?: string }`
+
+3. **depositToSavings(amount, profileId, description, category?)**
+   - RPC: `deposit_to_savings(p_household_id, p_amount, p_source_profile_id, p_description, p_category, p_notes?, p_created_by)`
+   - Schema: `DepositSchema`
+   - Retorna: `{ savingsTransactionId: string }`
+
+4. **getSavingsTransactions(params?)**: Query con filtros (type, startDate, endDate, profileId)
+
+5. **getSavingsBalance()**: Retorna balance actual + goal tracking
+
+6. **updateSavingsGoal(goalAmount, goalDeadline)**: UPDATE household_savings
+
+7. **getSavingsHistory()**: Alias sin filtros para UI historial completo
+
+8. **interestAccrualCheck()**: Admin-only, trigger manual cálculo interés
+
+**Schemas Zod**:
+```typescript
+TransferSchema = z.object({ creditId: z.string().uuid(), notes: z.string().optional() });
+WithdrawSchema = z.object({ amount, reason, categoryId?, createCommonTransaction });
+DepositSchema = z.object({ amount, profileId, description, category? });
+SavingsGoalSchema = z.object({ goalAmount?, goalDeadline?, goalDescription? });
+```
+
+#### **Fixes Seguridad Supabase** (Crítico)
+
+**3 Migraciones SQL aplicadas via MCP**:
+
+1. **fix_security_definer_views** (6 oct):
+   - Recreadas 2 vistas SIN SECURITY DEFINER: `v_transactions_with_profile`, `v_period_stats`
+   - **Impacto**: ✅ 2 ERRORES nivel ERROR eliminados
+   - **Motivo**: SECURITY DEFINER bypassea RLS del usuario actual
+
+2. **fix_all_functions_search_path_correct** (6 oct):
+   - 41 funciones con `ALTER FUNCTION ... SET search_path = public, pg_temp`
+   - **Impacto**: ✅ 36 WARNINGS eliminados
+   - **Motivo**: Previene SQL injection via schema poisoning
+
+3. **auth_leaked_password_protection** (Pendiente):
+   - Estado: ⏳ Habilitar en Supabase Dashboard → Authentication → Providers → Email
+   - Impacto: Bajo (usamos magic link sin contraseñas)
+
+**Build final**: ✅ 26 rutas compiladas, 0 errores TypeScript, 0 warnings linting
+
 **Documentación completa**:
 - `docs/MAJOR_REFACTOR_TRANSACTIONS_SYSTEM.md`: Problemas identificados y solución propuesta
 - `docs/IMPLEMENTATION_PLAN.md`: Plan de ejecución con SQL completo de las 12 migraciones
-- `docs/SESSION_SUMMARY_2025-10-05_SISTEMA_AHORRO.md`: Resumen completo de la sesión
+- `docs/SESSION_SUMMARY_2025-10-05_SISTEMA_AHORRO.md`: Resumen sesión sistema ahorro
+- `docs/SESSION_SUMMARY_2025-10-06_FASE_6.md`: ⭐ Resumen sesión FASE 6 completa
 
 **Estado DB**:
 - ✅ 27 columnas nuevas verificadas existentes
@@ -365,6 +480,7 @@ El sistema ha sido completamente refactorizado con 12 migraciones SQL que implem
 - ✅ Trigger `on_household_created` funcional
 - ✅ Tipos TypeScript regenerados (`types/database.ts`)
 - ✅ WIPE ejecutado: Household "Casa Test", 2 miembros, 23 categorías auto, 1 household_savings balance 0
+- ✅ Seguridad: 2 ERRORES + 36 WARNINGS eliminados (38/40 issues resueltos)
 
 **Punto crítico**: Row Level Security (RLS) está habilitado desde el día 1. Todas las políticas verifican que `auth.uid()` pertenezca al `household_id` del recurso consultado.
 
