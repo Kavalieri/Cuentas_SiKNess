@@ -2,11 +2,17 @@
   "servers": {
     "supabase": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp"
+      "url": "https://mcp.supabase.com/mcp",
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${env:SUPABASE_ACCESS_TOKEN}"
+      }
     },
     "vercel": {
       "type": "http",
-      "url": "https://mcp.vercel.com"
+      "url": "https://mcp.vercel.com",
+      "env": {
+        "VERCEL_TOKEN": "${env:VERCEL_TOKEN}"
+      }
     },
     "github": {
       "type": "http",
