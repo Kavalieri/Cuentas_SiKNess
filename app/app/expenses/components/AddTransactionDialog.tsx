@@ -57,14 +57,14 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
       return;
     }
 
-    // ├ëxito: resetear formulario antes de cerrar
-    form.reset();
+    // Éxito: revalidar PRIMERO, luego cerrar
     toast.success('Movimiento creado exitosamente');
+    router.refresh(); // Llamar ANTES de cerrar dialog
+    
+    // Resetear y cerrar
+    form.reset();
     setIsLoading(false);
     setOpen(false);
-    
-    // Revalidar datos del servidor para actualizar la UI
-    router.refresh();
   };
 
   return (
