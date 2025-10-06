@@ -10,10 +10,19 @@ import { AlertCircle, CreditCard, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PendingCreditsWidgetProps {
+  initialCredits?: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    source_month: number;
+    source_year: number;
+    status: string;
+    monthly_decision: string | null;
+  }>;
   onRefresh?: () => void;
 }
 
-export function PendingCreditsWidget({ onRefresh }: PendingCreditsWidgetProps) {
+export function PendingCreditsWidget({ initialCredits = [], onRefresh }: PendingCreditsWidgetProps) {
   const [credits, setCredits] = useState<
     Array<{
       id: string;
@@ -24,16 +33,20 @@ export function PendingCreditsWidget({ onRefresh }: PendingCreditsWidgetProps) {
       status: string;
       monthly_decision: string | null;
     }>
-  >([]);
+  >(initialCredits);
   const [selectedCredit, setSelectedCredit] = useState<typeof credits[0] | null>(null);
   const [currentContribution, setCurrentContribution] = useState<{
     expected_amount: number;
     paid_amount: number;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Solo cargar si se hace refresh
 
   useEffect(() => {
-    loadCredits();
+    // Solo cargar si NO hay datos iniciales
+    if (initialCredits.length === 0) {
+      loadCredits();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadCredits = async () => {

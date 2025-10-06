@@ -5,6 +5,7 @@ import { getCategories } from './categories/actions';
 import { getInvitationDetails, getUserPendingInvitations } from './household/invitations/actions';
 import { getHouseholdMembers } from './household/actions';
 import { getSavingsTransactions, getHouseholdSavings } from './savings/actions';
+import { getPendingCredits } from './credits/actions';
 import { DashboardOnboarding } from './components/DashboardOnboarding';
 import { PendingInvitationsCard } from './components/PendingInvitationsCard';
 import { DashboardContent } from './components/DashboardContent';
@@ -84,6 +85,7 @@ export default async function DashboardPage() {
     membersResult,
     savingsTransactionsResult,
     savingsBalanceResult,
+    pendingCreditsResult,
   ] = await Promise.all([
     getMonthSummary(year, month),
     getTransactions(),
@@ -93,6 +95,7 @@ export default async function DashboardPage() {
     getHouseholdMembers(),
     getSavingsTransactions(),
     getHouseholdSavings(),
+    getPendingCredits(),
   ]);
 
   const summary = summaryResult.ok ? summaryResult.data! : { expenses: 0, income: 0, balance: 0 };
@@ -103,6 +106,7 @@ export default async function DashboardPage() {
   const members = membersResult.ok ? (membersResult.data || []) : [];
   const savingsTransactions = savingsTransactionsResult.ok ? (savingsTransactionsResult.data || []) : [];
   const savingsBalance = savingsBalanceResult.ok ? savingsBalanceResult.data : undefined;
+  const pendingCredits = pendingCreditsResult.ok ? (pendingCreditsResult.data || []) : [];
 
   // Preparar datos para gráfico de evolución de ahorro
   // Agrupar por mes y obtener el balance final de cada mes
@@ -139,6 +143,7 @@ export default async function DashboardPage() {
         initialSavingsGoal={(savingsBalance as { goal_amount?: number | null })?.goal_amount}
         initialSavingsBalance={savingsBalance as never}
         initialSavingsTransactions={savingsTransactions as never[]}
+        initialPendingCredits={pendingCredits as never[]}
       />
     </div>
   );

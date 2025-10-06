@@ -96,6 +96,15 @@ interface DashboardContentProps {
   initialSavingsGoal?: number | null;
   initialSavingsBalance?: SavingsBalance;
   initialSavingsTransactions?: SavingsTransaction[];
+  initialPendingCredits?: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    source_month: number;
+    source_year: number;
+    status: string;
+    monthly_decision: string | null;
+  }>;
 }
 
 export function DashboardContent({
@@ -109,6 +118,7 @@ export function DashboardContent({
   initialSavingsGoal,
   initialSavingsBalance,
   initialSavingsTransactions,
+  initialPendingCredits = [],
 }: DashboardContentProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [summary, setSummary] = useState(initialSummary);
@@ -256,7 +266,7 @@ export function DashboardContent({
       </div>
 
       {/* Widget de Créditos Pendientes */}
-      <PendingCreditsWidget onRefresh={refreshData} />
+      <PendingCreditsWidget initialCredits={initialPendingCredits} onRefresh={refreshData} />
 
       {/* PESTAÑAS PRINCIPALES */}
       <Tabs defaultValue="balance" className="w-full">
