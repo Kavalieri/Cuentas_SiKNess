@@ -106,8 +106,26 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
   const handleOpenApprove = (data: PendingApprovalsData) => {
     setSelectedAdjustment(data);
     
-    // Pre-rellenar con valores sugeridos
-    setExpenseCategoryId(data.adjustment.category_id || data.category?.id || '');
+    // 🎯 BUSCAR CATEGORÍA "Aportación Cuenta Común" POR DEFECTO
+    // Si no existe la vinculada al adjustment, buscar en la lista de categorías
+    let defaultCategoryId = data.adjustment.category_id || data.category?.id || '';
+    
+    if (!defaultCategoryId) {
+      // Buscar "Aportación Cuenta Común" (case-insensitive)
+      const aportacionCategory = categories.find(
+        (cat) => 
+          cat.type === 'expense' && 
+          cat.name.toLowerCase().includes('aportación') &&
+          cat.name.toLowerCase().includes('cuenta') &&
+          cat.name.toLowerCase().includes('común')
+      );
+      
+      if (aportacionCategory) {
+        defaultCategoryId = aportacionCategory.id;
+      }
+    }
+    
+    setExpenseCategoryId(defaultCategoryId);
     setExpenseDescription(
       data.adjustment.expense_description || 
       `${data.category?.name || 'Gasto común'} - ${data.member.display_name || data.member.email}`

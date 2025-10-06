@@ -116,8 +116,25 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
   const handleOpenApprove = (data: AdjustmentData) => {
     setSelectedAdjustment(data);
     
-    // Pre-rellenar con valores sugeridos
-    setExpenseCategoryId(data.adjustment.expense_category_id || data.adjustment.category_id || data.category?.id || '');
+    // 🎯 BUSCAR CATEGORÍA "Aportación Cuenta Común" POR DEFECTO
+    let defaultExpenseCategoryId = data.adjustment.expense_category_id || data.adjustment.category_id || data.category?.id || '';
+    
+    if (!defaultExpenseCategoryId) {
+      // Buscar "Aportación Cuenta Común" (case-insensitive)
+      const aportacionCategory = categories.find(
+        (cat) => 
+          cat.type === 'expense' && 
+          cat.name.toLowerCase().includes('aportación') &&
+          cat.name.toLowerCase().includes('cuenta') &&
+          cat.name.toLowerCase().includes('común')
+      );
+      
+      if (aportacionCategory) {
+        defaultExpenseCategoryId = aportacionCategory.id;
+      }
+    }
+    
+    setExpenseCategoryId(defaultExpenseCategoryId);
     setExpenseDescription(
       data.adjustment.expense_description || 
       `${data.category?.name || 'Gasto común'} - ${data.member.display_name || data.member.email}`
