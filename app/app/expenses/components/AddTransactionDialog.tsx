@@ -47,7 +47,9 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
     if (open && members.length === 0) {
       setMembersLoading(true);
       getHouseholdMembersWithRole().then((result) => {
+        console.log('[AddTransactionDialog] getHouseholdMembersWithRole result:', result);
         if (result.ok && result.data) {
+          console.log('[AddTransactionDialog] Setting members:', result.data.members);
           setMembers(result.data.members);
           setUserRole(result.data.userRole);
           setCurrentUserId(result.data.currentUserId);
@@ -90,6 +92,14 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
     setIsLoading(false);
     setOpen(false);
   };
+
+  // DEBUG: Log del estado de members antes de renderizar
+  console.log('[AddTransactionDialog] State before render:', {
+    members,
+    userRole,
+    currentUserId,
+    membersLoading,
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -149,41 +159,44 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
             </Select>
           </div>
 
-          {/* ⭐ NEW: Selector de quién pagó (solo para owners) */}
-          {userRole === 'owner' && (
-            <div className="space-y-2">
-              <Label htmlFor="paid_by">
-                {type === 'expense' ? '¿Quién pagó?' : '¿Quién ingresó?'}
-              </Label>
-              <Select 
-                name="paid_by" 
-                defaultValue={type === 'expense' ? 'common' : currentUserId} 
-                disabled={membersLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={membersLoading ? "Cargando..." : "Seleccionar"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Opción "Cuenta común" solo para GASTOS */}
-                  {type === 'expense' && (
-                    <SelectItem value="common">🏦 Cuenta común</SelectItem>
-                  )}
-                  {/* Lista de miembros */}
-                  {members.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.display_name}
-                      {member.id === currentUserId && ' (tú)'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {type === 'income' && (
-                <p className="text-xs text-muted-foreground">
-                  ℹ️ Los ingresos siempre deben tener un usuario para trazabilidad
-                </p>
-              )}
-            </div>
-          )}
+          {/* ⭐ Selector de quién pagó - VISIBLE PARA TODOS */}
+          <div className="space-y-2">
+            <Label htmlFor="paid_by">
+              {type === 'expense' ? '¿Quién pagó?' : '¿Quién ingresó?'}
+            </Label>
+            <Select 
+              name="paid_by" 
+              defaultValue={type === 'expense' ? 'common' : currentUserId} 
+              disabled={membersLoading || userRole !== 'owner'}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={membersLoading ? "Cargando..." : "Seleccionar"} />
+              </SelectTrigger>
+              <SelectContent>
+                {/* Opción "Cuenta común" solo para GASTOS */}
+                {type === 'expense' && (
+                  <SelectItem value="common">🏦 Cuenta común</SelectItem>
+                )}
+                {/* Lista de miembros */}
+                {members.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.display_name}
+                    {member.id === currentUserId && ' (tú)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {type === 'income' && (
+              <p className="text-xs text-muted-foreground">
+                ℹ️ Los ingresos siempre deben tener un usuario para trazabilidad
+              </p>
+            )}
+            {userRole !== 'owner' && (
+              <p className="text-xs text-amber-500">
+                🔒 Solo el propietario puede cambiar este campo
+              </p>
+            )}
+          </div>
 
           {/* Fecha */}
           <div className="space-y-2">

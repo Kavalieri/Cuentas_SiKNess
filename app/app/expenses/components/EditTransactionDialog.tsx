@@ -62,7 +62,9 @@ export function EditTransactionDialog({
     if (open && members.length === 0) {
       setMembersLoading(true);
       getHouseholdMembersWithRole().then((result) => {
+        console.log('[EditTransactionDialog] getHouseholdMembersWithRole result:', result);
         if (result.ok && result.data) {
+          console.log('[EditTransactionDialog] Setting members:', result.data.members);
           setMembers(result.data.members);
           setUserRole(result.data.userRole);
           setCurrentUserId(result.data.currentUserId);
@@ -153,46 +155,49 @@ export function EditTransactionDialog({
             </Select>
           </div>
 
-          {/* Selector de quién pagó/ingresó (solo para owners) */}
-          {userRole === 'owner' && (
-            <div className="space-y-2">
-              <Label htmlFor="paid_by">
-                {transaction.type === 'expense' ? '¿Quién se beneficia?' : '¿Quién ingresó?'}
-              </Label>
-              <Select 
-                name="paid_by" 
-                defaultValue={transaction.paid_by || 'common'} 
-                disabled={membersLoading || isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={membersLoading ? "Cargando..." : "Seleccionar"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Opción "Común" solo para GASTOS */}
-                  {transaction.type === 'expense' && (
-                    <SelectItem value="common">🏦 Común (ambos)</SelectItem>
-                  )}
-                  {/* Lista de miembros */}
-                  {members.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.display_name}
-                      {member.id === currentUserId && ' (tú)'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {transaction.type === 'income' && (
-                <p className="text-xs text-muted-foreground">
-                  ℹ️ Los ingresos siempre deben tener un usuario para trazabilidad
-                </p>
-              )}
-              {transaction.type === 'expense' && (
-                <p className="text-xs text-muted-foreground">
-                  ℹ️ Indica quién se beneficia del gasto (aunque se pague del fondo común)
-                </p>
-              )}
-            </div>
-          )}
+          {/* Selector de quién pagó/ingresó - VISIBLE PARA TODOS */}
+          <div className="space-y-2">
+            <Label htmlFor="paid_by">
+              {transaction.type === 'expense' ? '¿Quién se beneficia?' : '¿Quién ingresó?'}
+            </Label>
+            <Select 
+              name="paid_by" 
+              defaultValue={transaction.paid_by || 'common'} 
+              disabled={membersLoading || isLoading || userRole !== 'owner'}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={membersLoading ? "Cargando..." : "Seleccionar"} />
+              </SelectTrigger>
+              <SelectContent>
+                {/* Opción "Común" solo para GASTOS */}
+                {transaction.type === 'expense' && (
+                  <SelectItem value="common">🏦 Común (ambos)</SelectItem>
+                )}
+                {/* Lista de miembros */}
+                {members.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.display_name}
+                    {member.id === currentUserId && ' (tú)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {transaction.type === 'income' && (
+              <p className="text-xs text-muted-foreground">
+                ℹ️ Los ingresos siempre deben tener un usuario para trazabilidad
+              </p>
+            )}
+            {transaction.type === 'expense' && (
+              <p className="text-xs text-muted-foreground">
+                ℹ️ Indica quién se beneficia del gasto (aunque se pague del fondo común)
+              </p>
+            )}
+            {userRole !== 'owner' && (
+              <p className="text-xs text-amber-500">
+                🔒 Solo el propietario puede cambiar este campo
+              </p>
+            )}
+          </div>
 
           {/* Fecha */}
           <div className="space-y-2">
