@@ -389,11 +389,8 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
 
   if (movementError) return fail('Error al crear movimiento de ingreso');
 
-  // 3. Actualizar contribución como pagada
-  // @ts-ignore
-  const result = await updateContributionPaidAmount(contributionId, expected_amount);
-
-  if (!result.ok) return result;
+  // 3. El trigger automático recalculará paid_amount al insertar la transacción
+  // NO necesitamos llamar a updateContributionPaidAmount porque el trigger lo hace
 
   revalidatePath('/app/contributions');
   revalidatePath('/app');
