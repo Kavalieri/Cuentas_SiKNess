@@ -130,10 +130,16 @@ export async function getTransactions(params?: {
       created_at,
       updated_at,
       category_id,
+      paid_by,
+      status,
       categories (
         id,
         name,
         icon
+      ),
+      profile:profiles!paid_by (
+        display_name,
+        avatar_url
       )
     `,
     )
