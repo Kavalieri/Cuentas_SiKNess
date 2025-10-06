@@ -69,10 +69,23 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
     return fail(`Error al crear período mensual: ${periodError.message}`);
   }
 
-  // Obtener paid_by del FormData (si el usuario es owner puede elegir)
-  // Si no viene, usar el profile_id del usuario actual
+  // Obtener paid_by del FormData
+  // "common" → NULL (cuenta común)
+  // UUID válido → ese usuario
+  // vacío → usuario actual (fallback)
   const paidByFormValue = formData.get('paid_by') as string | null;
-  const paidBy = paidByFormValue && paidByFormValue !== '' ? paidByFormValue : profile.id;
+  let paidBy: string | null = profile.id; // Default: usuario actual
+  
+  if (paidByFormValue === 'common') {
+    paidBy = null; // Cuenta común
+  } else if (paidByFormValue && paidByFormValue !== '') {
+    paidBy = paidByFormValue; // Usuario específico
+  }
+
+  // Validación: Si es ingreso, paid_by NO puede ser NULL
+  if (parsed.data.type === 'income' && paidBy === null) {
+    return fail('Los ingresos deben tener un usuario asignado para trazabilidad');
+  }
 
   // @ts-ignore - Supabase types issue
   const { data, error } = await supabase
@@ -89,7 +102,7 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
       occurred_at: parsed.data.occurred_at,
       // ⭐ Nuevas columnas de auditoría y estado
       period_id: periodId,
-      paid_by: paidBy, // Usa el valor del form o default al usuario actual
+      paid_by: paidBy, // NULL = cuenta común, UUID = usuario específico
       created_by: profile.id,
       source_type: 'manual',
       status: 'confirmed',
@@ -593,6 +606,9 @@ export async function getHouseholdMembersWithRole(): Promise<
   if (error || !members) {
     return fail('Error al obtener miembros del hogar');
   }
+
+  // DEBUG: Log para verificar qué miembros se están retornando
+  console.log('[getHouseholdMembersWithRole] members:', members);
 
   return ok({
     members: members.map((m) => ({

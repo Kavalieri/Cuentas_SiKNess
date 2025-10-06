@@ -319,11 +319,13 @@ export function TransactionsList({
                         </span>
                       )}
                     </p>
-                    {transaction.profile && (
-                      <p className="text-muted-foreground">
-                        Pagado por: <span className="font-medium">{transaction.profile.display_name}</span>
-                      </p>
-                    )}
+                    <p className="text-muted-foreground">
+                      {transaction.type === 'expense' ? 'Pagado por:' : 'Ingresado por:'}
+                      {' '}
+                      <span className="font-medium">
+                        {transaction.profile ? transaction.profile.display_name : '🏦 Cuenta común'}
+                      </span>
+                    </p>
                     {transaction.status && <TransactionStatusBadge status={transaction.status} />}
                   </div>
                   {showActions && (
@@ -474,7 +476,7 @@ export function TransactionsList({
                         <span className="text-sm">{transaction.profile.display_name}</span>
                       </div>
                     ) : (
-                      <span className="text-sm text-muted-foreground">-</span>
+                      <span className="text-sm text-muted-foreground">🏦 Cuenta común</span>
                     )}
                   </TableCell>
                   <TableCell>

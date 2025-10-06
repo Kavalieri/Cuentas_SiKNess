@@ -152,12 +152,23 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
           {/* ⭐ NEW: Selector de quién pagó (solo para owners) */}
           {userRole === 'owner' && (
             <div className="space-y-2">
-              <Label htmlFor="paid_by">¿Quién pagó?</Label>
-              <Select name="paid_by" defaultValue={currentUserId} disabled={membersLoading}>
+              <Label htmlFor="paid_by">
+                {type === 'expense' ? '¿Quién pagó?' : '¿Quién ingresó?'}
+              </Label>
+              <Select 
+                name="paid_by" 
+                defaultValue={type === 'expense' ? 'common' : currentUserId} 
+                disabled={membersLoading}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder={membersLoading ? "Cargando..." : "Seleccionar miembro"} />
+                  <SelectValue placeholder={membersLoading ? "Cargando..." : "Seleccionar"} />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Opción "Cuenta común" solo para GASTOS */}
+                  {type === 'expense' && (
+                    <SelectItem value="common">🏦 Cuenta común</SelectItem>
+                  )}
+                  {/* Lista de miembros */}
                   {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.display_name}
@@ -166,6 +177,11 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
                   ))}
                 </SelectContent>
               </Select>
+              {type === 'income' && (
+                <p className="text-xs text-muted-foreground">
+                  ℹ️ Los ingresos siempre deben tener un usuario para trazabilidad
+                </p>
+              )}
             </div>
           )}
 
