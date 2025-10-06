@@ -138,9 +138,9 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
             />
           </div>
 
-          {/* Descripci├│n */}
+          {/* Descripción */}
           <div className="space-y-2">
-            <Label htmlFor="description">Descripci├│n (opcional)</Label>
+            <Label htmlFor="description">Descripción (opcional)</Label>
             <Input
               id="description"
               name="description"
