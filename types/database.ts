@@ -1103,7 +1103,7 @@ export type Database = {
           split_type?: string
           status?: string
           type: string
-          updated_at: string
+          updated_at?: string
           updated_by?: string | null
         }
         Update: {
@@ -1372,9 +1372,21 @@ export type Database = {
         Args: { p_household_id: string; p_user_id: string }
         Returns: Json
       }
+      apply_credit_to_contribution: {
+        Args: {
+          p_applied_by: string
+          p_contribution_id: string
+          p_credit_id: string
+        }
+        Returns: Json
+      }
       apply_member_credits: {
         Args: { p_household_id: string; p_month: number; p_year: number }
         Returns: undefined
+      }
+      auto_apply_active_credits: {
+        Args: { p_household_id: string; p_period_id: string }
+        Returns: Json
       }
       calculate_monthly_contributions: {
         Args: { p_household_id: string; p_month: number; p_year: number }
@@ -1393,11 +1405,15 @@ export type Database = {
       }
       create_default_categories: {
         Args: { p_household_id: string }
-        Returns: number
+        Returns: undefined
       }
       create_household_with_member: {
         Args: { p_household_name: string; p_profile_id: string }
         Returns: Json
+      }
+      create_member_credit_from_overpayment: {
+        Args: { p_contribution_id: string; p_created_by?: string }
+        Returns: string
       }
       deposit_to_savings: {
         Args: {
@@ -1414,6 +1430,10 @@ export type Database = {
       ensure_monthly_period: {
         Args: { p_household_id: string; p_month: number; p_year: number }
         Returns: string
+      }
+      expire_old_credits: {
+        Args: { p_months_to_expire?: number }
+        Returns: number
       }
       get_current_profile: {
         Args: Record<PropertyKey, never>
@@ -1439,6 +1459,10 @@ export type Database = {
           role: string
         }[]
       }
+      get_member_credits_summary: {
+        Args: { p_household_id: string; p_profile_id: string }
+        Returns: Json
+      }
       get_member_income: {
         Args: { p_date?: string; p_household_id: string; p_profile_id: string }
         Returns: number
@@ -1463,8 +1487,8 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           household_id: string
-          movements_assigned: number
           periods_created: number
+          transactions_migrated: number
         }[]
       }
       reopen_monthly_period: {

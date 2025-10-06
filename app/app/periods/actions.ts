@@ -305,15 +305,15 @@ export async function getPeriodCategoryStats(
 }
 
 /**
- * Migra movimientos existentes a su período correspondiente
- * EJECUTAR SOLO UNA VEZ después de aplicar la migración
+ * Migra transacciones existentes sin período asignado
+ * (Legacy function - ya no debería ser necesaria)
  */
 export async function migrateExistingMovements(): Promise<
   Result<
     Array<{
       household_id: string;
       periods_created: number;
-      movements_assigned: number;
+      transactions_migrated: number; // ⭐ CAMBIO: movements_assigned → transactions_migrated
     }>
   >
 > {

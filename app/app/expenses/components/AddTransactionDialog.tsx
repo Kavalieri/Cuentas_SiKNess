@@ -86,15 +86,15 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="expense">­ƒÆ© Gasto</SelectItem>
-                <SelectItem value="income">­ƒÆ░ Ingreso</SelectItem>
+                <SelectItem value="expense">💸 Gasto</SelectItem>
+                <SelectItem value="income">💰 Ingreso</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Monto */}
           <div className="space-y-2">
-            <Label htmlFor="amount">Monto (Ôé¼) *</Label>
+            <Label htmlFor="amount">Monto (€) *</Label>
             <Input
               id="amount"
               name="amount"
