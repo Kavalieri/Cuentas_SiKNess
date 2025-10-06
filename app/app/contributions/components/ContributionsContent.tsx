@@ -4,6 +4,7 @@ import { HeroContribution } from './HeroContribution';
 import { ContributionMembersList } from './ContributionMembersList';
 import { ConfigurationSection } from './ConfigurationSection';
 import { MyAdjustmentsPanel } from './MyAdjustmentsPanel';
+import { CreditsPanel } from './CreditsPanel';
 import type { Database } from '@/types/database';
 import type { CalculationType } from '@/lib/contributionTypes';
 
@@ -56,6 +57,9 @@ export function ContributionsContent({
         categories={categories}
         currency={currency}
       />
+
+      {/* Panel de Créditos */}
+      <CreditsPanel />
 
       {/* Hero: Tu contribución */}
       <HeroContribution

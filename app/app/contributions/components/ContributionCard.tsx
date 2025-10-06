@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ interface ContributionCardProps {
 }
 
 export function ContributionCard({ contribution }: ContributionCardProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const isPaid = contribution.status === 'paid' || contribution.status === 'overpaid';
@@ -47,6 +49,7 @@ export function ContributionCard({ contribution }: ContributionCardProps) {
     }
 
     toast.success(isPaid ? 'Marcada como no pagada' : 'Marcada como pagada');
+    router.refresh(); // ⭐ Recargar datos instantáneamente
   };
 
   const statusConfig = {

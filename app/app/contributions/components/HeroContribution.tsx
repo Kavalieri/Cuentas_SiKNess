@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +46,7 @@ export function HeroContribution({
   currency = 'EUR',
   categories,
 }: HeroContributionProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'full' | 'custom' | 'prepayment'>('full');
   const [customAmount, setCustomAmount] = useState('');
@@ -138,11 +140,8 @@ export function HeroContribution({
       toast.success('✅ Pago registrado correctamente');
       setCustomAmount('');
       setPaymentMode('full');
-      // Recargar página después de 1 segundo
-      setTimeout(() => {
-        toast.info('🔄 Actualizando...', { duration: 2000 });
-        window.location.reload();
-      }, 1000);
+      // ⭐ Recargar datos instantáneamente sin reload completo
+      router.refresh();
     } else {
       toast.error(result.message);
     }
@@ -204,11 +203,8 @@ export function HeroContribution({
       setPrepaymentIncomeDesc('');
       setPaymentMode('full');
 
-      // Recargar después de 1 segundo
-      setTimeout(() => {
-        toast.info('🔄 Actualizando...', { duration: 2000 });
-        window.location.reload();
-      }, 1000);
+      // ⭐ Recargar datos instantáneamente sin reload completo
+      router.refresh();
     } else {
       toast.error(result.message);
     }

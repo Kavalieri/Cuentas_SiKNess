@@ -352,7 +352,20 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
 
   const memberEmail = memberProfile?.email || 'Miembro desconocido';
 
-  // 2. Crear movimiento de ingreso
+  // 1.6. Obtener usuario actual para auditoría
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return fail('No autenticado');
+
+  // 1.7. Obtener profile_id del usuario actual
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!currentProfile) return fail('Perfil no encontrado');
+
+  // 2. Crear movimiento de ingreso con auditoría completa
   const movementData = {
     household_id,
     profile_id,
@@ -362,12 +375,17 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
     currency: 'EUR',
     description: `Contribución mensual ${month}/${year} - ${memberEmail}`,
     occurred_at: new Date().toISOString().substring(0, 10),
-    // created_at y updated_at se manejan automáticamente por DEFAULT NOW()
+    // ⭐ AUDITORÍA: Rastreo completo del origen
+    paid_by: profile_id, // Quién pagó realmente
+    created_by: currentProfile.id, // Quién registró el movimiento
+    source_type: 'manual', // Origen: registrado manualmente
+    source_id: contributionId, // ID de la contribución origen
+    status: 'confirmed', // Estado inicial
   };
 
   const { error: movementError } = await supabase
     .from('transactions')
-    .insert(movementData as unknown as never); // Cast: created_at/updated_at auto-managed by DB
+    .insert(movementData as unknown as never);
 
   if (movementError) return fail('Error al crear movimiento de ingreso');
 
@@ -816,7 +834,20 @@ export async function recordContributionPayment(
 
   const memberEmail = memberProfile?.email || 'Miembro desconocido';
 
-  // 2. Crear movimiento de ingreso
+  // 1.6. Obtener usuario actual para auditoría
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return fail('No autenticado');
+
+  // 1.7. Obtener profile_id del usuario actual
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!currentProfile) return fail('Perfil no encontrado');
+
+  // 2. Crear movimiento de ingreso con auditoría completa
   const movementData = {
     household_id,
     profile_id,
@@ -826,12 +857,17 @@ export async function recordContributionPayment(
     currency: 'EUR',
     description: `Contribución mensual ${month}/${year} - ${memberEmail}`,
     occurred_at: new Date().toISOString().substring(0, 10),
-    // created_at y updated_at se manejan automáticamente por DEFAULT NOW()
+    // ⭐ AUDITORÍA: Rastreo completo del origen
+    paid_by: profile_id, // Quién pagó realmente
+    created_by: currentProfile.id, // Quién registró el movimiento
+    source_type: 'manual', // Origen: registrado manualmente
+    source_id: contributionId, // ID de la contribución origen
+    status: 'confirmed', // Estado inicial
   };
 
   const { error: movementError } = await supabase
     .from('transactions')
-    .insert(movementData as unknown as never); // Cast: created_at/updated_at auto-managed by DB
+    .insert(movementData as unknown as never);
 
   if (movementError) return fail('Error al crear movimiento de ingreso');
 
