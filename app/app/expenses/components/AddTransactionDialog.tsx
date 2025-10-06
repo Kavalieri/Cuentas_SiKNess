@@ -106,15 +106,15 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
             />
           </div>
 
-          {/* Categor├¡a */}
+          {/* Categoría */}
           <div className="space-y-2">
-            <Label htmlFor="category_id">Categor├¡a</Label>
+            <Label htmlFor="category_id">Categoría</Label>
             <Select name="category_id" defaultValue="none">
               <SelectTrigger>
-                <SelectValue placeholder="Sin categor├¡a" />
+                <SelectValue placeholder="Sin categoría" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Sin categor├¡a</SelectItem>
+                <SelectItem value="none">Sin categoría</SelectItem>
                 {filteredCategories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.icon} {category.name}
