@@ -300,6 +300,25 @@ export function TransactionsList({
 
                 <div className="flex items-center justify-between text-sm">
                   <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const dateStr = transaction.occurred_at;
+                        const localDate = new Date(dateStr + 'T00:00:00');
+                        return localDate.toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        });
+                      })()}
+                      {transaction.created_at && (
+                        <span className="ml-2">
+                          • {new Date(transaction.created_at).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      )}
+                    </p>
                     {transaction.profile && (
                       <p className="text-muted-foreground">
                         Pagado por: <span className="font-medium">{transaction.profile.display_name}</span>
@@ -466,13 +485,28 @@ export function TransactionsList({
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(transaction.created_at || transaction.occurred_at).toLocaleDateString('es-ES', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </span>
+                    <div className="space-y-1">
+                      <span className="text-sm text-muted-foreground">
+                        {(() => {
+                          // occurred_at es DATE sin hora - agregar T00:00:00 para interpretación local
+                          const dateStr = transaction.occurred_at;
+                          const localDate = new Date(dateStr + 'T00:00:00');
+                          return localDate.toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          });
+                        })()}
+                      </span>
+                      {transaction.created_at && (
+                        <span className="text-xs text-muted-foreground block">
+                          • {new Date(transaction.created_at).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   {showActions && (
                     <TableCell className="text-right">
