@@ -1,23 +1,5 @@
 {
   "servers": {
-    "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp",
-      "env": {
-        "SUPABASE_ACCESS_TOKEN": "${env:SUPABASE_ACCESS_TOKEN}"
-      }
-    },
-    "vercel": {
-      "type": "http",
-      "url": "https://mcp.vercel.com",
-      "env": {
-        "VERCEL_TOKEN": "${env:VERCEL_TOKEN}"
-      }
-    },
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/"
-    },
     "filesystem": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "${workspaceFolder}"]
