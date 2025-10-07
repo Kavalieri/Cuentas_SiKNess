@@ -3,7 +3,6 @@ import { getUserHouseholdId } from '@/lib/supabaseServer';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from './expenses/actions';
 import { getCategories } from './categories/actions';
 import { getInvitationDetails, getUserPendingInvitations } from './household/invitations/actions';
-import { getHouseholdMembers } from './household/actions';
 import { getSavingsTransactions, getHouseholdSavings } from './savings/actions';
 import { getPendingCredits } from './credits/actions';
 import { DashboardOnboarding } from './components/DashboardOnboarding';
@@ -82,7 +81,6 @@ export default async function DashboardPage() {
     categoriesResult,
     categoryExpensesResult,
     comparisonResult,
-    membersResult,
     savingsTransactionsResult,
     savingsBalanceResult,
     pendingCreditsResult,
@@ -92,7 +90,6 @@ export default async function DashboardPage() {
     getCategories(),
     getCategoryExpenses({ startDate, endDate }),
     getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
-    getHouseholdMembers(),
     getSavingsTransactions(),
     getHouseholdSavings(),
     getPendingCredits(),
@@ -103,7 +100,6 @@ export default async function DashboardPage() {
   const categories = categoriesResult.ok ? (categoriesResult.data || []) : [];
   const categoryExpenses = categoryExpensesResult.ok ? (categoryExpensesResult.data || []) : [];
   const comparison = comparisonResult.ok ? comparisonResult.data : undefined;
-  const members = membersResult.ok ? (membersResult.data || []) : [];
   const savingsTransactions = savingsTransactionsResult.ok ? (savingsTransactionsResult.data || []) : [];
   const savingsBalance = savingsBalanceResult.ok ? savingsBalanceResult.data : undefined;
   const pendingCredits = pendingCreditsResult.ok ? (pendingCreditsResult.data || []) : [];
@@ -139,7 +135,6 @@ export default async function DashboardPage() {
         initialSummary={summary}
         initialCategoryExpenses={categoryExpenses as never[]}
         initialComparison={comparison as never}
-        initialMembers={members as never[]}
         initialSavingsEvolution={savingsEvolutionData}
         initialSavingsGoal={(savingsBalance as { goal_amount?: number | null })?.goal_amount}
         initialSavingsBalance={savingsBalance as never}
