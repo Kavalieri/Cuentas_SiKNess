@@ -5,6 +5,148 @@
 
 ---
 
+## 🧠 **ARQUITECTURA CONCEPTUAL - CRÉDITO vs AHORRO**
+
+### **CRÉDITO (member_credits) - Dinero Adicional en Balance Principal**
+
+**Definición**: Dinero que un miembro aporta DE MÁS sobre su contribución esperada.
+
+**Ejemplo**: 
+- Sistema calcula contribución: 500€
+- Miembro ingresa: 550€
+- Resultado: 500€ cumplen contribución + **50€ CRÉDITO**
+
+**Características CRÍTICAS**:
+- ✅ El crédito FORMA PARTE del **balance principal** de la cuenta común
+- ✅ El crédito **PUEDE GASTARSE** (está disponible para expenses)
+- ✅ El crédito pertenece al miembro que lo aportó (rastreo por `profile_id`)
+- ✅ Al inicio de mes, el miembro decide qué hacer con su crédito
+
+**Decisiones del Miembro (al inicio de mes)**:
+1. **Aplicar al mes siguiente** (`monthly_decision: 'apply_to_month'`):
+   - Su contribución del próximo mes se **reduce** en el monto del crédito
+   - Si le pedían 500€, ahora solo paga 450€
+   - El crédito desaparece (`status: 'applied'`)
+
+2. **Mantener activo** (`monthly_decision: 'keep_active'`):
+   - El crédito **SIGUE EN EL BALANCE PRINCIPAL**
+   - Puede usarse para gastos comunes del hogar
+   - Seguirá disponible para decisión en meses futuros
+   - NO se mueve a ningún lado (permanece líquido)
+
+3. **Transferir a ahorro** (`monthly_decision: 'transfer_to_savings'`):
+   - Se **SACA** del balance principal
+   - Se **AÑADE** al balance de ahorro
+   - Ya NO puede gastarse en expenses (queda bloqueado)
+   - Simula mover el dinero físicamente a cuenta de ahorro bancaria
+
+**Fórmula Balance Principal**:
+```
+Balance Principal = Contribuciones + Ingresos + Créditos Activos - Gastos - Transferencias a Ahorro
+```
+
+**⚠️ IMPORTANTE - Visibilidad de Créditos**:
+
+Los créditos activos FORMAN PARTE del balance principal, pero deben ser VISIBLES para evitar confusión:
+
+**Dashboard - Desglose del Balance** (visible para TODOS):
+```
+┌─────────────────────────────────────────┐
+│  💰 Balance Principal                   │
+├─────────────────────────────────────────┤
+│  Balance Total:              1,000.00€  │
+│  ├─ Balance Libre:             850.00€  │
+│  ├─ Créditos Activos:          150.00€  │
+│  └─ Créditos Reservados:         0.00€  │
+│                                         │
+│  ⚠️ Los créditos activos pueden gastarse│
+│  pero pertenecen a miembros específicos │
+└─────────────────────────────────────────┘
+```
+
+**Estados de Crédito**:
+1. **Activo** (`reserved_at: NULL`): 
+   - Forma parte del balance total
+   - PUEDE gastarse en expenses
+   - Visible en "Créditos Activos"
+
+2. **Reservado** (`reserved_at: NOT NULL`): 
+   - Se RESTA del balance total inmediatamente
+   - YA NO puede gastarse (bloqueado para próximo mes)
+   - Visible en "Créditos Reservados" (solo para awareness)
+   - Solo el dueño ve el detalle en su card personal
+
+**Card Personal de Créditos** (solo visible para el dueño):
+```
+┌─────────────────────────────────────────┐
+│  💳 Mis Créditos                        │
+├─────────────────────────────────────────┤
+│  Crédito Activo:               50.00€   │
+│  Estado: Disponible para gastar         │
+│                                         │
+│  [Gestionar Crédito]                    │
+└─────────────────────────────────────────┘
+```
+
+Cuando reserva para próximo mes:
+```
+┌─────────────────────────────────────────┐
+│  💳 Mis Créditos                        │
+├─────────────────────────────────────────┤
+│  Crédito Reservado:            50.00€   │
+│  Para: Noviembre 2025                   │
+│  Tu contribución: 450€ (en vez de 500€) │
+│                                         │
+│  ⚠️ Ya NO está disponible para gastos   │
+└─────────────────────────────────────────┘
+```
+
+---
+
+### **AHORRO (household_savings) - Balance Paralelo Bloqueado**
+
+**Definición**: Sistema de balance PARALELO al principal, simula cuenta bancaria de ahorro real.
+
+**Características CRÍTICAS**:
+- ✅ Es una cuenta **separada físicamente** del balance principal
+- ❌ **NUNCA** recibe gastos directamente (no es una categoría)
+- ❌ **NUNCA** recibe ingresos personales directamente
+- ✅ **SOLO** se mueve mediante **transferencias** entre balances
+- 🎯 Objetivo: Bloquear dinero para metas específicas (vacaciones, emergencias, etc.)
+
+**Movimientos Válidos**:
+1. **Transferencia IN** (Balance Principal → Ahorro):
+   - Mover dinero del balance común al ahorro
+   - NO es un "aporte" de un miembro específico
+   - Se RESTA del balance principal (dinero bloqueado)
+   - Requiere que balance principal tenga fondos suficientes
+
+2. **Transferencia OUT** (Ahorro → Balance Principal):
+   - Mover dinero del ahorro al balance común
+   - NO crea transacción de ingreso (solo mueve entre balances)
+   - Se SUMA al balance principal (dinero disponible)
+   - Requiere que ahorro tenga fondos suficientes
+
+3. **Transferencia desde Crédito** (Crédito → Ahorro):
+   - Decisión mensual del miembro: `transfer_to_savings`
+   - Se SACA del balance principal (el crédito deja de estar disponible)
+   - Se AÑADE al ahorro (queda bloqueado)
+   - Rastreo: `savings_transaction.source_credit_id`
+
+**Fórmula Balance Ahorro**:
+```
+Balance Ahorro = Transferencias IN - Transferencias OUT
+```
+
+**Tipos de `savings_transactions`**:
+- `transfer_in`: Balance principal → Ahorro (depositar)
+- `transfer_out`: Ahorro → Balance principal (retirar)
+- `transfer_from_credit`: Crédito de miembro → Ahorro (decisión mensual)
+- `interest`: Interés acumulado (opcional, gamificación)
+- `adjustment`: Corrección manual (admin)
+
+---
+
 ## 📊 **ESTADO ACTUAL - YA IMPLEMENTADO**
 
 ### Base de Datos ✅
@@ -72,7 +214,9 @@
 
 ### **FASE 2: Gestión de Créditos al Inicio de Mes** ⏱️ 60 min - **P0**
 
-**Objetivo**: Dialog para decidir qué hacer con créditos activos al inicio de mes.
+**Objetivo**: Dialog para que el miembro decida qué hacer con sus créditos activos.
+
+**Concepto**: Crédito = Dinero adicional aportado que ESTÁ EN EL BALANCE PRINCIPAL (puede gastarse).
 
 **Componentes**:
 1. **CreditDecisionDialog.tsx** (nuevo):
@@ -83,15 +227,74 @@
        amount: number;
        description: string;
        origin_date: string;
+       status: 'active';
      };
-     onDecide: (decision: 'apply' | 'keep' | 'transfer') => Promise<void>;
+     onDecide: (decision: 'apply_to_month' | 'keep_active' | 'transfer_to_savings') => Promise<void>;
    }
    ```
-   - Radio buttons: "Aplicar este mes", "Mantener activo", "Transferir a ahorro"
-   - Explicación de cada opción
-   - Botón "Confirmar decisión"
+   
+   **3 Opciones (Radio Buttons)**:
+   
+   **🔵 Opción 1: Aplicar al Mes Siguiente**
+   ```
+   ✓ Tu contribución del próximo mes se reducirá en 50€
+   ✓ Si te piden 500€, solo pagarás 450€
+   ✓ El crédito desaparecerá (se habrá usado)
+   ⚠️ El dinero permanece en el balance principal
+   ```
+   
+   **🟢 Opción 2: Mantener Activo** (Default recomendado)
+   ```
+   ✓ El crédito sigue disponible en el balance principal
+   ✓ Puede usarse para gastos comunes del hogar
+   ✓ Seguirá disponible para decisión en futuros meses
+   ✓ Mantienes flexibilidad (puedes decidir después)
+   ```
+   
+   **🟡 Opción 3: Transferir a Ahorro**
+   ```
+   ✓ Se mueve del balance principal al ahorro
+   ✓ Ya NO puede gastarse en expenses (bloqueado)
+   ✓ Suma al balance de ahorro para metas específicas
+   ⚠️ Requiere decisión consciente (acción irreversible hasta retiro de ahorro)
+   ```
 
-2. **Server Action** - `credits/actions.ts`:
+2. **Server Action** - `app/credits/actions.ts` (nuevo):
+   ```typescript
+   export async function decideCreditAction(
+     creditId: string,
+     decision: 'apply_to_month' | 'keep_active' | 'transfer_to_savings'
+   ): Promise<Result<{ success: boolean }>> {
+     // 1. Validar que el crédito existe y está 'active'
+     // 2. UPDATE member_credits SET monthly_decision = decision
+     // 3. Si decision = 'transfer_to_savings':
+     //    - Llamar transfer_credit_to_savings() (función SQL existente)
+     //    - Actualizar status = 'transferred'
+     //    - Crear savings_transaction (type: 'transfer_from_credit')
+     // 4. Si decision = 'apply_to_month':
+     //    - UPDATE auto_apply = true (para FIFO automático)
+     // 5. Si decision = 'keep_active':
+     //    - No hacer nada (el crédito sigue activo)
+     // 6. revalidatePath('/app')
+   }
+   ```
+
+3. **PendingCreditsWidget** (mejorado):
+   - Detectar si estamos al inicio de mes (día 1-5)
+   - Mostrar badge "🔔 Decisión pendiente" si hay créditos sin decidir
+   - Al hacer click: Abrir CreditDecisionDialog
+   - Mostrar resumen: "Tienes 50€ de crédito activo en el balance principal"
+
+**Archivos**:
+- `app/credits/actions.ts` (nuevo)
+- `components/credits/CreditDecisionDialog.tsx` (nuevo)
+- `components/credits/PendingCreditsWidget.tsx` (modificar)
+
+**Validaciones**:
+- Solo el dueño del crédito puede decidir
+- Solo créditos con `status: 'active'` son elegibles
+- Transferir a ahorro: Validar que balance principal no quede negativo
+- Aplicar a mes: Validar que hay período mensual activo
    ```typescript
    export async function decideCreditAction(
      creditId: string,
@@ -114,42 +317,237 @@
 
 ---
 
-### **FASE 3: Panel de Balance Personal** ⏱️ 45 min - **P0**
+### **FASE 3: Panel de Balance Personal + Desglose de Créditos** ⏱️ 60 min - **P0**
 
-**Objetivo**: Card o sección que muestre el balance personal del usuario.
+**Objetivo**: Mostrar balance personal del usuario Y desglose claro de créditos en balance principal.
 
-**Componente**: **PersonalBalanceCard.tsx** (nuevo)
+**Componentes**:
 
-**Datos a mostrar**:
+#### **3.1 BalanceBreakdownCard.tsx** (nuevo) - Visible para TODOS
+
+Reemplaza la card simple de "Balance del Mes" en DashboardContent con desglose detallado:
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>💰 Balance Principal</CardTitle>
+    <CardDescription>Desglose del balance de la cuenta común</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    {/* Balance Total */}
+    <div className="p-4 bg-primary/10 rounded-lg">
+      <p className="text-sm text-muted-foreground">Balance Total</p>
+      <p className="text-3xl font-bold">
+        <PrivateAmount amount={balance.total} />
+      </p>
+    </div>
+    
+    {/* Desglose */}
+    <div className="space-y-2 text-sm">
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Balance Libre:</span>
+        <span className="font-semibold">
+          <PrivateAmount amount={balance.free} />
+        </span>
+      </div>
+      
+      <div className="flex justify-between items-center">
+        <span className="text-blue-600 dark:text-blue-400">Créditos Activos:</span>
+        <span className="font-semibold text-blue-600 dark:text-blue-400">
+          <PrivateAmount amount={balance.activeCredits} />
+        </span>
+      </div>
+      
+      {balance.reservedCredits > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-orange-600 dark:text-orange-400">Créditos Reservados:</span>
+          <span className="font-semibold text-orange-600 dark:text-orange-400">
+            <PrivateAmount amount={balance.reservedCredits} />
+          </span>
+        </div>
+      )}
+    </div>
+    
+    {/* Advertencia si hay créditos activos */}
+    {balance.activeCredits > 0 && (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="text-xs">
+          Los créditos activos pueden gastarse pero pertenecen a miembros específicos
+        </AlertDescription>
+      </Alert>
+    )}
+  </CardContent>
+</Card>
 ```
-┌─────────────────────────────────────┐
-│  💰 Mi Balance Personal (Octubre)   │
-├─────────────────────────────────────┤
-│  Contribución esperada:    750.00€  │
-│  Ya pagado este mes:       720.00€  │
-│  ────────────────────────────────   │
-│  Pendiente de pagar:        30.00€  │
-│                                     │
-│  💳 Créditos activos:       50.00€  │
-│  📊 Balance general:       +20.00€  │
-└─────────────────────────────────────┘
-```
 
-**Server Action** - `contributions/actions.ts`:
+**Server Action** - `app/app/expenses/actions.ts` (modificar getMonthSummary):
 ```typescript
-export async function getPersonalBalance(): Promise<Result<{
-  expectedContribution: number;
-  paidThisMonth: number;
-  activeCredits: number;
+export async function getMonthSummary(year: number, month: number): Promise<Result<{
+  income: number;
+  expenses: number;
   balance: number;
+  // NUEVO: Desglose de créditos
+  freeBalance: number;        // Balance - créditos
+  activeCredits: number;       // Créditos con reserved_at NULL
+  reservedCredits: number;     // Créditos con reserved_at NOT NULL
 }>>
 ```
 
-**Ubicación**: Dashboard, arriba de las pestañas o como nueva pestaña "Mi Balance"
+#### **3.2 MyCreditsCard.tsx** (nuevo) - Solo visible para el DUEÑO
+
+Card personal que muestra los créditos del usuario actual:
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>💳 Mis Créditos</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    {/* Créditos Activos */}
+    {myActiveCredits > 0 && (
+      <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <p className="font-bold text-blue-900 dark:text-blue-100">
+              Crédito Activo
+            </p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <PrivateAmount amount={myActiveCredits} />
+            </p>
+          </div>
+          <Badge variant="outline" className="bg-blue-100">
+            Disponible
+          </Badge>
+        </div>
+        <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+          Este dinero está en el balance principal y puede gastarse en expenses comunes
+        </p>
+        <Button 
+          onClick={openCreditDecisionDialog} 
+          variant="outline"
+          className="w-full"
+        >
+          Gestionar Crédito
+        </Button>
+      </div>
+    )}
+    
+    {/* Créditos Reservados */}
+    {myReservedCredits > 0 && (
+      <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border-2 border-orange-200 dark:border-orange-800">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <p className="font-bold text-orange-900 dark:text-orange-100">
+              Crédito Reservado
+            </p>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              <PrivateAmount amount={myReservedCredits} />
+            </p>
+          </div>
+          <Badge variant="outline" className="bg-orange-100">
+            Bloqueado
+          </Badge>
+        </div>
+        <p className="text-sm text-orange-800 dark:text-orange-200 mb-1">
+          Aplicado a tu contribución de <strong>{nextMonthName}</strong>
+        </p>
+        <p className="text-xs text-orange-700 dark:text-orange-300">
+          Tu contribución: <PrivateAmount amount={nextMonthContribution} /> (en vez de <PrivateAmount amount={normalContribution} />)
+        </p>
+        <Alert className="mt-3 border-orange-300">
+          <AlertDescription className="text-xs">
+            ⚠️ Este dinero ya NO está disponible para gastos comunes
+          </AlertDescription>
+        </Alert>
+      </div>
+    )}
+    
+    {/* Sin créditos */}
+    {myActiveCredits === 0 && myReservedCredits === 0 && (
+      <p className="text-sm text-muted-foreground text-center py-4">
+        No tienes créditos activos ni reservados
+      </p>
+    )}
+  </CardContent>
+</Card>
+```
+
+#### **3.3 PersonalBalanceCard.tsx** (nuevo) - Resumen personal
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>📊 Mi Balance Personal ({currentMonthName})</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    <div className="space-y-2">
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Contribución esperada:</span>
+        <span className="font-semibold">
+          <PrivateAmount amount={expectedContribution} />
+        </span>
+      </div>
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Ya pagado este mes:</span>
+        <span className="font-semibold text-green-600">
+          <PrivateAmount amount={paidThisMonth} />
+        </span>
+      </div>
+      <Separator />
+      <div className="flex justify-between items-center">
+        <span className="font-medium">Pendiente de pagar:</span>
+        <span className={`text-xl font-bold ${pending > 0 ? 'text-red-600' : 'text-green-600'}`}>
+          <PrivateAmount amount={pending} />
+        </span>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+```
+
+**Server Actions** - `app/app/contributions/actions.ts`:
+```typescript
+// Obtener balance personal del usuario actual
+export async function getPersonalBalance(): Promise<Result<{
+  expectedContribution: number;
+  paidThisMonth: number;
+  pending: number;
+  myActiveCredits: number;
+  myReservedCredits: number;
+  nextMonthContribution: number;  // Si hay crédito reservado
+}>>
+
+// Obtener desglose de balance principal (para BalanceBreakdownCard)
+export async function getBalanceBreakdown(): Promise<Result<{
+  total: number;
+  free: number;              // total - activeCredits - reservedCredits
+  activeCredits: number;     // SUM(amount) WHERE reserved_at IS NULL
+  reservedCredits: number;   // SUM(amount) WHERE reserved_at IS NOT NULL
+}>>
+```
+
+**Ubicación en UI**:
+- **BalanceBreakdownCard**: Reemplaza la card simple de "Balance del Mes" en Dashboard
+- **MyCreditsCard**: Nueva card en Dashboard, arriba de las pestañas (solo si usuario tiene créditos)
+- **PersonalBalanceCard**: Nueva pestaña "Mi Balance" o card en Dashboard
 
 **Archivos**:
+- `components/balance/BalanceBreakdownCard.tsx` (nuevo)
+- `components/credits/MyCreditsCard.tsx` (nuevo)
 - `components/contributions/PersonalBalanceCard.tsx` (nuevo)
-- `app/app/contributions/actions.ts` (agregar getPersonalBalance)
+- `app/app/contributions/actions.ts` (agregar getPersonalBalance, getBalanceBreakdown)
+- `app/app/components/DashboardContent.tsx` (integrar nuevas cards)
+
+**Migración SQL necesaria** (nueva columna):
+```sql
+ALTER TABLE member_credits
+ADD COLUMN reserved_at TIMESTAMPTZ DEFAULT NULL;
+
+COMMENT ON COLUMN member_credits.reserved_at IS 
+'Timestamp cuando el crédito fue reservado para aplicar al mes siguiente. 
+NULL = activo (puede gastarse), NOT NULL = reservado (bloqueado)';
+```
 
 ---
 
@@ -227,28 +625,153 @@ Simple export de transacciones en formato CSV.
 
 ---
 
-### **FASE 5: Mejoras UI Ahorro** ⏱️ 30 min - **P1**
+### **FASE 5: Mejoras UI Ahorro - TRANSFERENCIAS ENTRE BALANCES** ⏱️ 45 min - **P1**
 
-**Objetivo**: Hacer más prominente y clara la sección de ahorro.
+**Objetivo**: Clarificar que ahorro es un balance PARALELO (solo transferencias, no aportes directos).
+
+**IMPORTANTE**: El ahorro NO es una categoría ni recibe aportes. Es una cuenta separada donde se MUEVE dinero del balance principal.
 
 **Mejoras**:
-1. **SavingsTab.tsx**:
+
+1. **SavingsTab.tsx** (modificar):
    - Agregar progress bar visual: `<Progress value={percentage} />`
-   - Botón grande: "➕ Aportar al Fondo" (abre DepositDialog)
-   - Card de resumen más destacada
-   - Historial con filtros: Tipo, Rango de fechas
+   - Renombrar botón: "💸 Transferir a Ahorro" (NO "Aportar al Fondo")
+   - Card de resumen con 2 balances claramente separados:
+     ```
+     Balance Principal: 1,000€
+     Balance Ahorro:      500€
+     ```
+   - Historial con filtros: Tipo (transfer_in, transfer_out, transfer_from_credit)
 
-2. **DepositDialog.tsx** (nuevo):
-   - Input de monto
-   - Select de miembro (quién aporta)
-   - Textarea de descripción
-   - Botón "Depositar"
+2. **TransferToSavingsDialog.tsx** (nuevo, NO "DepositDialog"):
+   ```tsx
+   <Dialog>
+     <DialogTitle>💸 Transferir a Ahorro</DialogTitle>
+     <DialogDescription>
+       Mover dinero del balance principal al ahorro
+     </DialogDescription>
+     
+     <div className="space-y-4">
+       {/* Muestra balances actuales */}
+       <Alert>
+         <AlertDescription>
+           Balance Principal: <strong>{balancePrincipal}€</strong><br/>
+           Balance Ahorro: <strong>{balanceAhorro}€</strong>
+         </AlertDescription>
+       </Alert>
+       
+       {/* Input de monto */}
+       <div>
+         <Label>Monto a transferir</Label>
+         <Input 
+           type="number" 
+           max={balancePrincipal}
+           placeholder="Ejemplo: 100.00"
+         />
+       </div>
+       
+       {/* Categoría de ahorro (opcional) */}
+       <div>
+         <Label>Categoría (opcional)</Label>
+         <Select>
+           <SelectItem value="emergency">🚨 Emergencia</SelectItem>
+           <SelectItem value="vacation">✈️ Vacaciones</SelectItem>
+           <SelectItem value="home">🏠 Hogar</SelectItem>
+           <SelectItem value="investment">📈 Inversión</SelectItem>
+           <SelectItem value="other">➕ Otros</SelectItem>
+         </Select>
+       </div>
+       
+       {/* Descripción */}
+       <div>
+         <Label>Descripción</Label>
+         <Textarea placeholder="Ejemplo: Para viaje a Italia en verano" />
+       </div>
+       
+       {/* Preview del resultado */}
+       <Alert className="bg-blue-50">
+         <AlertDescription>
+           📊 Después de la transferencia:<br/>
+           Balance Principal: <strong>{balancePrincipal - monto}€</strong><br/>
+           Balance Ahorro: <strong>{balanceAhorro + monto}€</strong>
+         </AlertDescription>
+       </Alert>
+     </div>
+     
+     <DialogFooter>
+       <Button onClick={handleTransfer}>
+         Confirmar Transferencia
+       </Button>
+     </DialogFooter>
+   </Dialog>
+   ```
 
-3. **WithdrawDialog.tsx** (nuevo):
-   - Input de monto
-   - Select de razón (emergencia, vacaciones, etc.)
-   - Checkbox: "¿Crear transacción común?" (resta del balance)
-   - Botón "Retirar"
+3. **TransferFromSavingsDialog.tsx** (nuevo, NO "WithdrawDialog"):
+   ```tsx
+   <Dialog>
+     <DialogTitle>💰 Transferir de Ahorro</DialogTitle>
+     <DialogDescription>
+       Mover dinero del ahorro al balance principal
+     </DialogDescription>
+     
+     <div className="space-y-4">
+       {/* Similar a TransferToSavingsDialog pero inverso */}
+       <Alert>
+         <AlertDescription>
+           Balance Ahorro: <strong>{balanceAhorro}€</strong><br/>
+           Balance Principal: <strong>{balancePrincipal}€</strong>
+         </AlertDescription>
+       </Alert>
+       
+       <Input 
+         type="number" 
+         max={balanceAhorro}
+         label="Monto a transferir"
+       />
+       
+       <Select label="Razón">
+         <SelectItem value="goal_reached">✅ Meta alcanzada</SelectItem>
+         <SelectItem value="emergency">🚨 Emergencia</SelectItem>
+         <SelectItem value="needed">💸 Necesidad puntual</SelectItem>
+       </Select>
+       
+       <Alert className="bg-orange-50">
+         <AlertDescription>
+           ⚠️ Este dinero volverá al balance principal y podrá gastarse en expenses comunes
+         </AlertDescription>
+       </Alert>
+     </div>
+   </Dialog>
+   ```
+
+**Server Actions** - `app/savings/actions.ts` (modificar existentes):
+```typescript
+// Transferir del balance principal al ahorro
+export async function transferToSavings(
+  householdId: string,
+  amount: number,
+  category?: string,
+  description?: string
+): Promise<Result> {
+  // 1. Validar que balance principal >= amount
+  // 2. INSERT savings_transaction (type: 'transfer_in', amount, category, description)
+  // 3. UPDATE household_savings SET current_balance = current_balance + amount
+  // 4. NO crear transaction en transactions table (solo mover entre balances)
+}
+
+// Transferir del ahorro al balance principal
+export async function transferFromSavings(
+  householdId: string,
+  amount: number,
+  reason: string,
+  notes?: string
+): Promise<Result> {
+  // 1. Validar que balance ahorro >= amount
+  // 2. INSERT savings_transaction (type: 'transfer_out', amount, description: reason)
+  // 3. UPDATE household_savings SET current_balance = current_balance - amount
+  // 4. NO crear transaction de ingreso (solo mover entre balances)
+}
+```
 
 **Archivos**:
 - `components/savings/SavingsTab.tsx` (modificar)
@@ -356,33 +879,73 @@ export async function reopenPeriod(periodId: string, reason: string): Promise<Re
 
 ## 📝 **CHECKLIST DE IMPLEMENTACIÓN**
 
-### **Prioridad P0 (Esta sesión)**
-- [ ] Extender modo privacidad a TODAS las cantidades
-- [ ] CreditDecisionDialog + decideCreditAction()
-- [ ] PersonalBalanceCard + getPersonalBalance()
+### **COMPLETADO ✅**
+- [x] **FASE 1**: Extender modo privacidad a TODAS las cantidades (commit 1e61149)
+  - [x] Aplicar PrivateAmount a 7+ componentes
+  - [x] Build exitoso, push a GitHub
 
-### **Prioridad P1 (Esta sesión o próxima)**
-- [ ] Exportación PDF básica
-- [ ] Mejoras UI Ahorro (DepositDialog, WithdrawDialog)
-- [ ] Gestión períodos mensuales UI
+### **Prioridad P0 (CRÍTICO - Esta sesión)**
+- [ ] **Commit documentación**: Arquitectura CRÉDITO vs AHORRO clarificada
+- [ ] **Migración SQL**: Aplicar `add_reserved_at_to_member_credits.sql` vía MCP
+  - [ ] Columna `reserved_at` agregada
+  - [ ] 4 funciones SQL creadas (get_active/reserved_credits_sum, reserve/unreserve_credit)
+  - [ ] Verificar tablas con `mcp_supabase_list_tables`
+- [ ] **FASE 3**: Balance Breakdown Cards (PREREQUISITO para FASE 2)
+  - [ ] BalanceBreakdownCard: Desglose 3 líneas (libre + activo + reservado) - visible TODOS
+  - [ ] MyCreditsCard: Detalle personal créditos - visible solo OWNER
+  - [ ] PersonalBalanceCard: Tracking contribución mensual
+  - [ ] Server actions: `getBalanceBreakdown()`, `getPersonalBalance()`
+  - [ ] Actualizar DashboardContent.tsx para usar nuevas cards
 
-### **Prioridad P2 (Próxima sesión)**
-- [ ] Exportación Excel/CSV completa
-- [ ] Infografías automáticas
-- [ ] UI móvil optimizada completa
+### **Prioridad P1 (Alta - Esta sesión o próxima)**
+- [ ] **FASE 2**: Credit Decision Dialog (depende de FASE 3 para visibilidad)
+  - [ ] CreditDecisionDialog con 3 opciones (apply/keep/transfer)
+  - [ ] Server action: `decideCreditAction()`
+  - [ ] Server action: `getMyCredits()`
+  - [ ] Integrar en dashboard con badge alerta (día 1-5 del mes)
+- [ ] **FASE 4**: Exportación PDF básica
+  - [ ] jsPDF + AutoTable
+  - [ ] Resumen mensual con gráficos
+- [ ] **FASE 5**: Transferencias entre Balances (renombrado)
+  - [ ] TransferToSavingsDialog (no DepositDialog)
+  - [ ] TransferFromSavingsDialog (no WithdrawDialog)
+  - [ ] Server actions: `transferToSavings()`, `transferFromSavings()`
+
+### **Prioridad P2 (Media - Próxima sesión)**
+- [ ] **FASE 6**: Gestión Períodos Mensuales UI
+  - [ ] ClosePeriodButton con validaciones
+  - [ ] ReopenPeriodDialog para correcciones
+  - [ ] PeriodHistoryPanel con logs
+- [ ] **FASE 7**: UI Móvil Optimizada
+  - [ ] BottomNav con iconos
+  - [ ] FloatingActionButton para agregar transacciones
+  - [ ] Optimización responsive de todas las vistas
+- [ ] **FASE 8**: Exportación Avanzada
+  - [ ] Excel completo con 4 hojas (ExcelJS)
+  - [ ] CSV simple
+  - [ ] Infografías automáticas (Chart.js + canvas)
 
 ---
 
-## 🚀 **ORDEN DE EJECUCIÓN SUGERIDO**
+## 🚀 **ORDEN DE EJECUCIÓN ACTUALIZADO**
 
-1. **Modo Privacidad Extendido** → Rápido, alto impacto visual
-2. **PersonalBalanceCard** → Muestra valor inmediato al usuario
-3. **CreditDecisionDialog** → Funcionalidad crítica para gestión mensual
-4. **Exportación PDF** → Feature wow, diferenciador
-5. **Mejoras UI Ahorro** → Pulir experiencia
-6. **Gestión Períodos** → Funcionalidad avanzada
-7. **UI Móvil** → Optimización final
-8. **Exportación Avanzada** → Polish adicional
+### **Esta Sesión (P0-P1)**
+1. ✅ **Modo Privacidad Extendido** → COMPLETADO (commit 1e61149)
+2. ⏳ **Documentación + Migración SQL** → Commit + aplicar vía MCP
+3. 🔄 **FASE 3: Balance Breakdown Cards** → **PREREQUISITO para FASE 2**
+   - BalanceBreakdownCard proporciona visibilidad crítica
+   - MyCreditsCard muestra créditos propios del usuario
+   - PersonalBalanceCard tracking de contribución
+4. 🔄 **FASE 2: Credit Decision Dialog** → Depende de FASE 3
+5. 🔄 **FASE 4: Exportación PDF** → Feature wow diferenciador
+
+### **Próxima Sesión (P1-P2)**
+6. **FASE 5: Transferencias Balances** → Pulir experiencia ahorro
+7. **FASE 6: Gestión Períodos** → Funcionalidad avanzada
+8. **FASE 7: UI Móvil** → Optimización final
+9. **FASE 8: Exportación Avanzada** → Polish adicional
+
+**NOTA CRÍTICA**: FASE 3 ANTES de FASE 2 porque el balance breakdown proporciona el contexto visual necesario para que el usuario entienda qué son sus créditos y cómo afectan al balance antes de tomar decisiones sobre ellos.
 
 ---
 
