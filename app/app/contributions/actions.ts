@@ -902,3 +902,193 @@ export async function recordContributionPayment(
   revalidatePath('/app/expenses');
   return ok();
 }
+
+// =====================================================
+// FASE 3: Balance Breakdown & Personal Balance
+// =====================================================
+
+/**
+ * Obtiene el desglose completo del balance del hogar
+ * Muestra: balance total, balance libre, créditos activos, créditos reservados
+ */
+export async function getBalanceBreakdown(householdId: string): Promise<Result<{
+  totalBalance: number;
+  freeBalance: number;
+  activeCredits: number;
+  reservedCredits: number;
+  members: Array<{
+    profileId: string;
+    displayName: string;
+    activeCredits: number;
+    reservedCredits: number;
+  }>;
+}>> {
+  const supabase = await supabaseServer();
+  
+  // 1. Verificar autenticación
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return fail('No autenticado');
+
+  // 2. Obtener balance total del household (suma de ingresos - gastos)
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('type, amount')
+    .eq('household_id', householdId)
+    .eq('status', 'confirmed');
+
+  const totalIncome = transactions?.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+  const totalExpenses = transactions?.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+  const totalBalance = totalIncome - totalExpenses;
+
+  // 3. Obtener créditos activos y reservados usando las funciones SQL
+  const { data: activeCreditsData } = await supabase.rpc('get_active_credits_sum', {
+    p_household_id: householdId
+  });
+  
+  const { data: reservedCreditsData } = await supabase.rpc('get_reserved_credits_sum', {
+    p_household_id: householdId
+  });
+
+  const activeCredits = Number(activeCreditsData || 0);
+  const reservedCredits = Number(reservedCreditsData || 0);
+
+  // 4. Balance libre = balance total - créditos activos
+  // (los créditos activos forman parte del balance pero pertenecen a miembros específicos)
+  const freeBalance = totalBalance - activeCredits;
+
+  // 5. Obtener desglose por miembro
+  const { data: memberCredits } = await supabase
+    .from('member_credits')
+    .select(`
+      amount,
+      reserved_at,
+      profile_id,
+      profiles!inner (
+        id,
+        display_name
+      )
+    `)
+    .eq('household_id', householdId)
+    .eq('status', 'active');
+
+  // Agrupar por miembro
+  const membersMap = new Map<string, {
+    profileId: string;
+    displayName: string;
+    activeCredits: number;
+    reservedCredits: number;
+  }>();
+
+  memberCredits?.forEach(credit => {
+    const profileId = credit.profile_id;
+    const profile = Array.isArray(credit.profiles) ? credit.profiles[0] : credit.profiles;
+    const displayName = profile?.display_name || 'Usuario';
+    
+    if (!membersMap.has(profileId)) {
+      membersMap.set(profileId, {
+        profileId,
+        displayName,
+        activeCredits: 0,
+        reservedCredits: 0,
+      });
+    }
+
+    const member = membersMap.get(profileId)!;
+    if (credit.reserved_at) {
+      member.reservedCredits += Number(credit.amount);
+    } else {
+      member.activeCredits += Number(credit.amount);
+    }
+  });
+
+  const members = Array.from(membersMap.values());
+
+  return ok({
+    totalBalance,
+    freeBalance,
+    activeCredits,
+    reservedCredits,
+    members,
+  });
+}
+
+/**
+ * Obtiene el balance personal de un miembro específico
+ * Muestra: contribución esperada, pagado, pendiente, créditos propios
+ */
+export async function getPersonalBalance(householdId: string): Promise<Result<{
+  expectedContribution: number;
+  paidAmount: number;
+  pendingAmount: number;
+  status: string;
+  myActiveCredits: number;
+  myReservedCredits: number;
+  contributionId: string | null;
+}>> {
+  const supabase = await supabaseServer();
+  
+  // 1. Verificar autenticación y obtener profile
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return fail('No autenticado');
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return fail('Perfil no encontrado');
+
+  // 2. Obtener contribución del mes actual
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const { data: contribution } = await supabase
+    .from('contributions')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('profile_id', profile.id)
+    .eq('year', currentYear)
+    .eq('month', currentMonth)
+    .single();
+
+  if (!contribution) {
+    return ok({
+      expectedContribution: 0,
+      paidAmount: 0,
+      pendingAmount: 0,
+      status: 'pending_configuration',
+      myActiveCredits: 0,
+      myReservedCredits: 0,
+      contributionId: null,
+    });
+  }
+
+  const expectedAmount = Number(contribution.expected_amount || 0);
+  const paidAmount = Number(contribution.paid_amount || 0);
+  const adjustmentsTotal = Number(contribution.adjustments_total || 0);
+  const adjustedExpected = expectedAmount + adjustmentsTotal;
+  const pendingAmount = Math.max(0, adjustedExpected - paidAmount);
+
+  // 3. Obtener créditos propios (activos y reservados)
+  const { data: myCredits } = await supabase
+    .from('member_credits')
+    .select('amount, reserved_at')
+    .eq('household_id', householdId)
+    .eq('profile_id', profile.id)
+    .eq('status', 'active');
+
+  const myActiveCredits = myCredits?.filter(c => !c.reserved_at).reduce((sum, c) => sum + Number(c.amount), 0) || 0;
+  const myReservedCredits = myCredits?.filter(c => c.reserved_at).reduce((sum, c) => sum + Number(c.amount), 0) || 0;
+
+  return ok({
+    expectedContribution: adjustedExpected,
+    paidAmount,
+    pendingAmount,
+    status: contribution.status,
+    myActiveCredits,
+    myReservedCredits,
+    contributionId: contribution.id,
+  });
+}

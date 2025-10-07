@@ -11,6 +11,9 @@ import { IncomeVsExpensesChart } from '@/app/app/components/charts/IncomeVsExpen
 import { SavingsEvolutionChart } from '@/components/savings/SavingsEvolutionChart';
 import { SavingsTab } from '@/components/savings/SavingsTab';
 import { PendingCreditsWidget } from '@/components/credits/PendingCreditsWidget';
+import { BalanceBreakdownCard } from '@/components/balance/BalanceBreakdownCard';
+import { MyCreditsCard } from '@/components/credits/MyCreditsCard';
+import { PersonalBalanceCard } from '@/components/contributions/PersonalBalanceCard';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { PrivateAmount } from '@/components/shared/PrivateAmount';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
@@ -83,6 +86,7 @@ type MonthComparison = {
 };
 
 interface DashboardContentProps {
+  householdId: string; // ⭐ FASE 3: Necesario para nuevas cards
   initialCategories: Category[];
   initialTransactions: Transaction[];
   initialSummary: {
@@ -109,6 +113,7 @@ interface DashboardContentProps {
 }
 
 export function DashboardContent({
+  householdId, // ⭐ FASE 3
   initialCategories,
   initialTransactions,
   initialSummary,
@@ -231,8 +236,8 @@ export function DashboardContent({
         </div>
       </div>
 
-      {/* Resumen Financiero */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Resumen Financiero Básico */}
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -264,22 +269,24 @@ export function DashboardContent({
             </p>
           </CardContent>
         </Card>
+      </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Balance del Mes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${(summary?.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              <PrivateAmount amount={summary?.balance || 0} />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {(summary?.balance || 0) >= 0 ? 'Superávit' : 'Déficit'}
-            </p>
-          </CardContent>
-        </Card>
+      {/* ⭐ FASE 3: Balance Breakdown + Personal Balance + My Credits */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Balance Breakdown (visible para TODOS) */}
+        <BalanceBreakdownCard householdId={householdId} />
+
+        {/* Personal Balance (tracking contribución) */}
+        <PersonalBalanceCard householdId={householdId} />
+
+        {/* My Credits (solo visible si el usuario tiene créditos) */}
+        <MyCreditsCard 
+          householdId={householdId}
+          onManageCredit={() => {
+            // TODO: Abrir CreditDecisionDialog (FASE 2)
+            toast.info('Gestión de créditos disponible pronto (FASE 2)');
+          }}
+        />
       </div>
 
       {/* Widget de Créditos Pendientes */}

@@ -496,6 +496,7 @@ export type Database = {
           id: string
           monthly_decision: string | null
           profile_id: string
+          reserved_at: string | null
           savings_transaction_id: string | null
           source_month: number
           source_period_id: string | null
@@ -518,6 +519,7 @@ export type Database = {
           id?: string
           monthly_decision?: string | null
           profile_id: string
+          reserved_at?: string | null
           savings_transaction_id?: string | null
           source_month: number
           source_period_id?: string | null
@@ -540,6 +542,7 @@ export type Database = {
           id?: string
           monthly_decision?: string | null
           profile_id?: string
+          reserved_at?: string | null
           savings_transaction_id?: string | null
           source_month?: number
           source_period_id?: string | null
@@ -1435,6 +1438,10 @@ export type Database = {
         Args: { p_months_to_expire?: number }
         Returns: number
       }
+      get_active_credits_sum: {
+        Args: { p_household_id: string }
+        Returns: number
+      }
       get_current_profile: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1471,6 +1478,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_reserved_credits_sum: {
+        Args: { p_household_id: string }
+        Returns: number
+      }
+      get_user_household_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          household_id: string
+        }[]
+      }
       is_contribution_owner: {
         Args: { p_contribution_id: string }
         Returns: boolean
@@ -1491,9 +1508,17 @@ export type Database = {
           transactions_migrated: number
         }[]
       }
+      recalculate_contribution_paid_amount: {
+        Args: { p_contribution_id: string }
+        Returns: undefined
+      }
       reopen_monthly_period: {
         Args: { p_period_id: string; p_reason?: string; p_reopened_by: string }
         Returns: undefined
+      }
+      reserve_credit_for_next_month: {
+        Args: { p_credit_id: string; p_reserved_by: string }
+        Returns: Json
       }
       restore_to_stock: {
         Args: Record<PropertyKey, never>
@@ -1513,6 +1538,10 @@ export type Database = {
           p_notes?: string
           p_transferred_by: string
         }
+        Returns: Json
+      }
+      unreserve_credit: {
+        Args: { p_credit_id: string; p_unreserved_by: string }
         Returns: Json
       }
       update_contribution_status: {

@@ -133,6 +133,7 @@ export default async function DashboardPage() {
       )}
 
       <DashboardContent
+        householdId={householdId} 
         initialCategories={categories as never[]}
         initialTransactions={allTransactions as never[]}
         initialSummary={summary}
