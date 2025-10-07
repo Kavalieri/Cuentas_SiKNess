@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Receipt, Wallet, PiggyBank, Settings } from 'lucide-react';
+import { Home, Receipt, Wallet, BarChart3, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -28,9 +28,9 @@ const navItems: NavItem[] = [
     label: 'Contribuciones',
   },
   {
-    href: '/app/savings',
-    icon: <PiggyBank className="h-5 w-5" />,
-    label: 'Ahorro',
+    href: '/app/reports',
+    icon: <BarChart3 className="h-5 w-5" />,
+    label: 'Reportes',
   },
   {
     href: '/app/settings',
