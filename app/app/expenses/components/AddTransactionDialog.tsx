@@ -83,14 +83,16 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
       return;
     }
 
-    // Éxito: revalidar PRIMERO, luego cerrar
+    // Éxito: cerrar dialog y refrescar
     toast.success('Movimiento creado exitosamente');
-    router.refresh(); // Llamar ANTES de cerrar dialog
     
     // Resetear y cerrar
     form.reset();
     setIsLoading(false);
     setOpen(false);
+    
+    // Refrescar datos del servidor SIN recargar página
+    router.refresh();
   };
 
   // DEBUG: Log del estado de members antes de renderizar

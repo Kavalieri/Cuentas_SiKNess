@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MonthSelector } from '@/components/shared/MonthSelector';
@@ -127,6 +127,22 @@ export function DashboardContent({
   const [categoryExpenses, setCategoryExpenses] = useState(initialCategoryExpenses);
   const [comparison, setComparison] = useState(initialComparison);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // ⭐ Estado de pestaña activa con persistencia
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    // Restaurar desde sessionStorage al montar
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('dashboard-active-tab') || 'balance';
+    }
+    return 'balance';
+  });
+
+  // ⭐ Guardar estado de pestaña cuando cambia
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('dashboard-active-tab', activeTab);
+    }
+  }, [activeTab]);
 
   const handleMonthChange = async (newDate: Date) => {
     setSelectedMonth(newDate);
@@ -270,7 +286,7 @@ export function DashboardContent({
       <PendingCreditsWidget initialCredits={initialPendingCredits} onRefresh={refreshData} />
 
       {/* PESTAÑAS PRINCIPALES */}
-      <Tabs defaultValue="balance" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="balance" className="gap-2">
             <TrendingUp className="h-4 w-4" />

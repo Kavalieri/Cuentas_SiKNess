@@ -99,11 +99,14 @@ export function EditTransactionDialog({
     }
 
     toast.success('Movimiento actualizado exitosamente');
-    router.refresh();
-
+    
+    // Resetear y cerrar
     form.reset();
     setIsLoading(false);
     onOpenChange(false);
+    
+    // Refrescar datos del servidor SIN recargar página
+    router.refresh();
   };
 
   return (
