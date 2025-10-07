@@ -3,7 +3,7 @@ import { getCategories } from '@/app/app/categories/actions';
 import { AddTransactionDialog } from './components/AddTransactionDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/format';
+import { PrivateAmount } from '@/components/shared/PrivateAmount';
 
 export default async function ExpensesPage() {
   // Obtener Transacciones y categorías
@@ -92,7 +92,7 @@ export default async function ExpensesPage() {
                         }`}
                       >
                         {m.type === 'expense' ? '-' : '+'}
-                        {formatCurrency(m.amount as number, m.currency as string)}
+                        <PrivateAmount amount={m.amount as number} currency={m.currency as string} />
                       </p>
                       <Badge variant={m.type === 'expense' ? 'destructive' : 'default'}>
                         {m.type === 'expense' ? 'Gasto' : 'Ingreso'}

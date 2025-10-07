@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { setMemberIncome } from '@/app/app/contributions/actions';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/format';
+import { PrivateAmount } from '@/components/shared/PrivateAmount';
 import { startOfMonth } from 'date-fns';
 
 interface IncomeFormProps {
@@ -60,7 +60,7 @@ export function IncomeForm({ householdId, profileId, currentIncome }: IncomeForm
         />
         {income > 0 && (
           <p className="text-sm text-muted-foreground mt-1">
-            Ingreso actual: <strong>{formatCurrency(income)}</strong>/mes
+            Ingreso actual: <strong><PrivateAmount amount={income} /></strong>/mes
           </p>
         )}
       </div>

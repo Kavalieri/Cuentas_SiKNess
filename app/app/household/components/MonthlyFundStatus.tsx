@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
-import { formatCurrency } from '@/lib/format';
+import { PrivateAmount } from '@/components/shared/PrivateAmount';
 import { toast } from 'sonner';
 import { markContributionAsPaid, calculateAndCreateContributions } from '@/app/app/contributions/actions';
 import { useRouter } from 'next/navigation';
@@ -177,7 +177,7 @@ export function MonthlyFundStatus({
           <CardContent className="space-y-4">
             <p className="text-sm text-blue-900 dark:text-blue-100">
               Ya tienes todo configurado. Haz clic en el botón para calcular cuánto debe aportar 
-              cada miembro al fondo común de {formatCurrency(monthlyFund)} basado en sus ingresos.
+              cada miembro al fondo común de <PrivateAmount amount={monthlyFund} /> basado en sus ingresos.
             </p>
             <Button 
               onClick={handleCalculateContributions} 
@@ -215,7 +215,7 @@ export function MonthlyFundStatus({
             )}
           </CardTitle>
           <CardDescription>
-            Fondo de partida para gastos del mes • {formatCurrency(totalContributed, currency)} de {formatCurrency(fundGoal, currency)} aportados
+            Fondo de partida para gastos del mes • <PrivateAmount amount={totalContributed} currency={currency} /> de <PrivateAmount amount={fundGoal} currency={currency} /> aportados
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -223,16 +223,16 @@ export function MonthlyFundStatus({
           <div className="grid gap-4 md:grid-cols-3 mb-6">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Total Aportado</p>
-              <p className="text-2xl font-bold">{formatCurrency(totalContributed, currency)}</p>
+              <p className="text-2xl font-bold"><PrivateAmount amount={totalContributed} currency={currency} /></p>
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Gastos Realizados</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(expenses, currency)}</p>
+              <p className="text-2xl font-bold text-red-600"><PrivateAmount amount={expenses} currency={currency} /></p>
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Balance</p>
               <p className={`text-2xl font-bold ${fundBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(fundBalance, currency)}
+                <PrivateAmount amount={fundBalance} currency={currency} />
               </p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export function MonthlyFundStatus({
           {remainingToGoal > 0 && (
             <div className="mb-4 p-3 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground">
-                Faltan {formatCurrency(remainingToGoal, currency)} para completar el fondo objetivo
+                Faltan <PrivateAmount amount={remainingToGoal} currency={currency} /> para completar el fondo objetivo
               </p>
             </div>
           )}
@@ -249,7 +249,7 @@ export function MonthlyFundStatus({
           {incomes > 0 && (
             <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
               <p className="text-sm text-green-900 dark:text-green-100">
-                + {formatCurrency(incomes, currency)} en ingresos registrados este mes
+                + <PrivateAmount amount={incomes} currency={currency} /> en ingresos registrados este mes
               </p>
             </div>
           )}
@@ -323,7 +323,7 @@ export function MonthlyFundStatus({
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {percentageOfFund.toFixed(1)}% del fondo • Aportado: {formatCurrency(totalPaidByMember, currency)}
+                        {percentageOfFund.toFixed(1)}% del fondo • Aportado: <PrivateAmount amount={totalPaidByMember} currency={currency} />
                       </p>
                       {contribution.paid_at && (
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
@@ -372,7 +372,7 @@ export function MonthlyFundStatus({
           <div className="flex items-start gap-2">
             <span className="font-bold text-primary">1.</span>
             <p>
-              <strong>Inicio del mes:</strong> Cada miembro aporta su parte proporcional según sus ingresos para formar el fondo común de {formatCurrency(monthlyFund)}.
+              <strong>Inicio del mes:</strong> Cada miembro aporta su parte proporcional según sus ingresos para formar el fondo común de <PrivateAmount amount={monthlyFund} />.
             </p>
           </div>
           <div className="flex items-start gap-2">

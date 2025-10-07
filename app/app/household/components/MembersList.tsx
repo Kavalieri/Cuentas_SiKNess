@@ -23,7 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/format';
+import { PrivateAmount } from '@/components/shared/PrivateAmount';
 import { updateMemberRole, removeMember } from '@/app/app/household/actions';
 
 type Member = {
@@ -96,7 +96,7 @@ export function MembersList({ members }: MembersListProps) {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                Ingreso: {member.currentIncome > 0 ? formatCurrency(member.currentIncome) : 'No configurado'}
+                Ingreso: {member.currentIncome > 0 ? <PrivateAmount amount={member.currentIncome} /> : 'No configurado'}
               </p>
             </div>
 

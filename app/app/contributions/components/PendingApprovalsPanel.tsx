@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPendingAdjustments, approvePrepayment, rejectPrepayment } from '@/app/app/contributions/adjustment-actions';
+import { PrivateAmount } from '@/components/shared/PrivateAmount';
 import { formatCurrency } from '@/lib/format';
 import type { Database } from '@/types/database';
 
@@ -293,7 +294,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                        {formatCurrency(amount, currency)}
+                        <PrivateAmount amount={amount} currency={currency} />
                       </p>
                       <Badge variant="outline" className="mt-1">
                         {data.contribution.month}/{data.contribution.year}

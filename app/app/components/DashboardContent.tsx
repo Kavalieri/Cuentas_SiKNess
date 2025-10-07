@@ -12,7 +12,7 @@ import { SavingsEvolutionChart } from '@/components/savings/SavingsEvolutionChar
 import { SavingsTab } from '@/components/savings/SavingsTab';
 import { PendingCreditsWidget } from '@/components/credits/PendingCreditsWidget';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { formatCurrency } from '@/lib/format';
+import { PrivateAmount } from '@/components/shared/PrivateAmount';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -241,7 +241,7 @@ export function DashboardContent({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(summary?.income || 0)}
+              <PrivateAmount amount={summary?.income || 0} />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {incomeTransactions.length} {incomeTransactions.length === 1 ? 'ingreso' : 'ingresos'}
@@ -257,7 +257,7 @@ export function DashboardContent({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(summary?.expenses || 0)}
+              <PrivateAmount amount={summary?.expenses || 0} />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {expenseTransactions.length} {expenseTransactions.length === 1 ? 'gasto' : 'gastos'}
@@ -273,7 +273,7 @@ export function DashboardContent({
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${(summary?.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrency(summary?.balance || 0)}
+              <PrivateAmount amount={summary?.balance || 0} />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {(summary?.balance || 0) >= 0 ? 'Superávit' : 'Déficit'}
