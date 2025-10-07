@@ -243,6 +243,8 @@ export async function getTransactions(params?: {
   type?: 'expense' | 'income';
   startDate?: string;
   endDate?: string;
+  categoryId?: string;
+  search?: string;
 }): Promise<Result<unknown[]>> {
   const householdId = await getUserHouseholdId();
   if (!householdId) {
@@ -278,10 +280,14 @@ export async function getTransactions(params?: {
     `,
     )
     .eq('household_id', householdId)
-    .order('created_at', { ascending: false });
+    .order('occurred_at', { ascending: false });
 
   if (params?.type) {
     query = query.eq('type', params.type);
+  }
+
+  if (params?.categoryId) {
+    query = query.eq('category_id', params.categoryId);
   }
 
   if (params?.startDate) {
@@ -290,6 +296,10 @@ export async function getTransactions(params?: {
 
   if (params?.endDate) {
     query = query.lte('occurred_at', params.endDate);
+  }
+
+  if (params?.search) {
+    query = query.ilike('description', `%${params.search}%`);
   }
 
   const { data, error } = await query;
