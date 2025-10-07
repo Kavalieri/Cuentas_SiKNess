@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { supabaseServer } from '@/lib/supabaseServer';
+import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserRoleInActiveHousehold } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 import { CALCULATION_TYPES } from '@/lib/contributionTypes';
@@ -1100,3 +1100,197 @@ export async function getPersonalBalance(householdId: string): Promise<Result<{
     contributionId: contribution.id,
   });
 }
+
+/**
+ * Aprueba un ajuste de contribución (solo owner)
+ * Cambia status de 'pending' → 'active'
+ */
+export async function approveContributionAdjustment(adjustmentId: string): Promise<Result> {
+  const supabase = await supabaseServer();
+  const user = await getCurrentUser();
+  if (!user) return fail('No autenticado');
+
+  const householdId = await getUserHouseholdId();
+  if (!householdId) return fail('No tienes un hogar configurado');
+
+  // Verificar rol de owner
+  const role = await getUserRoleInActiveHousehold();
+  if (role !== 'owner') {
+    return fail('Solo el propietario puede aprobar ajustes');
+  }
+
+  // 1. Obtener ajuste actual
+  const { data: adjustment, error: fetchError } = await supabase
+    .from('contribution_adjustments')
+    .select(`
+      *,
+      contribution:contributions!inner(
+        household_id
+      )
+    `)
+    .eq('id', adjustmentId)
+    .single();
+
+  if (fetchError) return fail('Error al obtener ajuste: ' + fetchError.message);
+  if (!adjustment) return fail('Ajuste no encontrado');
+
+  // @ts-ignore - Supabase type inference
+  const contribution = adjustment.contribution;
+
+  // Verificar que pertenece al household
+  if (contribution.household_id !== householdId) {
+    return fail('El ajuste no pertenece a tu hogar');
+  }
+
+  // Verificar que está en estado pending
+  if (adjustment.status !== 'pending') {
+    return fail(`No se puede aprobar un ajuste en estado "${adjustment.status}"`);
+  }
+
+  // 2. Obtener profile_id del usuario para auditoría
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return fail('Perfil no encontrado');
+
+  // 3. Actualizar estado a 'active'
+  const { error: updateError } = await supabase
+    .from('contribution_adjustments')
+    .update({
+      status: 'active',
+      updated_by: profile.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', adjustmentId);
+
+  if (updateError) {
+    return fail('Error al aprobar ajuste: ' + updateError.message);
+  }
+
+  revalidatePath('/app/contributions/adjustments');
+  return ok();
+}
+
+/**
+ * Rechaza un ajuste de contribución (solo owner)
+ * Cambia status de 'pending' → 'cancelled'
+ * Opcionalmente elimina transacciones asociadas
+ */
+export async function rejectContributionAdjustment(
+  adjustmentId: string,
+  rejectionReason?: string
+): Promise<Result> {
+  const supabase = await supabaseServer();
+  const user = await getCurrentUser();
+  if (!user) return fail('No autenticado');
+
+  const householdId = await getUserHouseholdId();
+  if (!householdId) return fail('No tienes un hogar configurado');
+
+  // Verificar rol de owner
+  const role = await getUserRoleInActiveHousehold();
+  if (role !== 'owner') {
+    return fail('Solo el propietario puede rechazar ajustes');
+  }
+
+  // 1. Obtener ajuste actual
+  const { data: adjustment, error: fetchError } = await supabase
+    .from('contribution_adjustments')
+    .select(`
+      *,
+      contribution:contributions!inner(
+        household_id,
+        profile_id
+      )
+    `)
+    .eq('id', adjustmentId)
+    .single();
+
+  if (fetchError) return fail('Error al obtener ajuste: ' + fetchError.message);
+  if (!adjustment) return fail('Ajuste no encontrado');
+
+  // @ts-ignore - Supabase type inference
+  const contribution = adjustment.contribution;
+
+  // Verificar que pertenece al household
+  if (contribution.household_id !== householdId) {
+    return fail('El ajuste no pertenece a tu hogar');
+  }
+
+  // Verificar que está en estado pending
+  if (adjustment.status !== 'pending') {
+    return fail(`No se puede rechazar un ajuste en estado "${adjustment.status}"`);
+  }
+
+  // 2. Obtener profile_id del usuario para auditoría
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!profile) return fail('Perfil no encontrado');
+
+  // 3. Actualizar estado a 'cancelled' con razón
+  const updatedReason = rejectionReason 
+    ? `${adjustment.reason || ''} [RECHAZADO: ${rejectionReason}]`.trim()
+    : adjustment.reason;
+
+  const { error: updateError } = await supabase
+    .from('contribution_adjustments')
+    .update({
+      status: 'cancelled',
+      reason: updatedReason,
+      updated_by: profile.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', adjustmentId);
+
+  if (updateError) {
+    return fail('Error al rechazar ajuste: ' + updateError.message);
+  }
+
+  // 4. Eliminar transacciones asociadas (si existen)
+  const movementsToDelete: string[] = [];
+
+  // A) Si tiene movement_id directo, agregarlo
+  if (adjustment.movement_id) {
+    movementsToDelete.push(adjustment.movement_id);
+  }
+
+  // B) Buscar por descripción con [Ajuste: razón]
+  const searchPattern = `%[Ajuste: ${adjustment.reason}]%`;
+  const { data: movementsByDescription } = await supabase
+    .from('transactions')
+    .select('id')
+    .eq('household_id', contribution.household_id)
+    .like('description', searchPattern);
+
+  if (movementsByDescription) {
+    movementsByDescription.forEach(m => {
+      if (!movementsToDelete.includes(m.id)) {
+        movementsToDelete.push(m.id);
+      }
+    });
+  }
+
+  // Eliminar todos los movimientos identificados
+  if (movementsToDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('transactions')
+      .delete()
+      .in('id', movementsToDelete);
+
+    if (deleteError) {
+      console.error('[rejectContributionAdjustment] Error eliminando transacciones:', deleteError);
+      // No fallar por esto, ya se canceló el ajuste
+    }
+  }
+
+  revalidatePath('/app/contributions/adjustments');
+  return ok();
+}
+
