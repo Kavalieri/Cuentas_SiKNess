@@ -551,77 +551,113 @@ NULL = activo (puede gastarse), NOT NULL = reservado (bloqueado)';
 
 ---
 
-### **FASE 4: Sistema de Exportación - MVP** ⏱️ 90 min - **P1**
+### **FASE 4: Sistema de Exportación Completo** ⏱️ 180 min (3 sesiones) - **P0 CRÍTICO**
 
-**Objetivo**: Exportar datos a PDF, Excel, CSV.
+**📋 NOTA IMPORTANTE**: Ver documento completo en `docs/EXPORT_SYSTEM_PLAN.md` (11,500 líneas)
 
-#### **4.1 Exportación PDF** (Prioridad máxima)
+**Objetivo**: Sistema robusto de exportación multi-formato (PDF, CSV, Excel) con UI completa.
+
+**Estado**: 📝 Planificación completada - Listo para implementar
+
+#### **4.1 Exportación PDF** (P0 - Esta sesión - 90 min)
 
 **Librería**: `jspdf` + `jspdf-autotable`
 
 ```bash
-npm install jspdf jspdf-autotable
+npm install jspdf jspdf-autotable exceljs
 npm install -D @types/jspdf
 ```
 
-**Endpoint**: `/api/export/monthly-pdf`
+**Características**:
+- Resumen mensual ejecutivo (1-2 páginas A4)
+- 5 secciones: Header, Resumen, Balance, Contribuciones, Top Transacciones, Ahorro
+- Footer con fecha generación y paginación
+- Client-side generation (mejor control visual)
 
 **Contenido del PDF**:
 ```
-┌────────────────────────────────────────┐
-│  CuentasSiK - Resumen Mensual          │
-│  Octubre 2025                          │
-│  Hogar: Casa Test                      │
-├────────────────────────────────────────┤
-│                                        │
-│  📊 RESUMEN                            │
-│  Ingresos:              2,000.00€      │
-│  Gastos:                1,500.00€      │
-│  Balance:                 500.00€      │
-│                                        │
-│  👥 CONTRIBUCIONES                     │
-│  - caballeropomes: 750€ / 750€ ✅      │
-│  - fumetas.sik:    250€ / 250€ ✅      │
-│                                        │
-│  📋 TRANSACCIONES (Top 10)             │
-│  [Tabla con fecha, tipo, categoría, monto]
-│                                        │
-│  💰 AHORRO                             │
-│  Balance actual: 1,000€                │
-│  Meta: 5,000€ (20% completado)         │
-└────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  🏠 CuentasSiK - Casa Test                      │
+│  📅 Octubre 2025                                │
+│  ───────────────────────────────────────────    │
+│                                                 │
+│  📊 RESUMEN FINANCIERO                          │
+│  ├─ Ingresos:          2,000.00 €               │
+│  ├─ Gastos:            1,500.00 €               │
+│  └─ Balance:             500.00 € ✅            │
+│                                                 │
+│  � BALANCE DESGLOSADO                          │
+│  ├─ Balance Libre:     1,200.00 €               │
+│  ├─ Créditos Activos:    200.00 €               │
+│  └─ Créditos Reservados: 100.00 €               │
+│                                                 │
+│  � CONTRIBUCIONES                              │
+│  [Tabla con miembro, esperado, pagado, estado] │
+│                                                 │
+│  �📋 TOP 10 TRANSACCIONES                        │
+│  [Tabla con fecha, tipo, categoría, monto]     │
+│                                                 │
+│  � AHORRO DEL HOGAR                            │
+│  Balance: 1,000€ | Meta: 5,000€ (20%)           │
+└─────────────────────────────────────────────────┘
 ```
 
-**Server Action**:
-```typescript
-// app/api/export/monthly-pdf/route.ts
-export async function GET(request: Request) {
-  // Obtener datos del mes
-  // Generar PDF con jsPDF
-  // Retornar Response con Content-Type: application/pdf
-}
-```
+**Implementación**:
+- `lib/export/pdf-generator.ts`: Lógica de generación
+- `lib/export/types.ts`: Tipos compartidos (ExportData, ExportOptions)
+- `app/exports/actions.ts`: Server action `getExportData()`
+- `components/exports/ExportButton.tsx`: Botón en Dashboard
+- `components/exports/ExportDialog.tsx`: Dialog con opciones
 
-**Botón**: DashboardContent → "📥 Exportar Mes (PDF)"
+**Flujo**:
+1. Usuario click "📥 Exportar" en Dashboard
+2. Dialog abre con opciones: Formato (PDF/CSV/Excel), Período (mes/año)
+3. Server action obtiene datos estructurados del período
+4. Client-side generation genera archivo
+5. Auto-descarga con nombre: `CuentasSiK_CasaTest_2025-10.pdf`
 
-#### **4.2 Exportación Excel** (Fase 2)
+#### **4.2 Exportación CSV** (P1 - Próxima sesión - 30 min)
 
-**Librería**: `exceljs`
+**Características**:
+- Export simple de transacciones
+- Formato RFC 4180 (estándar CSV)
+- UTF-8 con BOM (para Excel Windows)
+- Columnas: Fecha,Tipo,Categoría,Monto,Moneda,Descripción,Pagado Por
 
-**Contenido**:
-- Hoja 1: Resumen mensual
-- Hoja 2: Transacciones completas
-- Hoja 3: Contribuciones
-- Hoja 4: Ahorro
+**Implementación**:
+- `lib/export/csv-generator.ts`: String template (sin librería)
+- Mismo dialog que PDF (opción CSV en RadioGroup)
 
-#### **4.3 Exportación CSV** (Fase 2)
+#### **4.3 Exportación Excel Completa** (P2 - Futuro - 120 min)
 
-Simple export de transacciones en formato CSV.
+**Librería**: `exceljs` (~500KB - lazy load obligatorio)
 
-**Archivos**:
-- `app/api/export/monthly-pdf/route.ts` (nuevo)
-- `app/api/export/excel/route.ts` (nuevo - fase 2)
-- `lib/pdf-generator.ts` (nuevo - helper)
+**Características**:
+- 5 hojas (pestañas): Resumen, Transacciones, Contribuciones, Ahorro, Categorías
+- Estilos profesionales: Headers negrita + fondo azul
+- Formato moneda: `#,##0.00 €`
+- Fórmulas: SUM, AVERAGE en hoja Resumen
+- Auto-width de columnas
+
+**Implementación**:
+- `lib/export/excel-generator.ts`: Generación multi-hoja con ExcelJS
+- Dynamic import para lazy loading (no afectar bundle inicial)
+
+---
+
+**Archivos creados**:
+- `docs/EXPORT_SYSTEM_PLAN.md` ✅ (Plan completo de 11,500 líneas)
+- `lib/export/types.ts` (próximo)
+- `lib/export/pdf-generator.ts` (próximo)
+- `lib/export/csv-generator.ts` (próximo)
+- `lib/export/excel-generator.ts` (próximo)
+- `app/exports/actions.ts` (próximo)
+- `components/exports/ExportButton.tsx` (próximo)
+- `components/exports/ExportDialog.tsx` (próximo)
+
+**Botón**: DashboardContent → "📥 Exportar" junto a MonthSelector
+
+#### **ELIMINADO: 4.2 y 4.3 antiguos** (Excel/CSV redundantes, ver arriba)
 
 ---
 
@@ -883,35 +919,62 @@ export async function reopenPeriod(periodId: string, reason: string): Promise<Re
 - [x] **FASE 1**: Extender modo privacidad a TODAS las cantidades (commit 1e61149)
   - [x] Aplicar PrivateAmount a 7+ componentes
   - [x] Build exitoso, push a GitHub
+- [x] **Documentación Arquitectura**: CRÉDITO vs AHORRO clarificada (commit 843e709)
+  - [x] docs/IMPLEMENTATION_ROADMAP.md: 8 fases documentadas
+  - [x] supabase/migrations/20251007000000_add_reserved_at_to_member_credits.sql: 194 líneas
+- [x] **Migración SQL**: Aplicar `add_reserved_at_to_member_credits.sql` vía MCP ✅
+  - [x] Columna `reserved_at` agregada a member_credits
+  - [x] 4 funciones SQL creadas (reserve/unreserve, get_active/reserved_credits_sum)
+  - [x] Verificado con `mcp_supabase_list_tables`
+- [x] **FASE 3**: Balance Breakdown Cards (commit 8a33a28)
+  - [x] BalanceBreakdownCard: Desglose 3 líneas (libre + activo + reservado) - visible TODOS
+  - [x] MyCreditsCard: Detalle personal créditos - visible solo OWNER
+  - [x] PersonalBalanceCard: Tracking contribución mensual
+  - [x] Server actions: `getBalanceBreakdown()`, `getPersonalBalance()`
+  - [x] Actualizado DashboardContent.tsx para usar nuevas cards
+  - [x] Build exitoso: 27 rutas, 0 errores
+- [x] **FASE 2**: Credit Decision Dialog (commit 0b13f09)
+  - [x] CreditDecisionDialog.tsx: 3 opciones (apply/keep/transfer) con descripciones visuales
+  - [x] app/credits/actions.ts: decideCreditAction() + getMyCredits()
+  - [x] MyCreditsCard: Integración dialog + alerta inicio de mes (días 1-5)
+  - [x] lib/date.ts: isStartOfMonth() helper agregado
+  - [x] Build exitoso: 27 rutas, 0 errores TypeScript, 0 warnings ESLint
 
-### **Prioridad P0 (CRÍTICO - Esta sesión)**
-- [ ] **Commit documentación**: Arquitectura CRÉDITO vs AHORRO clarificada
-- [ ] **Migración SQL**: Aplicar `add_reserved_at_to_member_credits.sql` vía MCP
-  - [ ] Columna `reserved_at` agregada
-  - [ ] 4 funciones SQL creadas (get_active/reserved_credits_sum, reserve/unreserve_credit)
-  - [ ] Verificar tablas con `mcp_supabase_list_tables`
-- [ ] **FASE 3**: Balance Breakdown Cards (PREREQUISITO para FASE 2)
-  - [ ] BalanceBreakdownCard: Desglose 3 líneas (libre + activo + reservado) - visible TODOS
-  - [ ] MyCreditsCard: Detalle personal créditos - visible solo OWNER
-  - [ ] PersonalBalanceCard: Tracking contribución mensual
-  - [ ] Server actions: `getBalanceBreakdown()`, `getPersonalBalance()`
-  - [ ] Actualizar DashboardContent.tsx para usar nuevas cards
+### **Prioridad P0 (CRÍTICO - Esta sesión - 3 horas)**
+- [ ] **FASE 4: Sistema de Exportación Completo** 📥
+  - [ ] **Fase 0: Preparación** (10 min)
+    - [ ] Instalar: `npm install jspdf jspdf-autotable exceljs`
+    - [ ] Crear estructura: `lib/export/`, `app/exports/`, `components/exports/`
+    - [ ] Crear `lib/export/types.ts` con tipos ExportData, ExportOptions
+  - [ ] **Fase 1: PDF Generator** (90 min)
+    - [ ] `lib/export/pdf-generator.ts`: generateMonthlyPDF()
+    - [ ] 5 secciones: Header, Resumen, Balance, Contribuciones, Top Transacciones, Ahorro
+    - [ ] Footer con fecha generación y paginación
+    - [ ] Testing: PDF de prueba con datos mock
+  - [ ] **Fase 2: Server Actions** (60 min)
+    - [ ] `app/exports/actions.ts`: getExportData(options)
+    - [ ] Queries: transacciones, balance, contribuciones, ahorro, categorías
+    - [ ] Testing: Verificar datos estructurados correctos
+  - [ ] **Fase 3: UI Components** (60 min)
+    - [ ] `components/exports/ExportButton.tsx`: Botón en Dashboard
+    - [ ] `components/exports/ExportDialog.tsx`: RadioGroup (PDF/CSV/Excel)
+    - [ ] Integrar en DashboardContent.tsx junto a MonthSelector
+    - [ ] Testing: Flujo completo Click → PDF descarga
 
-### **Prioridad P1 (Alta - Esta sesión o próxima)**
-- [ ] **FASE 2**: Credit Decision Dialog (depende de FASE 3 para visibilidad)
-  - [ ] CreditDecisionDialog con 3 opciones (apply/keep/transfer)
-  - [ ] Server action: `decideCreditAction()`
-  - [ ] Server action: `getMyCredits()`
-  - [ ] Integrar en dashboard con badge alerta (día 1-5 del mes)
-- [ ] **FASE 4**: Exportación PDF básica
-  - [ ] jsPDF + AutoTable
-  - [ ] Resumen mensual con gráficos
-- [ ] **FASE 5**: Transferencias entre Balances (renombrado)
+### **Prioridad P1 (Alta - Próxima sesión - 2 horas)**
+- [ ] **FASE 4.2: Exportación CSV** (30 min)
+  - [ ] `lib/export/csv-generator.ts`: generateTransactionsCSV()
+  - [ ] UTF-8 con BOM, escape de comillas, formato RFC 4180
+  - [ ] Testing: CSV en Excel Windows
+- [ ] **FASE 4.3: Refinamiento PDF** (30 min)
+  - [ ] Estilos avanzados, optimizar layout
+  - [ ] Testing: Datasets grandes (100+ transacciones)
+- [ ] **FASE 5**: Transferencias entre Balances (60 min)
   - [ ] TransferToSavingsDialog (no DepositDialog)
   - [ ] TransferFromSavingsDialog (no WithdrawDialog)
   - [ ] Server actions: `transferToSavings()`, `transferFromSavings()`
 
-### **Prioridad P2 (Media - Próxima sesión)**
+### **Prioridad P2 (Media - Sesiones futuras)**
 - [ ] **FASE 6**: Gestión Períodos Mensuales UI
   - [ ] ClosePeriodButton con validaciones
   - [ ] ReopenPeriodDialog para correcciones
