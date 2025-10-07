@@ -279,14 +279,8 @@ export function DashboardContent({
         {/* Personal Balance (tracking contribución) */}
         <PersonalBalanceCard householdId={householdId} />
 
-        {/* My Credits (solo visible si el usuario tiene créditos) */}
-        <MyCreditsCard 
-          householdId={householdId}
-          onManageCredit={() => {
-            // TODO: Abrir CreditDecisionDialog (FASE 2)
-            toast.info('Gestión de créditos disponible pronto (FASE 2)');
-          }}
-        />
+        {/* My Credits (FASE 2: Dialog integrado) */}
+        <MyCreditsCard householdId={householdId} />
       </div>
 
       {/* Widget de Créditos Pendientes */}

@@ -57,3 +57,12 @@ export const fromISODate = (isoDate: string): Date => {
 export const formatDate = (date: Date, formatStr = 'dd/MM/yyyy'): string => {
   return format(date, formatStr);
 };
+
+/**
+ * Verifica si es inicio de mes (días 1-5) para alertas de créditos
+ */
+export const isStartOfMonth = (): boolean => {
+  const today = new Date();
+  const dayOfMonth = today.getDate();
+  return dayOfMonth >= 1 && dayOfMonth <= 5;
+};
