@@ -22,9 +22,10 @@ interface ManageCreditDialogProps {
   credit: MemberCredit;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function ManageCreditDialog({ credit, open, onOpenChange }: ManageCreditDialogProps) {
+export function ManageCreditDialog({ credit, open, onOpenChange, onSuccess }: ManageCreditDialogProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [action, setAction] = useState<'apply' | 'transfer' | null>(null);
@@ -44,6 +45,7 @@ export function ManageCreditDialog({ credit, open, onOpenChange }: ManageCreditD
         setAction(null);
         onOpenChange(false);
         router.refresh();
+        if (onSuccess) onSuccess();
       }, 1500);
     } catch (error) {
       console.error('Error aplicando crédito:', error);
@@ -75,6 +77,7 @@ export function ManageCreditDialog({ credit, open, onOpenChange }: ManageCreditD
 
       onOpenChange(false);
       router.refresh();
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error transfiriendo crédito:', error);
       toast.error('Error al transferir al ahorro');
