@@ -18,9 +18,9 @@ const navItems: NavItem[] = [
     label: 'Inicio',
   },
   {
-    href: '/app/transactions',
+    href: '/app/expenses',
     icon: <Receipt className="h-5 w-5" />,
-    label: 'Transacciones',
+    label: 'Gastos',
   },
   {
     href: '/app/contributions',

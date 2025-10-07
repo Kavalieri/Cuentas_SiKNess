@@ -289,10 +289,10 @@ export function DashboardContent({
               <Card>
                 <CardContent className="py-6">
                   <Link
-                    href="/app/transactions"
+                    href="/app/expenses"
                     className="flex items-center justify-center gap-2 text-sm font-medium text-primary hover:underline"
                   >
-                    Ver todas las transacciones con filtros avanzados
+                    Ver todos los gastos e ingresos con filtros avanzados
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </CardContent>

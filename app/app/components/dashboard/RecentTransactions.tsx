@@ -36,7 +36,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
             </CardDescription>
           </div>
           {hasTransactions && (
-            <Link href="/app/transactions">
+            <Link href="/app/expenses">
               <Button variant="ghost" size="sm">
                 Ver todas
                 <ArrowRight className="ml-2 h-4 w-4" />
