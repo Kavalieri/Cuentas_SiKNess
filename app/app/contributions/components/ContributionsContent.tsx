@@ -3,8 +3,8 @@
 import { HeroContribution } from './HeroContribution';
 import { ContributionMembersList } from './ContributionMembersList';
 import { ConfigurationSection } from './ConfigurationSection';
-import { MyAdjustmentsPanel } from './MyAdjustmentsPanel';
-import { CreditsPanel } from './CreditsPanel';
+import { TabsNav } from '@/components/shared/navigation/TabsNav';
+import { FileText, Coins } from 'lucide-react';
 import type { Database } from '@/types/database';
 import type { CalculationType } from '@/lib/contributionTypes';
 
@@ -37,7 +37,7 @@ interface ContributionsContentProps {
 export function ContributionsContent({
   householdId,
   userEmail,
-  currentUserProfileId,
+  currentUserProfileId, // eslint-disable-line @typescript-eslint/no-unused-vars
   currentUserIncome,
   currentUserContribution,
   totalIncome,
@@ -46,20 +46,33 @@ export function ContributionsContent({
   calculationType,
   currency,
   isOwner,
-  categories,
+  categories, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: ContributionsContentProps) {
+  // Tabs de navegación
+  const tabs = [
+    {
+      label: 'Resumen',
+      href: '/app/contributions',
+      description: 'Vista general de contribuciones',
+    },
+    {
+      label: 'Ajustes',
+      href: '/app/contributions/adjustments',
+      icon: <FileText className="h-4 w-4" />,
+      description: 'Gestión de pre-pagos y ajustes',
+    },
+    {
+      label: 'Créditos',
+      href: '/app/contributions/credits',
+      icon: <Coins className="h-4 w-4" />,
+      description: 'Créditos por sobrepagas',
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Panel de Ajustes (visible para todos, en la parte alta) */}
-      <MyAdjustmentsPanel
-        isOwner={isOwner}
-        currentUserProfileId={currentUserProfileId}
-        categories={categories}
-        currency={currency}
-      />
-
-      {/* Panel de Créditos */}
-      <CreditsPanel />
+      {/* Navegación por tabs */}
+      <TabsNav tabs={tabs} />
 
       {/* Hero: Tu contribución */}
       <HeroContribution
