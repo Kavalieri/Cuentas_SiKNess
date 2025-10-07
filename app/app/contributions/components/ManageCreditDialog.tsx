@@ -17,6 +17,9 @@ import { formatCurrency } from '@/lib/format';
 import type { MemberCredit } from '@/lib/actions/credits';
 import { ArrowRight, PiggyBank, Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { transferCreditToSavings } from '@/app/app/savings/actions';
+import { getMonthlyContributions } from '@/app/app/contributions/actions';
+import { applyCreditToContribution } from '@/lib/actions/credits';
 
 interface ManageCreditDialogProps {
   credit: MemberCredit;
@@ -35,21 +38,67 @@ export function ManageCreditDialog({ credit, open, onOpenChange, onSuccess }: Ma
     setAction('apply');
 
     try {
-      // TODO: Implementar applyCreditToContribution server action
-      toast.info('Funcionalidad en desarrollo', {
-        description: 'Aplicar crédito al mes siguiente estará disponible pronto',
-      });
+      // Calcular el siguiente mes
+      const now = new Date();
+      const nextMonth = now.getMonth() + 2; // +1 para siguiente mes, +1 porque getMonth() es 0-indexed
+      const nextYear = nextMonth > 12 ? now.getFullYear() + 1 : now.getFullYear();
+      const normalizedMonth = nextMonth > 12 ? 1 : nextMonth;
 
-      setTimeout(() => {
+      // Obtener contribución del siguiente mes para el usuario del crédito
+      const contributions = (await getMonthlyContributions(
+        credit.household_id,
+        nextYear,
+        normalizedMonth
+      )) as unknown as Array<{
+        id: string;
+        profile_id: string;
+        household_id: string;
+        year: number;
+        month: number;
+        expected_amount: number;
+        paid_amount: number;
+        status: string;
+      }>;
+
+      const userContribution = contributions.find((c) => c.profile_id === credit.profile_id);
+
+      if (!userContribution) {
+        toast.error('No se encontró contribución para el siguiente mes', {
+          description:
+            'Asegúrate de haber generado las contribuciones del mes siguiente primero.',
+        });
         setIsLoading(false);
         setAction(null);
-        onOpenChange(false);
-        router.refresh();
-        if (onSuccess) onSuccess();
-      }, 1500);
+        return;
+      }
+
+      // Aplicar crédito usando la función existente
+      const formData = new FormData();
+      formData.append('creditId', credit.id);
+      formData.append('contributionId', userContribution.id);
+
+      const result = await applyCreditToContribution(formData);
+
+      if (!result.ok) {
+        toast.error('Error al aplicar crédito', {
+          description: result.message,
+        });
+        setIsLoading(false);
+        setAction(null);
+        return;
+      }
+
+      toast.success('Crédito aplicado al mes siguiente', {
+        description: `${formatCurrency(result.data?.amountApplied || 0)} reducido de tu contribución esperada`,
+      });
+
+      onOpenChange(false);
+      router.refresh();
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error aplicando crédito:', error);
       toast.error('Error al aplicar crédito');
+    } finally {
       setIsLoading(false);
       setAction(null);
     }
@@ -60,15 +109,20 @@ export function ManageCreditDialog({ credit, open, onOpenChange, onSuccess }: Ma
     setAction('transfer');
 
     try {
-      // TODO: Usar transferCreditToSavings del módulo savings
-      const response = await fetch('/api/credits/transfer-to-savings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creditId: credit.id }),
-      });
+      // Usar la función server action de savings
+      const formData = new FormData();
+      formData.append('creditId', credit.id);
+      formData.append('notes', `Transferencia de crédito desde mes ${credit.source_month}/${credit.source_year}`);
 
-      if (!response.ok) {
-        throw new Error('Error en la transferencia');
+      const result = await transferCreditToSavings(formData);
+
+      if (!result.ok) {
+        toast.error('Error al transferir al ahorro', {
+          description: result.message,
+        });
+        setIsLoading(false);
+        setAction(null);
+        return;
       }
 
       toast.success('Crédito transferido al ahorro', {
