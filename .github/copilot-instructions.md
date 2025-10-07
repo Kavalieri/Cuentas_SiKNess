@@ -26,7 +26,7 @@
 ### **MCPs Configurados y Disponibles:**
 
 #### **1. Supabase MCP** 🗄️
-**Activación**: `activate_supabase_project_management()` o herramientas específicas
+**Activación**: Las herramientas específicas se activan automáticamente cuando se necesitan. Alternativamente: `activate_supabase_project_management()`, `activate_supabase_branch_operations()`, `activate_supabase_edge_function_management()`, etc.
 
 **Herramientas disponibles:**
 - `mcp_supabase_apply_migration(project_id, name, query)` - Aplicar migraciones SQL
@@ -67,7 +67,7 @@ await mcp_supabase_list_tables({
 ```
 
 #### **2. GitHub MCP** 🐙
-**Activación**: `activate_github_repository_management()`, `activate_github_pull_request_management()`, etc.
+**Activación**: Las herramientas Git se activan automáticamente. Alternativamente: `activate_git_management_tools()`, `activate_git_issue_management_tools()`, `activate_git_workspace_tools()`
 
 **Herramientas disponibles:**
 - `mcp_github_github_create_or_update_file()` - Crear/actualizar archivos directamente
@@ -87,7 +87,7 @@ await mcp_supabase_list_tables({
 **Owner/Repo**: `Kavalieri/CuentasSiK`
 
 #### **3. Vercel MCP** 🔺
-**Activación**: `activate_vercel_tools()` (ya activado)
+**Activación**: Las herramientas Vercel se activan automáticamente. Alternativamente: `activate_vercel_tools()`
 
 **Herramientas disponibles:**
 - `mcp_vercel_deploy_to_vercel()` - Deploy automático

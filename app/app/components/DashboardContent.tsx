@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MonthSelector } from '@/components/shared/MonthSelector';
+import { ExportButton } from '@/components/exports/ExportButton';
 import { AddTransactionDialog } from '@/app/app/expenses/components/AddTransactionDialog';
 import { TransactionsList } from '@/app/app/components/TransactionsList';
 import { ExpensesByCategoryChart } from '@/app/app/components/charts/ExpensesByCategoryChart';
@@ -231,6 +232,10 @@ export function DashboardContent({
         </div>
         <div className="flex items-center gap-4">
           <MonthSelector value={selectedMonth} onChange={handleMonthChange} />
+          <ExportButton 
+            defaultYear={selectedMonth.getFullYear()} 
+            defaultMonth={selectedMonth.getMonth() + 1} 
+          />
           {/* @ts-ignore - categories typing */}
           <AddTransactionDialog categories={initialCategories} />
         </div>

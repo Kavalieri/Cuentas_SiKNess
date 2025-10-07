@@ -1442,6 +1442,15 @@ export type Database = {
         Args: { p_household_id: string }
         Returns: number
       }
+      get_balance_breakdown: {
+        Args: { p_household_id: string }
+        Returns: {
+          active_credits: number
+          free_balance: number
+          reserved_credits: number
+          total_balance: number
+        }[]
+      }
       get_current_profile: {
         Args: Record<PropertyKey, never>
         Returns: {
