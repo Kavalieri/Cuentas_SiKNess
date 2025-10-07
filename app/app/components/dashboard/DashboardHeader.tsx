@@ -20,8 +20,8 @@ export function DashboardHeader({ selectedMonth, onMonthChange }: DashboardHeade
       
       <div className="flex items-center gap-2">
         <MonthSelector
-          selectedMonth={selectedMonth}
-          onMonthChange={onMonthChange}
+          value={selectedMonth}
+          onChange={onMonthChange}
         />
         <ExportButton
           defaultYear={selectedMonth.getFullYear()}
