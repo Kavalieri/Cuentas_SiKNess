@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { PrivacyToggle } from '@/components/shared/PrivacyToggle';
 import { HouseholdSelector } from '@/components/shared/HouseholdSelector';
 import { BalanceDisplay } from '@/components/shared/BalanceDisplay';
+import { MobileBottomNav } from '@/components/shared/navigation/MobileBottomNav';
 import { isSystemAdmin } from '@/lib/adminCheck';
 import { getTotalBalance } from '@/app/app/expenses/actions';
 
@@ -118,12 +119,15 @@ export default async function AppLayout({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 bg-muted/30">
+      <main className="flex-1 bg-muted/30 pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-8">{children}</div>
       </main>
 
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
+
       {/* Footer */}
-      <footer className="border-t bg-background">
+      <footer className="hidden md:block border-t bg-background">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
