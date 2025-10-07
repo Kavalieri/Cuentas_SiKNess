@@ -941,35 +941,40 @@ export async function reopenPeriod(periodId: string, reason: string): Promise<Re
   - [x] Build exitoso: 27 rutas, 0 errores TypeScript, 0 warnings ESLint
 
 ### **Prioridad P0 (CRÍTICO - Esta sesión - 3 horas)**
-- [ ] **FASE 4: Sistema de Exportación Completo** 📥
-  - [ ] **Fase 0: Preparación** (10 min)
-    - [ ] Instalar: `npm install jspdf jspdf-autotable exceljs`
-    - [ ] Crear estructura: `lib/export/`, `app/exports/`, `components/exports/`
-    - [ ] Crear `lib/export/types.ts` con tipos ExportData, ExportOptions
-  - [ ] **Fase 1: PDF Generator** (90 min)
-    - [ ] `lib/export/pdf-generator.ts`: generateMonthlyPDF()
-    - [ ] 5 secciones: Header, Resumen, Balance, Contribuciones, Top Transacciones, Ahorro
-    - [ ] Footer con fecha generación y paginación
-    - [ ] Testing: PDF de prueba con datos mock
-  - [ ] **Fase 2: Server Actions** (60 min)
-    - [ ] `app/exports/actions.ts`: getExportData(options)
-    - [ ] Queries: transacciones, balance, contribuciones, ahorro, categorías
-    - [ ] Testing: Verificar datos estructurados correctos
-  - [ ] **Fase 3: UI Components** (60 min)
-    - [ ] `components/exports/ExportButton.tsx`: Botón en Dashboard
-    - [ ] `components/exports/ExportDialog.tsx`: RadioGroup (PDF/CSV/Excel)
-    - [ ] Integrar en DashboardContent.tsx junto a MonthSelector
-    - [ ] Testing: Flujo completo Click → PDF descarga
+- [x] **FASE 4: Sistema de Exportación Completo** 📥 ✅ COMPLETADO 7 oct 2025
+  - [x] **Fase 0: Preparación** (10 min) ✅
+    - [x] Instalar: `npm install jspdf jspdf-autotable exceljs`
+    - [x] Crear estructura: `lib/export/`, `app/exports/`, `components/exports/`
+    - [x] Crear `lib/export/types.ts` con tipos ExportData, ExportOptions
+  - [x] **Fase 1: PDF Generator** (90 min) ✅
+    - [x] `lib/export/pdf-generator.ts`: generateMonthlyPDF() (345 líneas)
+    - [x] 5 secciones: Header, Resumen, Balance, Contribuciones, Top Transacciones, Ahorro
+    - [x] Footer con fecha generación y paginación
+    - [x] Testing: PDF de prueba con datos mock
+  - [x] **Fase 2: Server Actions** (60 min) ✅
+    - [x] `app/exports/actions.ts`: getExportData(options) (244 líneas)
+    - [x] Queries: transacciones, balance, contribuciones, ahorro, categorías
+    - [x] Testing: Verificar datos estructurados correctos
+  - [x] **Fase 3: UI Components** (60 min) ✅
+    - [x] `components/exports/ExportButton.tsx`: Botón en Dashboard (42 líneas)
+    - [x] `components/exports/ExportDialog.tsx`: RadioGroup (PDF/CSV/Excel) (284 líneas)
+    - [x] Integrar en DashboardContent.tsx junto a MonthSelector
+    - [x] Testing: Flujo completo Click → PDF descarga
+  - [x] **Migración SQL**: create_get_balance_breakdown_rpc.sql ✅
+  - [x] **Commits**: adafc8b (FASE 0-3), ff3db20 (FASE 4) ✅
 
-### **Prioridad P1 (Alta - Próxima sesión - 2 horas)**
-- [ ] **FASE 4.2: Exportación CSV** (30 min)
-  - [ ] `lib/export/csv-generator.ts`: generateTransactionsCSV()
-  - [ ] UTF-8 con BOM, escape de comillas, formato RFC 4180
-  - [ ] Testing: CSV en Excel Windows
-- [ ] **FASE 4.3: Refinamiento PDF** (30 min)
+### **Prioridad P1 (Alta - Esta sesión - 30 min)**
+- [x] **FASE 4.2: Exportación CSV** (30 min) ✅ COMPLETADO 7 oct 2025
+  - [x] `lib/export/csv-generator.ts`: generateFullCSV() (260 líneas)
+  - [x] UTF-8 con BOM, escape de comillas, formato RFC 4180
+  - [x] 6 secciones: Resumen, Balance, Transacciones, Contribuciones, Ahorro, Categorías
+  - [x] Testing: CSV en Excel Windows
+  - [x] UI: Habilitado opción CSV en ExportDialog
+  - [x] Commit: ff3db20 ✅
+- [ ] **FASE 4.3: Refinamiento PDF** (30 min) - OPCIONAL
   - [ ] Estilos avanzados, optimizar layout
   - [ ] Testing: Datasets grandes (100+ transacciones)
-- [ ] **FASE 5**: Transferencias entre Balances (60 min)
+- [ ] **FASE 5**: Transferencias entre Balances (60 min) - FUTURO
   - [ ] TransferToSavingsDialog (no DepositDialog)
   - [ ] TransferFromSavingsDialog (no WithdrawDialog)
   - [ ] Server actions: `transferToSavings()`, `transferFromSavings()`
