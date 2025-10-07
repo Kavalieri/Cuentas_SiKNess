@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { FileText, Table, FileSpreadsheet, Loader2, Download } from 'lucide-react';
 import { getExportData } from '@/app/exports/actions';
 import { generateMonthlyPDF } from '@/lib/export/pdf-generator';
+import { generateFullCSV } from '@/lib/export/csv-generator';
 
 interface ExportDialogProps {
   open: boolean;
@@ -81,9 +82,8 @@ export function ExportDialog({
         blob = await generateMonthlyPDF(data);
         filename = `CuentasSiK_${sanitizeFilename(data.householdName)}_${year}-${month.toString().padStart(2, '0')}.pdf`;
       } else if (format === 'csv') {
-        // TODO: Implementar CSV generator (FASE 4)
-        toast.error('Exportación CSV disponible próximamente');
-        return;
+        blob = generateFullCSV(data);
+        filename = `CuentasSiK_${sanitizeFilename(data.householdName)}_${year}-${month.toString().padStart(2, '0')}.csv`;
       } else {
         // TODO: Implementar Excel generator (FASE 5)
         toast.error('Exportación Excel disponible próximamente');
@@ -139,16 +139,16 @@ export function ExportDialog({
                 </Label>
               </div>
               
-              <div className="flex items-start space-x-3 p-3 border-2 rounded-lg hover:bg-accent cursor-pointer transition-colors opacity-50">
-                <RadioGroupItem value="csv" id="csv" className="mt-1" disabled />
+              <div className="flex items-start space-x-3 p-3 border-2 rounded-lg hover:bg-accent cursor-pointer transition-colors">
+                <RadioGroupItem value="csv" id="csv" className="mt-1" />
                 <Label htmlFor="csv" className="cursor-pointer flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <Table className="h-4 w-4" />
-                    <span className="font-bold">CSV - Transacciones</span>
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">Próximamente</span>
+                    <span className="font-bold">CSV - Completo</span>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Disponible</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Archivo simple para importar en Excel o Sheets
+                    Archivo compatible con Excel y Sheets. Incluye resumen, transacciones, contribuciones y ahorro.
                   </p>
                 </Label>
               </div>
