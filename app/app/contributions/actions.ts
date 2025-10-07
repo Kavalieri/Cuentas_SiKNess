@@ -217,9 +217,16 @@ export async function calculateAndCreateContributions(
       return fail(calcError.message);
     }
 
+    // Tipo para los resultados de calculate_monthly_contributions
+    type CalculationResult = {
+      profile_id: string;
+      expected_amount: number;
+      income_percentage: number;
+      calculation_method: string;
+    };
+
     // Crear contribuciones para cada miembro
-    // @ts-ignore - Supabase type inference
-    const contributions = calculations.map((calc) => ({
+    const contributions = (calculations as CalculationResult[]).map((calc) => ({
       household_id: householdId,
       profile_id: calc.profile_id,
       year,
@@ -227,6 +234,7 @@ export async function calculateAndCreateContributions(
       expected_amount: calc.expected_amount,
       paid_amount: 0,
       status: 'pending',
+      calculation_method: calc.calculation_method, // ⭐ NEW: Guardar método usado
     }));
 
     const { error: insertError } = await supabase

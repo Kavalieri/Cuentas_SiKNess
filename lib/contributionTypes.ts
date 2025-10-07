@@ -11,13 +11,13 @@ export type CalculationType = typeof CALCULATION_TYPES[keyof typeof CALCULATION_
 export const CALCULATION_TYPE_LABELS: Record<CalculationType, string> = {
   proportional: 'Proporcional al Ingreso',
   equal: 'A Partes Iguales',
-  custom: 'Personalizado (Futuro)',
+  custom: 'Personalizado',
 };
 
 export const CALCULATION_TYPE_DESCRIPTIONS: Record<CalculationType, string> = {
   proportional: 'Cada miembro aporta según su ingreso mensual. Mayor ingreso = mayor contribución.',
   equal: 'Todos los miembros aportan la misma cantidad, independientemente de sus ingresos.',
-  custom: 'Definir manualmente el porcentaje de contribución de cada miembro (próximamente).',
+  custom: 'Define manualmente la contribución de cada miembro. La suma debe ser igual a la meta mensual.',
 };
 
 /**

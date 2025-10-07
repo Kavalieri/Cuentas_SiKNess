@@ -81,7 +81,6 @@ export function ConfigurationSection({
                     <SelectItem 
                       key={type} 
                       value={type}
-                      disabled={type === CALCULATION_TYPES.CUSTOM}
                     >
                       {CALCULATION_TYPE_LABELS[type]}
                     </SelectItem>

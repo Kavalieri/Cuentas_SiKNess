@@ -17,10 +17,10 @@ export default async function ProfilePage() {
   const userHouseholds = await getUserHouseholds();
   const supabase = await supabaseServer();
 
-  // Obtener profile_id del usuario
+  // Obtener profile_id y display_name del usuario
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, display_name')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -64,6 +64,7 @@ export default async function ProfilePage() {
           <ProfileForm
             email={user.email || ''}
             userId={user.id}
+            displayName={profile.display_name}
           />
         </CardContent>
       </Card>
