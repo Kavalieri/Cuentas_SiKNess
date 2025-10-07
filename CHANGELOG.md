@@ -1,5 +1,88 @@
 # Changelog
 
+## [0.3.0-alpha] - 2025-10-08
+
+### ✨ Added - v2 UX Refactor Complete (FASE 4-6)
+
+#### **FASE 4: Credits Management System** (commit b60d4e5)
+- **ManageCreditDialog refactored** with server actions pattern
+  * Apply credit to next month with automatic month detection
+  * Transfer credit to household savings fund
+  * Validation of next month contribution existence
+  * Descriptive notes with credit origin tracking
+- **Server actions integrated**: `applyCreditToContribution()`, `transferCreditToSavings()`
+- **Eliminated TODOs**: All placeholder code replaced with functional implementations
+
+#### **FASE 5: Savings Module Validation** (no changes needed)
+- ✅ **Complete functionality verified** from previous session
+  * DepositModal.tsx (264 lines) - React Hook Form + Zod validation
+  * WithdrawModal.tsx (286 lines) - Balance validation + optional transaction creation
+  * SavingsTab.tsx - Complete transaction history with privacy mode
+
+#### **FASE 6: Reports & Analytics Module** (commits 14c2ac2, 2da9dfd)
+- **New route**: `/app/reports` (30th route in application)
+- **4 Interactive Recharts Visualizations**:
+  * **TrendChart.tsx** (150 lines): LineChart showing income/expense trends (last 6 months)
+  * **CategoryPieChart.tsx** (120 lines): PieChart with top 5 categories and percentages
+  * **ContributionsBarChart.tsx** (140 lines): BarChart comparing member contributions (expected vs paid)
+  * **TopCategoriesTable.tsx** (110 lines): Ranking table of top 10 spending categories
+- **4 Server Actions** with optimized SQL queries:
+  * `getMonthlyTrends()`: Aggregates income/expense by month (6 months history)
+  * `getCategoryDistribution()`: Calculates top 5 categories with percentages
+  * `getContributionsComparison()`: Compares expected vs paid per member
+  * `getTopCategories()`: Ranks categories by total amount (top 10)
+- **ReportsContent.tsx** (200 lines): Client component orchestrating all visualizations
+- **Features**:
+  * Privacy mode integrated in all charts
+  * Responsive grid layout (1 col mobile, 2 col tablet/desktop)
+  * Empty states for each visualization
+  * Date range filter UI prepared (not yet functional)
+  * Loading skeletons during SSR
+
+#### **Navigation Improvements**
+- **MobileBottomNav updated**: Reports replaced "Más" (Settings) in 3rd position
+  * Reason: Reports is core functionality, deserves direct access
+  * Categories moved to 5th position
+  * New icons: BarChart3 for Reports
+
+#### **FASE 7: Testing & Polish** (in progress)
+- **TESTING_CHECKLIST_FASE_7.md** created (400+ lines)
+  * Comprehensive validation checklist with 110+ points
+  * Covers: Navigation, Responsive, Accessibility, Performance, Documentation, Bugs, Final validation
+- **README.md updated** with new features section
+  * Added: Credits System, Savings Module, Reports & Analytics, Periods Management
+  * All new features marked with ⭐ NEW indicator
+
+### 🔧 Changed
+
+- **Credits workflow simplified**: Automatic next month detection (no manual selector)
+- **Mobile navigation prioritization**: Reports elevated to direct access (vs overflow menu)
+- **Transaction editing**: Locked transactions (closed periods) strictly non-editable until reopened
+
+### 🐛 Fixed
+
+- **Type inference error**: Cast via `unknown` for Supabase join queries
+- **ESLint no-explicit-any**: Replaced all `any` types with specific types or `unknown` casts
+- **Recharts formatter types**: Explicit cast to `number` for currency formatting
+- **undefined monthNum**: Fixed variable reference in SQL query
+
+### 📈 Performance
+
+- **Build**: ✅ 30 routes compiled (0 errors, 0 warnings)
+- **First Load JS**: <105 kB per route (optimal)
+- **TypeScript**: Strict mode with 0 errors
+- **ESLint**: 0 warnings, no `any` types in codebase
+
+### 📚 Documentation
+
+- `SESSION_SUMMARY_2025-10-08_FASES_4-5.md` - Credits + Savings validation
+- `SESSION_SUMMARY_2025-10-08_FASE_6.md` - Reports module complete
+- `TESTING_CHECKLIST_FASE_7.md` - Systematic validation checklist
+- `README.md` - Features section updated with new modules
+- `.github/copilot-instructions.md` - Updated with v2 refactor details
+
+---
+
 ## [0.2.0-alpha](https://github.com/Kavalieri/CuentasSiK/compare/cuentas-sik-v0.1.0-alpha...cuentas-sik-v0.2.0-alpha) (2025-10-05)
 
 

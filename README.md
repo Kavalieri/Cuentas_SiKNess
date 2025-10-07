@@ -30,19 +30,46 @@ CuentasSiK es una aplicación web moderna y minimalista diseñada para parejas q
 - ✅ **Selector de Contexto**: Cambio rápido entre hogares activos
 - ✅ **Sistema de Invitaciones**: Enlaces seguros para invitar miembros
 
-### 💸 Gestión de Finanzas
-- ✅ **Movimientos**: Registro de gastos e ingresos con categorías personalizadas
-- ✅ **Edición con Historial**: Modifica movimientos con auditoría automática ⭐ NEW
-- ✅ **Categorías Personalizadas**: CRUD completo con iconos y tipos (gasto/ingreso)
-- ✅ **Dashboard Mensual**: Resúmenes visuales con gráficos (Recharts)
+### 💸 Gestión de Transacciones
+- ✅ **CRUD Completo**: Crear, editar, eliminar con validación de períodos
+- ✅ **Filtros Avanzados**: Por categoría, tipo, fecha, miembro
+- ✅ **Historial de Cambios**: Auditoría automática de modificaciones
+- ✅ **Categorías Personalizadas**: 23 categorías predeterminadas + personalización
 - ✅ **Privacy Mode**: Ocultar cantidades en lugares públicos (toggle Eye/EyeOff)
 
 ### 🤝 Sistema de Contribuciones Proporcionales
 - ✅ **Cálculo Inteligente**: Proporcional a ingresos, partes iguales o personalizado
-- ✅ **Pre-pagos con Aprobación**: Workflow completo miembro → owner
-- ✅ **Movimientos Duales Automáticos**: Pre-pagos crean gasto + ingreso virtual
+- ✅ **Ajustes con Aprobación**: Workflow completo miembro → owner (aprobar/rechazar) ⭐ NEW
+- ✅ **Transacciones Duales Automáticas**: Ajustes crean gasto + ingreso virtual
 - ✅ **Estados de Pago**: pending, partial, paid, overpaid con seguimiento en tiempo real
 - ✅ **Panel de Aprobaciones**: Interface dedicada para owners con contador de pendientes
+
+### 💳 Sistema de Créditos
+- ✅ **Gestión de Créditos**: Créditos generados por sobrepagos con decisión flexible ⭐ NEW
+- ✅ **Aplicar a Mes Siguiente**: Reduce automáticamente contribución del próximo mes ⭐ NEW
+- ✅ **Transferir a Ahorros**: Mueve crédito al fondo común del hogar ⭐ NEW
+- ✅ **Auto-Apply**: Opción de aplicación automática mensual
+- ✅ **Rastreo Completo**: Origen, estado y trazabilidad de cada crédito
+
+### 💰 Fondo de Ahorro del Hogar
+- ✅ **Balance Compartido**: Fondo común con meta de ahorro opcional ⭐ NEW
+- ✅ **Depositar**: Registro de aportes con categoría y miembro ⭐ NEW
+- ✅ **Retirar**: Retiros con validación de balance + opción transacción común ⭐ NEW
+- ✅ **Historial Completo**: Tabla con balance before/after y trazabilidad ⭐ NEW
+- ✅ **Progress Tracking**: Barra de progreso hacia meta configurada
+
+### 📊 Reportes y Análisis
+- ✅ **Tendencias Mensuales**: LineChart con ingresos/gastos últimos 6 meses ⭐ NEW
+- ✅ **Distribución por Categoría**: PieChart top 5 categorías más gastadas ⭐ NEW
+- ✅ **Comparación Contribuciones**: BarChart esperado vs pagado por miembro ⭐ NEW
+- ✅ **Ranking Categorías**: Tabla top 10 con contador de transacciones ⭐ NEW
+- ✅ **Visualizaciones Recharts**: Interactivas, responsive y con privacy mode
+
+### 📅 Gestión de Períodos Mensuales
+- ✅ **Cierre Mensual**: Lock de transacciones y ajustes con validación secuencial
+- ✅ **Reapertura**: Unlock con auditoría y contador de reaperturas
+- ✅ **Estados**: future, active, closing, closed, historical
+- ✅ **Logs de Acceso**: Auditoría completa de cierres/reaperturas
 
 ### 🎨 Experiencia de Usuario
 - ✅ **Dark/Light Mode**: Persistencia con detección del sistema (next-themes)
