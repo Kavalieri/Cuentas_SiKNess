@@ -2,17 +2,19 @@
 
 import { Button } from '@/components/ui/button';
 import { BreadcrumbNav } from '@/components/shared/navigation/BreadcrumbNav';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Zap } from 'lucide-react';
 
 interface AdjustmentsHeaderProps {
   isOwner: boolean;
   onAddClick: () => void;
+  onAddFromTemplateClick: () => void;
   totalCount: number;
 }
 
 export function AdjustmentsHeader({
   isOwner,
   onAddClick,
+  onAddFromTemplateClick,
   totalCount,
 }: AdjustmentsHeaderProps) {
   return (
@@ -39,10 +41,16 @@ export function AdjustmentsHeader({
           </p>
         </div>
 
-        <Button onClick={onAddClick} className="sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Ajuste
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={onAddFromTemplateClick} variant="outline" className="sm:w-auto">
+            <Zap className="h-4 w-4 mr-2" />
+            Desde Plantilla
+          </Button>
+          <Button onClick={onAddClick} className="sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Ajuste
+          </Button>
+        </div>
       </div>
     </div>
   );

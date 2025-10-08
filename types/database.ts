@@ -46,6 +46,82 @@ export type Database = {
           },
         ]
       }
+      contribution_adjustment_templates: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          created_by: string | null
+          default_amount: number | null
+          description: string | null
+          household_id: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean | null
+          last_used_amount: number | null
+          last_used_at: string | null
+          name: string
+          sort_order: number
+          usage_count: number | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          default_amount?: number | null
+          description?: string | null
+          household_id: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean | null
+          last_used_amount?: number | null
+          last_used_at?: string | null
+          name: string
+          sort_order?: number
+          usage_count?: number | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          default_amount?: number | null
+          description?: string | null
+          household_id?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean | null
+          last_used_amount?: number | null
+          last_used_at?: string | null
+          name?: string
+          sort_order?: number
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_adjustment_templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustment_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_adjustment_templates_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contribution_adjustments: {
         Row: {
           amount: number
@@ -69,6 +145,7 @@ export type Database = {
           rejected_at: string | null
           rejected_by: string | null
           status: string
+          template_id: string | null
           type: string | null
           updated_at: string | null
           updated_by: string | null
@@ -95,6 +172,7 @@ export type Database = {
           rejected_at?: string | null
           rejected_by?: string | null
           status?: string
+          template_id?: string | null
           type?: string | null
           updated_at?: string | null
           updated_by?: string | null
@@ -121,6 +199,7 @@ export type Database = {
           rejected_at?: string | null
           rejected_by?: string | null
           status?: string
+          template_id?: string | null
           type?: string | null
           updated_at?: string | null
           updated_by?: string | null
@@ -218,6 +297,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contribution_adjustments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contribution_adjustment_templates"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contribution_adjustments_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -229,6 +315,7 @@ export type Database = {
       contributions: {
         Row: {
           adjustments_total: number | null
+          calculation_method: string | null
           created_at: string
           expected_amount: number | null
           household_id: string
@@ -243,6 +330,7 @@ export type Database = {
         }
         Insert: {
           adjustments_total?: number | null
+          calculation_method?: string | null
           created_at?: string
           expected_amount?: number | null
           household_id: string
@@ -257,6 +345,7 @@ export type Database = {
         }
         Update: {
           adjustments_total?: number | null
+          calculation_method?: string | null
           created_at?: string
           expected_amount?: number | null
           household_id?: string
@@ -1394,7 +1483,9 @@ export type Database = {
       calculate_monthly_contributions: {
         Args: { p_household_id: string; p_month: number; p_year: number }
         Returns: {
+          calculation_method: string
           expected_amount: number
+          income_percentage: number
           profile_id: string
         }[]
       }

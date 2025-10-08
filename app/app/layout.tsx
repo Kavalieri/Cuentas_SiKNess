@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser, getUserHouseholdId, getUserHouseholds } from '@/lib/supabaseServer';
 import { signOut } from '@/app/login/actions';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home, User, Users, Shield } from 'lucide-react';
+import { LogOut, Home, User } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { PrivacyToggle } from '@/components/shared/PrivacyToggle';
 import { HouseholdSelector } from '@/components/shared/HouseholdSelector';
@@ -48,35 +48,12 @@ export default async function AppLayout({
       <header className="border-b bg-background sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between gap-4">
-            {/* Left: Logo + Nav */}
+            {/* Left: Logo */}
             <div className="flex items-center gap-6 flex-1">
               <Link href="/app" className="flex items-center gap-2 font-bold text-lg shrink-0">
                 <Home className="h-5 w-5" />
                 <span className="hidden sm:inline">CuentasSiK</span>
               </Link>
-              <nav className="hidden md:flex gap-2">
-                <Link href="/app">
-                  <Button variant="ghost" size="sm">
-                    Dashboard
-                  </Button>
-                </Link>
-                {householdId && (
-                  <Link href="/app/household">
-                    <Button variant="ghost" size="sm">
-                      <Users className="mr-1 h-4 w-4" />
-                      Hogar
-                    </Button>
-                  </Link>
-                )}
-                {userIsSystemAdmin && (
-                  <Link href="/app/admin">
-                    <Button variant="ghost" size="sm">
-                      <Shield className="mr-1 h-4 w-4" />
-                      Admin
-                    </Button>
-                  </Link>
-                )}
-              </nav>
             </div>
 
             {/* Center: Balance (si existe household) */}
@@ -119,12 +96,12 @@ export default async function AppLayout({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 bg-muted/30 pb-20 md:pb-0">
+      <main className="flex-1 bg-muted/30 pb-20">
         <div className="container mx-auto px-4 py-8">{children}</div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <MobileBottomNav />
+      {/* Bottom Navigation (visible en todos los dispositivos) */}
+      <MobileBottomNav hasHousehold={!!householdId} isAdmin={userIsSystemAdmin} />
 
       {/* Footer */}
       <footer className="hidden md:block border-t bg-background">

@@ -48,7 +48,7 @@ export function HeroContribution({
 }: HeroContributionProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<'full' | 'custom' | 'prepayment'>('full');
+  const [paymentMode, setPaymentMode] = useState<'full' | 'custom' | 'prepayment'>('custom');
   const [customAmount, setCustomAmount] = useState('');
   
   // Estados para pre-pago
@@ -325,7 +325,7 @@ export function HeroContribution({
           <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
             <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
-              Has completado tu contribución de este mes. ¡Gracias!
+              Has completado tu contribución de este mes. ¡Gracias! Aún puedes realizar aportes adicionales si lo deseas.
             </p>
           </div>
         )}
@@ -335,32 +335,37 @@ export function HeroContribution({
           <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
             <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
-              ¡Excelente! Has aportado {formatCurrency(Math.abs(remainingToPay), currency)} más de lo esperado este mes. Gracias por tu contribución extra.
+              ¡Excelente! Has aportado {formatCurrency(Math.abs(remainingToPay), currency)} más de lo esperado este mes. Gracias por tu contribución extra. Puedes seguir aportando si lo necesitas.
             </p>
           </div>
         )}
 
-        {/* Formulario de pago */}
-        {actualIsPending && remainingToPay > 0 && (
-          <div className="space-y-4 pt-2">
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Opciones de pago:</Label>
+        {/* Formulario de pago - SIEMPRE DISPONIBLE */}
+        <div className="space-y-4 pt-2">
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">
+              {actualIsPending && remainingToPay > 0 
+                ? 'Opciones de pago:' 
+                : 'Realizar aporte adicional:'}
+            </Label>
 ```
               
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMode"
-                    value="full"
-                    checked={paymentMode === 'full'}
-                    onChange={() => setPaymentMode('full')}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">
-                    Pagar el total pendiente ({formatCurrency(remainingToPay, currency)})
-                  </span>
-                </label>
+                {actualIsPending && remainingToPay > 0 && (
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="paymentMode"
+                      value="full"
+                      checked={paymentMode === 'full'}
+                      onChange={() => setPaymentMode('full')}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm">
+                      Pagar el total pendiente ({formatCurrency(remainingToPay, currency)})
+                    </span>
+                  </label>
+                )}
 
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -517,7 +522,6 @@ export function HeroContribution({
               )}
             </Button>
           </div>
-        )}
 
         <p className="text-xs text-muted-foreground">
           Basado en tu ingreso mensual de {formatCurrency(userIncome ?? 0, currency)}

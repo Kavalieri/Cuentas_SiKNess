@@ -5,9 +5,12 @@ import { toast } from 'sonner';
 import { AdjustmentsHeader } from './AdjustmentsHeader';
 import { AdjustmentsList } from './AdjustmentsList';
 import { AddAdjustmentDialog } from './AddAdjustmentDialog';
+import { TemplateSelector } from './TemplateSelector';
+import { QuickAdjustmentForm } from './QuickAdjustmentForm';
 import { LoadingState } from '@/components/shared/data-display/LoadingState';
 import { getAllHouseholdAdjustments, getMyAdjustments } from '@/app/app/contributions/adjustment-actions';
 import type { Database } from '@/types/database';
+import type { AdjustmentTemplate } from '@/app/app/contributions/adjustments/template-actions';
 
 type AdjustmentRow = Database['public']['Tables']['contribution_adjustments']['Row'];
 type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'icon' | 'type'>;
@@ -42,6 +45,9 @@ export function AdjustmentsContent({
   const [adjustments, setAdjustments] = useState<AdjustmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<AdjustmentTemplate | null>(null);
+  const [showQuickForm, setShowQuickForm] = useState(false);
 
     const loadAdjustments = async () => {
     setLoading(true);
@@ -104,6 +110,18 @@ export function AdjustmentsContent({
     loadAdjustments();
   };
 
+  const handleTemplateSelected = (template: AdjustmentTemplate) => {
+    setSelectedTemplate(template);
+    setShowTemplateSelector(false);
+    setShowQuickForm(true);
+  };
+
+  const handleQuickFormSuccess = () => {
+    loadAdjustments();
+    setShowQuickForm(false);
+    setSelectedTemplate(null);
+  };
+
   if (loading) {
     return <LoadingState message="Cargando ajustes..." />;
   }
@@ -113,8 +131,25 @@ export function AdjustmentsContent({
       <AdjustmentsHeader
         isOwner={isOwner}
         onAddClick={() => setShowAddDialog(true)}
+        onAddFromTemplateClick={() => setShowTemplateSelector(true)}
         totalCount={adjustments.length}
       />
+
+      {/* Selector de plantillas (cuando se muestra) */}
+      {showTemplateSelector && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Selecciona una plantilla:</h3>
+            <button
+              onClick={() => setShowTemplateSelector(false)}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Cancelar
+            </button>
+          </div>
+          <TemplateSelector onSelectTemplate={handleTemplateSelected} />
+        </div>
+      )}
 
       <AdjustmentsList
         adjustments={adjustments}
@@ -131,6 +166,16 @@ export function AdjustmentsContent({
         currency={currency}
         onSuccess={handleAdjustmentAdded}
       />
+
+      {selectedTemplate && (
+        <QuickAdjustmentForm
+          template={selectedTemplate}
+          categories={categories.filter((c) => c.type === 'expense')}
+          open={showQuickForm}
+          onOpenChange={setShowQuickForm}
+          onSuccess={handleQuickFormSuccess}
+        />
+      )}
     </div>
   );
 }
