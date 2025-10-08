@@ -1,9 +1,9 @@
-# 🚀 Deployment Quick Guide - CuentasSiK v0.3.0
+# 🚀 Deployment Quick Guide - CuentasSiK v0.3.0-alpha
 
 **Para**: Equipo de Implementación Linux Production  
-**Versión**: v0.3.0 (Phase 8 Complete)  
+**Versión**: v0.3.0-alpha (Phase 8 Complete)  
 **Fecha**: 8 octubre 2025  
-**Commit**: `63069a5`
+**Status**: Pre-release Ready
 
 ---
 
