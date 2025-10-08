@@ -1,127 +1,76 @@
 # Changelog
 
-## [0.3.0] - 2025-10-08
+## [0.3.0-alpha](https://github.com/Kavalieri/CuentasSiK/compare/cuentas-sik-v0.2.0-alpha...cuentas-sik-v0.3.0-alpha) (2025-10-08)
 
-### 🎯 Phase 8: UX Improvements Complete
 
-**Status**: ✅ Production Ready  
-**Commits**: `bb845e8` (main), `eb746ab` (previous)  
-**Build**: 30 routes, 0 errors, 0 warnings
+### ⚠ BREAKING CHANGES
 
-#### **FASE 8.1: Unified Navigation**
-- **MobileBottomNav visible on ALL devices** (not just mobile)
-  * Props: `showHousehold`, `showAdmin` (conditional rendering based on permissions)
-  * Grid layout: 3-7 items responsive
-- **Simplified header**: removed duplicate desktop navigation
-- **Consistent padding**: `pb-20` on all screen sizes
-- **Impact**: Modern, consistent navigation across mobile, tablet, desktop
+* member_credits tiene nuevas columnas obligatorias (auto_apply, monthly_decision)
 
-**Files modified**:
-- `components/shared/navigation/MobileBottomNav.tsx`
-- `app/app/layout.tsx`
+### Features
 
-#### **FASE 8.2: Adjustments Route Verification**
-- ✅ **Route already correct**: `/app/contributions/adjustments`
-- Tab "Ajustes" correctly points to adjustments management
-- **No changes needed** (validation only)
+* add updated_at tracking + fix categories empty + auto-refresh dashboard ([ffe7ef3](https://github.com/Kavalieri/CuentasSiK/commit/ffe7ef3e1f49276e19eb34f4f67b35f5312e08f2))
+* **balance:** implementar FASE 3 - Balance Breakdown Cards ([8a33a28](https://github.com/Kavalieri/CuentasSiK/commit/8a33a2824d4423d42ea04bdbd0d6b2851cd1faae))
+* **contributions:** implement approve/reject workflow for adjustments ([4bbe6ee](https://github.com/Kavalieri/CuentasSiK/commit/4bbe6ee70ada2ef9ce01863d8223a92af0c13a6b))
+* **contributions:** use "Aportación Cuenta Conjunta" instead of "Nómina" ([e3716d1](https://github.com/Kavalieri/CuentasSiK/commit/e3716d1db5d0ca94114bda95637cd3f722b7e180))
+* **credits:** implementar FASE 2 - Credit Decision Dialog ([0b13f09](https://github.com/Kavalieri/CuentasSiK/commit/0b13f09cdd28ceb8f20eba59deffe1e880f81fa9))
+* **credits:** implementar sistema completo de créditos automáticos ([7a5016e](https://github.com/Kavalieri/CuentasSiK/commit/7a5016edd1d1116bf8b9006959fb32bc79727d37))
+* **credits:** integrate server actions for transfer and apply workflows ([b60d4e5](https://github.com/Kavalieri/CuentasSiK/commit/b60d4e56391c8d3e35cc941ef87c9fdf84177857))
+* **credits:** UI completa para gestionar créditos ([fbb9ba6](https://github.com/Kavalieri/CuentasSiK/commit/fbb9ba632e20683f27913c0a9cab7efd6f8437dc))
+* **dashboard:** add advanced filters for transactions list ([6a8fda3](https://github.com/Kavalieri/CuentasSiK/commit/6a8fda375a3b5ca27029fb3e2a436849b3197ed9))
+* **dashboard:** add paid_by and status columns to transactions list ([a84ccfc](https://github.com/Kavalieri/CuentasSiK/commit/a84ccfc4224aa0e20b9e6546f58ec8823708eec7))
+* **dashboard:** add savings evolution chart to statistics tab ([ab7e34a](https://github.com/Kavalieri/CuentasSiK/commit/ab7e34a154e6ed3ff268d3d2c370f7e2d06e09f5))
+* **dashboard:** implement 3-tab navigation (Balance, Ahorro, Estadísticas) ([4533965](https://github.com/Kavalieri/CuentasSiK/commit/453396549dc0245946118bcf301cce30b5b0a30f))
+* **dashboard:** implement advanced filters and sorting for Balance tab ([b0d99ce](https://github.com/Kavalieri/CuentasSiK/commit/b0d99ce26e2b1d4aa0e332aae8ada34164333679))
+* **expenses:** agregar opción "Cuenta común" y validación por tipo de transacción ([f991994](https://github.com/Kavalieri/CuentasSiK/commit/f991994ad66619ce433efa879e065ab45353eeaa))
+* **expenses:** agregar selector paid_by condicional según rol de usuario ([17ca5fc](https://github.com/Kavalieri/CuentasSiK/commit/17ca5fcbd52aeb1dbe619f8c30f1880ded57923b))
+* **expenses:** implement complete CRUD with filters and dialogs ([5a3419a](https://github.com/Kavalieri/CuentasSiK/commit/5a3419a46ee4aec360a0def616fef9ac996238a4))
+* **expenses:** implementar formulario de edición de transacciones ([542e96b](https://github.com/Kavalieri/CuentasSiK/commit/542e96bed64e01e2fd9344bd096a5f4ea1c54b3e))
+* **export:** implementar FASE 0-3 - Sistema de Exportación PDF ([adafc8b](https://github.com/Kavalieri/CuentasSiK/commit/adafc8b670aa6c8051b85f14b12489df165243c3))
+* **export:** implementar FASE 4 - CSV Generator ([ff3db20](https://github.com/Kavalieri/CuentasSiK/commit/ff3db20546de24fae308f020b6b4ac76c8237d92))
+* FASE 6 completada - auditoría completa + módulo ahorro + fixes seguridad ([35511ee](https://github.com/Kavalieri/CuentasSiK/commit/35511ee6c74447324fede3189c9e411c7d81b81e))
+* FASE 7 (partial) - UI Módulo Ahorro completo con 3 modales ([ce83220](https://github.com/Kavalieri/CuentasSiK/commit/ce832209ecafc1c71f192562f35b4bb716098ab2))
+* **fase0:** Add calculation types + editable display names ([c715899](https://github.com/Kavalieri/CuentasSiK/commit/c71589933311f4935ad9435db2041895e826779d))
+* **phase-8:** complete UX improvements - unified navigation, payment fix, templates system ([bb845e8](https://github.com/Kavalieri/CuentasSiK/commit/bb845e832776bdbeb683e4c03f1b753a697e03dd))
+* **phase-8:** implement credits monthly decision and periods close/reopen UI ([5ed4860](https://github.com/Kavalieri/CuentasSiK/commit/5ed4860d57153bfd05a229346181dcdc0f8c9660))
+* **privacy:** extender modo privacidad a TODAS las cantidades ([1e61149](https://github.com/Kavalieri/CuentasSiK/commit/1e6114949a10a04e31f5e51d8ad6038ef737bf70))
+* **reports:** implement complete reports module with Recharts visualizations ([14c2ac2](https://github.com/Kavalieri/CuentasSiK/commit/14c2ac2fe94b05583a0fe6f760cbb3dd6935c560))
+* Sistema de ahorro completo + 23 categorías predeterminadas ([80319af](https://github.com/Kavalieri/CuentasSiK/commit/80319af4783e58638ee9bb918316b5b97d572544))
+* **ui:** FASE 1 - Preparación y componentes base compartidos ([b939af8](https://github.com/Kavalieri/CuentasSiK/commit/b939af80b80a7657f7d9bb8b3421c172aa78fb10))
+* **ui:** FASE 2a - Componentes Dashboard modulares (4/7) ([70c7362](https://github.com/Kavalieri/CuentasSiK/commit/70c7362b5b623096046574390c2c6e3c788d2e28))
+* **ui:** FASE 2b - Componentes gráficos Dashboard (6/7) ([4456f6c](https://github.com/Kavalieri/CuentasSiK/commit/4456f6c220d4abc07b4f15d561425a705ef01d9d))
+* **ui:** FASE 2c - Refactor DashboardContent modular (7/7) ([bc305b5](https://github.com/Kavalieri/CuentasSiK/commit/bc305b5586e55579c62910f75fb269fc44f09ac5))
+* **ui:** FASE 3 - Nueva ruta /app/transactions completa ([0265d02](https://github.com/Kavalieri/CuentasSiK/commit/0265d021467e81f32c912e4b9b09187710a2850f))
+* **ui:** FASE 4.1 - Ruta /app/contributions/adjustments completa ([d52a392](https://github.com/Kavalieri/CuentasSiK/commit/d52a392a12d54eef913fea220383dfc185f40840))
+* **ui:** FASE 4.2 - Ruta /app/contributions/credits completa ([dd1c487](https://github.com/Kavalieri/CuentasSiK/commit/dd1c487e0f60b291fb42e0d3c8d1e7dbbd4208c2))
+* **ui:** FASE 4.3 - Refactor ContributionsContent con TabsNav ([5dbaf54](https://github.com/Kavalieri/CuentasSiK/commit/5dbaf54d70a9ecc540d11d097b9ea22b0f8d5b0c))
+* **ui:** preservar estado de pestanas al refrescar ([67e5388](https://github.com/Kavalieri/CuentasSiK/commit/67e538876b2c15950d596e276cb69368a76a5707))
 
-#### **FASE 8.3: Payment Blocking Fix**
-- **Problem**: Payment form hidden when `status !== 'pending'`
-- **Solution**: Form ALWAYS visible regardless of status
-  * Dynamic labels: "Opciones de pago" vs "Realizar aporte adicional"
-  * "Full payment" option conditional (only when `remainingToPay > 0`)
-  * Default `paymentMode`: changed to `'custom'` (more universal)
-- **Impact**: Users can ALWAYS contribute (overpayments → automatic credits)
 
-**Files modified**:
-- `app/app/contributions/components/HeroContribution.tsx`
+### Bug Fixes
 
-#### **FASE 8.4: Recurring Payment Templates** ⭐ NEW
-
-**Database Layer** (2 migrations):
-- **Table**: `contribution_adjustment_templates`
-  * Columns: `name`, `description`, `category_id`, `icon`, `is_active`, `last_used_amount`, `sort_order`, `is_default`, `usage_count`
-  * Unique constraint: `(household_id, name)`
-  * Indexes: household_id, is_default
-- **RLS Policies**:
-  * SELECT: All household members
-  * INSERT/DELETE: Only household owners
-  * UPDATE: All members (for last_used_amount)
-- **Auto-seed**: 4 templates per household on creation
-  * 🏠 Alquiler Vivienda
-  * 💡 Luz
-  * 💧 Agua
-  * 📡 Internet
-- **Trigger**: `on_household_created_create_templates` (executes AFTER category creation)
-- **Foreign key**: `contribution_adjustments.template_id` (traceability)
-
-**Files**:
-- `supabase/migrations/20251008000001_create_adjustment_templates.sql` (84 lines)
-- `supabase/migrations/20251008000002_add_template_columns.sql` (27 lines)
-
-**Server Actions** (template-actions.ts - 390 lines):
-- **`getAdjustmentTemplates()`**: 
-  * Fetches active templates with JOIN to categories
-  * Returns name, icon, last_used_amount, default category
-  * Ordered by sort_order
-- **`updateTemplateLastUsed(templateId, amount)`**:
-  * Stores last amount used for next time
-  * Called automatically after successful adjustment creation
-- **`createAdjustmentFromTemplate(data)`** (main workflow):
-  1. Validates input with Zod schema
-  2. Fetches template info (name, category_id)
-  3. Auto-generates reason: "Pago [name] [month year]"
-  4. **Auto-creates contribution** if current month doesn't exist
-  5. Creates **expense transaction** in selected category
-  6. Creates **income virtual transaction** in "Aportación Cuenta Conjunta"
-  7. Creates **adjustment** linking both transactions
-  8. Updates template's `last_used_amount`
-  9. Revalidates paths
-  * **Rollback on error**: Deletes created transactions if adjustment fails
-  * Returns `{ adjustmentId: string }`
-
-**UI Components**:
-- **TemplateSelector.tsx** (100 lines):
-  * Grid layout: 2×2 (mobile), 4×1 (desktop)
-  * Card with icon, name, "Último: [amount]" hint, category
-  * Click → opens QuickAdjustmentForm with pre-filled data
-  * Loading/error states
-- **QuickAdjustmentForm.tsx** (240 lines):
-  * Dialog modal with React Hook Form + Zod validation
-  * Fields pre-filled:
-    - Amount: `last_used_amount`
-    - Category: `category_id` from template
-    - Reason: "Pago [name] [month year]"
-    - Notes: optional
-  * Submit → `createAdjustmentFromTemplate()`
-  * Toast notifications (success/error)
-  * Auto-close on success
-- **AdjustmentsHeader.tsx** (modified):
-  * New button: "Desde Plantilla" (Zap icon ⚡)
-  * Variant: outline (to differentiate from "Nuevo Ajuste")
-- **AdjustmentsContent.tsx** (modified):
-  * State management for selector visibility and selected template
-  * Handlers: `handleTemplateSelected`, `handleQuickFormSuccess`
-  * Integration with existing adjustments list
-
-**Files**:
-- `app/app/contributions/adjustments/template-actions.ts` (new, 390 lines)
-- `app/app/contributions/adjustments/components/TemplateSelector.tsx` (new, 100 lines)
-- `app/app/contributions/adjustments/components/QuickAdjustmentForm.tsx` (new, 240 lines)
-- `app/app/contributions/adjustments/components/AdjustmentsHeader.tsx` (modified)
-- `app/app/contributions/adjustments/components/AdjustmentsContent.tsx` (modified)
-
-**Features**:
-- ⚡ **Quick creation**: Adjustment in <30 seconds
-- 🧠 **Smart memory**: Remembers last amount used per template
-- 🔄 **Auto-creation**: Contribution auto-created if month doesn't exist
-- 🔗 **Full traceability**: Expense + income + adjustment linked
-- 🛡️ **Secure**: RLS policies + Zod validation + rollback on error
-- 📱 **Responsive**: Works perfectly on mobile/tablet/desktop
-
-**Impact**: Massive productivity improvement for recurring payments (rent, utilities).
-
----
+* cambiar as any por as unknown as never en INSERT transactions para evitar ESLint errors ([1b31cba](https://github.com/Kavalieri/CuentasSiK/commit/1b31cba718064251b6f8dc4ff7f145f4550a7f36))
+* **contributions:** auditoría completa y actualización instantánea de UI ([819e76a](https://github.com/Kavalieri/CuentasSiK/commit/819e76a08438da586574b9158d5b475e4c521d05))
+* **contributions:** distinguish NULL (not configured) from 0 (configured as zero) ([4703da4](https://github.com/Kavalieri/CuentasSiK/commit/4703da4fc02d983518657501cab48e521ff3519a))
+* **contributions:** prevent isPaid=true when expected_amount is NULL (sin configurar) ([5d94bb6](https://github.com/Kavalieri/CuentasSiK/commit/5d94bb61f880eca75693dc77dabe0d31aa3426bf))
+* **contributions:** updated_at NULL error + default category for prepayment approval ([60f7963](https://github.com/Kavalieri/CuentasSiK/commit/60f7963045215ffd5fa8e70cb673f9932ddc8fe2))
+* corregir bug de zona horaria en fechas de movimientos de ajustes ([ab33c9a](https://github.com/Kavalieri/CuentasSiK/commit/ab33c9aa27d16d6b5b08386f2280585809e25b75))
+* corregir SelectItem value vacío en EditMovementDialog ([ff913ed](https://github.com/Kavalieri/CuentasSiK/commit/ff913ed8d03dac04ba2bda3196ecc25241d2cb74))
+* **critical:** getCreditsSummary y display de descriptions ([7835bff](https://github.com/Kavalieri/CuentasSiK/commit/7835bff29f269b212251809a978220e66ab9c99b))
+* **dates:** occurred_at mostraba día creación en vez de día real ([c902424](https://github.com/Kavalieri/CuentasSiK/commit/c902424b8ecacd960579b1b634bb06e8e1ce098c))
+* **db:** apply monthly_periods schema fix and clean build warnings ([e653e45](https://github.com/Kavalieri/CuentasSiK/commit/e653e45318379bb374c5d9853ff7cf3d2512be7f))
+* **db:** corregir referencias a tabla movements en funciones ([5d8223a](https://github.com/Kavalieri/CuentasSiK/commit/5d8223a7d010d159ee68e150e614c404cd043ae0))
+* **db:** fix monthly_periods schema and encoding issues ([eb949a4](https://github.com/Kavalieri/CuentasSiK/commit/eb949a42aef28e6f4f7c7687c5c58cd30071b62a))
+* **expenses:** mostrar todos los miembros en selector paid_by ([179a536](https://github.com/Kavalieri/CuentasSiK/commit/179a536d03cd1ea4f2c8619dd8b54fa52808a962))
+* **expenses:** reordenar router.refresh() antes de cerrar dialog ([7c28476](https://github.com/Kavalieri/CuentasSiK/commit/7c28476dc4b977a7397968e6c1b7e337d363970b))
+* **mcp:** add authentication tokens for Supabase and Vercel MCPs ([ae280e2](https://github.com/Kavalieri/CuentasSiK/commit/ae280e2e45f14f6239bf568cba113adc4d0772f4))
+* mostrar fechas/horas correctas en TransactionsList (dashboard) ([c680e63](https://github.com/Kavalieri/CuentasSiK/commit/c680e63cc5b633f39aeceb912bc3859b2ee0fe62))
+* remove explicit created_at/updated_at from INSERT statements ([d9dac83](https://github.com/Kavalieri/CuentasSiK/commit/d9dac833f66bdfad7c852a1b42adadfbd23e2815))
+* **routes:** consolidate to /app/expenses, remove duplicate /app/transactions ([95dd37e](https://github.com/Kavalieri/CuentasSiK/commit/95dd37e442a3758cc5657e150fe94febf9b7d646))
+* sistema tracking contribuciones + trigger auto + crédito caballero ([edbd7b5](https://github.com/Kavalieri/CuentasSiK/commit/edbd7b521e617d48189f0e371aa77808f360a2fe))
+* **transactions:** start_date error + UTF-8 encoding issue ([590c878](https://github.com/Kavalieri/CuentasSiK/commit/590c8787a952fc5d372bda954980c8857c4c411f))
+* **ui:** créditos panel vacío y fechas/hora transacciones ([8644cc6](https://github.com/Kavalieri/CuentasSiK/commit/8644cc61b3a950faad77fda0c2a5268ff18a7071))
+* **ui:** eliminate loading spinner flash on PendingCreditsWidget ([110e318](https://github.com/Kavalieri/CuentasSiK/commit/110e318d2b34e3e39f4e815be15b0afc358583f9))
 
 ## [0.3.0-alpha] - 2025-10-08
 
