@@ -1,5 +1,128 @@
 # Changelog
 
+## [0.3.0] - 2025-10-08
+
+### 🎯 Phase 8: UX Improvements Complete
+
+**Status**: ✅ Production Ready  
+**Commits**: `bb845e8` (main), `eb746ab` (previous)  
+**Build**: 30 routes, 0 errors, 0 warnings
+
+#### **FASE 8.1: Unified Navigation**
+- **MobileBottomNav visible on ALL devices** (not just mobile)
+  * Props: `showHousehold`, `showAdmin` (conditional rendering based on permissions)
+  * Grid layout: 3-7 items responsive
+- **Simplified header**: removed duplicate desktop navigation
+- **Consistent padding**: `pb-20` on all screen sizes
+- **Impact**: Modern, consistent navigation across mobile, tablet, desktop
+
+**Files modified**:
+- `components/shared/navigation/MobileBottomNav.tsx`
+- `app/app/layout.tsx`
+
+#### **FASE 8.2: Adjustments Route Verification**
+- ✅ **Route already correct**: `/app/contributions/adjustments`
+- Tab "Ajustes" correctly points to adjustments management
+- **No changes needed** (validation only)
+
+#### **FASE 8.3: Payment Blocking Fix**
+- **Problem**: Payment form hidden when `status !== 'pending'`
+- **Solution**: Form ALWAYS visible regardless of status
+  * Dynamic labels: "Opciones de pago" vs "Realizar aporte adicional"
+  * "Full payment" option conditional (only when `remainingToPay > 0`)
+  * Default `paymentMode`: changed to `'custom'` (more universal)
+- **Impact**: Users can ALWAYS contribute (overpayments → automatic credits)
+
+**Files modified**:
+- `app/app/contributions/components/HeroContribution.tsx`
+
+#### **FASE 8.4: Recurring Payment Templates** ⭐ NEW
+
+**Database Layer** (2 migrations):
+- **Table**: `contribution_adjustment_templates`
+  * Columns: `name`, `description`, `category_id`, `icon`, `is_active`, `last_used_amount`, `sort_order`, `is_default`, `usage_count`
+  * Unique constraint: `(household_id, name)`
+  * Indexes: household_id, is_default
+- **RLS Policies**:
+  * SELECT: All household members
+  * INSERT/DELETE: Only household owners
+  * UPDATE: All members (for last_used_amount)
+- **Auto-seed**: 4 templates per household on creation
+  * 🏠 Alquiler Vivienda
+  * 💡 Luz
+  * 💧 Agua
+  * 📡 Internet
+- **Trigger**: `on_household_created_create_templates` (executes AFTER category creation)
+- **Foreign key**: `contribution_adjustments.template_id` (traceability)
+
+**Files**:
+- `supabase/migrations/20251008000001_create_adjustment_templates.sql` (84 lines)
+- `supabase/migrations/20251008000002_add_template_columns.sql` (27 lines)
+
+**Server Actions** (template-actions.ts - 390 lines):
+- **`getAdjustmentTemplates()`**: 
+  * Fetches active templates with JOIN to categories
+  * Returns name, icon, last_used_amount, default category
+  * Ordered by sort_order
+- **`updateTemplateLastUsed(templateId, amount)`**:
+  * Stores last amount used for next time
+  * Called automatically after successful adjustment creation
+- **`createAdjustmentFromTemplate(data)`** (main workflow):
+  1. Validates input with Zod schema
+  2. Fetches template info (name, category_id)
+  3. Auto-generates reason: "Pago [name] [month year]"
+  4. **Auto-creates contribution** if current month doesn't exist
+  5. Creates **expense transaction** in selected category
+  6. Creates **income virtual transaction** in "Aportación Cuenta Conjunta"
+  7. Creates **adjustment** linking both transactions
+  8. Updates template's `last_used_amount`
+  9. Revalidates paths
+  * **Rollback on error**: Deletes created transactions if adjustment fails
+  * Returns `{ adjustmentId: string }`
+
+**UI Components**:
+- **TemplateSelector.tsx** (100 lines):
+  * Grid layout: 2×2 (mobile), 4×1 (desktop)
+  * Card with icon, name, "Último: [amount]" hint, category
+  * Click → opens QuickAdjustmentForm with pre-filled data
+  * Loading/error states
+- **QuickAdjustmentForm.tsx** (240 lines):
+  * Dialog modal with React Hook Form + Zod validation
+  * Fields pre-filled:
+    - Amount: `last_used_amount`
+    - Category: `category_id` from template
+    - Reason: "Pago [name] [month year]"
+    - Notes: optional
+  * Submit → `createAdjustmentFromTemplate()`
+  * Toast notifications (success/error)
+  * Auto-close on success
+- **AdjustmentsHeader.tsx** (modified):
+  * New button: "Desde Plantilla" (Zap icon ⚡)
+  * Variant: outline (to differentiate from "Nuevo Ajuste")
+- **AdjustmentsContent.tsx** (modified):
+  * State management for selector visibility and selected template
+  * Handlers: `handleTemplateSelected`, `handleQuickFormSuccess`
+  * Integration with existing adjustments list
+
+**Files**:
+- `app/app/contributions/adjustments/template-actions.ts` (new, 390 lines)
+- `app/app/contributions/adjustments/components/TemplateSelector.tsx` (new, 100 lines)
+- `app/app/contributions/adjustments/components/QuickAdjustmentForm.tsx` (new, 240 lines)
+- `app/app/contributions/adjustments/components/AdjustmentsHeader.tsx` (modified)
+- `app/app/contributions/adjustments/components/AdjustmentsContent.tsx` (modified)
+
+**Features**:
+- ⚡ **Quick creation**: Adjustment in <30 seconds
+- 🧠 **Smart memory**: Remembers last amount used per template
+- 🔄 **Auto-creation**: Contribution auto-created if month doesn't exist
+- 🔗 **Full traceability**: Expense + income + adjustment linked
+- 🛡️ **Secure**: RLS policies + Zod validation + rollback on error
+- 📱 **Responsive**: Works perfectly on mobile/tablet/desktop
+
+**Impact**: Massive productivity improvement for recurring payments (rent, utilities).
+
+---
+
 ## [0.3.0-alpha] - 2025-10-08
 
 ### ✨ Added - v2 UX Refactor Complete (FASE 4-6)
