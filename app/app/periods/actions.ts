@@ -29,10 +29,11 @@ export async function getPeriod(
     .maybeSingle();
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
-  return ok(data);
+  const typedData = data as unknown as MonthlyPeriod | null;
+  return ok(typedData);
 }
 
 /**
@@ -54,7 +55,7 @@ export async function ensurePeriod(year: number, month: number): Promise<Result<
   });
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   return ok(data);
@@ -81,10 +82,11 @@ export async function getAllPeriods(limit = 12): Promise<Result<MonthlyPeriod[]>
     .limit(limit);
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
-  return ok(data || []);
+  const typedData = (data || []) as unknown as MonthlyPeriod[];
+  return ok(typedData);
 }
 
 /**
@@ -107,10 +109,11 @@ export async function getPendingPeriods(): Promise<Result<MonthlyPeriod[]>> {
     .order('month', { ascending: true });
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
-  return ok(data || []);
+  const typedPendingData = (data || []) as unknown as MonthlyPeriod[];
+  return ok(typedPendingData);
 }
 
 /**
@@ -118,7 +121,7 @@ export async function getPendingPeriods(): Promise<Result<MonthlyPeriod[]>> {
  */
 export async function closePeriod(periodId: string, notes?: string): Promise<Result> {
   const supabase = await supabaseServer();
-  
+
   // Obtener usuario actual
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -132,7 +135,7 @@ export async function closePeriod(periodId: string, notes?: string): Promise<Res
   });
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   revalidatePath('/app');
@@ -145,7 +148,7 @@ export async function closePeriod(periodId: string, notes?: string): Promise<Res
  */
 export async function reopenPeriod(periodId: string, reason?: string): Promise<Result> {
   const supabase = await supabaseServer();
-  
+
   // Obtener usuario actual
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -159,7 +162,7 @@ export async function reopenPeriod(periodId: string, reason?: string): Promise<R
   });
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   revalidatePath('/app');
@@ -178,7 +181,7 @@ export async function updatePeriodTotals(periodId: string): Promise<Result> {
   });
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   revalidatePath('/app');
@@ -205,10 +208,18 @@ export async function getPeriodStats(periodId: string): Promise<
     .maybeSingle();
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
-  return ok(data);
+  type PeriodStats = {
+    transaction_count: number | null;
+    total_expenses: number | null;
+    total_income: number | null;
+    balance: number | null;
+  };
+
+  const typedStats = data as unknown as PeriodStats | null;
+  return ok(typedStats);
 }
 
 /**
@@ -260,8 +271,16 @@ export async function getPeriodCategoryStats(
     .eq('type', 'expense');
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
+
+  type TransactionWithCategory = {
+    category_id: string;
+    amount: number;
+    categories: { id: string; name: string };
+  };
+
+  const typedTransactions = (data || []) as unknown as TransactionWithCategory[];
 
   // Agrupar y calcular totales
   const categoryMap = new Map<
@@ -269,9 +288,9 @@ export async function getPeriodCategoryStats(
     { category_id: string; category_name: string; total: number; count: number }
   >();
 
-  (data || []).forEach((transaction) => {
-    const categoryId = transaction.category_id as string;
-    const categoryName = (transaction.categories as { name?: string })?.name || 'Sin categoría';
+  typedTransactions.forEach((transaction) => {
+    const categoryId = transaction.category_id;
+    const categoryName = transaction.categories.name || 'Sin categoría';
     const existing = categoryMap.get(categoryId);
 
     if (existing) {
@@ -322,7 +341,7 @@ export async function migrateExistingMovements(): Promise<
   const { data, error } = await supabase.rpc('migrate_existing_movements');
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   revalidatePath('/app');

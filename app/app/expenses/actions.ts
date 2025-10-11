@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserRoleInActiveHousehold } from '@/lib/supabaseServer';
+import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserRoleInActiveHousehold, query } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 
@@ -20,7 +20,8 @@ const TransactionSchema = z.object({
 
 /**
  * Crea una nueva transacción (gasto o ingreso)
- * Con auditoría completa: paid_by, created_by, source_type, status
+ * Campos actuales: id, household_id, category_id, type, amount, currency, description,
+ *                  occurred_at, created_at, period_id, profile_id, updated_at, paid_by
  * Asegura que exista el período mensual antes de insertar
  */
 export async function createTransaction(formData: FormData): Promise<Result<{ id: string }>> {
@@ -75,7 +76,7 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
   // vacío → usuario actual (fallback)
   const paidByFormValue = formData.get('paid_by') as string | null;
   let paidBy: string | null = profile.id; // Default: usuario actual
-  
+
   if (paidByFormValue === 'common') {
     paidBy = null; // Cuenta común
   } else if (paidByFormValue && paidByFormValue !== '') {
@@ -93,25 +94,21 @@ export async function createTransaction(formData: FormData): Promise<Result<{ id
     // @ts-ignore
     .insert({
       household_id: householdId,
-      profile_id: profile.id,
+      profile_id: profile.id, // Quien registró la transacción (auditoría)
       category_id: parsed.data.category_id, // Ya transformado por Zod
       type: parsed.data.type,
       amount: parsed.data.amount,
       currency: parsed.data.currency,
       description: parsed.data.description || null,
       occurred_at: parsed.data.occurred_at,
-      // ⭐ Nuevas columnas de auditoría y estado
       period_id: periodId,
-      
-      // ⭐ RESPONSABILIDAD FINANCIERA (quién se beneficia/contribuye)
+
+      // ⭐ RESPONSABILIDAD FINANCIERA (quién pagó/recibió)
       paid_by: paidBy, // NULL = cuenta común (ambos), UUID = usuario específico
-      
-      // ⭐ AUDITORÍA (trazabilidad administrativa)
-      created_by: profile.id, // Quien registró la transacción (inmutable)
-      updated_by: null, // Se establece en updateTransaction
-      
-      source_type: 'manual',
-      status: 'confirmed',
+
+      // ✅ AUDITORÍA (quién REGISTRÓ la transacción)
+      created_by_profile_id: profile.id,
+      updated_by_profile_id: profile.id,
     })
     .select()
     .single();
@@ -153,6 +150,7 @@ export async function updateTransaction(formData: FormData): Promise<Result<{ id
   }
 
   const role = await getUserRoleInActiveHousehold();
+  console.log('[getHouseholdMembersWithRole] Role obtenido:', role);
   if (!role) {
     return fail('No se pudo determinar tu rol en el hogar');
   }
@@ -190,7 +188,7 @@ export async function updateTransaction(formData: FormData): Promise<Result<{ id
   // Procesar paid_by
   const paidByFormValue = formData.get('paid_by') as string | null;
   let paidBy: string | null = existingTransaction.paid_by; // Mantener el actual si no se cambia
-  
+
   if (paidByFormValue === 'common') {
     paidBy = null; // Común
   } else if (paidByFormValue && paidByFormValue !== '') {
@@ -213,14 +211,12 @@ export async function updateTransaction(formData: FormData): Promise<Result<{ id
       currency: parsed.data.currency,
       description: parsed.data.description || null,
       occurred_at: parsed.data.occurred_at,
-      
+
       // ⭐ RESPONSABILIDAD FINANCIERA (quién se beneficia/contribuye)
       paid_by: paidBy, // Puede cambiar según quién asuma el gasto/ingreso
-      
-      // ⭐ AUDITORÍA (trazabilidad administrativa)
-      // created_by NO se modifica (campo inmutable - quien registró originalmente)
-      updated_by: profile.id, // Quien realiza esta edición
-      updated_at: new Date().toISOString(),
+
+      // ✅ AUDITORÍA (quién MODIFICÓ la transacción)
+      updated_by_profile_id: profile.id,
     })
     .eq('id', transactionId)
     .select()
@@ -253,32 +249,10 @@ export async function getTransactions(params?: {
 
   const supabase = await supabaseServer();
 
+  // Primero obtener transacciones sin JOINs
   let query = supabase
     .from('transactions')
-    .select(
-      `
-      id,
-      type,
-      amount,
-      currency,
-      description,
-      occurred_at,
-      created_at,
-      updated_at,
-      category_id,
-      paid_by,
-      status,
-      categories (
-        id,
-        name,
-        icon
-      ),
-      profile:profiles!paid_by (
-        display_name,
-        avatar_url
-      )
-    `,
-    )
+    .select('id, type, amount, currency, description, occurred_at, created_at, updated_at, category_id, paid_by')
     .eq('household_id', householdId)
     .order('occurred_at', { ascending: false });
 
@@ -302,13 +276,75 @@ export async function getTransactions(params?: {
     query = query.ilike('description', `%${params.search}%`);
   }
 
-  const { data, error } = await query;
+  const { data: transactions, error } = await query;
 
   if (error) {
     return fail(error.message);
   }
 
-  return ok(data || []);
+  // Debug: Log sample transaction data
+  if (transactions && transactions.length > 0 && transactions[0]) {
+    const sample = transactions[0] as any;
+    console.log('[getTransactions] Sample transaction data:', {
+      id: sample.id,
+      occurred_at: sample.occurred_at,
+      occurred_at_type: typeof sample.occurred_at,
+      created_at: sample.created_at,
+      created_at_type: typeof sample.created_at,
+    });
+  }
+
+  if (!transactions || transactions.length === 0) {
+    return ok([]);
+  }
+
+  // Tipar transacciones
+  type TransactionData = {
+    id: string;
+    type: string;
+    amount: number;
+    currency: string;
+    description: string | null;
+    occurred_at: string;
+    created_at: string;
+    updated_at: string;
+    category_id: string | null;
+    paid_by: string | null;
+  };
+  const typedTransactions = transactions as TransactionData[];
+
+  // Obtener categorías y perfiles por separado
+  const categoryIds = [...new Set(typedTransactions.map(t => t.category_id).filter(Boolean))];
+  const userIds = [...new Set(typedTransactions.map(t => t.paid_by).filter(Boolean))];
+
+  const [categoriesResult, profilesResult] = await Promise.all([
+    categoryIds.length > 0
+      ? supabase.from('categories').select('id, name, icon').in('id', categoryIds as string[])
+      : Promise.resolve({ data: [], error: null }),
+    userIds.length > 0
+      ? supabase.from('profiles').select('auth_user_id, display_name, avatar_url').in('auth_user_id', userIds as string[])
+      : Promise.resolve({ data: [], error: null })
+  ]);
+
+  // Crear mapas para búsqueda rápida
+  type CategoryData = { id: string; name: string; icon: string | null };
+  type ProfileData = { auth_user_id: string; display_name: string; avatar_url: string | null };
+
+  const categoriesById = new Map<string, CategoryData>(
+    (categoriesResult.data as CategoryData[]).map(c => [c.id, c])
+  );
+  const profilesById = new Map<string, ProfileData>(
+    (profilesResult.data as ProfileData[]).map(p => [p.auth_user_id, p])
+  );
+
+  // Unir datos
+  const enrichedTransactions = typedTransactions.map(t => ({
+    ...t,
+    categories: t.category_id ? categoriesById.get(t.category_id) : null,
+    profile: t.paid_by ? profilesById.get(t.paid_by) : null
+  }));
+
+  return ok(enrichedTransactions);
 }
 
 /**
@@ -322,10 +358,10 @@ export async function deleteTransaction(transactionId: string): Promise<Result> 
 
   const supabase = await supabaseServer();
 
-  // 1. Obtener transacción actual para verificar household y estado locked
+  // 1. Obtener transacción actual para verificar household
   const { data: currentTransaction, error: fetchError } = await supabase
     .from('transactions')
-    .select('*, household_id, status, locked_at, locked_by')
+    .select('id, household_id')
     .eq('id', transactionId)
     .single();
 
@@ -338,12 +374,7 @@ export async function deleteTransaction(transactionId: string): Promise<Result> 
     return fail('No tienes permisos para eliminar esta transacción');
   }
 
-  // 3. ⭐ VALIDAR QUE NO ESTÉ BLOQUEADA (período cerrado)
-  if (currentTransaction.status === 'locked' || currentTransaction.locked_at) {
-    return fail('No se puede eliminar una transacción de un período cerrado. Reabre el período primero.');
-  }
-
-  // 4. Eliminar transacción
+  // 3. Eliminar transacción
   const { error } = await supabase
     .from('transactions')
     .delete()
@@ -467,33 +498,49 @@ export async function getCategoryExpenses(params?: {
 
   const supabase = await supabaseServer();
 
-  let query = supabase
-    .from('transactions')
-    .select(
-      `
-      category_id,
-      amount,
-      categories (
-        id,
-        name,
-        icon
-      )
-    `
-    )
-    .eq('household_id', householdId)
-    .eq('type', 'expense');
+  // Construir query con JOIN manual para PostgreSQL directo
+  let sql = `
+    SELECT
+      t.category_id,
+      t.amount,
+      c.id as category_id,
+      c.name as category_name,
+      c.icon as category_icon
+    FROM transactions t
+    LEFT JOIN categories c ON t.category_id = c.id
+    WHERE t.household_id = $1 AND t.type = $2
+  `;
+
+  const queryParams: unknown[] = [householdId, 'expense'];
+  let paramIndex = 3;
 
   if (params?.startDate) {
-    query = query.gte('occurred_at', params.startDate);
+    sql += ` AND t.occurred_at >= $${paramIndex}`;
+    queryParams.push(params.startDate);
+    paramIndex++;
   }
   if (params?.endDate) {
-    query = query.lte('occurred_at', params.endDate);
+    sql += ` AND t.occurred_at <= $${paramIndex}`;
+    queryParams.push(params.endDate);
+    paramIndex++;
   }
 
-  const { data: transactions, error } = await query;
+  let transactions: any[] = [];
 
-  if (error) {
-    return fail(error.message);
+  try {
+    const { query } = await import('@/lib/db');
+    const result = await query(sql, queryParams);
+    transactions = result.rows.map((row: any) => ({
+      category_id: row.category_id,
+      amount: row.amount,
+      categories: row.category_id ? {
+        id: row.category_id,
+        name: row.category_name,
+        icon: row.category_icon
+      } : null
+    }));
+  } catch (err: any) {
+    return fail(err.message);
   }
 
   // Agrupar manualmente por categoría
@@ -700,50 +747,52 @@ export async function getHouseholdMembersWithRole(): Promise<
   }
 
   const role = await getUserRoleInActiveHousehold();
+  console.log('[getHouseholdMembersWithRole] Role obtenido:', role);
   if (!role) {
     return fail('No se pudo determinar tu rol en el hogar');
   }
 
   const supabase = await supabaseServer();
 
-  // Obtener profile_id del usuario actual
-  const { data: currentProfile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('auth_user_id', user.id)
-    .single();
+  // user.profile_id ya ES el profiles.id que necesitamos
+  console.log('[getHouseholdMembersWithRole] user.id (auth_user_id):', user.id);
+  console.log('[getHouseholdMembersWithRole] user.profile_id (profiles.id):', user.profile_id);
 
-  if (!currentProfile) {
-    return fail('Usuario no encontrado');
-  }
+  const currentProfileId = user.profile_id;
 
-  // Obtener todos los miembros del household
-  const { data: members, error } = await supabase
-    .from('household_members')
-    .select(`
-      profile_id,
-      profiles (
-        id,
-        display_name
-      )
-    `)
-    .eq('household_id', householdId);
+  // Obtener todos los miembros del household con SQL nativo
+  const result = await query(
+    `SELECT
+      hm.profile_id,
+      p.id,
+      p.display_name
+    FROM household_members hm
+    JOIN profiles p ON hm.profile_id = p.id
+    WHERE hm.household_id = $1`,
+    [householdId]
+  );
 
-  if (error || !members) {
+  if (!result.rows || result.rows.length === 0) {
     return fail('Error al obtener miembros del hogar');
   }
 
+  type MemberRaw = {
+    profile_id: string;
+    id: string;
+    display_name: string;
+  };
+
+  const typedMembers = result.rows as MemberRaw[];
+
   // DEBUG: Log para verificar qué miembros se están retornando
-  console.log('[getHouseholdMembersWithRole] members:', members);
+  console.log('[getHouseholdMembersWithRole] members:', typedMembers);
 
   return ok({
-    members: members.map((m) => ({
-      // @ts-ignore - Nested select returns object
-      id: m.profiles.id,
-      // @ts-ignore - Nested select returns object
-      display_name: m.profiles.display_name,
+    members: typedMembers.map((m) => ({
+      id: m.id,
+      display_name: m.display_name,
     })),
-    userRole: role,
-    currentUserId: currentProfile.id,
+    userRole: role as 'owner' | 'member',
+    currentUserId: currentProfileId,
   });
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { StatCard } from '@/components/shared/data-display/StatCard';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Coins } from 'lucide-react';
 import { usePrivateFormat } from '@/lib/hooks/usePrivateFormat';
 
 interface FinancialSummaryProps {
@@ -10,6 +10,12 @@ interface FinancialSummaryProps {
   balance: number;
   transactionCount: number;
   avgDaily?: number;
+  householdCredits?: {
+    totalActiveCredits: number;
+    totalReservedCredits: number;
+    balanceAfterCredits: number;
+    rawBalance: number;
+  };
   previousMonthComparison?: {
     incomeChange: number;
     expensesChange: number;
@@ -22,11 +28,13 @@ export function FinancialSummary({
   balance,
   transactionCount,
   avgDaily,
+  householdCredits,
   previousMonthComparison,
 }: FinancialSummaryProps) {
   const { formatPrivateCurrency } = usePrivateFormat();
 
   const balanceVariant = balance >= 0 ? 'success' : 'danger';
+  const totalCredits = (householdCredits?.totalActiveCredits || 0) + (householdCredits?.totalReservedCredits || 0);
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -59,7 +67,7 @@ export function FinancialSummary({
               }
             : undefined
         }
-        subtitle={previousMonthComparison ? 'vs mes anterior' : undefined}
+        subtitle={avgDaily ? `~${formatPrivateCurrency(avgDaily)}/día` : undefined}
       />
 
       <StatCard
@@ -67,14 +75,14 @@ export function FinancialSummary({
         value={formatPrivateCurrency(balance)}
         icon={<DollarSign className="h-4 w-4" />}
         variant={balanceVariant}
-        subtitle={balance >= 0 ? 'Superávit' : 'Déficit'}
       />
 
       <StatCard
-        title="Transacciones"
-        value={transactionCount}
-        icon={<BarChart3 className="h-4 w-4" />}
-        subtitle={avgDaily ? `~${formatPrivateCurrency(avgDaily)}/día` : undefined}
+        title="Créditos del Hogar"
+        value={formatPrivateCurrency(totalCredits)}
+        icon={<Coins className="h-4 w-4" />}
+        variant="default"
+        subtitle={householdCredits ? `Saldo libre (sin créditos): ${formatPrivateCurrency(householdCredits.balanceAfterCredits)}` : undefined}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation';
 import { supabaseServer, getUserHouseholdId } from '@/lib/supabaseServer';
 import { isOwner } from '@/lib/adminCheck';

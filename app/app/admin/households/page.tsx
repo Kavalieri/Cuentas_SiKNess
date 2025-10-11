@@ -1,8 +1,22 @@
+export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { formatDate } from '@/lib/format';
 import { Home, Users, Calendar, TrendingDown } from 'lucide-react';
+
+// Tipos para las queries
+interface HouseholdMember {
+  profile_id: string;
+  role: string;
+}
+
+interface Household {
+  id: string;
+  name: string;
+  created_at: string;
+  household_members?: HouseholdMember[];
+}
 
 export default async function HouseholdsPage() {
   const supabase = await supabaseServer();
@@ -28,7 +42,7 @@ export default async function HouseholdsPage() {
 
   // Para cada hogar, obtener estadísticas adicionales
   const householdsWithStats = await Promise.all(
-    (households ?? []).map(async (household) => {
+    ((households as unknown as Household[]) ?? []).map(async (household) => {
       const [movementsResult, categoriesResult] = await Promise.all([
         supabase
           .from('transactions')

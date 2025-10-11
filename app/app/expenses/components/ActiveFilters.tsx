@@ -52,7 +52,16 @@ export function ActiveFilters({ categories }: ActiveFiltersProps) {
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
+    // Si ya incluye 'T', es un timestamp completo, si no, es solo fecha
+    const dateString = dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00';
+    const date = new Date(dateString);
+
+    // Verificar si la fecha es válida
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date string:', dateStr);
+      return 'Fecha inválida';
+    }
+
     return date.toLocaleDateString('es-ES', {
       day: 'numeric',
       month: 'short',

@@ -83,10 +83,13 @@ export async function getCurrentHousehold(): Promise<Result<{ id: string; name: 
     .single();
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
-  return ok(data);
+  type HouseholdData = { id: string; name: string };
+  const typedData = data as unknown as HouseholdData | null;
+
+  return ok(typedData);
 }
 
 /**
@@ -112,7 +115,7 @@ export async function updateHouseholdName(formData: FormData): Promise<Result> {
     .eq('id', householdId);
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   revalidatePath('/app/household');
@@ -139,7 +142,7 @@ export async function updateMemberRole(
     .eq('id', memberId);
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   revalidatePath('/app/household');
@@ -170,14 +173,19 @@ export async function removeMember(memberId: string): Promise<Result> {
     .eq('household_id', householdId)
     .eq('role', 'owner');
 
-  if (owners && owners.length === 1) {
+  type OwnerData = { profile_id: string };
+  const typedOwners = (owners as unknown as OwnerData[]) ?? [];
+
+  if (typedOwners.length === 1) {
     const { data: memberToDelete } = await supabase
       .from('household_members')
       .select('profile_id')
       .eq('id', memberId)
       .single();
 
-    if (memberToDelete && owners[0]?.profile_id === memberToDelete.profile_id) {
+    const typedMemberToDelete = memberToDelete as unknown as OwnerData | null;
+
+    if (typedMemberToDelete && typedOwners[0]?.profile_id === typedMemberToDelete.profile_id) {
       return fail('No puedes eliminar el último administrador del hogar');
     }
   }
@@ -189,7 +197,7 @@ export async function removeMember(memberId: string): Promise<Result> {
     .eq('id', memberId);
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   revalidatePath('/app/household');
@@ -225,14 +233,25 @@ export async function getHouseholdMembers(): Promise<
     .eq('household_id', householdId);
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
+  type MemberWithProfile = {
+    profile_id: string;
+    profiles: {
+      id: string;
+      display_name: string;
+      avatar_url: string | null;
+    } | null;
+  };
+
+  const typedData = (data as unknown as MemberWithProfile[]) ?? [];
+
   // Transformar datos
-  const members = (data || [])
+  const members = typedData
     .filter((m) => m.profiles)
     .map((m) => {
-      const profile = m.profiles as { id: string; display_name: string; avatar_url: string | null } | null;
+      const profile = m.profiles;
       return {
         id: profile?.id || '',
         display_name: profile?.display_name || 'Sin nombre',

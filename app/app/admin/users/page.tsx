@@ -1,9 +1,25 @@
+export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { formatDate } from '@/lib/format';
 import { Users, Mail, Calendar, Home, Shield } from 'lucide-react';
+
+interface Membership {
+  household_id: string;
+  role: string | null;
+  households: { name: string } | null;
+}
+
+interface UserWithDetails {
+  id: string;
+  email: string;
+  created_at: string;
+  last_sign_in_at: string | null;
+  memberships: Membership[];
+  is_system_admin: boolean;
+}
 
 export default async function UsersPage() {
   // Verificar que el usuario actual es admin
@@ -35,16 +51,18 @@ export default async function UsersPage() {
   if (usersError) {
     return (
       <div className="text-destructive">
-        Error al cargar usuarios: {usersError.message}
+        Error al cargar usuarios
       </div>
     );
   }
 
   // Para cada usuario, obtener sus membresías y si es admin
-  const usersWithDetails = await Promise.all(
+  const usersWithDetails: UserWithDetails[] = await Promise.all(
     users.users.map(async (user) => {
+      const supabase = await supabaseServer();
+
       const [membershipsResult, adminResult] = await Promise.all([
-        adminClient
+        supabase
           .from('household_members')
           .select(`
             household_id,
@@ -53,11 +71,11 @@ export default async function UsersPage() {
               name
             )
           `)
-          .eq('user_id', user.id),
-        adminClient
+          .eq('profile_id', user.id),
+        supabase
           .from('system_admins')
-          .select('user_id')
-          .eq('user_id', user.id)
+          .select('profile_id')
+          .eq('profile_id', user.id)
           .single(),
       ]);
 
@@ -66,7 +84,7 @@ export default async function UsersPage() {
         email: user.email ?? 'Sin email',
         created_at: user.created_at,
         last_sign_in_at: user.last_sign_in_at,
-        memberships: membershipsResult.data ?? [],
+        memberships: (membershipsResult.data as unknown as Membership[]) ?? [],
         is_system_admin: !adminResult.error && !!adminResult.data,
       };
     })
@@ -140,7 +158,7 @@ export default async function UsersPage() {
                 <div className="space-y-2">
                   <div className="text-sm font-medium">Membresías:</div>
                   <div className="flex flex-wrap gap-2">
-                    {user.memberships.map((membership: { household_id: string; role: string | null; households: { name: string } | null }) => (
+                    {user.memberships.map((membership) => (
                       <Badge key={membership.household_id} variant="secondary">
                         <Home className="h-3 w-3 mr-1" />
                         {membership.households?.name ?? 'Sin nombre'}

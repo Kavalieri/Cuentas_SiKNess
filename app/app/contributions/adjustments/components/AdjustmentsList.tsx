@@ -53,9 +53,11 @@ export function AdjustmentsList({
 
   // Agrupar por estado
   const pending = adjustments.filter((a) => a.adjustment.status === 'pending');
+  const approved = adjustments.filter((a) => a.adjustment.status === 'approved');
   const active = adjustments.filter((a) => a.adjustment.status === 'active');
   const applied = adjustments.filter((a) => a.adjustment.status === 'applied');
   const cancelled = adjustments.filter((a) => a.adjustment.status === 'cancelled');
+  const rejected = adjustments.filter((a) => a.adjustment.status === 'rejected');
   const locked = adjustments.filter((a) => a.adjustment.status === 'locked');
 
   return (
@@ -66,6 +68,28 @@ export function AdjustmentsList({
           <h2 className="text-lg font-semibold">Pendientes de Aprobación ({pending.length})</h2>
           <div className="grid gap-4">
             {pending.map((data) => (
+              <AdjustmentItem
+                key={data.adjustment.id}
+                adjustmentData={data}
+                isOwner={isOwner}
+                currentUserProfileId={currentUserProfileId}
+                currency={currency}
+                onUpdate={onAdjustmentUpdated}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Aprobados (listos para aplicar) */}
+      {approved.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-green-600">Aprobados ({approved.length})</h2>
+          <p className="text-sm text-muted-foreground">
+            Estos ajustes han sido aprobados y están listos para aplicarse en las contribuciones.
+          </p>
+          <div className="grid gap-4">
+            {approved.map((data) => (
               <AdjustmentItem
                 key={data.adjustment.id}
                 adjustmentData={data}
@@ -104,6 +128,27 @@ export function AdjustmentsList({
           <h2 className="text-lg font-semibold">Aplicados ({applied.length})</h2>
           <div className="grid gap-4">
             {applied.map((data) => (
+              <AdjustmentItem
+                key={data.adjustment.id}
+                adjustmentData={data}
+                isOwner={isOwner}
+                currentUserProfileId={currentUserProfileId}
+                currency={currency}
+                onUpdate={onAdjustmentUpdated}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rechazados */}
+      {rejected.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-red-600">
+            Rechazados ({rejected.length})
+          </h2>
+          <div className="grid gap-4">
+            {rejected.map((data) => (
               <AdjustmentItem
                 key={data.adjustment.id}
                 adjustmentData={data}

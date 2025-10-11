@@ -69,9 +69,15 @@ export function OverviewWrapper({
         .gte('occurred_at', startOfMonth.toISOString().split('T')[0])
         .lte('occurred_at', endOfMonth.toISOString().split('T')[0]);
 
-      const expensesList = monthTransactions?.filter(t => t.type === 'expense') || [];
-      const incomesList = monthTransactions?.filter(t => t.type === 'income') || [];
-      
+      type Transaction = {
+        type: string;
+        amount: number;
+      };
+
+      const typedTransactions = (monthTransactions || []) as Transaction[];
+      const expensesList = typedTransactions.filter(t => t.type === 'expense');
+      const incomesList = typedTransactions.filter(t => t.type === 'income');
+
       setExpenses(expensesList.reduce((sum, e) => sum + e.amount, 0));
       setIncomes(incomesList.reduce((sum, i) => sum + i.amount, 0));
     };

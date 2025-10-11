@@ -1,0 +1,130 @@
+{
+  "recommendations": [
+    // ============================================================================
+    // 🎯 Esenciales para el Proyecto
+    // ============================================================================
+
+    // GitHub Copilot (AI pair programming)
+    "github.copilot",
+    "github.copilot-chat",
+
+    // Prettier (Code formatter)
+    "esbenp.prettier-vscode",
+
+    // ESLint (Linter para TypeScript/JavaScript)
+    "dbaeumer.vscode-eslint",
+
+    // ============================================================================
+    // 🔧 TypeScript/JavaScript/React
+    // ============================================================================
+
+    // ES7+ React/Redux/React-Native snippets
+    "dsznajder.es7-react-js-snippets",
+
+    // Auto Rename Tag
+    "formulahendry.auto-rename-tag",
+
+    // Auto Close Tag
+    "formulahendry.auto-close-tag",
+
+    // Path Intellisense
+    "christian-kohler.path-intellisense",
+
+    // ============================================================================
+    // 🎨 Tailwind CSS
+    // ============================================================================
+
+    // Tailwind CSS IntelliSense
+    "bradlc.vscode-tailwindcss",
+
+    // Tailwind Documentation
+    "austenc.tailwind-docs",
+
+    // ============================================================================
+    // 🗄️ Database & SQL
+    // ============================================================================
+
+    // SQLTools (SQL client)
+    "mtxr.sqltools",
+
+    // SQLTools PostgreSQL Driver
+    "mtxr.sqltools-driver-pg",
+
+    // PostgreSQL syntax highlighting
+    "ckolkman.vscode-postgres",
+
+    // ============================================================================
+    // 🐚 Shell & Terminal
+    // ============================================================================
+
+    // Shell Script
+    "foxundermoon.shell-format",
+
+    // Bash IDE
+    "mads-hartmann.bash-ide-vscode",
+
+    // ============================================================================
+    // 📝 Markdown
+    // ============================================================================
+
+    // Markdown All in One
+    "yzhang.markdown-all-in-one",
+
+    // Markdown Preview Enhanced
+    "shd101wyy.markdown-preview-enhanced",
+
+    // ============================================================================
+    // 🔍 Git & Version Control
+    // ============================================================================
+
+    // GitLens (Git supercharged)
+    "eamodio.gitlens",
+
+    // Git Graph
+    "mhutchie.git-graph",
+
+    // ============================================================================
+    // 🎨 UI Enhancements
+    // ============================================================================
+
+    // Material Icon Theme
+    "pkief.material-icon-theme",
+
+    // Better Comments
+    "aaron-bond.better-comments",
+
+    // Indent Rainbow
+    "oderwat.indent-rainbow",
+
+    // Bracket Pair Colorizer 2
+    "coenraads.bracket-pair-colorizer-2",
+
+    // ============================================================================
+    // 🧰 Utilities
+    // ============================================================================
+
+    // DotENV syntax highlighting
+    "mikestead.dotenv",
+
+    // EditorConfig for VS Code
+    "editorconfig.editorconfig",
+
+    // Error Lens (inline errors)
+    "usernamehw.errorlens",
+
+    // Todo Tree
+    "gruntfuggly.todo-tree",
+
+    // Remote - SSH (para desarrollo remoto)
+    "ms-vscode-remote.remote-ssh",
+
+    // Remote - SSH: Editing Configuration Files
+    "ms-vscode-remote.remote-ssh-edit"
+  ],
+
+  "unwantedRecommendations": [
+    // Extensiones que pueden causar conflictos o no son necesarias
+    "ms-vscode.vscode-typescript-next",
+    "hookyqr.beautify"
+  ]
+}

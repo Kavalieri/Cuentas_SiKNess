@@ -92,8 +92,27 @@ export async function getAdjustmentTemplates(): Promise<Result<AdjustmentTemplat
     return fail('Error al obtener las plantillas');
   }
 
+  interface TemplateRaw {
+    id: string;
+    household_id: string;
+    name: string;
+    category_id: string;
+    icon: string;
+    is_active: boolean;
+    last_used_amount: number | null;
+    sort_order: number;
+    created_at: string;
+    category: {
+      id: string;
+      name: string;
+      type: string;
+    } | null;
+  }
+
+  const typedTemplates = (templates as unknown as TemplateRaw[]) ?? [];
+
   // Transformar el resultado para que coincida con el tipo esperado
-  const templatesWithCategory: AdjustmentTemplate[] = templates.map((t) => ({
+  const templatesWithCategory: AdjustmentTemplate[] = typedTemplates.map((t) => ({
     id: t.id,
     household_id: t.household_id,
     name: t.name,
@@ -165,7 +184,7 @@ export async function updateTemplateLastUsed(
 
 /**
  * Crea un ajuste de contribución desde una plantilla
- * 
+ *
  * Este action:
  * 1. Valida los datos del formulario
  * 2. Obtiene información de la plantilla (categoría, nombre)
@@ -235,7 +254,7 @@ export async function createAdjustmentFromTemplate(data: {
     .from('contributions')
     .select('id')
     .eq('household_id', householdId)
-    .eq('profile_id', user.id)
+    .eq('profile_id', user.profile_id)
     .eq('year', year)
     .eq('month', month)
     .maybeSingle();
@@ -246,13 +265,13 @@ export async function createAdjustmentFromTemplate(data: {
       .from('contributions')
       .insert({
         household_id: householdId,
-        profile_id: user.id,
+        profile_id: user.profile_id,
         year,
         month,
         expected_amount: 0, // Se calculará después
         paid_amount: 0,
         status: 'pending',
-        created_by: user.id,
+        created_by: user.profile_id,
       })
       .select('id')
       .single();

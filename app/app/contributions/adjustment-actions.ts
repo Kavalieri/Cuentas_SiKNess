@@ -75,7 +75,7 @@ export async function createPrepaymentRequest(formData: FormData): Promise<Resul
 
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return fail('Usuario no autenticado');
   }
@@ -127,8 +127,8 @@ export async function createPrepaymentRequest(formData: FormData): Promise<Resul
     .select('id')
     .single();
 
-  if (error) {
-    return fail(error.message);
+  if (error || !adjustment) {
+    return fail('Error al crear ajuste');
   }
 
   // TODO: Notificar a owners del hogar
@@ -149,7 +149,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
 
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return fail('Usuario no autenticado');
   }
@@ -163,20 +163,23 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   // Obtener ajuste y validar estado
   const { data: adjustment, error: adjustmentError } = await supabase
     .from('contribution_adjustments')
-    .select(`
-      *,
-      contributions!inner(
-        household_id,
-        profile_id,
-        year,
-        month
-      )
-    `)
+    .select('*')
     .eq('id', parsed.data.adjustment_id)
     .single();
 
   if (adjustmentError || !adjustment) {
     return fail('Ajuste no encontrado');
+  }
+
+  // Obtener contribución asociada
+  const { data: contribution, error: contributionError } = await supabase
+    .from('contributions')
+    .select('household_id, profile_id, year, month')
+    .eq('id', adjustment.contribution_id)
+    .single();
+
+  if (contributionError || !contribution) {
+    return fail('Contribución no encontrada');
   }
 
   if (adjustment.status !== 'pending') {
@@ -187,7 +190,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   const { data: membership } = await supabase
     .from('household_members')
     .select('role')
-    .eq('household_id', adjustment.contributions.household_id)
+    .eq('household_id', contribution.household_id)
     .eq('profile_id', profileId)
     .single();
 
@@ -294,7 +297,7 @@ export async function approvePrepayment(formData: FormData): Promise<Result> {
   revalidatePath('/app/contributions');
   revalidatePath('/app/expenses');
   revalidatePath('/app');
-  
+
   return ok();
 }
 
@@ -310,7 +313,7 @@ export async function rejectPrepayment(formData: FormData): Promise<Result> {
 
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return fail('Usuario no autenticado');
   }
@@ -324,15 +327,23 @@ export async function rejectPrepayment(formData: FormData): Promise<Result> {
   // Obtener ajuste y validar estado
   const { data: adjustment, error: adjustmentError } = await supabase
     .from('contribution_adjustments')
-    .select(`
-      *,
-      contributions!inner(household_id)
-    `)
+    .select('*')
     .eq('id', parsed.data.adjustment_id)
     .single();
 
   if (adjustmentError || !adjustment) {
     return fail('Ajuste no encontrado');
+  }
+
+  // Obtener contribución asociada
+  const { data: contribution, error: contributionError } = await supabase
+    .from('contributions')
+    .select('household_id')
+    .eq('id', adjustment.contribution_id)
+    .single();
+
+  if (contributionError || !contribution) {
+    return fail('Contribución no encontrada');
   }
 
   if (adjustment.status !== 'pending') {
@@ -343,7 +354,7 @@ export async function rejectPrepayment(formData: FormData): Promise<Result> {
   const { data: membership } = await supabase
     .from('household_members')
     .select('role')
-    .eq('household_id', adjustment.contributions.household_id)
+    .eq('household_id', contribution.household_id)
     .eq('profile_id', profileId)
     .single();
 
@@ -353,7 +364,7 @@ export async function rejectPrepayment(formData: FormData): Promise<Result> {
 
   // Actualizar ajuste a rechazado
   const updatedReason = `${adjustment.reason}\n\n❌ RECHAZADO: ${parsed.data.rejection_reason}`;
-  
+
   const { error: updateError } = await supabase
     .from('contribution_adjustments')
     .update({
@@ -371,7 +382,7 @@ export async function rejectPrepayment(formData: FormData): Promise<Result> {
   // TODO: Notificar al miembro del rechazo
 
   revalidatePath('/app/contributions');
-  
+
   return ok();
 }
 
@@ -387,7 +398,7 @@ export async function recordExtraIncome(formData: FormData): Promise<Result> {
 
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return fail('Usuario no autenticado');
   }
@@ -479,7 +490,7 @@ export async function recordExtraIncome(formData: FormData): Promise<Result> {
   revalidatePath('/app/contributions');
   revalidatePath('/app/expenses');
   revalidatePath('/app');
-  
+
   return ok();
 }
 
@@ -502,7 +513,7 @@ export async function updatePendingAdjustment(formData: FormData): Promise<Resul
 
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return fail('Usuario no autenticado');
   }
@@ -516,15 +527,23 @@ export async function updatePendingAdjustment(formData: FormData): Promise<Resul
   // Obtener ajuste y validar estado
   const { data: adjustment, error: adjustmentError } = await supabase
     .from('contribution_adjustments')
-    .select(`
-      *,
-      contributions!inner(household_id)
-    `)
+    .select('*')
     .eq('id', parsed.data.adjustment_id)
     .single();
 
   if (adjustmentError || !adjustment) {
     return fail('Ajuste no encontrado');
+  }
+
+  // Obtener contribución asociada
+  const { data: contribution, error: contributionError } = await supabase
+    .from('contributions')
+    .select('household_id')
+    .eq('id', adjustment.contribution_id)
+    .single();
+
+  if (contributionError || !contribution) {
+    return fail('Contribución no encontrada');
   }
 
   if (adjustment.status !== 'pending') {
@@ -545,7 +564,7 @@ export async function updatePendingAdjustment(formData: FormData): Promise<Resul
 
   // Construir objeto de actualización solo con campos definidos
   const updateData: Partial<AdjustmentInsert> = {};
-  
+
   if (parsed.data.expense_category_id) {
     updateData.expense_category_id = parsed.data.expense_category_id;
   }
@@ -567,7 +586,7 @@ export async function updatePendingAdjustment(formData: FormData): Promise<Resul
   }
 
   revalidatePath('/app/contributions');
-  
+
   return ok();
 }
 
@@ -582,7 +601,7 @@ export async function updatePendingAdjustment(formData: FormData): Promise<Resul
 export async function getAllHouseholdAdjustments(): Promise<Result<AdjustmentRow[]>> {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return fail('Usuario no autenticado');
   }
@@ -611,29 +630,101 @@ export async function getAllHouseholdAdjustments(): Promise<Result<AdjustmentRow
     return fail('Solo los owners pueden ver todos los ajustes del hogar');
   }
 
-  // Obtener todos los ajustes del hogar
+  // Obtener todos los ajustes del hogar a través de contributions
+  // Primero obtenemos las contributions del household
+  const { data: contributions, error: contribError } = await supabase
+    .from('contributions')
+    .select('id')
+    .eq('household_id', householdId);
+
+  if (contribError) {
+    return fail('Error al obtener contribuciones: ' + contribError.message);
+  }
+
+  if (!contributions || contributions.length === 0) {
+    return ok([]);
+  }
+
+  const contributionIds = contributions.map((c: any) => c.id as string);
+
+  // Ahora obtenemos los ajustes que pertenecen a esas contributions
   const { data: adjustments, error } = await supabase
     .from('contribution_adjustments')
-    .select(`
-      *,
-      contributions!inner(
-        household_id,
-        profile_id,
-        year,
-        month,
-        profiles!inner(display_name, email)
-      ),
-      category:categories!category_id(name, type),
-      expense_category:categories!expense_category_id(name, type)
-    `)
-    .eq('contributions.household_id', householdId)
+    .select('*')
+    .in('contribution_id', contributionIds)
     .order('created_at', { ascending: false });
 
   if (error) {
     return fail('Error al obtener ajustes: ' + error.message);
   }
 
-  return ok(adjustments as unknown as AdjustmentRow[]);
+  if (!adjustments || adjustments.length === 0) {
+    return ok([]);
+  }
+
+  // Tipificar los ajustes
+  const typedAdjustments = adjustments as AdjustmentRow[];
+
+  // Obtener contribution_ids únicos
+  const categoryIds = [...new Set([
+    ...typedAdjustments.map(a => a.category_id).filter(Boolean),
+    ...typedAdjustments.map(a => a.expense_category_id).filter(Boolean)
+  ])];
+
+  // Obtener datos relacionados en paralelo
+  const [contributionsResult, categoriesResult] = await Promise.all([
+    contributionIds.length > 0 ? supabase
+      .from('contributions')
+      .select('id, household_id, profile_id, year, month')
+      .in('id', contributionIds) : Promise.resolve({ data: [], error: null }),
+    categoryIds.length > 0 ? supabase
+      .from('categories')
+      .select('id, name, icon, type')
+      .in('id', categoryIds) : Promise.resolve({ data: [], error: null })
+  ]);
+
+  if (contributionsResult.error) {
+    return fail('Error al obtener contribuciones: ' + contributionsResult.error.message);
+  }
+  if (categoriesResult.error) {
+    return fail('Error al obtener categorías: ' + categoriesResult.error.message);
+  }
+
+  // Crear mapas para lookup rápido
+  const contributionsMap = new Map((contributionsResult.data as any[])?.map(c => [c.id, c]) || []);
+  const categoriesMap = new Map((categoriesResult.data as any[])?.map(c => [c.id, c]) || []);
+
+  // Obtener profile_ids únicos de las contribuciones
+  const profileIds = [...new Set((contributionsResult.data as any[])?.map(c => c.profile_id).filter(Boolean) || [])];
+
+  // Obtener perfiles si hay profile_ids
+  const profilesResult = profileIds.length > 0 ? await supabase
+    .from('profiles')
+    .select('id, display_name, email')
+    .in('id', profileIds) : { data: [], error: null };
+
+  if (profilesResult.error) {
+    return fail('Error al obtener perfiles: ' + profilesResult.error.message);
+  }
+
+  const profilesMap = new Map((profilesResult.data as any[])?.map(p => [p.id, p]) || []);
+
+  // Combinar los datos
+  const enrichedAdjustments = typedAdjustments.map(adjustment => ({
+    ...adjustment,
+    contributions: adjustment.contribution_id ? {
+      ...(contributionsMap.get(adjustment.contribution_id) || {}),
+      profiles: (contributionsMap.get(adjustment.contribution_id) as any)?.profile_id
+        ? profilesMap.get((contributionsMap.get(adjustment.contribution_id) as any)?.profile_id)
+        : null
+    } : null,
+    category: adjustment.category_id ? categoriesMap.get(adjustment.category_id) : null,
+    expense_category: adjustment.expense_category_id ? categoriesMap.get(adjustment.expense_category_id) : null
+  }));
+
+  console.log("[getAllHouseholdAdjustments] Returning enriched adjustments:", enrichedAdjustments.length);
+  console.log("[getAllHouseholdAdjustments] Sample adjustment:", enrichedAdjustments[0]);
+  return ok(enrichedAdjustments as unknown as AdjustmentRow[]);
 }
 
 /**
@@ -643,7 +734,7 @@ export async function getAllHouseholdAdjustments(): Promise<Result<AdjustmentRow
 export async function getMyAdjustments(): Promise<Result<AdjustmentRow[]>> {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return fail('Usuario no autenticado');
   }
@@ -660,30 +751,100 @@ export async function getMyAdjustments(): Promise<Result<AdjustmentRow[]>> {
     return fail('No se pudo determinar el hogar activo');
   }
 
-  // Obtener ajustes del usuario actual
+  // Obtener ajustes del usuario actual a través de sus contributions
+  // Primero obtenemos las contributions del usuario en este household
+  const { data: userContributions, error: contribError } = await supabase
+    .from('contributions')
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('profile_id', profileId);
+
+  if (contribError) {
+    return fail('Error al obtener contribuciones: ' + contribError.message);
+  }
+
+  if (!userContributions || userContributions.length === 0) {
+    return ok([]);
+  }
+
+  const userContributionIds = userContributions.map((c: any) => c.id as string);
+
+  // Ahora obtenemos los ajustes de esas contributions
   const { data: adjustments, error } = await supabase
     .from('contribution_adjustments')
-    .select(`
-      *,
-      contributions!inner(
-        household_id,
-        profile_id,
-        year,
-        month,
-        profiles!inner(display_name, email)
-      ),
-      category:categories!category_id(name, type),
-      expense_category:categories!expense_category_id(name, type)
-    `)
-    .eq('contributions.household_id', householdId)
-    .eq('contributions.profile_id', profileId)
+    .select('*')
+    .in('contribution_id', userContributionIds)
     .order('created_at', { ascending: false });
 
   if (error) {
     return fail('Error al obtener ajustes: ' + error.message);
   }
 
-  return ok(adjustments as unknown as AdjustmentRow[]);
+  if (!adjustments || adjustments.length === 0) {
+    return ok([]);
+  }
+
+  // Tipificar los ajustes
+  const typedAdjustments = adjustments as AdjustmentRow[];
+
+  // Obtener contribution_ids únicos
+  const categoryIds = [...new Set([
+    ...typedAdjustments.map(a => a.category_id).filter(Boolean),
+    ...typedAdjustments.map(a => a.expense_category_id).filter(Boolean)
+  ])];
+
+  // Obtener datos relacionados en paralelo
+  const [contributionsResult, categoriesResult] = await Promise.all([
+    userContributionIds.length > 0 ? supabase
+      .from('contributions')
+      .select('id, household_id, profile_id, year, month')
+      .in('id', userContributionIds) : Promise.resolve({ data: [], error: null }),
+    categoryIds.length > 0 ? supabase
+      .from('categories')
+      .select('id, name, icon, type')
+      .in('id', categoryIds) : Promise.resolve({ data: [], error: null })
+  ]);
+
+  if (contributionsResult.error) {
+    return fail('Error al obtener contribuciones: ' + contributionsResult.error.message);
+  }
+  if (categoriesResult.error) {
+    return fail('Error al obtener categorías: ' + categoriesResult.error.message);
+  }
+
+  // Crear mapas para lookup rápido
+  const contributionsMap = new Map((contributionsResult.data as any[])?.map(c => [c.id, c]) || []);
+  const categoriesMap = new Map((categoriesResult.data as any[])?.map(c => [c.id, c]) || []);
+
+  // Obtener profile_ids únicos de las contribuciones
+  const profileIds = [...new Set((contributionsResult.data as any[])?.map(c => c.profile_id).filter(Boolean) || [])];
+
+  // Obtener perfiles si hay profile_ids
+  const profilesResult = profileIds.length > 0 ? await supabase
+    .from('profiles')
+    .select('id, display_name, email')
+    .in('id', profileIds) : { data: [], error: null };
+
+  if (profilesResult.error) {
+    return fail('Error al obtener perfiles: ' + profilesResult.error.message);
+  }
+
+  const profilesMap = new Map((profilesResult.data as any[])?.map(p => [p.id, p]) || []);
+
+  // Combinar los datos
+  const enrichedAdjustments = typedAdjustments.map(adjustment => ({
+    ...adjustment,
+    contributions: adjustment.contribution_id ? {
+      ...(contributionsMap.get(adjustment.contribution_id) || {}),
+      profiles: (contributionsMap.get(adjustment.contribution_id) as any)?.profile_id
+        ? profilesMap.get((contributionsMap.get(adjustment.contribution_id) as any)?.profile_id)
+        : null
+    } : null,
+    category: adjustment.category_id ? categoriesMap.get(adjustment.category_id) : null,
+    expense_category: adjustment.expense_category_id ? categoriesMap.get(adjustment.expense_category_id) : null
+  }));
+
+  return ok(enrichedAdjustments as unknown as AdjustmentRow[]);
 }
 
 /**

@@ -1,14 +1,49 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import { supabaseServer } from '@/lib/supabaseServer';
 
-interface SystemDetailsProps {
-  supabase: SupabaseClient<Database>;
+// Tipos explícitos
+interface Household {
+  id: string;
+  name: string;
+  created_at: string;
 }
 
-export default async function SystemDetails({ supabase }: SystemDetailsProps) {
+interface Transaction {
+  id: string;
+  type: string;
+  amount: number;
+  currency: string;
+  occurred_at: string;
+  household_id: string;
+  households: { name: string };
+}
+
+interface SystemAdmin {
+  user_id: string;
+  created_at: string;
+  notes: string | null;
+}
+
+interface HouseholdMember {
+  profile_id: string;
+  household_id: string;
+  role: string;
+  households: { name: string };
+  profiles: { display_name: string | null; email: string };
+}
+
+interface Category {
+  id: string;
+  name: string;
+  type: string;
+  household_id: string;
+  households: { name: string };
+}
+
+export default async function SystemDetails() {
+  const supabase = await supabaseServer();
   // Obtener últimos hogares
   const { data: recentHouseholds } = await supabase
     .from('households')
@@ -20,10 +55,10 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
   const { data: recentTransactions } = await supabase
     .from('transactions')
     .select(`
-      id, 
-      type, 
-      amount, 
-      currency, 
+      id,
+      type,
+      amount,
+      currency,
       occurred_at,
       household_id,
       households!inner(name)
@@ -39,8 +74,8 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
 
   // Obtener emails de admins (desde auth)
   const { data: authUsers } = await supabase.auth.admin.listUsers();
-  
-  const adminsWithEmails = (systemAdmins ?? []).map((admin) => {
+
+  const adminsWithEmails = ((systemAdmins as unknown as SystemAdmin[]) ?? []).map((admin) => {
     const user = authUsers?.users.find((u) => u.id === admin.user_id);
     return {
       email: user?.email ?? 'Desconocido',
@@ -62,12 +97,20 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
     .order('household_id', { ascending: false })
     .limit(10);
 
+  // Cast tipado
+  const typedHouseholds = recentHouseholds as unknown as Household[];
+  const typedTransactions = recentTransactions as unknown as Transaction[];
+  const typedMembers = recentMembers as unknown as HouseholdMember[];
+
   // Obtener categorías (sin RPC, query directo)
   const { data: categoriesData } = await supabase
     .from('categories')
     .select('id, name, type, household_id, households!inner(name)')
     .order('created_at', { ascending: false })
     .limit(10);
+
+  // Cast tipado
+  const typedCategories = categoriesData as unknown as Category[];
 
   return (
     <Tabs defaultValue="households" className="w-full">
@@ -88,9 +131,9 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {recentHouseholds && recentHouseholds.length > 0 ? (
+            {typedHouseholds && typedHouseholds.length > 0 ? (
               <div className="space-y-3">
-                {recentHouseholds.map((household) => (
+                {typedHouseholds.map((household) => (
                   <div
                     key={household.id}
                     className="flex items-center justify-between p-3 bg-muted rounded-lg"
@@ -131,9 +174,9 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {recentTransactions && recentTransactions.length > 0 ? (
+            {typedTransactions && typedTransactions.length > 0 ? (
               <div className="space-y-2">
-                {recentTransactions.map((transaction) => (
+                {typedTransactions.map((transaction) => (
                   <div
                     key={transaction.id}
                     className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm"
@@ -150,7 +193,7 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
                           }).format(transaction.amount)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {(transaction.households as { name: string })?.name ?? 'Hogar desconocido'}
+                          {transaction.households?.name ?? 'Hogar desconocido'}
                         </p>
                       </div>
                     </div>
@@ -176,19 +219,19 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {recentMembers && recentMembers.length > 0 ? (
+            {typedMembers && typedMembers.length > 0 ? (
               <div className="space-y-2">
-                {recentMembers.map((member, idx) => (
+                {typedMembers.map((member, idx) => (
                   <div
                     key={`${member.profile_id}-${member.household_id}-${idx}`}
                     className="flex items-center justify-between p-3 bg-muted rounded-lg"
                   >
                     <div>
                       <p className="font-medium">
-                        {(member.profiles as { display_name?: string; email?: string })?.display_name ?? (member.profiles as { display_name?: string; email?: string })?.email ?? 'Usuario desconocido'}
+                        {member.profiles?.display_name ?? member.profiles?.email ?? 'Usuario desconocido'}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {(member.households as { name: string })?.name ?? 'Hogar desconocido'} • {member.role === 'owner' ? '👑 Owner' : '👥 Member'}
+                        {member.households?.name ?? 'Hogar desconocido'} • {member.role === 'owner' ? '👑 Owner' : '👥 Member'}
                       </p>
                     </div>
                     <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
@@ -257,9 +300,9 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {categoriesData && categoriesData.length > 0 ? (
+            {typedCategories && typedCategories.length > 0 ? (
               <div className="space-y-2">
-                {categoriesData.map((category) => (
+                {typedCategories.map((category) => (
                   <div
                     key={category.id}
                     className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm"
@@ -267,7 +310,7 @@ export default async function SystemDetails({ supabase }: SystemDetailsProps) {
                     <div>
                       <p className="font-medium">{category.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {(category.households as { name: string })?.name ?? 'Hogar desconocido'}
+                        {category.households?.name ?? 'Hogar desconocido'}
                       </p>
                     </div>
                     <Badge variant={category.type === 'expense' ? 'destructive' : 'default'}>

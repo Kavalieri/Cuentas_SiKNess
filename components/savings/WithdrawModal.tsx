@@ -91,23 +91,31 @@ export function WithdrawModal({ open, onOpenChange, onSuccess, currentBalance }:
     try {
       const supabase = supabaseBrowser();
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) return;
+
+      // Tipar user
+      type User = { id: string; email?: string };
+      const typedUser = user as unknown as User;
 
       // Obtener household activo
       const { data: settings } = await supabase
         .from('user_settings')
         .select('active_household_id')
-        .eq('user_id', user.id)
+        .eq('user_id', typedUser.id)
         .single();
 
-      if (!settings?.active_household_id) return;
+      // Tipar settings
+      type Settings = { active_household_id: string };
+      const typedSettings = settings as unknown as Settings;
+
+      if (!typedSettings?.active_household_id) return;
 
       // Obtener categorías de gasto
       const { data: expenseCategories } = await supabase
         .from('categories')
         .select('id, name, icon')
-        .eq('household_id', settings.active_household_id)
+        .eq('household_id', typedSettings.active_household_id)
         .eq('type', 'expense')
         .order('name');
 

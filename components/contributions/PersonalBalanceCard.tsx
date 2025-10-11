@@ -17,7 +17,11 @@ export function PersonalBalanceCard({ householdId }: PersonalBalanceCardProps) {
   const [data, setData] = useState<{
     expectedContribution: number;
     paidAmount: number;
+    adjustmentsPaid: number;
+    baseAmount: number;
+    totalContributed: number;
     pendingAmount: number;
+    creditGenerated: number;
     status: string;
     myActiveCredits: number;
     myReservedCredits: number;
@@ -29,13 +33,17 @@ export function PersonalBalanceCard({ householdId }: PersonalBalanceCardProps) {
     async function fetchData() {
       setLoading(true);
       const result = await getPersonalBalance(householdId);
-      
+
       if (result.ok && result.data) {
+        // Debug en development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[PersonalBalanceCard] Data received:', result.data);
+        }
         setData(result.data);
       } else {
         toast.error('Error al cargar balance personal');
       }
-      
+
       setLoading(false);
     }
 
@@ -64,8 +72,8 @@ export function PersonalBalanceCard({ householdId }: PersonalBalanceCardProps) {
 
   if (!data) return null;
 
-  const progressPercentage = data.expectedContribution > 0 
-    ? Math.min((data.paidAmount / data.expectedContribution) * 100, 100)
+  const progressPercentage = data.baseAmount > 0
+    ? Math.min((data.totalContributed / data.baseAmount) * 100, 100)
     : 0;
 
   const statusConfig = {
@@ -123,60 +131,56 @@ export function PersonalBalanceCard({ householdId }: PersonalBalanceCardProps) {
         {/* Montos */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Contribución esperada:</span>
+            <span className="text-sm text-muted-foreground">Base esperada:</span>
             <span className="font-semibold">
-              <PrivateAmount amount={data.expectedContribution} />
+              <PrivateAmount amount={data.baseAmount} />
             </span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Ya pagado:</span>
-            <span className="font-semibold text-green-600">
-              <PrivateAmount amount={data.paidAmount} />
+            <span className="text-sm text-muted-foreground">Ajustes (prepagos):</span>
+            <span className="font-semibold text-blue-600">
+              <PrivateAmount amount={data.adjustmentsPaid} />
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Pendiente:</span>
-            <span className="font-semibold text-orange-600">
-              <PrivateAmount amount={data.pendingAmount} />
+          <div className="flex items-center justify-between pt-2 border-t">
+            <span className="text-sm font-medium">Total aportado:</span>
+            <span className="font-bold text-green-600">
+              <PrivateAmount amount={data.totalContributed} />
             </span>
           </div>
+
+          {data.pendingAmount > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Pendiente:</span>
+              <span className="font-semibold text-orange-600">
+                <PrivateAmount amount={data.pendingAmount} />
+              </span>
+            </div>
+          )}
+
+          {data.creditGenerated > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Crédito generado:</span>
+              <span className="font-semibold text-purple-600">
+                <PrivateAmount amount={data.creditGenerated} />
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Barra de progreso */}
-        {data.expectedContribution > 0 && (
+        {data.baseAmount > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Progreso</span>
               <span>{Math.round(progressPercentage)}%</span>
             </div>
-            <Progress value={progressPercentage} className="h-2" />
-          </div>
-        )}
-
-        {/* Créditos acumulados */}
-        {(data.myActiveCredits > 0 || data.myReservedCredits > 0) && (
-          <div className="pt-3 border-t space-y-2">
-            <h4 className="text-sm font-semibold text-muted-foreground">Mis Créditos:</h4>
-            
-            {data.myActiveCredits > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-blue-600">Activos (disponibles):</span>
-                <span className="font-semibold text-blue-600">
-                  <PrivateAmount amount={data.myActiveCredits} />
-                </span>
-              </div>
-            )}
-
-            {data.myReservedCredits > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-orange-600">Reservados (próximo mes):</span>
-                <span className="font-semibold text-orange-600">
-                  <PrivateAmount amount={data.myReservedCredits} />
-                </span>
-              </div>
-            )}
+            <Progress
+              value={progressPercentage}
+              className={`h-2 ${progressPercentage >= 100 ? '[&>div]:bg-green-500' : ''}`}
+            />
           </div>
         )}
 

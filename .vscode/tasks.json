@@ -2,21 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "🧹 Clear All Caches",
-      "type": "shell",
-      "command": "Remove-Item -Recurse -Force -ErrorAction SilentlyContinue .next,node_modules/.cache,tsconfig.tsbuildinfo; Write-Host '✅ Caches limpiadas: .next/, node_modules/.cache/, tsconfig.tsbuildinfo' -ForegroundColor Green",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "clear": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "🚀 Dev Server",
+      "label": "� Dev Server",
       "type": "shell",
       "command": "npm run dev",
       "isBackground": true,
@@ -28,31 +14,98 @@
         "showReuseMessage": true,
         "clear": false
       },
-      "problemMatcher": {
-        "owner": "typescript",
-        "source": "ts",
-        "applyTo": "closedDocuments",
-        "fileLocation": ["relative", "${workspaceFolder}"],
-        "pattern": {
-          "regexp": "^([^\\s].*)[\\(:](\\d+)[,:](\\d+)(?:\\):\\s+|\\s+-\\s+)(error|warning|info)\\s+TS(\\d+)\\s*:\\s*(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "code": 5,
-          "message": 6
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^\\s*- (wait|event)\\s+-\\s+",
-          "endsPattern": "^\\s*✓ Compiled|✓ Ready"
-        }
-      }
+      "problemMatcher": []
     },
     {
-      "label": "🔨 Build Production",
+      "label": "🛑 Stop Dev Server",
       "type": "shell",
-      "command": "npm run build",
+      "command": "lsof -ti:3001 | xargs -r kill -9 && echo '✅ Puerto 3001 liberado' || true",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🧹 Clear All Caches",
+      "type": "shell",
+      "command": "rm -rf .next node_modules/.cache tsconfig.tsbuildinfo && echo '✅ Caches limpiadas'",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "📥 Sincronizar PROD → DEV",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/sync_prod_to_dev.sh",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "➕ Crear Nueva Migración",
+      "type": "shell",
+      "command": "mkdir -p ${workspaceFolder}/database/migrations/development && cd ${workspaceFolder}/database/migrations/development && FILENAME=$(date +%Y%m%d_%H%M%S)_nueva_migracion.sql && echo '-- Migración: ' $FILENAME > $FILENAME && echo '-- Descripción: [DESCRIBE QUÉ HACE ESTA MIGRACIÓN]' >> $FILENAME && echo '' >> $FILENAME && echo '-- Tu SQL aquí:' >> $FILENAME && echo '' >> $FILENAME && echo '✅ Migración creada:' $FILENAME",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Aplicar Migraciones a DEV",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/apply_migrations_dev.sh",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "⬆️ Promover Migración (dev → tested)",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/promote_migration.sh",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 Ver Estado Migraciones",
+      "type": "shell",
+      "command": "echo '📊 DEVELOPMENT:' && ls -1 ${workspaceFolder}/database/migrations/development/*.sql 2>/dev/null | wc -l && echo '✅ TESTED:' && ls -1 ${workspaceFolder}/database/migrations/tested/*.sql 2>/dev/null | wc -l && echo '📦 APPLIED:' && ls -1 ${workspaceFolder}/database/migrations/applied/*.sql 2>/dev/null | wc -l && echo '🗄️ ARCHIVE:' && ls -1 ${workspaceFolder}/database/migrations/applied/archive/*.sql 2>/dev/null | wc -l",
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -61,30 +114,86 @@
         "showReuseMessage": false,
         "clear": true
       },
-      "problemMatcher": [
-        "$tsc",
-        {
-          "owner": "eslint",
-          "pattern": [
-            {
-              "regexp": "^(.+):(\\d+):(\\d+):\\s+(warning|error)\\s+-\\s+(.+)\\s+\\((.+)\\)$",
-              "file": 1,
-              "line": 2,
-              "column": 3,
-              "severity": 4,
-              "message": 5,
-              "code": 6
-            }
-          ]
-        }
-      ],
+      "problemMatcher": []
+    },
+
+    {
+      "label": "🏗️ Build Producción",
+      "type": "shell",
+      "command": "NODE_ENV=production npm run build && ls -lh .next/required-server-files.json 2>/dev/null || true",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": ["$tsc"],
       "group": {
         "kind": "build",
         "isDefault": true
       }
     },
     {
-      "label": "🧪 Test",
+      "label": "🚀 Desplegar a PRODUCCIÓN",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/deploy_to_prod.sh",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Reiniciar PM2 (Producción)",
+      "type": "shell",
+      "command": "sudo -u www-data pm2 restart cuentassik-prod",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 Ver Logs PM2",
+      "type": "shell",
+      "command": "sudo -u www-data pm2 logs cuentassik-prod --lines 50 --nostream",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 Estado PM2",
+      "type": "shell",
+      "command": "sudo -u www-data pm2 status && echo '' && sudo -u www-data pm2 info cuentassik-prod || true",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "🧪 Run Tests",
       "type": "shell",
       "command": "npm test",
       "presentation": {
@@ -112,9 +221,39 @@
       "problemMatcher": ["$eslint-stylish"]
     },
     {
-      "label": "🔄 Full Clean + Build",
-      "dependsOn": ["🧹 Clear All Caches", "🔨 Build Production"],
-      "dependsOrder": "sequence",
+      "label": "🔍 Type Check",
+      "type": "shell",
+      "command": "npm run typecheck",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": [],
+      "group": "test"
+    },
+
+    {
+      "label": "📊 Estado Servicios Críticos",
+      "type": "shell",
+      "command": "echo '📊 Estado servicios:' && sudo systemctl status apache2 mysql ssh --no-pager | grep -E '(Active:|●)' && echo '' && sudo -u www-data pm2 list && echo '' && sudo -u www-data pm2 logs cuentassik-prod --lines 15 --nostream",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔐 Ver Puertos Abiertos",
+      "type": "shell",
+      "command": "sudo netstat -tulpn | grep LISTEN",
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -124,6 +263,131 @@
         "clear": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "📦 Espacio en Disco",
+      "type": "shell",
+      "command": "df -h && echo '' && echo '=== Uso por directorio ===' && du -sh /var/www /home/teamspeak /home/pzakra ${workspaceFolder} 2>/dev/null",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "🧹 Limpiar Caché (Linux)",
+      "type": "shell",
+      "command": "rm -rf .next node_modules/.cache tsconfig.tsbuildinfo && echo '✅ Cachés limpiadas: .next/, node_modules/.cache/, tsconfig.tsbuildinfo'",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Reiniciar PM2 Producción",
+      "type": "shell",
+      "command": "sudo -u www-data pm2 restart cuentassik-prod && echo '✅ PM2 reiniciado' && sleep 2 && sudo -u www-data pm2 logs cuentassik-prod --lines 20 --nostream",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Reiniciar Apache",
+      "type": "shell",
+      "command": "sudo systemctl restart apache2 && echo '✅ Apache reiniciado' && sudo systemctl status apache2 --no-pager",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Reiniciar MySQL",
+      "type": "shell",
+      "command": "sudo systemctl restart mysql && echo '✅ MySQL reiniciado' && sudo systemctl status mysql --no-pager",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Reiniciar Todos los Servicios",
+      "type": "shell",
+      "command": "echo '🔄 Reiniciando MySQL...' && sudo systemctl restart mysql && echo '✅ MySQL OK' && echo '🔄 Reiniciando Apache...' && sudo systemctl restart apache2 && echo '✅ Apache OK' && sleep 2 && echo '🔄 Reiniciando PM2...' && sudo -u www-data pm2 restart cuentassik-prod && echo '✅ PM2 OK' && sleep 3 && echo '\n📊 Estado de servicios:' && sudo systemctl status mysql apache2 --no-pager | grep -E '(Active:|●)' && echo '\n📋 Logs PM2:' && sudo -u www-data pm2 logs cuentassik-prod --lines 15 --nostream",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "🚀 Deploy Producción (Build + Deploy + Restart)",
+      "type": "shell",
+      "command": "echo '🔨 Building...' && npm run build && echo '📦 Deploying...' && sudo rsync -av --delete .next/ /opt/cuentassik/prod/.next/ --exclude='cache' && sudo chown -R www-data:www-data /opt/cuentassik/prod/.next/ && echo '🔄 Restarting services...' && sudo systemctl restart apache2 && sudo -u www-data pm2 restart cuentassik-prod && sleep 3 && echo '\n✅ Deploy completo!' && echo '\n📋 Logs PM2:' && sudo -u www-data pm2 logs cuentassik-prod --lines 20 --nostream",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "🧹🚀 Full Reset + Deploy (Con Caché)",
+      "type": "shell",
+      "command": "echo '🧹 Limpiando caché...' && rm -rf .next node_modules/.cache tsconfig.tsbuildinfo && echo '✅ Caché limpiada' && echo '🔨 Building...' && npm run build && echo '📦 Deploying...' && sudo rsync -av --delete .next/ /opt/cuentassik/prod/.next/ --exclude='cache' && sudo chown -R www-data:www-data /opt/cuentassik/prod/.next/ && echo '🔄 Restarting MySQL...' && sudo systemctl restart mysql && echo '🔄 Restarting Apache...' && sudo systemctl restart apache2 && sleep 2 && echo '🔄 Restarting PM2...' && sudo -u www-data pm2 restart cuentassik-prod && sleep 3 && echo '\n✅ Full reset completo!' && echo '\n📊 Estado servicios:' && sudo systemctl status mysql apache2 --no-pager | grep -E '(Active:|●)' && echo '\n📋 Logs PM2:' && sudo -u www-data pm2 logs cuentassik-prod --lines 20 --nostream",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
     }
   ]
 }

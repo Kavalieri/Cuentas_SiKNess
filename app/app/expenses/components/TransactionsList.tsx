@@ -42,8 +42,16 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
+  const formatDate = (dateInput: string | Date) => {
+    // Convertir a Date si es string
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+    // Verificar si la fecha es válida
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateInput);
+      return 'Fecha inválida';
+    }
+
     return date.toLocaleDateString('es-ES', {
       day: 'numeric',
       month: 'short',
@@ -51,8 +59,17 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
     });
   };
 
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('es-ES', {
+  const formatTime = (dateInput: string | Date) => {
+    // Convertir a Date si es string
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+    // Verificar si la fecha es válida
+    if (isNaN(date.getTime())) {
+      console.error('Invalid time:', dateInput);
+      return 'Hora inválida';
+    }
+
+    return date.toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit',
     });

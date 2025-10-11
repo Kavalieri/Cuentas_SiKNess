@@ -1,0 +1,16 @@
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+# Migrations - Desarrollo y archivo histórico obsoleto
+migrations/development/*.sql
+migrations/applied/archive/
+
+# Keep structure folders
+!migrations/development/.gitkeep
+!migrations/applied/archive/.gitkeep

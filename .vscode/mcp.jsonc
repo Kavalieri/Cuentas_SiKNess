@@ -1,0 +1,238 @@
+{
+  "description": "Model Context Protocol servers documentation for CuentasSiK project",
+
+  // ============================================================================
+  // 📝 ARCHIVO DE DOCUMENTACIÓN - NO CONFIGURACIÓN ACTIVA
+  // ============================================================================
+  //
+  // ⚠️ IMPORTANTE: Los MCPs se configuran GLOBALMENTE en:
+  // ~/.vscode-server/data/User/mcp.json
+  //
+  // Este archivo sirve como:
+  // - 📚 Documentación de MCPs recomendados para este proyecto
+  // - 🔍 Referencia de casos de uso específicos
+  // - 📋 Checklist para verificar configuración global
+  //
+  // Los MCPs están ACTIVOS y funcionando desde la configuración global.
+  // ============================================================================
+
+  "mcpServersDocumentation": {
+    // ========================================================================
+    // 🔧 Git Operations (CRÍTICO para este proyecto)
+    // ========================================================================
+    "git-ssh": {
+      "description": "Git operations: commit, push, branch, stash, merge, rebase, etc.",
+      "type": "stdio",
+      "command": "npx -y @mseep/git-mcp-server",
+      "useCases": [
+        "Commits con mensajes descriptivos",
+        "Gestión de branches (main, feature/*)",
+        "Stash de cambios temporales",
+        "Merge de branches",
+        "Cherry-pick de commits",
+        "Gestión de tags (releases)",
+        "Resolución de conflictos"
+      ],
+      "critical": true,
+      "requiredFor": [
+        "Release workflow (release-please)",
+        "Git wrapup automático",
+        "Branch management"
+      ]
+    },
+
+    // ========================================================================
+    // 🐙 GitHub Integration (CRÍTICO para releases)
+    // ========================================================================
+    "github-ssh": {
+      "description": "GitHub operations: issues, PRs, releases, workflows, repos",
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "useCases": [
+        "Crear/actualizar Issues",
+        "Gestionar Pull Requests",
+        "Ver/crear Releases",
+        "Ejecutar GitHub Actions workflows",
+        "Gestionar Projects",
+        "Notificaciones",
+        "Buscar en repositorios"
+      ],
+      "critical": true,
+      "requiredFor": ["Release-please workflow", "Gestión de versiones", "CI/CD monitoring"]
+    },
+
+    // ========================================================================
+    // 🐚 Shell Commands (CRÍTICO para servidor Linux)
+    // ========================================================================
+    "shell-ssh": {
+      "description": "Execute shell commands (bash, npm, git, systemctl, etc.)",
+      "type": "stdio",
+      "command": "npx -y shell-command-mcp",
+      "allowedCommands": [
+        "npm",
+        "npx",
+        "node",
+        "git",
+        "gh",
+        "bash",
+        "sh",
+        "systemctl",
+        "journalctl",
+        "ls",
+        "cat",
+        "grep",
+        "find",
+        "wc",
+        "chmod",
+        "chown",
+        "mkdir",
+        "rm",
+        "mv",
+        "cp",
+        "sudo",
+        "ps",
+        "df",
+        "du",
+        "free",
+        "top",
+        "curl",
+        "wget",
+        "psql",
+        "pg_dump",
+        "pg_restore"
+      ],
+      "critical": true,
+      "requiredFor": [
+        "Gestión de servicios (apache2, mysql, ssh)",
+        "Database operations",
+        "Scripts de mantenimiento",
+        "Monitoring del servidor"
+      ],
+      "security": {
+        "note": "Configurado con lista blanca de comandos permitidos",
+        "riskLevel": "medium",
+        "requiresValidation": true
+      }
+    },
+
+    // ========================================================================
+    // 🌐 Fetch/HTTP (Útil para documentación)
+    // ========================================================================
+    "fetch-ssh": {
+      "description": "Fetch content from URLs, YouTube transcripts",
+      "type": "stdio",
+      "command": "npx -y fetch-mcp",
+      "useCases": [
+        "Leer documentación externa",
+        "Obtener transcripts de YouTube",
+        "Verificar APIs públicas"
+      ],
+      "critical": false
+    },
+
+    // ========================================================================
+    // 📚 Documentation & Context
+    // ========================================================================
+    "upstash.context7-ssh": {
+      "description": "Up-to-date library documentation (Next.js, React, etc.)",
+      "type": "http",
+      "url": "https://context7.upstash.com/mcp",
+      "useCases": [
+        "Documentación actualizada de Next.js 15",
+        "React 19 hooks y features",
+        "PostgreSQL queries",
+        "Tailwind CSS classes"
+      ],
+      "critical": false,
+      "note": "Alternativa a documentación desactualizada"
+    },
+
+    "microsoft.docs.mcp-ssh": {
+      "description": "Microsoft documentation (TypeScript, VS Code API, etc.)",
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp",
+      "useCases": [
+        "TypeScript documentation",
+        "VS Code extension development",
+        "Azure services (futuro)"
+      ],
+      "critical": false
+    },
+
+    // ========================================================================
+    // 📄 MarkItDown (Conversión de documentos)
+    // ========================================================================
+    "markitdown-ssh": {
+      "description": "Convert documents to Markdown (PDF, DOCX, images, etc.)",
+      "type": "stdio",
+      "command": "uvx markitdown-mcp==0.0.1a4",
+      "useCases": [
+        "Convertir PDFs a Markdown",
+        "Extraer texto de imágenes (OCR)",
+        "Convertir documentos Word"
+      ],
+      "critical": false
+    },
+
+    // ========================================================================
+    // 📁 Filesystem (Acceso a archivos)
+    // ========================================================================
+    "fs-ssh": {
+      "description": "Filesystem access to workspace directories",
+      "type": "stdio",
+      "command": "npx -y @modelcontextprotocol/server-filesystem",
+      "allowedPaths": ["/home/kava/workspace", "/home/kava/workspace/proyectos/CuentasSiK/repo"],
+      "critical": false,
+      "note": "VS Code ya tiene acceso directo a archivos, este MCP es redundante"
+    }
+  },
+
+  // ==========================================================================
+  // 🎯 Recomendaciones por Tarea
+  // ==========================================================================
+
+  "recommendedForTasks": {
+    "development": ["git-ssh", "shell-ssh", "upstash.context7-ssh", "microsoft.docs.mcp-ssh"],
+    "deployment": ["git-ssh", "github-ssh", "shell-ssh"],
+    "database": ["shell-ssh"],
+    "documentation": ["fetch-ssh", "markitdown-ssh", "upstash.context7-ssh"],
+    "monitoring": ["shell-ssh", "github-ssh"]
+  },
+
+  // ==========================================================================
+  // ✅ ESTADO ACTUAL - MCPs ACTIVOS Y FUNCIONANDO
+  // ==========================================================================
+
+  "currentStatus": {
+    "mcpsActive": true,
+    "configSource": "~/.vscode-server/data/User/mcp.json (GLOBAL)",
+    "verified": "2025-10-11 - MCPs probados y funcionando",
+    "availableMcps": [
+      "mcp_git_* - Git operations ✅",
+      "mcp_github_* - GitHub integration ✅",
+      "mcp_shell_execute_command - Shell commands ✅",
+      "mcp_microsoft_doc_* - Microsoft docs ✅",
+      "mcp_fetch_* - Web fetch ✅"
+    ]
+  },
+
+  // ==========================================================================
+  // ⚠️ Notas de Seguridad
+  // ==========================================================================
+
+  "securityNotes": {
+    "shell-ssh": "NUNCA ejecutar comandos peligrosos sin confirmación (rm -rf, dd, etc.)",
+    "git-ssh": "Verificar mensajes de commit antes de push",
+    "github-ssh": "Cuidado con operaciones de delete (repos, releases, etc.)"
+  },
+
+  // ==========================================================================
+  // 📖 Referencias
+  // ==========================================================================
+
+  "references": {
+    "mcp-docs": "https://modelcontextprotocol.io/",
+    "github-copilot-mcp": "https://docs.github.com/copilot/using-github-copilot/using-mcp",
+    "available-servers": "https://github.com/modelcontextprotocol/servers"
+  }
+}

@@ -1,145 +1,165 @@
-# 🛠️ VS Code Tasks para Supabase
+# 🛠️ VS Code Tasks para CuentasSiK (Linux)
 
-## Propósito
-
-Estas tasks son **wrappers simples** de los comandos de Supabase CLI para evitar tener que escribir `npx` cada vez.
-
-## Tareas Disponibles
+## 📋 Acceso Rápido
 
 Presiona `Ctrl+Shift+P` → **"Tasks: Run Task"** para ver todas las tareas.
 
-### ⚡ Tareas Principales
+---
 
-#### **supabase db push**
-- **Comando**: `npx supabase db push`
-- Aplica las migraciones locales a la base de datos remota
+## 🚀 Desarrollo
 
-#### **supabase gen types**
-- **Comando**: `npx supabase gen types typescript --project-id fizxvvtakvmmeflmbwud | Out-File types/database.ts`
-- Regenera los tipos TypeScript y los guarda en `types/database.ts`
+### 🚀 Dev Server
+- **Comando**: `npm run dev`
+- Inicia servidor de desarrollo en http://localhost:3001
+- Background task con hot-reload automático
 
-#### **supabase db push + gen types** ⭐
-- Ejecuta las dos tareas anteriores en secuencia
-- **Workflow típico**: Crear migración → Aplicar esta task → Listo
+### 🛑 Stop Dev Server
+- **Comando**: `lsof -ti:3001 | xargs kill -9`
+- Libera puerto 3001 si quedó bloqueado
+
+### 🧹 Clear All Caches
+- **Comando**: `rm -rf .next node_modules/.cache tsconfig.tsbuildinfo`
+- Limpia cachés de Next.js y TypeScript
 
 ---
 
-### 🔧 Tareas de Migración
+## 🗄️ Base de Datos
 
-#### **supabase migration new**
-- **Comando**: `npx supabase migration new <nombre>`
-- Crea un nuevo archivo de migración vacío
-- Te pedirá el nombre (ej: `add_user_field`)
+### 📥 Sincronizar PROD → DEV
+- **Script**: `scripts/sync_prod_to_dev.sh`
+- Copia datos de producción a desarrollo
+- ⚠️ **Cuidado**: Sobrescribe base de datos local
 
-#### **supabase db pull**
-- **Comando**: `npx supabase db pull`
-- Descarga los cambios del esquema remoto a local
+### ➕ Crear Nueva Migración
+- **Comando**: Crea archivo `YYYYMMDD_HHMMSS_nueva_migracion.sql`
+- Ubicación: `database/migrations/development/`
+- Template incluido con formato estándar
 
----
+### 🔄 Aplicar Migraciones a DEV
+- **Script**: `scripts/apply_migrations_dev.sh`
+- Aplica migraciones pendientes en desarrollo
+- Registra en tabla `schema_migrations`
 
-### � Tareas de Configuración
+### ⬆️ Promover Migración (dev → tested)
+- **Script**: `scripts/promote_migration.sh`
+- Mueve migración validada de `development/` a `tested/`
+- Lista para aplicar en producción
 
-#### **supabase link**
-- **Comando**: `npx supabase link --project-ref fizxvvtakvmmeflmbwud`
-- Vincula el proyecto local con el remoto (primera vez)
-
----
-
-### 🧪 Tareas de Desarrollo Local
-
-#### **supabase db reset**
-- **Comando**: `npx supabase db reset`
-- Resetea la base de datos LOCAL (no la remota)
-
-#### **supabase start**
-- **Comando**: `npx supabase start`
-- Inicia Supabase local (Docker)
-
-#### **supabase stop**
-- **Comando**: `npx supabase stop`
-- Detiene Supabase local
-
-#### **supabase status**
-- **Comando**: `npx supabase status`
-- Muestra el estado de Supabase local
+### 📊 Ver Estado Migraciones
+- Muestra contador de migraciones por carpeta:
+  - 📊 development/ (WIP)
+  - ✅ tested/ (Validadas)
+  - 📦 applied/ (Aplicadas en PROD)
+  - 🗄️ applied/archive/ (Históricas)
 
 ---
 
-## 🚀 Workflow Típico
+## 🚀 Producción
 
-1. **Crear migración**:
-   - `Ctrl+Shift+P` → **"supabase migration new"**
-   - Nombre: `add_new_field`
+### 🏗️ Build Producción
+- **Comando**: `NODE_ENV=production npm run build`
+- Construye aplicación para producción
+- Verifica `required-server-files.json`
 
-2. **Editar SQL**:
-   ```sql
-   ALTER TABLE users ADD COLUMN preferences JSONB;
-   ```
+### 🚀 Desplegar a PRODUCCIÓN
+- **Script**: `scripts/deploy_to_prod.sh`
+- Workflow completo:
+  1. Backup de base de datos
+  2. Build de aplicación
+  3. Aplicar migraciones
+  4. Reiniciar PM2
+  5. Verificación
 
-3. **Aplicar y regenerar tipos**:
-   - `Ctrl+Shift+P` → **"supabase db push + gen types"** ⭐
+### 🔄 Reiniciar PM2 (Producción)
+- **Comando**: `sudo -u www-data pm2 restart cuentassik-prod`
+- Reinicia aplicación en PM2
+- Muestra estado después de reiniciar
 
-4. **Listo**: Usar los nuevos tipos en TypeScript
+### 📊 Ver Logs PM2
+- **Comando**: `sudo -u www-data pm2 logs cuentassik-prod --lines 50`
+- Últimas 50 líneas de logs de producción
 
----
-
-## 📝 Equivalencias
-
-| Task | Comando Manual |
-|------|----------------|
-| `supabase db push` | `npx supabase db push` |
-| `supabase gen types` | `npx supabase gen types typescript --project-id fizxvvtakvmmeflmbwud \| Out-File types/database.ts` |
-| `supabase migration new` | `npx supabase migration new <nombre>` |
-| `supabase db pull` | `npx supabase db pull` |
-| `supabase link` | `npx supabase link --project-ref fizxvvtakvmmeflmbwud` |
-| `supabase db reset` | `npx supabase db reset` |
-| `supabase start` | `npx supabase start` |
-| `supabase stop` | `npx supabase stop` |
-| `supabase status` | `npx supabase status` |
+### 📊 Estado PM2
+- **Comando**: `sudo -u www-data pm2 status` + info detallado
+- Estado completo de PM2 y la aplicación
 
 ---
 
-## ⚙️ Personalización
+## 🧪 Testing & Quality
 
-Si necesitas agregar más comandos, edita `.vscode/tasks.json`:
+### 🧪 Run Tests
+- **Comando**: `npm test`
+- Ejecuta suite de tests con Vitest
 
-```json
-{
-  "label": "supabase <comando>",
-  "type": "shell",
-  "command": "npx supabase <comando> <args>"
-}
-```
-npx supabase gen types typescript --project-id fizxvvtakvmmeflmbwud > types/database.ts
+### 🔍 Lint
+- **Comando**: `npm run lint`
+- ESLint sobre todo el proyecto
 
-# Crear migración
-npx supabase migration new nombre_de_migracion
-
-# Pull cambios remotos
-npx supabase db pull
-
-# Link proyecto
-npx supabase link --project-ref fizxvvtakvmmeflmbwud
-```
+### 🔍 Type Check
+- **Comando**: `npm run typecheck`
+- Verifica tipos TypeScript sin compilar
 
 ---
 
-## ❓ Solución de Problemas
+## 📊 Monitoring
 
-### "Supabase CLI not found"
+### 📊 Estado Servicios Críticos
+- Muestra estado de:
+  - Apache2 (web)
+  - MySQL (database)
+  - SSH (acceso)
+  - PM2 (app)
+- Últimos logs de PM2
+
+### 🔐 Ver Puertos Abiertos
+- **Comando**: `sudo netstat -tulpn | grep LISTEN`
+- Todos los puertos en escucha
+
+### 📦 Espacio en Disco
+- **Comando**: `df -h` + `du -sh` directorios principales
+- Uso de disco general y por directorio
+
+---
+
+## 📝 Notas Importantes
+
+### Permisos
+Algunas tasks requieren `sudo`. El usuario `kava` debe estar en sudoers.
+
+### Scripts
+Las tasks ejecutan scripts en `scripts/`. Asegúrate de que tengan permisos de ejecución:
 ```bash
-npm install -D supabase
+chmod +x scripts/*.sh
 ```
 
-### "Project not linked"
-Ejecutar tarea: **"Supabase: Link Project"**
+### Variables de Entorno
+- DEV: `.env.development.local`
+- PROD: `.env.production.local` (en servidor)
 
-### "Types not updating"
-1. Verificar que la migración se aplicó: **"Supabase: Push DB"**
-2. Regenerar tipos manualmente: **"Supabase: Update TypeScript Types"**
+### Base de Datos
+- DEV: `cuentassik_dev` (PostgreSQL local)
+- PROD: `cuentassik_prod` (PostgreSQL servidor)
 
 ---
 
-## 🎯 Tip Pro
+## 🔄 Workflow Típico
 
-**Usa la tarea combinada** `Supabase: Push DB + Update Types` para aplicar migraciones. Es la forma más rápida y no olvidas regenerar los tipos.
+### Desarrollo de Feature
+1. `📥 Sincronizar PROD → DEV` (datos frescos)
+2. `🚀 Dev Server` (iniciar desarrollo)
+3. `➕ Crear Nueva Migración` (si necesitas cambios en DB)
+4. `🔄 Aplicar Migraciones a DEV` (probar cambios)
+5. `🧪 Run Tests` + `🔍 Lint` + `🔍 Type Check`
+6. `⬆️ Promover Migración` (cuando esté validada)
+7. Commit y push
+
+### Deploy a Producción
+1. `🧪 Run Tests` + `🔍 Type Check` (pre-flight)
+2. `🚀 Desplegar a PRODUCCIÓN` (script completo)
+3. `📊 Estado Servicios Críticos` (verificación)
+4. `📊 Ver Logs PM2` (revisar errores)
+
+---
+
+**Última actualización**: 11 Octubre 2025
+**Versión**: 1.0.0 (Linux)

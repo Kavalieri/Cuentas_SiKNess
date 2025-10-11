@@ -51,11 +51,13 @@ export function AdjustmentsContent({
 
     const loadAdjustments = async () => {
     setLoading(true);
-    
-    const result = isOwner 
+
+    const result = isOwner
       ? await getAllHouseholdAdjustments()
       : await getMyAdjustments();
-    
+
+    console.log('[AdjustmentsContent] Raw result from server:', result);
+
     if (result.ok && result.data) {
       // Las actions retornan datos con joins anidados
       // Necesitamos transformar a AdjustmentData
@@ -73,8 +75,11 @@ export function AdjustmentsContent({
         expense_category: Category | null;
         [key: string]: unknown;
       };
-      
+
       const rawData = result.data as unknown as RawItem[];
+      console.log('[AdjustmentsContent] Raw data length:', rawData.length);
+      console.log('[AdjustmentsContent] First item:', rawData[0]);
+
       const transformed = rawData.map((item) => ({
         adjustment: item as unknown as AdjustmentRow,
         member: {
@@ -88,12 +93,13 @@ export function AdjustmentsContent({
         },
         category: item.expense_category || item.category || null,
       }));
-      
+
+      console.log('[AdjustmentsContent] Transformed data:', transformed);
       setAdjustments(transformed);
     } else if (!result.ok) {
       toast.error(result.message || 'Error al cargar ajustes');
     }
-    
+
     setLoading(false);
   };
 

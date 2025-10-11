@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabaseServer, getCurrentUser } from '@/lib/supabaseServer';
@@ -22,19 +23,11 @@ export default async function HouseholdPage() {
 
   const supabase = await supabaseServer();
 
-  // Obtener profile_id del usuario actual
-  const { data: currentProfile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('auth_user_id', user.id)
-    .single();
-
-  if (!currentProfile) {
-    redirect('/login');
-  }
+  // user.profile_id es profiles.id (el UUID del perfil usado en FKs)
+  const currentProfile = { id: user.profile_id };
 
   const householdId = await getCurrentHouseholdId();
-  
+
   // Si no tiene household, redirigir a creación
   if (!householdId) {
     redirect('/app/household/create');
@@ -58,9 +51,18 @@ export default async function HouseholdPage() {
     p_household_id: householdId,
   });
 
+  type MemberData = {
+    id: string;
+    profile_id: string;
+    email: string | null;
+    role: string;
+  };
+
+  const typedMembersData = (membersData || []) as unknown as MemberData[];
+
   // Enriquecer con ingresos actuales
   const members = await Promise.all(
-    (membersData || []).map(async (member) => {
+    typedMembersData.map(async (member) => {
       const { data: income } = await supabase.rpc('get_member_income', {
         p_household_id: householdId,
         p_profile_id: member.profile_id,
@@ -72,7 +74,7 @@ export default async function HouseholdPage() {
         profile_id: member.profile_id,
         email: member.email || 'Sin email',
         role: member.role as 'owner' | 'member',
-        currentIncome: (income as number) ?? 0,
+        currentIncome: (income as unknown as number) ?? 0,
       };
     })
   );
@@ -85,6 +87,25 @@ export default async function HouseholdPage() {
     .eq('household_id', householdId)
     .eq('year', now.getFullYear())
     .eq('month', now.getMonth() + 1);
+
+  type Contribution = {
+    id: string;
+    household_id: string;
+    profile_id: string;
+    period_id: string;
+    year: number;
+    month: number;
+    expected_amount: number | null;
+    paid_amount: number;
+    calculation_method: string | null;
+    adjustments_total: number | null;
+    created_at: string;
+    updated_at: string;
+    paid_at: string | null;
+    status: string;
+  };
+
+  const typedContributions = (contributions || []) as unknown as Contribution[];
 
   // Obtener meta mensual y configuración
   const { data: settings } = await supabase
@@ -108,18 +129,24 @@ export default async function HouseholdPage() {
     .gte('occurred_at', startOfMonth.toISOString().split('T')[0])
     .lte('occurred_at', endOfMonth.toISOString().split('T')[0]);
 
-  const expenses = monthTransactions?.filter(t => t.type === 'expense') || [];
-  const incomes = monthTransactions?.filter(t => t.type === 'income') || [];
-  
+  type Transaction = {
+    type: string;
+    amount: number;
+  };
+
+  const typedTransactions = (monthTransactions || []) as unknown as Transaction[];
+  const expenses = typedTransactions.filter(t => t.type === 'expense');
+  const incomes = typedTransactions.filter(t => t.type === 'income');
+
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalIncomes = incomes.reduce((sum, i) => sum + i.amount, 0);
 
   // Preparar datos para ContributionsContent
   const totalIncome = members.reduce((sum, m) => sum + m.currentIncome, 0);
   const contributionsMap = new Map(
-    (contributions || []).map((c) => [c.profile_id, c])
+    typedContributions.map((c) => [c.profile_id, c])
   );
-  
+
   const membersWithIncomes = members.map((m) => ({
     profile_id: m.profile_id,
     email: m.email,
@@ -138,6 +165,15 @@ export default async function HouseholdPage() {
     .eq('household_id', householdId)
     .order('name');
 
+  type Category = {
+    id: string;
+    name: string;
+    icon: string | null;
+    type: string;
+  };
+
+  const typedCategories = (categories || []) as unknown as Category[];
+
   // Obtener invitaciones pendientes (solo para owners)
   const pendingInvitations = userIsOwner ? await getPendingInvitations() : [];
 
@@ -146,8 +182,8 @@ export default async function HouseholdPage() {
       <div>
         <h1 className="text-3xl font-bold">🏠 Mi Hogar</h1>
         <p className="text-muted-foreground">
-          {userIsOwner 
-            ? 'Gestiona tu hogar, miembros y contribuciones' 
+          {userIsOwner
+            ? 'Gestiona tu hogar, miembros y contribuciones'
             : 'Información de tu hogar y contribuciones'}
         </p>
       </div>
@@ -167,7 +203,7 @@ export default async function HouseholdPage() {
           <OverviewWrapper
             householdId={householdId}
             initialMembers={members}
-            initialContributions={contributions || []}
+            initialContributions={typedContributions}
             initialGoalAmount={goalAmount}
             currentUserId={currentProfile.id}
             currency={currency}
@@ -190,7 +226,7 @@ export default async function HouseholdPage() {
             calculationType={calculationType}
             currency={currency}
             isOwner={userIsOwner}
-            categories={categories || []}
+            categories={typedCategories}
           />
         </TabsContent>
 
@@ -251,7 +287,7 @@ export default async function HouseholdPage() {
 
         {/* Tab 5: Configuración del Hogar */}
         <TabsContent value="settings" className="space-y-6 mt-6">
-          <HouseholdInfo 
+          <HouseholdInfo
             household={{
               id: household.id,
               name: household.name,

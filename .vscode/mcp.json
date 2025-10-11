@@ -1,0 +1,51 @@
+{
+  "servers": {
+    "github/github-mcp-server-linux": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "microsoft.docs.mcp-linux": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "fetch-linux": {
+      "command": "npx",
+      "args": ["-y", "fetch-mcp"],
+      "type": "stdio"
+    },
+    "git-linux": {
+      "command": "npx",
+      "args": ["-y", "@mseep/git-mcp-server"],
+      "type": "stdio"
+    },
+    "context7-linux": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-62a11e45-03ac-4e6e-8c49-3e1438963f1e"
+      }
+    },
+    "shell-linux": {
+      "command": "npx",
+      "args": ["-y", "shell-command-mcp"],
+      "env": {
+        "ALLOWED_COMMANDS": "npm,npx,node,git,gh,vercel,supabase,pwsh,powershell,cmd,bash,sh,python,py,pip,docker,docker-compose,tar,zip,pwd"
+      },
+      "type": "stdio"
+    },
+    "microsoft/markitdown-linux": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["markitdown-mcp==0.0.1a4"],
+      "gallery": "https://api.mcp.github.com/2025-09-15/v0/servers/976a2f68-e16c-4e2b-9709-7133487f8c14",
+      "version": "1.0.0"
+    },
+    "cognitionai/deepwiki-linux": {
+      "type": "http",
+      "url": "https://mcp.deepwiki.com/sse",
+      "gallery": "https://api.mcp.github.com/2025-09-15/v0/servers/8e68c99d-b438-46c2-94d5-dbdef09ff5a4",
+      "version": "1.0.0"
+    }
+  },
+  "inputs": []
+}

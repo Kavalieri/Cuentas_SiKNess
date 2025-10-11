@@ -23,7 +23,7 @@ interface Transaction {
   amount: number;
   currency: string;
   description: string | null;
-  occurred_at: string;
+  occurred_at: string | Date;
   categories?: {
     name: string;
     icon: string | null;
@@ -63,11 +63,30 @@ export function DeleteTransactionDialog({
     router.refresh();
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
+  const formatDate = (dateValue: string | Date) => {
+    // Manejar si ya es un objeto Date
+    let date: Date;
+
+    if (dateValue instanceof Date) {
+      date = dateValue;
+    } else if (typeof dateValue === 'string') {
+      // Si ya incluye 'T', es un timestamp completo, si no, es solo fecha
+      const dateString = dateValue.includes('T') ? dateValue : dateValue + 'T00:00:00';
+      date = new Date(dateString);
+    } else {
+      console.error('Invalid date value:', dateValue);
+      return 'Fecha inválida';
+    }
+
+    // Verificar si la fecha es válida
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateValue);
+      return 'Fecha inválida';
+    }
+
     return date.toLocaleDateString('es-ES', {
-      day: 'numeric',
       month: 'long',
+      day: 'numeric',
       year: 'numeric',
     });
   };

@@ -257,7 +257,7 @@ const AddAdminSchema = z.object({
 });
 
 const RemoveAdminSchema = z.object({
-  user_id: z.string().uuid('ID de usuario inválido'),
+  profile_id: z.string().uuid('ID de perfil inválido'),
 });
 
 /**
@@ -281,30 +281,35 @@ export async function addSystemAdmin(formData: FormData): Promise<Result> {
 
   const supabase = await supabaseServer();
 
-  // Obtener user_id del email
-  const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
-  
-  if (usersError) {
-    return fail(`Error al buscar usuario: ${usersError.message}`);
-  }
+  // Obtener profile_id del email
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, auth_user_id')
+    .eq('email', email)
+    .single();
 
-  const user = users.users.find((u) => u.email === email);
-  
-  if (!user) {
+  if (!profile) {
     return fail('No existe un usuario con ese email');
   }
 
   // Obtener el usuario actual para granted_by
   const { data: { user: currentUser } } = await supabase.auth.getUser();
-  
+
   if (!currentUser) {
     return fail('No se pudo obtener el usuario actual');
   }
 
+  // Obtener profile_id del usuario actual
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', currentUser.id)
+    .single();
+
   // Insertar en system_admins
   const { error } = await supabase.from('system_admins').insert({
-    user_id: user.id,
-    granted_by: currentUser.id,
+    profile_id: profile.id,
+    granted_by: currentProfile?.id || null,
     notes: notes || `Administrador agregado por ${currentUser.email}`,
   });
 
@@ -339,23 +344,26 @@ export async function removeSystemAdmin(formData: FormData): Promise<Result> {
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
 
-  const { user_id } = parsed.data;
+  const { profile_id } = parsed.data;
 
   const supabase = await supabaseServer();
 
   // Verificar que no sea un admin permanente (protección adicional)
   const permanentAdminEmail = process.env.NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL;
-  const { data: users } = await supabase.auth.admin.listUsers();
-  const targetUser = users?.users.find((u) => u.id === user_id);
-  
-  if (permanentAdminEmail && targetUser?.email === permanentAdminEmail) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', profile_id)
+    .single();
+
+  if (permanentAdminEmail && profile?.email === permanentAdminEmail) {
     return fail('No se puede eliminar al administrador permanente del sistema');
   }
 
   // Verificar que no sea el último admin
   const { count } = await supabase
     .from('system_admins')
-    .select('user_id', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true });
 
   if (count && count <= 1) {
     return fail('No se puede eliminar al último administrador del sistema');
@@ -365,7 +373,7 @@ export async function removeSystemAdmin(formData: FormData): Promise<Result> {
   const { error } = await supabase
     .from('system_admins')
     .delete()
-    .eq('user_id', user_id);
+    .eq('profile_id', profile_id);
 
   if (error) {
     return fail(`Error al eliminar administrador: ${error.message}`);

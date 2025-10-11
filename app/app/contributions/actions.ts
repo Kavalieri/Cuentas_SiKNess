@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserRoleInActiveHousehold } from '@/lib/supabaseServer';
+import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserRoleInActiveHousehold, query } from '@/lib/supabaseServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 import { CALCULATION_TYPES } from '@/lib/contributionTypes';
@@ -55,10 +55,10 @@ export async function setMemberIncome(formData: FormData): Promise<Result> {
   }
 
   const supabase = await supabaseServer();
-  
+
   // Convertir fecha a string ISO para Supabase
   const effective_from_str: string = parsed.data.effective_from.toISOString().split('T')[0]!;
-  
+
   const incomeData: {
     household_id: string;
     profile_id: string;
@@ -70,7 +70,7 @@ export async function setMemberIncome(formData: FormData): Promise<Result> {
     monthly_income: parsed.data.monthly_income,
     effective_from: effective_from_str,
   };
-  
+
   // Usar UPSERT para actualizar si ya existe o crear si no existe
   const { error } = await supabase
     .from('member_incomes')
@@ -80,7 +80,7 @@ export async function setMemberIncome(formData: FormData): Promise<Result> {
     });
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   // Recalcular contribuciones del mes actual automáticamente
@@ -156,7 +156,7 @@ export async function setContributionGoal(formData: FormData): Promise<Result> {
       { onConflict: 'household_id' }
     );
 
-  if (error) return fail(error.message);
+  if (error) return fail('Error en operación');
 
   // Recalcular contribuciones del mes actual automáticamente
   const now = new Date();
@@ -214,7 +214,7 @@ export async function calculateAndCreateContributions(
       if (calcError.message.includes('No incomes configured')) {
         return fail('Primero configura los ingresos de los miembros');
       }
-      return fail(calcError.message);
+      return fail('Error en operación');
     }
 
     // Tipo para los resultados de calculate_monthly_contributions
@@ -244,12 +244,12 @@ export async function calculateAndCreateContributions(
         ignoreDuplicates: false,
       });
 
-    if (insertError) return fail(insertError.message);
+    if (insertError) return fail('Error en operación');
 
     revalidatePath('/app/contributions');
     return ok();
-  } catch (error) {
-    return fail((error as Error).message);
+  } catch {
+    return fail('Error en operación');
   }
 }
 
@@ -258,23 +258,28 @@ export async function getMonthlyContributions(
   year: number,
   month: number
 ) {
-  const supabase = await supabaseServer();
-
-  const { data, error } = await supabase
-    .from('contributions')
-    .select(
-      `
-      *,
-      user:auth.users(id, email)
+  // Usar query directo en lugar de sintaxis Supabase
+  const result = await query(
     `
-    )
-    .eq('household_id', householdId)
-    .eq('year', year)
-    .eq('month', month);
+    SELECT
+      c.*,
+      p.email as user_email
+    FROM contributions c
+    LEFT JOIN profiles p ON p.id = c.profile_id
+    WHERE c.household_id = $1
+      AND c.year = $2
+      AND c.month = $3
+    ORDER BY c.created_at DESC
+    `,
+    [householdId, year, month]
+  );
 
-  if (error) return [];
-  // @ts-ignore - Supabase type inference issue
-  return data || [];
+  if (!result.rows) {
+    console.error('[getMonthlyContributions] No data returned');
+    return [];
+  }
+
+  return result.rows || [];
 }
 
 export async function updateContributionPaidAmount(
@@ -289,7 +294,7 @@ export async function updateContributionPaidAmount(
     .update({ paid_amount: paidAmount, updated_at: new Date().toISOString() })
     .eq('id', contributionId);
 
-  if (updateError) return fail(updateError.message);
+  if (updateError) return fail('Error en operación');
 
   // Actualizar estado según monto pagado
   // @ts-ignore - Supabase type inference issue
@@ -297,7 +302,7 @@ export async function updateContributionPaidAmount(
     p_contribution_id: contributionId,
   });
 
-  if (statusError) return fail(statusError.message);
+  if (statusError) return fail('Error en operación');
 
   revalidatePath('/app/contributions');
   return ok();
@@ -316,7 +321,7 @@ export async function markContributionAsPaid(contributionId: string): Promise<Re
     .eq('id', contributionId)
     .single();
 
-  if (fetchError) return fail(fetchError.message);
+  if (fetchError) return fail('Error al obtener contribución');
   if (!contribution) return fail('Contribución no encontrada');
 
   // @ts-ignore - Supabase type inference
@@ -465,8 +470,8 @@ export async function addContributionAdjustment(
   // Si es un prepayment con monto negativo y tiene categoría, crear movimientos automáticamente
   const isPrepayment = parsed.data.type === 'prepayment';
   const isNegativeAmount = parsed.data.amount < 0;
-  const hasCategory = parsed.data.category_id && 
-                      parsed.data.category_id !== '' && 
+  const hasCategory = parsed.data.category_id &&
+                      parsed.data.category_id !== '' &&
                       parsed.data.category_id !== '__none__';
 
   if (isPrepayment && isNegativeAmount && hasCategory) {
@@ -541,7 +546,7 @@ export async function addContributionAdjustment(
     // Si falla la inserción del ajuste, eliminar los movimientos creados
     if (movementId) await supabase.from('transactions').delete().eq('id', movementId);
     if (incomeMovementId) await supabase.from('transactions').delete().eq('id', incomeMovementId);
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
   // El trigger update_contribution_adjustments_total() actualizará automáticamente:
@@ -563,7 +568,7 @@ export async function getContributionAdjustments(contributionId: string) {
     .select(
       `
       *,
-      category:categories(id, name, icon),
+      category:categories(id, name, icon, type),
       movement:transactions(id, description, amount, occurred_at),
       creator:profiles(id, email)
     `
@@ -583,6 +588,8 @@ export async function getHouseholdAdjustments(
 ) {
   const supabase = await supabaseServer();
 
+  interface ContributionIdOnly { id: string; }
+
   // Obtener todas las contribuciones del hogar para el mes
   const { data: contributions } = await supabase
     .from('contributions')
@@ -591,9 +598,10 @@ export async function getHouseholdAdjustments(
     .eq('year', year)
     .eq('month', month);
 
-  if (!contributions || contributions.length === 0) return [];
+  const typedContributions = (contributions as unknown as ContributionIdOnly[]) ?? [];
+  if (typedContributions.length === 0) return [];
 
-  const contributionIds = contributions.map((c) => c.id);
+  const contributionIds = typedContributions.map((c) => c.id);
 
   // Obtener todos los ajustes de esas contribuciones
   const { data, error } = await supabase
@@ -602,7 +610,7 @@ export async function getHouseholdAdjustments(
       `
       *,
       contribution:contributions(id, profile_id, profiles(id, email)),
-      category:categories(id, name, icon),
+      category:categories(id, name, icon, type),
       movement:transactions(id, description, amount, occurred_at),
       creator:profiles(id, email)
     `
@@ -618,26 +626,24 @@ export async function getHouseholdAdjustments(
 export async function deleteContributionAdjustment(adjustmentId: string): Promise<Result> {
   const supabase = await supabaseServer();
 
-  // 1. Obtener el ajuste y la contribución asociada
+  // 1. Obtener el ajuste
   const { data: adjustment, error: fetchError } = await supabase
     .from('contribution_adjustments')
-    .select(`
-      *,
-      contribution:contributions!inner(
-        profile_id,
-        household_id,
-        year,
-        month
-      )
-    `)
+    .select('*')
     .eq('id', adjustmentId)
     .single();
 
-  if (fetchError) return fail('Error al obtener ajuste: ' + fetchError.message);
+  if (fetchError) return fail('Error en operación');
   if (!adjustment) return fail('Ajuste no encontrado');
 
-  // @ts-ignore - Supabase type inference issue
-  const contribution = adjustment.contribution;
+  // 2. Obtener la contribución asociada
+  const { data: contribution, error: contributionError } = await supabase
+    .from('contributions')
+    .select('profile_id, household_id, year, month')
+    .eq('id', adjustment.contribution_id)
+    .single();
+
+  if (contributionError || !contribution) return fail('Contribución no encontrada');
 
   // 2. Buscar y eliminar movimientos asociados
   const movementsToDelete: string[] = [];
@@ -647,6 +653,8 @@ export async function deleteContributionAdjustment(adjustmentId: string): Promis
     movementsToDelete.push(adjustment.movement_id);
   }
 
+  interface TransactionIdOnly { id: string; }
+
   // B) Buscar por descripción con [Ajuste: razón]
   const searchPattern = `%[Ajuste: ${adjustment.reason}]%`;
   const { data: movementsByDescription } = await supabase
@@ -655,13 +663,12 @@ export async function deleteContributionAdjustment(adjustmentId: string): Promis
     .eq('household_id', contribution.household_id)
     .like('description', searchPattern);
 
-  if (movementsByDescription) {
-    movementsByDescription.forEach(m => {
-      if (!movementsToDelete.includes(m.id)) {
-        movementsToDelete.push(m.id);
-      }
-    });
-  }
+  const typedByDescription = (movementsByDescription as unknown as TransactionIdOnly[]) ?? [];
+  typedByDescription.forEach(m => {
+    if (!movementsToDelete.includes(m.id)) {
+      movementsToDelete.push(m.id);
+    }
+  });
 
   // C) Buscar por descripción con [Pre-pago] (formato antiguo)
   if (adjustment.type === 'prepayment' && adjustment.category_id) {
@@ -674,13 +681,12 @@ export async function deleteContributionAdjustment(adjustmentId: string): Promis
       .eq('type', 'expense')
       .like('description', '%[Pre-pago]%');
 
-    if (movementsByPrePago) {
-      movementsByPrePago.forEach(m => {
-        if (!movementsToDelete.includes(m.id)) {
-          movementsToDelete.push(m.id);
-        }
-      });
-    }
+    const typedByPrePago = (movementsByPrePago as unknown as TransactionIdOnly[]) ?? [];
+    typedByPrePago.forEach(m => {
+      if (!movementsToDelete.includes(m.id)) {
+        movementsToDelete.push(m.id);
+      }
+    });
   }
 
   // Eliminar todos los movimientos encontrados
@@ -702,7 +708,7 @@ export async function deleteContributionAdjustment(adjustmentId: string): Promis
     .delete()
     .eq('id', adjustmentId);
 
-  if (deleteError) return fail('Error al eliminar ajuste: ' + deleteError.message);
+  if (deleteError) return fail('Error en operación');
 
   // El trigger update_contribution_adjustments_total() actualizará automáticamente
   // el total de ajustes y el monto esperado de la contribución
@@ -723,6 +729,12 @@ export async function getContributionsSummary(householdId: string) {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
+  interface ContributionSummary {
+    expected_amount: number;
+    paid_amount: number;
+    status: string;
+  }
+
   // Obtener contribuciones del mes actual
   const { data: contributions, error } = await supabase
     .from('contributions')
@@ -740,14 +752,13 @@ export async function getContributionsSummary(householdId: string) {
     };
   }
 
-  // @ts-ignore - Supabase type inference issue
-  const totalExpected = (contributions || []).reduce(
-    (sum: number, c: Record<string, unknown>) => sum + ((c.expected_amount as number) || 0),
+  const typedContributions = (contributions as unknown as ContributionSummary[]) ?? [];
+  const totalExpected = typedContributions.reduce(
+    (sum, c) => sum + (c.expected_amount || 0),
     0
   );
-  // @ts-ignore - Supabase type inference issue
-  const totalPaid = (contributions || []).reduce(
-    (sum: number, c: Record<string, unknown>) => sum + ((c.paid_amount as number) || 0),
+  const totalPaid = typedContributions.reduce(
+    (sum, c) => sum + (c.paid_amount || 0),
     0
   );
   const totalPending = totalExpected - totalPaid;
@@ -783,9 +794,9 @@ export async function recordContributionPayment(
     .eq('id', contributionId)
     .single();
 
-  if (fetchError) return fail(fetchError.message);
+  if (fetchError) return fail('Error en operación');
   if (!contribution) return fail('Contribución no encontrada');
-  
+
   // Validar que la contribución tenga expected_amount configurado
   if (contribution.expected_amount === null) {
     return fail('No se puede registrar pago: el miembro debe configurar sus ingresos primero');
@@ -878,7 +889,7 @@ export async function recordContributionPayment(
 
   // 3. Actualizar contribución
   const newPaidAmount = (paid_amount || 0) + amount;
-  
+
   let newStatus: string;
   if (newPaidAmount >= adjusted_amount) {
     newStatus = 'paid';
@@ -932,10 +943,15 @@ export async function getBalanceBreakdown(householdId: string): Promise<Result<{
   }>;
 }>> {
   const supabase = await supabaseServer();
-  
+
   // 1. Verificar autenticación
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return fail('No autenticado');
+
+  interface TransactionBalance {
+    type: string;
+    amount: number;
+  }
 
   // 2. Obtener balance total del household (suma de ingresos - gastos)
   const { data: transactions } = await supabase
@@ -944,15 +960,16 @@ export async function getBalanceBreakdown(householdId: string): Promise<Result<{
     .eq('household_id', householdId)
     .eq('status', 'confirmed');
 
-  const totalIncome = transactions?.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-  const totalExpenses = transactions?.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+  const typedTransactions = (transactions as unknown as TransactionBalance[]) ?? [];
+  const totalIncome = typedTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+  const totalExpenses = typedTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
   const totalBalance = totalIncome - totalExpenses;
 
   // 3. Obtener créditos activos y reservados usando las funciones SQL
   const { data: activeCreditsData } = await supabase.rpc('get_active_credits_sum', {
     p_household_id: householdId
   });
-  
+
   const { data: reservedCreditsData } = await supabase.rpc('get_reserved_credits_sum', {
     p_household_id: householdId
   });
@@ -964,20 +981,61 @@ export async function getBalanceBreakdown(householdId: string): Promise<Result<{
   // (los créditos activos forman parte del balance pero pertenecen a miembros específicos)
   const freeBalance = totalBalance - activeCredits;
 
+  interface MemberCredit {
+    amount: number;
+    reserved_at: string | null;
+    profile_id: string;
+    profiles: {
+      id: string;
+      display_name: string;
+    } | {
+      id: string;
+      display_name: string;
+    }[];
+  }
+
   // 5. Obtener desglose por miembro
   const { data: memberCredits } = await supabase
     .from('member_credits')
     .select(`
       amount,
       reserved_at,
-      profile_id,
-      profiles!inner (
-        id,
-        display_name
-      )
+      profile_id
     `)
     .eq('household_id', householdId)
     .eq('status', 'active');
+
+  // Obtener profile_ids únicos
+  interface MemberCredit {
+    profile_id: string;
+    [key: string]: unknown;
+  }
+
+  const memberCreditsTyped = (memberCredits as MemberCredit[]) || [];
+  const memberProfileIds = [...new Set(memberCreditsTyped.map(c => c.profile_id).filter(Boolean))];
+
+  // Obtener perfiles
+  const profilesResult = memberProfileIds.length > 0 ? await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .in('id', memberProfileIds) : { data: [], error: null };
+
+  // Crear mapa de perfiles
+  interface Profile {
+    id: string;
+    display_name: string;
+  }
+
+  const typedProfiles = (profilesResult.data as Profile[]) || [];
+  const memberProfilesMap = new Map(typedProfiles.map(p => [p.id, p]));
+
+  // Enriquecer member credits con perfiles
+  const enrichedMemberCredits = memberCreditsTyped.map(credit => ({
+    ...credit,
+    profiles: credit.profile_id ? memberProfilesMap.get(credit.profile_id) : null
+  }));
+
+  const typedMemberCredits = enrichedMemberCredits as unknown as MemberCredit[];
 
   // Agrupar por miembro
   const membersMap = new Map<string, {
@@ -987,11 +1045,11 @@ export async function getBalanceBreakdown(householdId: string): Promise<Result<{
     reservedCredits: number;
   }>();
 
-  memberCredits?.forEach(credit => {
+  typedMemberCredits.forEach(credit => {
     const profileId = credit.profile_id;
     const profile = Array.isArray(credit.profiles) ? credit.profiles[0] : credit.profiles;
     const displayName = profile?.display_name || 'Usuario';
-    
+
     if (!membersMap.has(profileId)) {
       membersMap.set(profileId, {
         profileId,
@@ -1027,14 +1085,18 @@ export async function getBalanceBreakdown(householdId: string): Promise<Result<{
 export async function getPersonalBalance(householdId: string): Promise<Result<{
   expectedContribution: number;
   paidAmount: number;
+  adjustmentsPaid: number;
+  baseAmount: number;
+  totalContributed: number;
   pendingAmount: number;
+  creditGenerated: number;
   status: string;
   myActiveCredits: number;
   myReservedCredits: number;
   contributionId: string | null;
 }>> {
   const supabase = await supabaseServer();
-  
+
   // 1. Verificar autenticación y obtener profile
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return fail('No autenticado');
@@ -1065,7 +1127,11 @@ export async function getPersonalBalance(householdId: string): Promise<Result<{
     return ok({
       expectedContribution: 0,
       paidAmount: 0,
+      adjustmentsPaid: 0,
+      baseAmount: 0,
+      totalContributed: 0,
       pendingAmount: 0,
+      creditGenerated: 0,
       status: 'pending_configuration',
       myActiveCredits: 0,
       myReservedCredits: 0,
@@ -1076,8 +1142,40 @@ export async function getPersonalBalance(householdId: string): Promise<Result<{
   const expectedAmount = Number(contribution.expected_amount || 0);
   const paidAmount = Number(contribution.paid_amount || 0);
   const adjustmentsTotal = Number(contribution.adjustments_total || 0);
-  const adjustedExpected = expectedAmount + adjustmentsTotal;
-  const pendingAmount = Math.max(0, adjustedExpected - paidAmount);
+  const adjustmentsPaid = Number(contribution.adjustments_paid_amount || 0);
+
+  // DEBUG: Ver datos raw
+  console.log('[getPersonalBalance] Contribution data:', {
+    expected_amount: contribution.expected_amount,
+    paid_amount: contribution.paid_amount,
+    adjustments_total: contribution.adjustments_total,
+    adjustments_paid_amount: contribution.adjustments_paid_amount,
+  });
+
+  // Calcular base amount (expected sin ajustes)
+  const baseAmount = expectedAmount - adjustmentsTotal;
+
+  // Total realmente aportado al household
+  const totalContributed = paidAmount + adjustmentsPaid;
+
+  // Calcular si hay crédito generado (exceso sobre la base original)
+  const creditGenerated = Math.max(0, totalContributed - baseAmount);
+
+  console.log('[getPersonalBalance] Calculated:', {
+    baseAmount,
+    totalContributed,
+    creditGenerated,
+    adjustmentsPaid,
+  });
+
+  // NOTA: expected_amount YA incluye adjustments_total (trigger lo actualiza)
+  // expected_amount = base + adjustments_total
+  const pendingAmount = Math.max(0, expectedAmount - paidAmount);
+
+  interface MyCredit {
+    amount: number;
+    reserved_at: string | null;
+  }
 
   // 3. Obtener créditos propios (activos y reservados)
   const { data: myCredits } = await supabase
@@ -1087,13 +1185,18 @@ export async function getPersonalBalance(householdId: string): Promise<Result<{
     .eq('profile_id', profile.id)
     .eq('status', 'active');
 
-  const myActiveCredits = myCredits?.filter(c => !c.reserved_at).reduce((sum, c) => sum + Number(c.amount), 0) || 0;
-  const myReservedCredits = myCredits?.filter(c => c.reserved_at).reduce((sum, c) => sum + Number(c.amount), 0) || 0;
+  const typedMyCredits = (myCredits as unknown as MyCredit[]) ?? [];
+  const myActiveCredits = typedMyCredits.filter(c => !c.reserved_at).reduce((sum, c) => sum + Number(c.amount), 0) || 0;
+  const myReservedCredits = typedMyCredits.filter(c => c.reserved_at).reduce((sum, c) => sum + Number(c.amount), 0) || 0;
 
   return ok({
-    expectedContribution: adjustedExpected,
+    expectedContribution: expectedAmount,
     paidAmount,
+    adjustmentsPaid,
+    baseAmount,
+    totalContributed,
     pendingAmount,
+    creditGenerated,
     status: contribution.status,
     myActiveCredits,
     myReservedCredits,
@@ -1122,20 +1225,21 @@ export async function approveContributionAdjustment(adjustmentId: string): Promi
   // 1. Obtener ajuste actual
   const { data: adjustment, error: fetchError } = await supabase
     .from('contribution_adjustments')
-    .select(`
-      *,
-      contribution:contributions!inner(
-        household_id
-      )
-    `)
+    .select('*')
     .eq('id', adjustmentId)
     .single();
 
-  if (fetchError) return fail('Error al obtener ajuste: ' + fetchError.message);
+  if (fetchError) return fail('Error en operación');
   if (!adjustment) return fail('Ajuste no encontrado');
 
-  // @ts-ignore - Supabase type inference
-  const contribution = adjustment.contribution;
+  // 2. Obtener contribución asociada
+  const { data: contribution, error: contributionError } = await supabase
+    .from('contributions')
+    .select('household_id')
+    .eq('id', adjustment.contribution_id)
+    .single();
+
+  if (contributionError || !contribution) return fail('Contribución no encontrada');
 
   // Verificar que pertenece al household
   if (contribution.household_id !== householdId) {
@@ -1167,7 +1271,7 @@ export async function approveContributionAdjustment(adjustmentId: string): Promi
     .eq('id', adjustmentId);
 
   if (updateError) {
-    return fail('Error al aprobar ajuste: ' + updateError.message);
+    return fail('Error en operación');
   }
 
   revalidatePath('/app/contributions/adjustments');
@@ -1199,21 +1303,21 @@ export async function rejectContributionAdjustment(
   // 1. Obtener ajuste actual
   const { data: adjustment, error: fetchError } = await supabase
     .from('contribution_adjustments')
-    .select(`
-      *,
-      contribution:contributions!inner(
-        household_id,
-        profile_id
-      )
-    `)
+    .select('*')
     .eq('id', adjustmentId)
     .single();
 
-  if (fetchError) return fail('Error al obtener ajuste: ' + fetchError.message);
+  if (fetchError) return fail('Error en operación');
   if (!adjustment) return fail('Ajuste no encontrado');
 
-  // @ts-ignore - Supabase type inference
-  const contribution = adjustment.contribution;
+  // 2. Obtener contribución asociada
+  const { data: contribution, error: contributionError } = await supabase
+    .from('contributions')
+    .select('household_id, profile_id')
+    .eq('id', adjustment.contribution_id)
+    .single();
+
+  if (contributionError || !contribution) return fail('Contribución no encontrada');
 
   // Verificar que pertenece al household
   if (contribution.household_id !== householdId) {
@@ -1235,7 +1339,7 @@ export async function rejectContributionAdjustment(
   if (!profile) return fail('Perfil no encontrado');
 
   // 3. Actualizar estado a 'cancelled' con razón
-  const updatedReason = rejectionReason 
+  const updatedReason = rejectionReason
     ? `${adjustment.reason || ''} [RECHAZADO: ${rejectionReason}]`.trim()
     : adjustment.reason;
 
@@ -1250,7 +1354,7 @@ export async function rejectContributionAdjustment(
     .eq('id', adjustmentId);
 
   if (updateError) {
-    return fail('Error al rechazar ajuste: ' + updateError.message);
+    return fail('Error en operación');
   }
 
   // 4. Eliminar transacciones asociadas (si existen)
@@ -1261,6 +1365,10 @@ export async function rejectContributionAdjustment(
     movementsToDelete.push(adjustment.movement_id);
   }
 
+  interface TransactionIdOnly {
+    id: string;
+  }
+
   // B) Buscar por descripción con [Ajuste: razón]
   const searchPattern = `%[Ajuste: ${adjustment.reason}]%`;
   const { data: movementsByDescription } = await supabase
@@ -1269,13 +1377,12 @@ export async function rejectContributionAdjustment(
     .eq('household_id', contribution.household_id)
     .like('description', searchPattern);
 
-  if (movementsByDescription) {
-    movementsByDescription.forEach(m => {
-      if (!movementsToDelete.includes(m.id)) {
-        movementsToDelete.push(m.id);
-      }
-    });
-  }
+  const typedMovements = (movementsByDescription as unknown as TransactionIdOnly[]) ?? [];
+  typedMovements.forEach(m => {
+    if (!movementsToDelete.includes(m.id)) {
+      movementsToDelete.push(m.id);
+    }
+  });
 
   // Eliminar todos los movimientos identificados
   if (movementsToDelete.length > 0) {

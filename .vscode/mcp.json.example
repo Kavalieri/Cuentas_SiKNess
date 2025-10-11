@@ -1,0 +1,22 @@
+{
+  "servers": {
+    "git-ssh": {
+      "command": "/usr/bin/npx",
+      "args": ["-y", "@mseep/git-mcp-server"],
+      "type": "stdio"
+    },
+    "shell-ssh": {
+      "command": "/usr/bin/npx",
+      "args": ["-y", "shell-command-mcp"],
+      "env": {
+        "ALLOWED_COMMANDS": "npm,npx,node,git,gh,bash,sh,python,py,pip,docker,systemctl,journalctl,chmod,chown,mkdir,rm,mv,cp,touch,echo,which,whoami,hostname,uname,date,env,curl,wget,sudo,psql,pg_dump,pg_restore"
+      },
+      "type": "stdio"
+    },
+    "github-ssh": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+  },
+  "inputs": []
+}

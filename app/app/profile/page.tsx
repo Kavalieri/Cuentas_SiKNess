@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserHouseholds } from '@/lib/supabaseServer';
 import { redirect } from 'next/navigation';
@@ -14,7 +15,17 @@ export default async function ProfilePage() {
   }
 
   const householdId = await getUserHouseholdId();
-  const userHouseholds = await getUserHouseholds();
+  const userHouseholdsRaw = await getUserHouseholds();
+
+  type Household = {
+    id: string;
+    name: string;
+    role: 'owner' | 'member';
+    created_at: string;
+  };
+
+  const userHouseholds = userHouseholdsRaw as unknown as Household[];
+
   const supabase = await supabaseServer();
 
   // Obtener profile_id y display_name del usuario
@@ -81,8 +92,8 @@ export default async function ProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <HouseholdsList 
-            households={userHouseholds} 
+          <HouseholdsList
+            households={userHouseholds}
             activeHouseholdId={householdId}
           />
         </CardContent>

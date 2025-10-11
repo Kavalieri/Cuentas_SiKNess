@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { ContributionsContent } from './components/ContributionsContent';
 import { getCurrentHouseholdId } from '@/lib/adminCheck';
 import { redirect } from 'next/navigation';
@@ -58,9 +59,17 @@ export default async function ContributionsPage() {
     p_household_id: householdId,
   });
 
+  interface MemberRaw {
+    profile_id: string;
+    email: string;
+    role: string;
+  }
+
+  const typedMembersData = (membersData as unknown as MemberRaw[]) ?? [];
+
   // Obtener ingresos actuales de cada miembro
   const membersWithIncomes: Member[] = await Promise.all(
-    (membersData || []).map(async (member) => {
+    typedMembersData.map(async (member) => {
       const { data: income } = await supabase.rpc('get_member_income', {
         p_household_id: householdId,
         p_profile_id: member.profile_id,
@@ -92,9 +101,11 @@ export default async function ContributionsPage() {
     .eq('month', currentMonth)
     .eq('year', currentYear);
 
+  const typedContributions = (contributions as unknown as Contribution[]) ?? [];
+
   // Asignar contribuciones a miembros
   const contributionsMap = new Map(
-    (contributions || []).map((c) => [c.profile_id, c])
+    typedContributions.map((c) => [c.profile_id, c])
   );
 
   membersWithIncomes.forEach((member) => {
@@ -119,7 +130,12 @@ export default async function ContributionsPage() {
     .gte('occurred_at', startDate)
     .lte('occurred_at', endDate);
 
-  const totalPaid = (monthlyIncomes || []).reduce((sum, income) => sum + income.amount, 0);
+  interface IncomeAmount {
+    amount: number;
+  }
+
+  const typedMonthlyIncomes = (monthlyIncomes as unknown as IncomeAmount[]) ?? [];
+  const totalPaid = typedMonthlyIncomes.reduce((sum, income) => sum + income.amount, 0);
 
   console.log('[DEBUG] Monthly Incomes:', monthlyIncomes?.length || 0, 'transactions');
   console.log('[DEBUG] Total Paid (all incomes):', totalPaid, 'Monthly Goal:', monthlyGoal);
@@ -133,6 +149,9 @@ export default async function ContributionsPage() {
     .select('id, name, icon, type')
     .eq('household_id', householdId)
     .order('name');
+
+  type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'icon' | 'type'>;
+  const typedCategories = (categories as unknown as Category[]) ?? [];
 
   return (
     <div className="space-y-6">
@@ -155,7 +174,7 @@ export default async function ContributionsPage() {
         calculationType={calculationType}
         currency={currency}
         isOwner={isOwner}
-        categories={categories || []}
+        categories={typedCategories}
       />
     </div>
   );

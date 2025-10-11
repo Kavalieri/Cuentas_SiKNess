@@ -1,32 +1,57 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
-
 /**
- * Cliente Supabase con SERVICE_ROLE_KEY para operaciones de administración
- * 
- * ⚠️ SOLO usar en Server Components/Actions que verifican isSystemAdmin()
- * ⚠️ NUNCA exponer este cliente al navegador
- * ⚠️ Este cliente bypasea Row Level Security (RLS)
- * 
- * Usos válidos:
- * - Panel de administración (listado de usuarios)
- * - Operaciones que requieren auth.admin.*
- * - Scripts de seed/migración
+ * WRAPPER DE COMPATIBILIDAD - Cliente Admin
+ * Operaciones administrativas usan ahora PostgreSQL directo
  */
+
+import { query } from './db';
+
 export const supabaseAdmin = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error(
-      'Missing Supabase environment variables. Required: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY',
-    );
-  }
-
-  return createClient<Database>(supabaseUrl, serviceRoleKey, {
+  return {
     auth: {
-      autoRefreshToken: false,
-      persistSession: false,
+      admin: {
+        listUsers: async () => {
+          // Listar todos los usuarios desde profiles
+          const result = await query(`
+            SELECT
+              auth_user_id as id,
+              email,
+              display_name,
+              created_at,
+              updated_at,
+              created_at as last_sign_in_at
+            FROM profiles
+            ORDER BY created_at DESC
+          `);
+
+          return {
+            data: { users: result.rows },
+            error: null
+          };
+        },
+
+        deleteUser: async (userId: string) => {
+          // Eliminar usuario y sus datos relacionados
+          await query('DELETE FROM profiles WHERE auth_user_id = $1', [userId]);
+          return { data: null, error: null };
+        }
+      }
     },
-  });
+
+    from: (table: string) => ({
+      select: (columns: string = '*') => ({
+        eq: (column: string, value: unknown) => ({
+          single: async () => {
+            const result = await query(
+              `SELECT ${columns} FROM ${table} WHERE ${column} = $1`,
+              [value]
+            );
+            return {
+              data: result.rows[0] || null,
+              error: null
+            };
+          }
+        })
+      })
+    })
+  };
 };

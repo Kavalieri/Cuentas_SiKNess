@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getTransactions } from '@/app/app/expenses/actions';
 import { getCategories } from '@/app/app/categories/actions';
 import { AddTransactionDialog } from './components/AddTransactionDialog';

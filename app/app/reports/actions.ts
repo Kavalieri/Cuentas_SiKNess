@@ -54,8 +54,12 @@ export async function getTrendData(params?: {
       { expenses: number; income: number }
     >();
 
-    transactions?.forEach((tx) => {
-      const month = tx.occurred_at.substring(0, 7); // 'YYYY-MM'
+    transactions?.forEach((tx: any) => {
+      // Asegurar que occurred_at sea string
+      const occurredAt = typeof tx.occurred_at === 'string' ? tx.occurred_at : String(tx.occurred_at || '');
+      if (!occurredAt || occurredAt === 'null' || occurredAt === 'undefined') return;
+
+      const month = occurredAt.substring(0, 7); // 'YYYY-MM'
       const current = monthlyData.get(month) || { expenses: 0, income: 0 };
 
       if (tx.type === 'expense') {
@@ -151,7 +155,7 @@ export async function getCategoryDistribution(params?: {
       .eq('type', type)
       .gte('occurred_at', startDate)
       .lte('occurred_at', endDate)
-      .not('category_id', 'is', null);
+      .neq('category_id', null);
 
     if (error) {
       return fail(`Error al obtener transacciones: ${error.message}`);
@@ -161,7 +165,7 @@ export async function getCategoryDistribution(params?: {
     const categoryMap = new Map<string, { amount: number; icon: string | null }>();
     let total = 0;
 
-    transactions?.forEach((tx) => {
+    transactions?.forEach((tx: any) => {
       if (tx.category) {
         const categoryName = tx.category.name;
         const current = categoryMap.get(categoryName) || {
@@ -242,7 +246,7 @@ export async function getContributionsComparison(params?: {
     }
 
     // Formatear datos
-    const result = contributions.map((c) => {
+    const result = contributions.map((c: any) => {
       const expectedAmount = c.expected_amount || 0;
       const paidAmount = c.paid_amount || 0;
       return {
@@ -308,7 +312,7 @@ export async function getTopCategories(params?: {
       .eq('type', type)
       .gte('occurred_at', startDate)
       .lte('occurred_at', endDate)
-      .not('category_id', 'is', null);
+      .neq('category_id', null);
 
     if (error) {
       return fail(`Error al obtener transacciones: ${error.message}`);
@@ -320,7 +324,7 @@ export async function getTopCategories(params?: {
       { total: number; count: number; icon: string | null }
     >();
 
-    transactions?.forEach((tx) => {
+    transactions?.forEach((tx: any) => {
       if (tx.category) {
         const categoryName = tx.category.name;
         const current = categoryMap.get(categoryName) || {

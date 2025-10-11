@@ -13,9 +13,10 @@ import { LoadingState } from '@/components/shared/data-display/LoadingState';
 import { AddTransactionDialog } from '@/app/app/expenses/components/AddTransactionDialog';
 import { SavingsEvolutionChart } from '@/components/savings/SavingsEvolutionChart';
 import { SavingsTab } from '@/components/savings/SavingsTab';
-import { PendingCreditsWidget } from '@/components/credits/PendingCreditsWidget';
 import { MyCreditsCard } from '@/components/credits/MyCreditsCard';
 import { PersonalBalanceCard } from '@/components/contributions/PersonalBalanceCard';
+import { MonthlyFundCard } from './MonthlyFundCard';
+import { HouseholdCreditsCard } from './HouseholdCreditsCard';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from '@/app/app/expenses/actions';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -81,20 +82,35 @@ interface DashboardContentProps {
   initialSavingsGoal?: number | null;
   initialSavingsBalance?: SavingsBalance;
   initialSavingsTransactions?: SavingsTransaction[];
-  initialPendingCredits?: Array<{
-    id: string;
-    amount: number;
-    currency: string;
-    source_month: number;
-    source_year: number;
-    status: string;
-    monthly_decision: string | null;
-  }>;
   balanceBreakdown?: {
     totalBalance: number;
     freeBalance: number;
     activeCredits: number;
     reservedCredits: number;
+  };
+  householdCreditsData?: {
+    totalActiveCredits: number;
+    totalReservedCredits: number;
+    balanceAfterCredits: number;
+    totalIncome: number;
+    totalExpenses: number;
+    rawBalance: number;
+  };
+  monthlyFundData?: {
+    members: Array<{
+      profile_id: string;
+      email: string;
+      current_income: number | null;
+    }>;
+    contributions: Array<{
+      paid_amount: number;
+      expected_amount: number;
+      status: string;
+    }>;
+    monthlyFund: number;
+    totalIncome: number;
+    currency: string;
+    distributionType?: string;
   };
 }
 
@@ -109,8 +125,9 @@ export function DashboardContent({
   initialSavingsGoal,
   initialSavingsBalance,
   initialSavingsTransactions,
-  initialPendingCredits = [],
   balanceBreakdown,
+  householdCreditsData,
+  monthlyFundData,
 }: DashboardContentProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [summary, setSummary] = useState(initialSummary);
@@ -118,7 +135,7 @@ export function DashboardContent({
   const [categoryExpenses, setCategoryExpenses] = useState(initialCategoryExpenses);
   const [comparison, setComparison] = useState(initialComparison);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Estado de pestaña activa con persistencia
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -237,32 +254,34 @@ export function DashboardContent({
         <LoadingState message="Cargando datos del dashboard..." />
       ) : (
         <>
-          {/* Resumen Financiero: 4 StatCards */}
+          {/* Resumen Financiero: 4 StatCards (con Créditos del Hogar) */}
           <FinancialSummary
             income={summary.income}
             expenses={summary.expenses}
             balance={summary.balance}
-            transactionCount={transactions.length}
+            transactionCount={0}
             avgDaily={avgDailyExpenses}
+            householdCredits={householdCreditsData}
             previousMonthComparison={previousMonthComparison}
           />
 
-          {/* Balance Breakdown + Personal Balance + My Credits */}
+          {/* Fondo Mensual + Mi Contribución + Mis Créditos */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {balanceBreakdown && (
-              <BalanceBreakdown
-                totalBalance={balanceBreakdown.totalBalance}
-                freeBalance={balanceBreakdown.freeBalance}
-                activeCredits={balanceBreakdown.activeCredits}
-                reservedCredits={balanceBreakdown.reservedCredits}
+            {monthlyFundData && (
+              <MonthlyFundCard
+                householdId={householdId}
+                members={monthlyFundData.members as never[]}
+                contributions={monthlyFundData.contributions as never[]}
+                monthlyFund={monthlyFundData.monthlyFund}
+                totalIncome={monthlyFundData.totalIncome}
+                expenses={summary.expenses}
+                currency={monthlyFundData.currency}
+                distributionType={monthlyFundData.distributionType}
               />
             )}
             <PersonalBalanceCard householdId={householdId} />
             <MyCreditsCard householdId={householdId} />
           </div>
-
-          {/* Widget de Créditos Pendientes */}
-          <PendingCreditsWidget initialCredits={initialPendingCredits} onRefresh={refreshData} />
 
           {/* PESTAÑAS PRINCIPALES */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -284,7 +303,7 @@ export function DashboardContent({
             {/* TAB BALANCE: Transacciones recientes */}
             <TabsContent value="balance" className="mt-6 space-y-6">
               <RecentTransactions transactions={recentTransactions} />
-              
+
               {/* Card para ver página completa */}
               <Card>
                 <CardContent className="py-6">

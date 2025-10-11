@@ -263,7 +263,7 @@ export async function cancelInvitation(invitationId: string): Promise<Result> {
   revalidatePath('/app/household');
   revalidatePath('/app/profile');
   revalidatePath('/app');
-  
+
   return ok();
 }
 
@@ -300,9 +300,17 @@ export async function cleanupOrphanedInvitations(): Promise<Result<{ deleted: nu
     return ok({ deleted: 0 });
   }
 
+  type InvitationWithHousehold = {
+    id: string;
+    household_id: string;
+    households: { id: string } | null;
+  };
+
+  const typedOrphaned = orphaned as unknown as InvitationWithHousehold[];
+
   // Filtrar las que tienen households null (huérfanas)
-  const orphanedIds = orphaned
-    .filter((inv) => !('households' in inv) || !inv.households)
+  const orphanedIds = typedOrphaned
+    .filter((inv) => !inv.households)
     .map((inv) => inv.id);
 
   if (orphanedIds.length === 0) {
@@ -324,7 +332,7 @@ export async function cleanupOrphanedInvitations(): Promise<Result<{ deleted: nu
   revalidatePath('/app/household');
   revalidatePath('/app/profile');
   revalidatePath('/app');
-  
+
   return ok({ deleted: orphanedIds.length });
 }
 
@@ -346,7 +354,6 @@ export async function getUserPendingInvitations(): Promise<Result<InvitationDeta
     .select(
       `
       id,
-      type,
       token,
       email,
       household_id,
@@ -357,9 +364,7 @@ export async function getUserPendingInvitations(): Promise<Result<InvitationDeta
       max_uses,
       current_uses,
       metadata,
-      households (
-        name
-      )
+      type
     `
     )
     .eq('email', user.email.toLowerCase())
@@ -376,9 +381,22 @@ export async function getUserPendingInvitations(): Promise<Result<InvitationDeta
     return ok([]);
   }
 
+  // Obtener household_ids únicos para consultar nombres
+  const typedData = data as any[];
+  const householdIds = [...new Set(typedData.map((inv: any) => inv.household_id).filter(Boolean))];
+
+  // Obtener nombres de households
+  const householdsResult = householdIds.length > 0 ? await supabase
+    .from('households')
+    .select('id, name')
+    .in('id', householdIds) : { data: [], error: null };
+
+  const typedHouseholds = (householdsResult.data as any[]) || [];
+  const householdsMap = new Map(typedHouseholds.map((h: any) => [h.id, h.name]));
+
   // Convertir a InvitationDetails
   const invitations: InvitationDetails[] = [];
-  
+
   for (const invitation of data) {
     // Obtener email del invitador
     let invitedByEmail = 'Usuario de CuentasSiK';
@@ -398,7 +416,7 @@ export async function getUserPendingInvitations(): Promise<Result<InvitationDeta
     }
 
     // @ts-ignore
-    const householdName = invitation.households?.name || null;
+    const householdName = householdsMap.get(invitation.household_id) || null;
 
     invitations.push({
       // @ts-ignore
@@ -440,12 +458,8 @@ export async function getInvitationDetails(token: string): Promise<Result<Invita
     return fail('Token inválido');
   }
 
-  // Usar supabaseBrowser para evitar problemas con cookies de sesión
-  const { createBrowserClient } = await import('@supabase/ssr');
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Usar supabaseServer en lugar de browser client
+  const supabase = await supabaseServer();
 
   // @ts-ignore - Tipos pendientes de regenerar después de aplicar migración
   const { data, error } = await supabase
@@ -495,7 +509,7 @@ export async function getInvitationDetails(token: string): Promise<Result<Invita
   // @ts-ignore - Tipos pendientes
   const expiresAt = new Date(data.expires_at);
   const now = new Date();
-  
+
   // Verificar si está expirada
   if (expiresAt < now) {
     // @ts-ignore
@@ -630,13 +644,7 @@ export async function getPendingInvitations() {
   // Incluso si el household_id es inválido, para poder ver errores
   const { data, error } = await supabase
     .from('invitations')
-    .select(`
-      *,
-      households (
-        id,
-        name
-      )
-    `)
+    .select('*')
     .eq('household_id', householdId)
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
@@ -646,8 +654,39 @@ export async function getPendingInvitations() {
     return [];
   }
 
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  // Obtener información de households para enriquecer los datos
+  const typedData = data as any[];
+  const householdIds = [...new Set(typedData.map((inv: any) => inv.household_id).filter(Boolean))];
+  const householdsResult = householdIds.length > 0 ? await supabase
+    .from('households')
+    .select('id, name')
+    .in('id', householdIds) : { data: [], error: null };
+
+  const householdsMap = new Map((householdsResult.data as any[] || []).map((h: any) => [h.id, { id: h.id, name: h.name }]));
+
+  type InvitationDebug = {
+    id: string;
+    email: string | null;
+    token: string;
+    status: string;
+    created_at: string | null;
+    expires_at: string;
+    household_id: string | null;
+    households: { id: string; name: string } | null;
+  };
+
+  // Enriquecer con información de households
+  const enrichedData = typedData.map((inv: any) => ({
+    ...inv,
+    households: inv.household_id ? householdsMap.get(inv.household_id) || null : null
+  })) as unknown as InvitationDebug[];
+
   // Log para debugging: detectar invitaciones huérfanas
-  const orphanedInvitations = data?.filter((inv) => !('households' in inv) || !inv.households) || [];
+  const orphanedInvitations = enrichedData.filter((inv) => !inv.households);
   if (orphanedInvitations.length > 0) {
     console.warn(`⚠️  Encontradas ${orphanedInvitations.length} invitaciones huérfanas (household inexistente)`);
     orphanedInvitations.forEach((inv) => {
@@ -655,7 +694,7 @@ export async function getPendingInvitations() {
     });
   }
 
-  return data || [];
+  return enrichedData;
 }
 
 /**
@@ -682,15 +721,15 @@ async function sendInvitationEmail({
   // 1. Resend (https://resend.com)
   // 2. SendGrid
   // 3. Supabase Edge Functions
-  
+
   // TODO: Implementar envío real de email
   // Por ahora, el owner puede copiar el link y enviarlo manualmente
-  
+
   console.log('Invitation email would be sent:');
   console.log(`To: ${to}`);
   console.log(`Household: ${householdName}`);
   console.log(`Invited by: ${inviterEmail}`);
   console.log(`Link: ${inviteUrl}`);
-  
+
   return { success: true, inviteUrl };
 }

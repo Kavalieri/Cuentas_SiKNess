@@ -56,15 +56,28 @@ export async function getPendingCredits(): Promise<
     .from('member_credits')
     .select('id, amount, currency, source_month, source_year, status, monthly_decision, profile_id, created_at')
     .eq('household_id', householdId)
-    .eq('profile_id', user.id)
+    .eq('profile_id', user.profile_id)
     .in('status', ['active', 'pending_decision'])
     .order('created_at', { ascending: true });
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
-  return ok(data || []);
+  type CreditData = {
+    id: string;
+    amount: number;
+    currency: string;
+    source_month: number;
+    source_year: number;
+    status: string;
+    monthly_decision: string | null;
+    profile_id: string;
+    created_at: string;
+  };
+
+  const typedData = (data as unknown as CreditData[]) ?? [];
+  return ok(typedData);
 }
 
 /**
@@ -96,7 +109,7 @@ export async function getCurrentContribution(
     .maybeSingle();
 
   if (periodError) {
-    return fail(periodError.message);
+    return fail('Error en operación');
   }
 
   if (!period) {
@@ -108,14 +121,20 @@ export async function getCurrentContribution(
     .from('contributions')
     .select('expected_amount, paid_amount')
     .eq('period_id', period.id)
-    .eq('profile_id', user.id)
+    .eq('profile_id', user.profile_id)
     .maybeSingle();
 
   if (error) {
-    return fail(error.message);
+    return fail('Error en operación');
   }
 
-  return ok(data);
+  type ContributionData = {
+    expected_amount: number | null;
+    paid_amount: number;
+  };
+
+  const typedData = data as unknown as ContributionData | null;
+  return ok(typedData);
 }
 
 // ========================================================================
@@ -158,7 +177,7 @@ export async function processMonthlyDecision(formData: FormData): Promise<Result
     return fail('Crédito no encontrado');
   }
 
-  if (credit.profile_id !== user.id) {
+  if (credit.profile_id !== user.profile_id) {
     return fail('No tienes permiso para modificar este crédito');
   }
 
@@ -186,7 +205,7 @@ export async function processMonthlyDecision(formData: FormData): Promise<Result
     });
 
     if (periodError) {
-      return fail(`Error al obtener período: ${periodError.message}`);
+      return fail('Error en operación');
     }
 
     // Obtener contribución del usuario en ese período
@@ -194,11 +213,11 @@ export async function processMonthlyDecision(formData: FormData): Promise<Result
       .from('contributions')
       .select('id, expected_amount, paid_amount')
       .eq('period_id', periodId)
-      .eq('profile_id', user.id)
+      .eq('profile_id', user.profile_id)
       .maybeSingle();
 
     if (contributionError) {
-      return fail(`Error al obtener contribución: ${contributionError.message}`);
+      return fail('Error en operación');
     }
 
     if (!contribution) {
@@ -218,7 +237,7 @@ export async function processMonthlyDecision(formData: FormData): Promise<Result
       .eq('id', parsed.data.creditId);
 
     if (updateError) {
-      return fail(`Error al aplicar crédito: ${updateError.message}`);
+      return fail('Error en operación');
     }
 
     // Actualizar paid_amount de la contribución
@@ -232,7 +251,7 @@ export async function processMonthlyDecision(formData: FormData): Promise<Result
       .eq('id', contribution.id);
 
     if (contributionUpdateError) {
-      return fail(`Error al actualizar contribución: ${contributionUpdateError.message}`);
+      return fail('Error en operación');
     }
 
     revalidatePath('/app');
@@ -248,7 +267,7 @@ export async function processMonthlyDecision(formData: FormData): Promise<Result
       .eq('id', parsed.data.creditId);
 
     if (updateError) {
-      return fail(`Error al mantener crédito: ${updateError.message}`);
+      return fail('Error en operación');
     }
 
     revalidatePath('/app');
@@ -262,7 +281,7 @@ export async function processMonthlyDecision(formData: FormData): Promise<Result
     });
 
     if (transferError) {
-      return fail(`Error al transferir crédito: ${transferError.message}`);
+      return fail('Error en operación');
     }
 
     revalidatePath('/app');
@@ -271,4 +290,60 @@ export async function processMonthlyDecision(formData: FormData): Promise<Result
   }
 
   return fail('Decisión no válida');
+}
+
+/**
+ * Obtiene el total de créditos activos de todo el household
+ * y el balance descontando estos créditos
+ */
+export async function getHouseholdCreditsBalance(): Promise<
+  Result<{
+    totalActiveCredits: number;
+    totalReservedCredits: number;
+    balanceAfterCredits: number;
+    totalIncome: number;
+    totalExpenses: number;
+    rawBalance: number;
+  }>
+> {
+  const householdId = await getUserHouseholdId();
+  if (!householdId) {
+    return fail('No tienes un hogar activo');
+  }
+
+  const supabase = await supabaseServer();
+
+  // 1. Obtener créditos totales del household
+  const { data: credits } = await supabase
+    .from('member_credits')
+    .select('amount, reserved_at')
+    .eq('household_id', householdId)
+    .eq('status', 'active');
+
+  const creditsData = (credits as unknown as Array<{ amount: number; reserved_at: string | null }>) ?? [];
+  const totalActiveCredits = creditsData.filter(c => !c.reserved_at).reduce((sum, c) => sum + Number(c.amount), 0);
+  const totalReservedCredits = creditsData.filter(c => c.reserved_at).reduce((sum, c) => sum + Number(c.amount), 0);
+
+  // 2. Obtener balance total del household (todos los transactions)
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('type, amount')
+    .eq('household_id', householdId);
+
+  const transactionsData = (transactions as unknown as Array<{ type: string; amount: number }>) ?? [];
+  const totalIncome = transactionsData.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
+  const totalExpenses = transactionsData.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+  const rawBalance = totalIncome - totalExpenses;
+
+  // 3. Balance después de descontar créditos (dinero realmente disponible)
+  const balanceAfterCredits = rawBalance - totalActiveCredits - totalReservedCredits;
+
+  return ok({
+    totalActiveCredits,
+    totalReservedCredits,
+    balanceAfterCredits,
+    totalIncome,
+    totalExpenses,
+    rawBalance,
+  });
 }

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import { sendMagicLink } from './actions';
+import { sendMagicLink_Action } from './actions';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -46,7 +46,7 @@ function LoginForm() {
       const formData = new FormData();
       formData.append('email', email);
 
-      const result = await sendMagicLink(formData);
+      const result = await sendMagicLink_Action(formData);
 
       if (!result.ok) {
         toast.error(result.message);
@@ -98,7 +98,7 @@ function LoginForm() {
             {hasInvitation ? '¡Te han invitado!' : 'Iniciar Sesión'}
           </CardTitle>
           <CardDescription>
-            {hasInvitation 
+            {hasInvitation
               ? 'Inicia sesión o crea una cuenta para aceptar tu invitación'
               : 'Introduce tu email y te enviaremos un enlace mágico para acceder'
             }
@@ -113,7 +113,7 @@ function LoginForm() {
               </AlertDescription>
             </Alert>
           )}
-          
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

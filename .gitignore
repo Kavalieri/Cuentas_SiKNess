@@ -36,3 +36,5 @@ Thumbs.db
 .vercel/
 dist/
 .vercel
+ecosystem.config.js
+.archive/

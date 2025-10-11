@@ -182,22 +182,46 @@ export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
       return fail('Perfil no encontrado');
     }
 
-    // Ejecutar resumen via RPC
-    const { data, error } = (await supabase.rpc('get_member_credits_summary', {
-      p_household_id: householdId,
-      p_profile_id: profile.id,
-    })) as unknown as { data: CreditsSummary | null; error: Error | null };
+    // Obtener resumen directamente con queries
+    const { data: activeCredits, error: activeError } = await supabase
+      .from('member_credits')
+      .select('amount')
+      .eq('household_id', householdId)
+      .eq('profile_id', profile.id)
+      .eq('status', 'active');
 
-    if (error) {
-      console.error('Error obteniendo resumen de créditos:', error);
-      return fail('Error al obtener resumen de créditos');
+    if (activeError) {
+      console.error('Error obteniendo créditos activos:', activeError);
+      return fail('Error al obtener créditos activos');
     }
 
-    if (!data) {
-      return fail('No se pudo obtener el resumen');
+    const { data: appliedCredits, error: appliedError } = await supabase
+      .from('member_credits')
+      .select('amount')
+      .eq('household_id', householdId)
+      .eq('profile_id', profile.id)
+      .eq('status', 'applied');
+
+    if (appliedError) {
+      console.error('Error obteniendo créditos aplicados:', appliedError);
+      return fail('Error al obtener créditos aplicados');
     }
 
-    return ok(data);
+    const activeTotal = activeCredits?.reduce((sum, credit) => sum + (credit as any).amount, 0) || 0;
+    const appliedTotal = appliedCredits?.reduce((sum, credit) => sum + (credit as any).amount, 0) || 0;
+
+    const summary: CreditsSummary = {
+      active: {
+        count: activeCredits?.length || 0,
+        total_amount: activeTotal,
+      },
+      applied: {
+        count: appliedCredits?.length || 0,
+        total_amount: appliedTotal,
+      },
+    };
+
+    return ok(summary);
   } catch (error) {
     console.error('Error en getCreditsSummary:', error);
     return fail('Error inesperado al obtener resumen');
@@ -292,7 +316,7 @@ export async function setCreditAutoApply(formData: FormData): Promise<Result> {
       .from('member_credits')
       .update({ auto_apply: autoApply })
       .eq('id', creditId)
-      .eq('profile_id', user.id) // Seguridad: solo sus propios créditos
+      .eq('profile_id', user.profile_id) // Seguridad: solo sus propios créditos
       .eq('status', 'active'); // Solo créditos activos
 
     if (error) {
@@ -339,7 +363,7 @@ export async function setCreditMonthlyDecision(formData: FormData): Promise<Resu
       .from('member_credits')
       .update({ monthly_decision: decision })
       .eq('id', creditId)
-      .eq('profile_id', user.id)
+      .eq('profile_id', user.profile_id)
       .eq('status', 'active');
 
     if (error) {
@@ -378,7 +402,7 @@ export async function createManualCredit(
     const { data: userSettings } = await supabase
       .from('user_settings')
       .select('active_household_id')
-      .eq('profile_id', user.id)
+      .eq('profile_id', user.profile_id)
       .single();
 
     if (!userSettings?.active_household_id) {
@@ -389,7 +413,7 @@ export async function createManualCredit(
       .from('household_members')
       .select('role')
       .eq('household_id', userSettings.active_household_id)
-      .eq('profile_id', user.id)
+      .eq('profile_id', user.profile_id)
       .single();
 
     if (membership?.role !== 'owner') {
@@ -421,6 +445,10 @@ export async function createManualCredit(
       return fail('Error al crear crédito');
     }
 
+    if (!credit) {
+      return fail('No se pudo crear el crédito');
+    }
+
     revalidatePath('/app/contributions');
 
     return ok(credit.id);
@@ -449,7 +477,7 @@ export async function autoApplyCreditsForPeriod(periodId: string): Promise<Resul
     const { data: userSettings } = await supabase
       .from('user_settings')
       .select('active_household_id')
-      .eq('profile_id', user.id)
+      .eq('profile_id', user.profile_id)
       .single();
 
     if (!userSettings?.active_household_id) {

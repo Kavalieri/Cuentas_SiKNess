@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
 import { redirect } from 'next/navigation';
 import { getCategories } from '@/app/app/categories/actions';
@@ -20,7 +21,7 @@ export default async function AdjustmentsPage() {
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, display_name')
-    .eq('user_id', user.id)
+    .eq('auth_user_id', user.id)
     .single();
 
   if (!profile) {

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
 import { redirect } from 'next/navigation';
 import { CreditsContent } from './components/CreditsContent';

@@ -1,8 +1,16 @@
+export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { getCurrentHouseholdId } from '@/lib/adminCheck';
 import { MembersList } from './components/MembersList';
 import { InviteMemberDialog } from './components/InviteMemberDialog';
+
+interface MemberData {
+  id: string;
+  profile_id: string;
+  email: string | null;
+  role: string;
+}
 
 export default async function AdminMembersPage() {
   const householdId = await getCurrentHouseholdId();
@@ -20,7 +28,7 @@ export default async function AdminMembersPage() {
 
   // Enriquecer con ingresos actuales
   const members = await Promise.all(
-    (membersData || []).map(async (member) => {
+    ((membersData as unknown as MemberData[]) || []).map(async (member) => {
       const { data: income } = await supabase.rpc('get_member_income', {
         p_household_id: householdId,
         p_profile_id: member.profile_id,

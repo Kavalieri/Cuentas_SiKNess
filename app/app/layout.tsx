@@ -11,6 +11,7 @@ import { BalanceDisplay } from '@/components/shared/BalanceDisplay';
 import { MobileBottomNav } from '@/components/shared/navigation/MobileBottomNav';
 import { isSystemAdmin } from '@/lib/adminCheck';
 import { getTotalBalance } from '@/app/app/expenses/actions';
+import { HouseholdProvider } from '@/contexts/HouseholdContext';
 
 function SignOutButton() {
   return (
@@ -36,14 +37,44 @@ export default async function AppLayout({
 
   const userIsSystemAdmin = await isSystemAdmin();
   const householdId = await getUserHouseholdId();
-  const userHouseholds = await getUserHouseholds();
+  const userHouseholdsRaw = await getUserHouseholds();
+
+  type Household = {
+    id: string;
+    name: string;
+    role: 'owner' | 'member'; // ⚠️ LEGACY (se mantiene por compatibilidad temporal)
+    is_owner: boolean; // ✅ NUEVO (campo optimizado)
+  };
+
+  const userHouseholds = userHouseholdsRaw as unknown as Household[];
+
+  // Determinar el rol del usuario en el household activo
+  const currentHousehold = userHouseholds.find(h => h.id === householdId);
+
+  // ✅ OPTIMIZADO: Usar is_owner directo de la base de datos
+  const isOwner = currentHousehold?.is_owner || false;
+
+  console.log('[AppLayout] User permissions in current household:', {
+    householdId,
+    isOwner,
+    userId: user.profile_id,
+    userEmail: user.email
+  });
 
   // Obtener balance total si tiene household
   const balanceResult = householdId ? await getTotalBalance() : null;
   const balance = balanceResult?.ok ? balanceResult.data : null;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <HouseholdProvider
+      value={{
+        householdId,
+        isOwner,
+        userId: user.profile_id,
+        userEmail: user.email || '',
+      }}
+    >
+      <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="border-b bg-background sticky top-0 z-50">
         <div className="container mx-auto px-4">
@@ -69,14 +100,14 @@ export default async function AppLayout({
 
             {/* Right: Household Selector + User Menu + Theme + Logout */}
             <div className="flex items-center gap-2 justify-end flex-1">
-              {/* Selector de household (solo si tiene múltiples) */}
-              {userHouseholds.length > 1 && householdId && (
+              {/* Selector de household (siempre visible si tiene al menos 1) */}
+              {userHouseholds.length > 0 && householdId && (
                 <HouseholdSelector
                   households={userHouseholds}
                   activeHouseholdId={householdId}
                 />
               )}
-              
+
               {/* Botón de Perfil */}
               <Link href="/app/profile">
                 <Button variant="ghost" size="sm" className="gap-2">
@@ -117,9 +148,9 @@ export default async function AppLayout({
             <div className="flex items-center gap-2">
               <span className="font-mono">v{process.env.npm_package_version || '0.1.0-alpha'}</span>
               <span>•</span>
-              <a 
-                href="https://github.com/Kavalieri/CuentasSiK" 
-                target="_blank" 
+              <a
+                href="https://github.com/Kavalieri/CuentasSiK"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-foreground transition-colors"
               >
@@ -130,5 +161,6 @@ export default async function AppLayout({
         </div>
       </footer>
     </div>
+    </HouseholdProvider>
   );
 }

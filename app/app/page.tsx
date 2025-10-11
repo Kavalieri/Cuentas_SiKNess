@@ -1,13 +1,17 @@
+export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
-import { getUserHouseholdId } from '@/lib/supabaseServer';
+import { getUserHouseholdId, query } from '@/lib/supabaseServer';
 import { getMonthSummary, getTransactions, getCategoryExpenses, getMonthComparison } from './expenses/actions';
 import { getCategories } from './categories/actions';
 import { getInvitationDetails, getUserPendingInvitations } from './household/invitations/actions';
 import { getSavingsTransactions, getHouseholdSavings } from './savings/actions';
-import { getPendingCredits } from './credits/actions';
+import { getHouseholdCreditsBalance } from './credits/actions';
+import { getMonthlyContributions, getHouseholdSettings } from './contributions/actions';
 import { DashboardOnboarding } from './components/DashboardOnboarding';
 import { PendingInvitationsCard } from './components/PendingInvitationsCard';
 import { DashboardContent } from './components/DashboardContent';
+import { MonthlyFundCard } from './components/MonthlyFundCard';
+import { HouseholdCreditsCard } from './components/HouseholdCreditsCard';
 
 export default async function DashboardPage() {
   // Verificar si el usuario tiene un household
@@ -42,7 +46,7 @@ export default async function DashboardPage() {
       if (invitationToken) {
         // Intentar obtener detalles de la invitación
         const result = await getInvitationDetails(invitationToken);
-        
+
         if (result.ok) {
           // Invitación válida - mostrarla en el dashboard
           pendingInvitation = {
@@ -74,6 +78,13 @@ export default async function DashboardPage() {
   const pendingInvitationsResult = await getUserPendingInvitations();
   const pendingInvitations = pendingInvitationsResult.ok ? pendingInvitationsResult.data || [] : [];
 
+  // Cargar miembros con RPC get_household_members_optimized
+  const membersQuery = await query(
+    `SELECT * FROM get_household_members_optimized($1)`,
+    [householdId]
+  );
+  const members = membersQuery.rows || [];
+
   // Obtener datos en paralelo
   const [
     summaryResult,
@@ -83,7 +94,9 @@ export default async function DashboardPage() {
     comparisonResult,
     savingsTransactionsResult,
     savingsBalanceResult,
-    pendingCreditsResult,
+    contributionsResult,
+    householdSettingsResult,
+    householdCreditsResult,
   ] = await Promise.all([
     getMonthSummary(year, month),
     getTransactions(),
@@ -92,7 +105,9 @@ export default async function DashboardPage() {
     getMonthComparison({ currentMonth: `${year}-${month.toString().padStart(2, '0')}` }),
     getSavingsTransactions(),
     getHouseholdSavings(),
-    getPendingCredits(),
+    getMonthlyContributions(householdId, year, month),
+    getHouseholdSettings(householdId),
+    getHouseholdCreditsBalance(),
   ]);
 
   const summary = summaryResult.ok ? summaryResult.data! : { expenses: 0, income: 0, balance: 0 };
@@ -102,7 +117,19 @@ export default async function DashboardPage() {
   const comparison = comparisonResult.ok ? comparisonResult.data : undefined;
   const savingsTransactions = savingsTransactionsResult.ok ? (savingsTransactionsResult.data || []) : [];
   const savingsBalance = savingsBalanceResult.ok ? savingsBalanceResult.data : undefined;
-  const pendingCredits = pendingCreditsResult.ok ? (pendingCreditsResult.data || []) : [];
+  const householdCredits = householdCreditsResult.ok ? householdCreditsResult.data! : {
+    totalActiveCredits: 0,
+    totalReservedCredits: 0,
+    balanceAfterCredits: 0,
+    totalIncome: 0,
+    totalExpenses: 0,
+    rawBalance: 0,
+  };
+
+  // Datos para MonthlyFundCard (estas funciones retornan datos directamente)
+  const contributions = contributionsResult || [];
+  const householdSettings = householdSettingsResult;
+  const monthlyFund = householdSettings?.monthly_contribution_goal || 0;
 
   // Preparar datos para gráfico de evolución de ahorro
   // Agrupar por mes y obtener el balance final de cada mes
@@ -129,7 +156,7 @@ export default async function DashboardPage() {
       )}
 
       <DashboardContent
-        householdId={householdId} 
+        householdId={householdId}
         initialCategories={categories as never[]}
         initialTransactions={allTransactions as never[]}
         initialSummary={summary}
@@ -139,7 +166,15 @@ export default async function DashboardPage() {
         initialSavingsGoal={(savingsBalance as { goal_amount?: number | null })?.goal_amount}
         initialSavingsBalance={savingsBalance as never}
         initialSavingsTransactions={savingsTransactions as never[]}
-        initialPendingCredits={pendingCredits as never[]}
+        householdCreditsData={householdCredits}
+        monthlyFundData={{
+          members: members as never[],
+          contributions: contributions as never[],
+          monthlyFund,
+          totalIncome: summary.income,
+          currency: householdSettings?.currency || 'EUR',
+          distributionType: householdSettings?.distribution_type || 'proportional',
+        }}
       />
     </div>
   );

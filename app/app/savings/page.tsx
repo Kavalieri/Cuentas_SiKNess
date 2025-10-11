@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { SavingsTab } from '@/components/savings/SavingsTab';

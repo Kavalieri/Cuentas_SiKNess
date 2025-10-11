@@ -5,7 +5,6 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Leer versión de package.json
 const packageJson = JSON.parse(
   readFileSync(join(__dirname, 'package.json'), 'utf-8')
 );
@@ -15,13 +14,19 @@ const nextConfig = {
   eslint: {
     dirs: ['app', 'components', 'lib'],
   },
-  // Hacer disponibles las variables de entorno en el middleware
+  typescript: {
+    // Mantener en false para producción - queremos ver los errores
+    ignoreBuildErrors: false,
+  },
   env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     npm_package_version: packageJson.version,
   },
-  // Silenciar warnings conocidos de dependencias de Supabase en Edge Runtime
+  // Confiar en el proxy de Apache para headers
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['cuentasdev.sikwow.com', 'cuentas.sikwow.com', 'localhost:3001', 'localhost:3000'],
+    },
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

@@ -14,7 +14,7 @@ import { addSystemAdmin, removeSystemAdmin } from '@/app/app/admin/actions';
 import { formatDate } from '@/lib/format';
 
 type SystemAdmin = {
-  user_id: string;
+  profile_id: string;
   email: string;
   created_at: string;
   granted_by: string | null;
@@ -61,11 +61,11 @@ export default function SystemAdminsClientPage({ admins }: { admins: SystemAdmin
     router.refresh();
   };
 
-  const handleRemoveAdmin = async (userId: string) => {
-    setRemovingId(userId);
+  const handleRemoveAdmin = async (profileId: string) => {
+    setRemovingId(profileId);
 
     const formData = new FormData();
-    formData.append('user_id', userId);
+    formData.append('profile_id', profileId);
 
     const result = await removeSystemAdmin(formData);
 
@@ -148,7 +148,7 @@ export default function SystemAdminsClientPage({ admins }: { admins: SystemAdmin
         <h2 className="text-xl font-semibold">Administradores Actuales</h2>
         {admins.map((admin) => (
           <Card
-            key={admin.user_id}
+            key={admin.profile_id}
             className={admin.is_permanent ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}
           >
             <CardHeader>
@@ -175,7 +175,7 @@ export default function SystemAdminsClientPage({ admins }: { admins: SystemAdmin
                       <Button
                         variant="destructive"
                         size="sm"
-                        disabled={removingId === admin.user_id}
+                        disabled={removingId === admin.profile_id}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -197,7 +197,7 @@ export default function SystemAdminsClientPage({ admins }: { admins: SystemAdmin
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => handleRemoveAdmin(admin.user_id)}
+                          onClick={() => handleRemoveAdmin(admin.profile_id)}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Eliminar Permisos
@@ -226,7 +226,7 @@ export default function SystemAdminsClientPage({ admins }: { admins: SystemAdmin
                 </div>
               )}
               <div className="text-xs text-muted-foreground bg-muted p-2 rounded font-mono truncate">
-                {admin.user_id}
+                {admin.profile_id}
               </div>
             </CardContent>
           </Card>
