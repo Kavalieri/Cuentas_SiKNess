@@ -2,7 +2,9 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "tagNameTemplate": "Cuentas-SiK-v${version}",
+      "releaseTitleTemplate": "Cuentas SiK v${version}"
     }
   },
   "bump-minor-pre-major": true,

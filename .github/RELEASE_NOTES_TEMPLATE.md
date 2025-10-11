@@ -1,6 +1,6 @@
-# 🚀 CuentasSiK v1.0.0
+# 🚀 Cuentas SiK vX.Y.Z
 
-> **🎉 PRIMERA RELEASE ESTABLE** - Sistema completo de gestión de gastos compartidos para parejas migrado a infraestructura propia
+> **🎉 RELEASE ESTABLE** - Sistema completo de gestión de gastos compartidos para parejas migrado a infraestructura propia
 
 ---
 
@@ -8,6 +8,8 @@
 
 - **🎯 Aplicación en Producción**: https://cuentas.sikwow.com
 - **📚 Documentación**: [README.md](https://github.com/Kavalieri/CuentasSiK#readme)
+- **🛠 Troubleshooting**: [docs/TROUBLESHOOTING.md](https://github.com/Kavalieri/CuentasSiK/blob/main/docs/TROUBLESHOOTING.md)
+- **🔐 JWT**: [docs/JWT.md](https://github.com/Kavalieri/CuentasSiK/blob/main/docs/JWT.md)
 - **🐛 Reportar Issues**: [GitHub Issues](https://github.com/Kavalieri/CuentasSiK/issues)
 - **💬 Discusiones**: [GitHub Discussions](https://github.com/Kavalieri/CuentasSiK/discussions)
 - **📖 Guía de Contribución**: [CONTRIBUTING.md](https://github.com/Kavalieri/CuentasSiK/blob/main/CONTRIBUTING.md)
@@ -22,9 +24,9 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-## �🎯 ¿Qué es CuentasSiK?
+## 🎯 ¿Qué es Cuentas SiK?
 
-**CuentasSiK** es una aplicación web profesional para gestionar gastos compartidos entre parejas o compañeros de piso, con un enfoque en contribuciones proporcionales según los ingresos de cada miembro.
+**Cuentas SiK** es una aplicación web profesional para gestionar gastos compartidos entre parejas o compañeros de piso, con un enfoque en contribuciones proporcionales según los ingresos de cada miembro.
 
 ### ✨ Características Principales
 

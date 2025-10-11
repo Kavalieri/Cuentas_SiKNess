@@ -134,7 +134,7 @@ SMTP_SECURE="false"
 SMTP_USER="user@example.com"
 SMTP_PASS="app-password"
 SMTP_FROM="noreply@cuentassik.com"
-
+# 💰 Cuentas SiK
 # App
 NEXT_PUBLIC_SITE_URL="https://tu-dominio.com"
 NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL="admin@tu-dominio.com"
@@ -145,36 +145,21 @@ NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL="admin@tu-dominio.com"
 Arranque estándar de Next.js en producción:
 
 ```bash
+[🛠 Troubleshooting](./docs/TROUBLESHOOTING.md) · [🔐 JWT](./docs/JWT.md)
 npm start  # equivale a: next start
 ```
 
-Recomendado ejecutarlo detrás de un proxy (Nginx/Apache) y con un gestor de procesos a elección:
 
 - Opción A: systemd (servicio del SO)
 - Opción B: PM2 (opcional, ver `docs/PM2.md`)
-- Opción C: Contenedores (Docker/Podman) si lo prefieres
 
 Ejemplo mínimo con systemd (opcional):
 
-```ini
-[Unit]
-Description=CuentasSiK
-After=network.target
-
-[Service]
 Type=simple
-WorkingDirectory=/ruta/a/CuentasSiK
 Environment=NODE_ENV=production
 Environment=DATABASE_URL=postgresql://...
 Environment=JWT_SECRET=...
-ExecStart=/usr/bin/npm start
-Restart=always
 
-[Install]
-WantedBy=multi-user.target
-```
-
-Configura tu reverse proxy para apuntar al puerto de la app (por defecto 3000).
 
 ---
 
@@ -184,16 +169,13 @@ Configura tu reverse proxy para apuntar al puerto de la app (por defecto 3000).
 - Base de datos y migraciones: `./database/README.md`
 - Instrucciones completas para agentes/IA: `.github/copilot-instructions.md`
 
----
-
-## Contribuir
+[🛠 Troubleshooting](./docs/TROUBLESHOOTING.md)
+[🔐 JWT](./docs/JWT.md)
 
 Las contribuciones son bienvenidas. Revisa [CONTRIBUTING.md](./CONTRIBUTING.md) y abre un issue/PR siguiendo Conventional Commits.
 
-## Licencia
 
 MIT © 2025 CuentasSiK Contributors. Ver [LICENSE](./LICENSE).
 
-## Contacto
 
 soporte@cuentassik.com · [Issues](https://github.com/Kavalieri/CuentasSiK/issues)
