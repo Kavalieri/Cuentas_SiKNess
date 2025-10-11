@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/Kavalieri/CuentasSiK/compare/cuentas-sik-v0.3.0-alpha...cuentas-sik-v1.0.0) (2025-10-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* Migración completa de infraestructura requiere reconfiguración de entorno
+
+### Features
+
+* Migración completa de Supabase+Vercel a stack Ubuntu nativo ([f77e1b3](https://github.com/Kavalieri/CuentasSiK/commit/f77e1b34ed3abf41617cf9be8bee0eb78b55e565))
+
 ## [0.3.0-alpha](https://github.com/Kavalieri/CuentasSiK/compare/cuentas-sik-v0.2.0-alpha...cuentas-sik-v0.3.0-alpha) (2025-10-08)
 
 
