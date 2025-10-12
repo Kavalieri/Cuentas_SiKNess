@@ -1,10 +1,38 @@
 import { getGoogleAuthUrl } from '@/lib/auth';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+/**
+ * Detecta el origen correcto del request para OAuth
+ */
+function detectOrigin(request: NextRequest): string {
+  // Prioridad 1: Headers del proxy (Apache)
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+
+  if (forwardedHost && forwardedProto) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  // Prioridad 2: Headers directos
+  const host = request.headers.get('host');
+  if (host) {
+    const proto = host.includes('localhost') ? 'http' : 'https';
+    return `${proto}://${host}`;
+  }
+
+  // Prioridad 3: URL del request
+  return request.nextUrl.origin;
+}
+
+export async function GET(request: NextRequest) {
   try {
-    // Generar URL de autorización de Google
-    const authUrl = getGoogleAuthUrl();
+    // Detectar origen del request (localhost o producción)
+    const origin = detectOrigin(request);
+
+    console.log('[OAuth] Detected origin:', origin);
+
+    // Generar URL de autorización de Google con redirect_uri correcto
+    const authUrl = getGoogleAuthUrl(origin);
 
     // Redireccionar a Google
     return NextResponse.redirect(authUrl);

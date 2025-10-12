@@ -1,17 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, CheckCircle, XCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/format';
-import { ApproveAdjustmentDialog } from './ApproveAdjustmentDialog';
-import { RejectAdjustmentDialog } from './RejectAdjustmentDialog';
 import type { Database } from '@/types/database';
+import { Calendar, CheckCircle, Trash2, User, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { ApproveAdjustmentDialog } from './ApproveAdjustmentDialog';
+import { DeleteAdjustmentDialog } from './DeleteAdjustmentDialog';
+import { RejectAdjustmentDialog } from './RejectAdjustmentDialog';
 
 type AdjustmentRow = Database['public']['Tables']['contribution_adjustments']['Row'];
-type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'icon' | 'type'>;
+type Category = Pick<
+  Database['public']['Tables']['categories']['Row'],
+  'id' | 'name' | 'icon' | 'type'
+>;
 
 interface AdjustmentData {
   adjustment: AdjustmentRow;
@@ -46,19 +50,40 @@ export function AdjustmentItem({
 
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const getStatusBadge = () => {
     switch (adjustment.status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">⏳ Pendiente</Badge>;
+        return (
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+            ⏳ Pendiente
+          </Badge>
+        );
       case 'active':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">✅ Activo</Badge>;
+        return (
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+            ✅ Activo
+          </Badge>
+        );
       case 'applied':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✓ Aplicado</Badge>;
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            ✓ Aplicado
+          </Badge>
+        );
       case 'cancelled':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">✕ Cancelado</Badge>;
+        return (
+          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+            ✕ Cancelado
+          </Badge>
+        );
       case 'locked':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">🔒 Bloqueado</Badge>;
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+            🔒 Bloqueado
+          </Badge>
+        );
       default:
         return null;
     }
@@ -83,17 +108,15 @@ export function AdjustmentItem({
                         <Badge variant="secondary">💳 Pre-pago</Badge>
                       )}
                     </div>
-                    
-                    <p className="font-medium">
-                      {adjustment.reason || 'Sin descripción'}
-                    </p>
-                    
+
+                    <p className="font-medium">{adjustment.reason || 'Sin descripción'}</p>
+
                     <div className="flex flex-col gap-1 mt-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         <span>{member.display_name || member.email}</span>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         <span>
@@ -112,9 +135,11 @@ export function AdjustmentItem({
 
                   {/* Monto */}
                   <div className="text-right">
-                    <p className={`text-lg font-bold ${
-                      adjustment.amount >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <p
+                      className={`text-lg font-bold ${
+                        adjustment.amount >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
                       {adjustment.amount >= 0 ? '+' : ''}
                       {formatCurrency(adjustment.amount, currency)}
                     </p>
@@ -145,6 +170,21 @@ export function AdjustmentItem({
                 </Button>
               </div>
             )}
+
+            {/* Botón de eliminación (solo para owner en cualquier estado) */}
+            {isOwner && (
+              <div className="flex gap-2 pt-2 border-t border-dashed border-orange-200">
+                <Button
+                  onClick={() => setShowDeleteDialog(true)}
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar Permanentemente
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -166,6 +206,16 @@ export function AdjustmentItem({
           currency={currency}
           open={showRejectDialog}
           onOpenChange={setShowRejectDialog}
+          onSuccess={onUpdate}
+        />
+      )}
+
+      {showDeleteDialog && (
+        <DeleteAdjustmentDialog
+          adjustmentData={adjustmentData}
+          currency={currency}
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
           onSuccess={onUpdate}
         />
       )}

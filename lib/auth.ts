@@ -113,10 +113,18 @@ export async function sendMagicLink(
   redirectUrl?: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Verificar que el email existe en la base de datos
-    const users = await sql.select<User>('profiles', { email });
+    // Verificar que el email existe en profiles
+    const result = await query(
+      `
+      SELECT id, auth_user_id, display_name, email
+      FROM profiles
+      WHERE email = $1
+      LIMIT 1
+    `,
+      [email],
+    );
 
-    if (users.length === 0) {
+    if (result.rows.length === 0) {
       return { success: false, error: 'Usuario no encontrado' };
     }
 
@@ -154,14 +162,22 @@ export async function verifyMagicLink(
       return { success: false, error: 'Token inválido o expirado' };
     }
 
-    // Buscar usuario
-    const users = await sql.select<User>('profiles', { email: payload.email });
+    // Buscar usuario por email en profiles
+    const result = await query(
+      `
+      SELECT id, auth_user_id, display_name, email
+      FROM profiles
+      WHERE email = $1
+      LIMIT 1
+    `,
+      [payload.email],
+    );
 
-    if (users.length === 0) {
+    if (result.rows.length === 0) {
       return { success: false, error: 'Usuario no encontrado' };
     }
 
-    const user = users[0];
+    const user = result.rows[0];
 
     if (!user) {
       return { success: false, error: 'Error al obtener usuario' };
@@ -309,26 +325,36 @@ export async function createUser(
   displayName?: string,
 ): Promise<{ success: boolean; userId?: string; error?: string }> {
   try {
-    // Verificar que el email no existe
-    const existing = await sql.select<User>('profiles', { email });
+    // Verificar que el email no existe en profiles
+    const existingResult = await query(
+      `
+      SELECT email
+      FROM profiles
+      WHERE email = $1
+      LIMIT 1
+    `,
+      [email],
+    );
 
-    if (existing.length > 0) {
+    if (existingResult.rows.length > 0) {
       return { success: false, error: 'El email ya está registrado' };
     }
 
-    // Generar UUID para el usuario
-    const result = await query<{ auth_user_id: string }>(
-      `INSERT INTO profiles (auth_user_id, email, display_name, created_at, updated_at)
+    // Generar UUID para el usuario y crear perfil con email
+    const profileResult = await query<{ id: string; auth_user_id: string }>(
+      `INSERT INTO profiles (auth_user_id, display_name, email, created_at, updated_at)
        VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())
-       RETURNING auth_user_id`,
-      [email, displayName || email.split('@')[0]],
+       RETURNING id, auth_user_id`,
+      [displayName || email.split('@')[0], email],
     );
 
-    if (!result.rows[0]) {
+    if (!profileResult.rows[0]) {
       return { success: false, error: 'Error al crear el usuario' };
     }
 
-    return { success: true, userId: result.rows[0].auth_user_id };
+    const profile = profileResult.rows[0];
+
+    return { success: true, userId: profile.auth_user_id };
   } catch (error) {
     console.error('Error creating user:', error);
     return { success: false, error: 'Error al crear el usuario' };
@@ -341,7 +367,6 @@ export async function createUser(
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 
 interface GoogleTokens {
   access_token: string;
@@ -363,16 +388,20 @@ interface GoogleUserInfo {
 
 /**
  * Genera URL de autorización de Google OAuth
+ * @param origin - Origen del request (ej: "https://cuentasdev.sikwow.com" o "http://localhost:3001")
  */
-export function getGoogleAuthUrl(state?: string): string {
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_REDIRECT_URI) {
-    throw new Error('Google OAuth no configurado. Verifica GOOGLE_CLIENT_ID y GOOGLE_REDIRECT_URI');
+export function getGoogleAuthUrl(origin: string, state?: string): string {
+  if (!GOOGLE_CLIENT_ID) {
+    throw new Error('Google OAuth no configurado. Verifica GOOGLE_CLIENT_ID');
   }
+
+  // Construir redirect_uri dinámicamente basado en el origen del request
+  const redirectUri = `${origin}/auth/google/callback`;
 
   const baseUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: GOOGLE_REDIRECT_URI,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'openid email profile',
     access_type: 'offline',
@@ -383,16 +412,21 @@ export function getGoogleAuthUrl(state?: string): string {
     params.set('state', state);
   }
 
+  console.log('[OAuth] Generating auth URL with redirect_uri:', redirectUri);
   return `${baseUrl}?${params.toString()}`;
 }
 
 /**
  * Intercambia código de autorización por tokens de acceso
+ * @param code - Código de autorización de Google
+ * @param redirectUri - Mismo redirect_uri usado en la solicitud inicial (requerido por OAuth)
  */
-async function exchangeCodeForTokens(code: string): Promise<GoogleTokens> {
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URI) {
+async function exchangeCodeForTokens(code: string, redirectUri: string): Promise<GoogleTokens> {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
     throw new Error('Google OAuth no configurado');
   }
+
+  console.log('[OAuth] Exchanging code with redirect_uri:', redirectUri);
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -404,7 +438,7 @@ async function exchangeCodeForTokens(code: string): Promise<GoogleTokens> {
       client_secret: GOOGLE_CLIENT_SECRET,
       code,
       grant_type: 'authorization_code',
-      redirect_uri: GOOGLE_REDIRECT_URI,
+      redirect_uri: redirectUri,
     }),
   });
 
@@ -463,13 +497,19 @@ async function _getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> 
 
 /**
  * Autentica usuario con Google OAuth
+ * @param code - Código de autorización de Google
+ * @param origin - Origen del request para construir redirect_uri
  */
 export async function authenticateWithGoogle(
   code: string,
+  origin: string,
 ): Promise<{ success: boolean; error?: string; userId?: string; sessionToken?: string }> {
   try {
+    // Construir redirect_uri (debe coincidir con el usado en la solicitud inicial)
+    const redirectUri = `${origin}/auth/google/callback`;
+
     // Intercambiar código por tokens
-    const tokens = await exchangeCodeForTokens(code);
+    const tokens = await exchangeCodeForTokens(code, redirectUri);
 
     // Decodificar id_token para obtener info básica
     const userInfo = decodeJwt(tokens.id_token) as GoogleUserInfo;
@@ -478,14 +518,22 @@ export async function authenticateWithGoogle(
       return { success: false, error: 'Email no verificado en Google' };
     }
 
-    // Buscar o crear usuario
-    const existingUsers = await sql.select<User>('profiles', { email: userInfo.email });
+    // Buscar usuario por email directamente en profiles
+    const userResult = await query(
+      `
+      SELECT id, auth_user_id, display_name, email
+      FROM profiles
+      WHERE email = $1
+      LIMIT 1
+    `,
+      [userInfo.email],
+    );
 
     let userId: string;
 
-    if (existingUsers.length > 0) {
+    if (userResult.rows.length > 0) {
       // Usuario existe, actualizar información si es necesario
-      const existingUser = existingUsers[0];
+      const existingUser = userResult.rows[0];
       if (!existingUser) {
         return { success: false, error: 'Error al obtener usuario existente' };
       }
@@ -512,8 +560,18 @@ export async function authenticateWithGoogle(
       userId = createResult.userId!;
     }
 
-    // Crear sesión y retornar el token (el callback lo establecerá en la cookie)
+    // Crear sesión y establecer cookie (igual que verifyMagicLink)
     const sessionToken = await generateSessionToken(userId, userInfo.email);
+
+    // Guardar en cookie (CRÍTICO para Next.js 15)
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_EXPIRY,
+      path: '/',
+    });
 
     return { success: true, userId, sessionToken };
   } catch (error) {
@@ -529,29 +587,27 @@ async function createUserFromGoogle(
   googleUser: GoogleUserInfo,
 ): Promise<{ success: boolean; error?: string; userId?: string }> {
   try {
-    // Generar UUID para auth_user_id
-    const authUserId = crypto.randomUUID();
-
-    // Insertar en profiles
-    const result = await query(
+    // Crear perfil con email directamente en profiles
+    const profileResult = await query(
       `
-      INSERT INTO profiles (auth_user_id, email, display_name, avatar_url, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, NOW(), NOW())
-      RETURNING auth_user_id
+      INSERT INTO profiles (auth_user_id, display_name, email, avatar_url, created_at, updated_at)
+      VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+      RETURNING id, auth_user_id
       `,
-      [authUserId, googleUser.email, googleUser.name, googleUser.picture],
+      [googleUser.name, googleUser.email, googleUser.picture],
     );
 
-    if (result.rows.length === 0) {
+    if (profileResult.rows.length === 0) {
       return { success: false, error: 'Error al crear el usuario' };
     }
 
-    const createdUser = result.rows[0];
-    if (!createdUser || !createdUser.auth_user_id) {
+    const createdProfile = profileResult.rows[0];
+
+    if (!createdProfile || !createdProfile.auth_user_id) {
       return { success: false, error: 'Error al obtener usuario creado' };
     }
 
-    return { success: true, userId: createdUser.auth_user_id };
+    return { success: true, userId: createdProfile.auth_user_id };
   } catch (error) {
     console.error('Error creating user from Google:', error);
     return { success: false, error: 'Error al crear el usuario' };

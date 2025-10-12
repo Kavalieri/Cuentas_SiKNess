@@ -1,12 +1,17 @@
 export const dynamic = 'force-dynamic';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabaseServer, getCurrentUser, getUserHouseholdId, getUserHouseholds } from '@/lib/supabaseServer';
-import { redirect } from 'next/navigation';
-import { ProfileForm } from './components/ProfileForm';
-import { IncomeForm } from './components/IncomeForm';
-import { HouseholdsList } from './components/HouseholdsList';
-import { ProfileInvitationsCard } from './components/ProfileInvitationsCard';
 import { getUserPendingInvitations } from '@/app/app/household/invitations/actions';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  getCurrentUser,
+  getUserHouseholdId,
+  getUserHouseholds,
+  supabaseServer,
+} from '@/lib/supabaseServer';
+import { redirect } from 'next/navigation';
+import { HouseholdsList } from './components/HouseholdsList';
+import { IncomeForm } from './components/IncomeForm';
+import { ProfileForm } from './components/ProfileForm';
+import { ProfileInvitationsCard } from './components/ProfileInvitationsCard';
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -39,7 +44,6 @@ export default async function ProfilePage() {
     redirect('/login');
   }
 
-  // Obtener ingreso actual (del hogar activo si existe)
   let currentIncome = 0;
   if (householdId) {
     const { data: income } = await supabase.rpc('get_member_income', {
@@ -67,9 +71,7 @@ export default async function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle>Información Básica</CardTitle>
-          <CardDescription>
-            Tu información de cuenta
-          </CardDescription>
+          <CardDescription>Tu información de cuenta</CardDescription>
         </CardHeader>
         <CardContent>
           <ProfileForm
@@ -87,15 +89,10 @@ export default async function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle>🏠 Mis Hogares</CardTitle>
-          <CardDescription>
-            Hogares a los que perteneces y tu rol en cada uno
-          </CardDescription>
+          <CardDescription>Hogares a los que perteneces y tu rol en cada uno</CardDescription>
         </CardHeader>
         <CardContent>
-          <HouseholdsList
-            households={userHouseholds}
-            activeHouseholdId={householdId}
-          />
+          <HouseholdsList households={userHouseholds} activeHouseholdId={householdId} />
         </CardContent>
       </Card>
 

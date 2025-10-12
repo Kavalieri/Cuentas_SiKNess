@@ -1,13 +1,11 @@
 import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const packageJson = JSON.parse(
-  readFileSync(join(__dirname, 'package.json'), 'utf-8')
-);
+const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf-8'));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -24,9 +22,16 @@ const nextConfig = {
   // Confiar en el proxy de Apache para headers
   experimental: {
     serverActions: {
-      allowedOrigins: ['cuentasdev.sikwow.com', 'cuentas.sikwow.com', 'localhost:3001', 'localhost:3000'],
+      allowedOrigins: [
+        'cuentasdev.sikwow.com',
+        'cuentas.sikwow.com',
+        'localhost:3001',
+        'localhost:3000',
+      ],
     },
   },
+  // Permitir cross-origin requests de dominios de producción hacia dev server
+  allowedDevOrigins: ['cuentasdev.sikwow.com', 'cuentas.sikwow.com'],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

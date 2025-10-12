@@ -641,50 +641,50 @@ export async function deleteContributionAdjustment(adjustmentId: string): Promis
 
   if (contributionError || !contribution) return fail('Contribución no encontrada');
 
-  // 2. Buscar y eliminar movimientos asociados
+  // 2. Eliminar TODOS los movimientos asociados al ajuste
   const movementsToDelete: string[] = [];
 
-  // A) Si tiene movement_id directo, agregarlo
+  // A) Movimiento directo vinculado
   if (adjustment.movement_id) {
     movementsToDelete.push(adjustment.movement_id);
   }
 
-  interface TransactionIdOnly {
-    id: string;
-  }
-
-  // B) Buscar por descripción con [Ajuste: razón]
-  const searchPattern = `%[Ajuste: ${adjustment.reason}]%`;
-  const { data: movementsByDescription } = await supabase
-    .from('transactions')
-    .select('id')
-    .eq('household_id', contribution.household_id)
-    .like('description', searchPattern);
-
-  const typedByDescription = (movementsByDescription as unknown as TransactionIdOnly[]) ?? [];
-  typedByDescription.forEach((m) => {
-    if (!movementsToDelete.includes(m.id)) {
-      movementsToDelete.push(m.id);
-    }
-  });
-
-  // C) Buscar por descripción con [Pre-pago] (formato antiguo)
-  if (adjustment.type === 'prepayment' && adjustment.category_id) {
-    const { data: movementsByPrePago } = await supabase
+  // B) Buscar movimiento compensatorio (mismo monto, descripción y created_at similar)
+  if (adjustment.movement_id) {
+    // Obtener datos del movimiento principal
+    const { data: mainMovement } = await supabase
       .from('transactions')
-      .select('id')
-      .eq('household_id', contribution.household_id)
-      .eq('profile_id', contribution.profile_id)
-      .eq('category_id', adjustment.category_id)
-      .eq('type', 'expense')
-      .like('description', '%[Pre-pago]%');
+      .select('description, amount, created_at, household_id')
+      .eq('id', adjustment.movement_id)
+      .single();
 
-    const typedByPrePago = (movementsByPrePago as unknown as TransactionIdOnly[]) ?? [];
-    typedByPrePago.forEach((m) => {
-      if (!movementsToDelete.includes(m.id)) {
-        movementsToDelete.push(m.id);
+    if (mainMovement) {
+      // Buscar movimiento compensatorio con misma descripción y monto
+      const { data: compensatoryMovements } = await supabase
+        .from('transactions')
+        .select('id, type')
+        .eq('household_id', mainMovement.household_id)
+        .eq('description', mainMovement.description)
+        .eq('amount', Math.abs(parseFloat(mainMovement.amount)).toString())
+        .neq('id', adjustment.movement_id)
+        .gte(
+          'created_at',
+          new Date(new Date(mainMovement.created_at).getTime() - 60000).toISOString(),
+        ) // 1 minuto antes
+        .lte(
+          'created_at',
+          new Date(new Date(mainMovement.created_at).getTime() + 60000).toISOString(),
+        ); // 1 minuto después
+
+      if (compensatoryMovements && compensatoryMovements.length > 0) {
+        const typedMovements = compensatoryMovements as { id: string; type: string }[];
+        typedMovements.forEach((movement) => {
+          if (!movementsToDelete.includes(movement.id)) {
+            movementsToDelete.push(movement.id);
+          }
+        });
       }
-    });
+    }
   }
 
   // Eliminar todos los movimientos encontrados
@@ -696,7 +696,7 @@ export async function deleteContributionAdjustment(adjustmentId: string): Promis
 
     if (deleteMovementsError) {
       console.error('Error al eliminar movimientos:', deleteMovementsError);
-      // No fallar, continuar con la eliminación del ajuste
+      return fail(`Error al eliminar los movimientos asociados: ${deleteMovementsError.message}`);
     }
   }
 

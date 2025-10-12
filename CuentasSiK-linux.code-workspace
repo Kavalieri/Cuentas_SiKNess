@@ -1,7 +1,29 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	]
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "sqltools.connections": [
+      {
+        "ssh": "Disabled",
+        "previewLimit": 50,
+        "server": "localhost",
+        "driver": "PostgreSQL",
+        "name": "cuentassik-dev",
+        "group": "cuentassik",
+        "connectString": "postgresql://cuentassik_user:LkEVkbZvzDvyqhRvoaXo6Um1I@localhost:5432/cuentassik_dev"
+      },
+      {
+        "ssh": "Disabled",
+        "previewLimit": 50,
+        "server": "localhost",
+        "driver": "PostgreSQL",
+        "name": "cuentassik-prod",
+        "connectString": "postgresql://cuentassik_user:LkEVkbZvzDvyqhRvoaXo6Um1I@localhost:5432/cuentassik_prod",
+        "group": "cuentassik"
+      }
+    ]
+  }
 }
