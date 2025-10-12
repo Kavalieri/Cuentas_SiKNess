@@ -6,6 +6,9 @@ import { fail, ok } from '@/lib/result';
 import { getCurrentUser, getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import type { Database } from '@/types/database';
+
+type Contribution = Database['public']['Tables']['contributions']['Row'];
 
 const HouseholdSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -255,4 +258,74 @@ export async function getHouseholdMembers(): Promise<
     });
 
   return ok(members);
+}
+
+// =====================================================
+// FUNCIONES PARA OVERVIEW WRAPPER
+// =====================================================
+
+/**
+ * Obtener datos mensuales para el overview (contribuciones + resumen transacciones)
+ */
+export async function getMonthlyOverviewData(year: number, month: number): Promise<Result<{
+  contributions: Contribution[];
+  expensesTotal: number;
+  incomesTotal: number;
+}>> {
+  const householdId = await getUserHouseholdId();
+  if (!householdId) {
+    return fail('No se pudo determinar el hogar activo');
+  }
+
+  const supabase = await supabaseServer();
+
+  try {
+    // 1. Obtener contribuciones del mes
+    const { data: contributions, error: contributionsError } = await supabase
+      .from('contributions')
+      .select('*')
+      .eq('household_id', householdId)
+      .eq('year', year)
+      .eq('month', month);
+
+    if (contributionsError) {
+      return fail('Error al obtener contribuciones: ' + contributionsError.message);
+    }
+
+    // 2. Obtener transacciones del mes
+    const startOfMonth = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endOfMonth = month === 12 
+      ? `${year + 1}-01-01` 
+      : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+
+    const { data: transactions, error: transactionsError } = await supabase
+      .from('transactions')
+      .select('type, amount')
+      .eq('household_id', householdId)
+      .gte('occurred_at', startOfMonth)
+      .lt('occurred_at', endOfMonth);
+
+    if (transactionsError) {
+      return fail('Error al obtener transacciones: ' + transactionsError.message);
+    }
+
+    // 3. Calcular totales
+    const typedTransactions = (transactions || []) as Array<{ type: string; amount: number }>;
+    const expensesTotal = typedTransactions
+      .filter(t => t.type === 'expense' || t.type === 'expense_direct')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const incomesTotal = typedTransactions
+      .filter(t => t.type === 'income' || t.type === 'income_direct')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return ok({
+      contributions: (contributions as Contribution[]) || [],
+      expensesTotal,
+      incomesTotal,
+    });
+
+  } catch {
+    return fail('Error inesperado al obtener datos mensuales');
+  }
 }

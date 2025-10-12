@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { OverviewTab } from './OverviewTab';
-import { supabaseBrowser } from '@/lib/supabaseBrowser';
+import { getMonthlyOverviewData } from '@/app/app/household/actions';
 import type { Database } from '@/types/database';
 
 type Contribution = Database['public']['Tables']['contributions']['Row'];
@@ -44,42 +44,18 @@ export function OverviewWrapper({
   // Fetch data cuando cambia el mes
   useEffect(() => {
     const fetchMonthData = async () => {
-      const supabase = supabaseBrowser();
+      const year = selectedMonth.getFullYear();
+      const month = selectedMonth.getMonth() + 1;
 
-      // Obtener contribuciones del mes seleccionado
-      const { data: newContributions } = await supabase
-        .from('contributions')
-        .select('*')
-        .eq('household_id', householdId)
-        .eq('year', selectedMonth.getFullYear())
-        .eq('month', selectedMonth.getMonth() + 1);
-
-      if (newContributions) {
-        setContributions(newContributions);
+      const result = await getMonthlyOverviewData(year, month);
+      
+      if (result.ok && result.data) {
+        setContributions(result.data.contributions);
+        setExpenses(result.data.expensesTotal);
+        setIncomes(result.data.incomesTotal);
+      } else {
+        console.error('Error fetching monthly data:', result.ok ? 'No data' : result.message);
       }
-
-      // Obtener transacciones del mes seleccionado
-      const startOfMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
-      const endOfMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
-
-      const { data: monthTransactions } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('household_id', householdId)
-        .gte('occurred_at', startOfMonth.toISOString().split('T')[0])
-        .lte('occurred_at', endOfMonth.toISOString().split('T')[0]);
-
-      type Transaction = {
-        type: string;
-        amount: number;
-      };
-
-      const typedTransactions = (monthTransactions || []) as Transaction[];
-      const expensesList = typedTransactions.filter(t => t.type === 'expense');
-      const incomesList = typedTransactions.filter(t => t.type === 'income');
-
-      setExpenses(expensesList.reduce((sum, e) => sum + e.amount, 0));
-      setIncomes(incomesList.reduce((sum, i) => sum + i.amount, 0));
     };
 
     fetchMonthData();
