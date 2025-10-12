@@ -31,12 +31,6 @@ export async function GET(request: NextRequest) {
     // Autenticar con Google
     const result = await authenticateWithGoogle(code);
 
-    console.log('🔍 DEBUG: authenticateWithGoogle result:', { 
-      success: result.success, 
-      hasToken: !!result.sessionToken,
-      error: result.error 
-    });
-
     if (!result.success || !result.sessionToken) {
       console.error('Google authentication failed:', result.error);
       const loginUrl = new URL('/login', baseUrl);
@@ -46,8 +40,6 @@ export async function GET(request: NextRequest) {
 
     // Crear respuesta con redirección
     const redirectUrl = state || '/app';
-
-    console.log('✅ Estableciendo cookie y redirigiendo a:', redirectUrl);
 
     // En lugar de redirect HTTP, devolver HTML que establece cookie y redirige en el cliente
     const html = `
