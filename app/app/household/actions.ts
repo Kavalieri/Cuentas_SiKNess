@@ -1,11 +1,11 @@
 'use server';
 
+import { isOwner } from '@/lib/adminCheck';
+import type { Result } from '@/lib/result';
+import { fail, ok } from '@/lib/result';
+import { getCurrentUser, getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { supabaseServer, getCurrentUser, getUserHouseholdId } from '@/lib/supabaseServer';
-import { ok, fail } from '@/lib/result';
-import type { Result } from '@/lib/result';
-import { isOwner } from '@/lib/adminCheck';
 
 const HouseholdSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -14,7 +14,9 @@ const HouseholdSchema = z.object({
 /**
  * Crea un nuevo household para el usuario actual
  */
-export async function createHousehold(formData: FormData): Promise<Result<{ household_id: string }>> {
+export async function createHousehold(
+  formData: FormData,
+): Promise<Result<{ household_id: string }>> {
   const parsed = HouseholdSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
@@ -39,11 +41,11 @@ export async function createHousehold(formData: FormData): Promise<Result<{ hous
     return fail('Perfil no encontrado');
   }
 
-  // Usar función SQL con SECURITY DEFINER para bypasear problemas de RLS
+  // Usar nueva función atómica create_household_with_owner
   // @ts-ignore - Supabase types issue con Next.js 15
-  const { data, error } = await supabase.rpc('create_household_with_member', {
-    p_household_name: parsed.data.name,
-    p_profile_id: profile.id, // UPDATED: profile_id instead of user_id
+  const { data, error } = await supabase.rpc('create_household_with_owner', {
+    p_name: parsed.data.name,
+    p_profile_id: profile.id,
   });
 
   if (error || !data) {
@@ -51,13 +53,12 @@ export async function createHousehold(formData: FormData): Promise<Result<{ hous
     return fail(error?.message || 'Error al crear el hogar');
   }
 
-  // @ts-ignore - data es JSON con household_id
-  const household_id = data.household_id as string;
+  const household_id = data as string;
 
   // NUEVO: Establecer el nuevo household como activo automáticamente
-  await supabase.from('user_settings').upsert({
+  await supabase.from('user_active_household').upsert({
     profile_id: profile.id,
-    active_household_id: household_id,
+    household_id: household_id,
     updated_at: new Date().toISOString(),
   });
 
@@ -109,10 +110,7 @@ export async function updateHouseholdName(formData: FormData): Promise<Result> {
   }
 
   const supabase = await supabaseServer();
-  const { error } = await supabase
-    .from('households')
-    .update({ name })
-    .eq('id', householdId);
+  const { error } = await supabase.from('households').update({ name }).eq('id', householdId);
 
   if (error) {
     return fail('Error en operación');
@@ -127,7 +125,7 @@ export async function updateHouseholdName(formData: FormData): Promise<Result> {
  */
 export async function updateMemberRole(
   memberId: string,
-  newRole: 'owner' | 'member'
+  newRole: 'owner' | 'member',
 ): Promise<Result> {
   const userIsOwner = await isOwner();
   if (!userIsOwner) {
@@ -191,10 +189,7 @@ export async function removeMember(memberId: string): Promise<Result> {
   }
 
   // Eliminar miembro
-  const { error } = await supabase
-    .from('household_members')
-    .delete()
-    .eq('id', memberId);
+  const { error } = await supabase.from('household_members').delete().eq('id', memberId);
 
   if (error) {
     return fail('Error en operación');
