@@ -7,6 +7,14 @@ import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
 import { getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
 import { z } from 'zod';
+import type { Database } from '@/types/database';
+
+type Contribution = Database['public']['Tables']['contributions']['Row'];
+
+interface HouseholdSettings {
+  monthly_target?: number;
+  calculation_type?: string;
+}
 
 // =====================================================
 // TIPOS Y ENUMS
@@ -89,7 +97,10 @@ export async function getContributionPeriodStatus(
   }
 
   // Por ahora, determinar estado basado en contributions
-  const hasLockedContributions = contributions.some((c: any) => c.status !== 'pending');
+  const hasLockedContributions = contributions.some((c: unknown) => {
+    const contribution = c as Contribution;
+    return contribution.status !== 'pending';
+  });
 
   return ok({
     household_id: householdId,
@@ -184,7 +195,7 @@ async function calculateContributionsWithDirectExpenses(
     return fail('Error al obtener configuración del hogar');
   }
 
-  const settings = household?.settings as any;
+  const settings = household?.settings as HouseholdSettings;
   const targetAmount = settings?.monthly_target || 0;
   const calculationMethod = settings?.calculation_type || 'proportional';
 
@@ -222,7 +233,8 @@ async function calculateContributionsWithDirectExpenses(
   }
 
   // 4. Agrupar gastos directos por miembro
-  const directExpensesByMember = (directExpenses || []).reduce((acc, expense) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const directExpensesByMember = (directExpenses || []).reduce((acc: Record<string, number>, expense: any) => {
     const payerId = expense.real_payer_id;
     if (payerId) {
       acc[payerId] = (acc[payerId] || 0) + parseFloat(expense.amount.toString());
@@ -232,11 +244,13 @@ async function calculateContributionsWithDirectExpenses(
 
   // 5. Calcular contribuciones base según método configurado
   const totalIncome = memberIncomes.reduce(
-    (sum, income) => sum + parseFloat(income.monthly_income.toString()),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (sum: number, income: any) => sum + parseFloat(income.monthly_income.toString()),
     0,
   );
 
-  const calculations: MemberContributionCalculation[] = memberIncomes.map((income) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const calculations: MemberContributionCalculation[] = memberIncomes.map((income: any) => {
     const profileId = income.profile_id;
     const memberIncome = parseFloat(income.monthly_income.toString());
 
