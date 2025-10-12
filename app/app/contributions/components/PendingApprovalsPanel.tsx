@@ -1,23 +1,43 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { getPendingAdjustments, approvePrepayment, rejectPrepayment } from '@/app/app/contributions/adjustment-actions';
+import {
+  getPendingAdjustments,
+  rejectPrepayment,
+} from '@/app/app/contributions/adjustment-actions';
+import { approveAdjustmentPrepayment } from '@/app/app/transactions/unified-actions';
 import { PrivateAmount } from '@/components/shared/PrivateAmount';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/format';
 import type { Database } from '@/types/database';
+import { AlertCircle, CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 type AdjustmentRow = Database['public']['Tables']['contribution_adjustments']['Row'];
-type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'icon' | 'type'>;
+type Category = Pick<
+  Database['public']['Tables']['categories']['Row'],
+  'id' | 'name' | 'icon' | 'type'
+>;
 
 interface PendingApprovalsData {
   adjustment: AdjustmentRow;
@@ -60,7 +80,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
   const loadPendingAdjustments = async () => {
     setLoading(true);
     const result = await getPendingAdjustments();
-    
+
     if (result.ok && result.data) {
       // Transformar datos
       type RawItem = {
@@ -74,8 +94,8 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
         expense_category: Category | null; // Categoría editada por owner
         [key: string]: unknown;
       };
-      
-      const transformed = ((result.data as unknown) as RawItem[]).map((item) => ({
+
+      const transformed = (result.data as unknown as RawItem[]).map((item) => ({
         adjustment: item as unknown as AdjustmentRow,
         member: {
           profile_id: item.contributions.profile_id,
@@ -95,7 +115,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
         toast.error('message' in result ? result.message : 'Error al cargar ajustes pendientes');
       }
     }
-    
+
     setLoading(false);
   };
 
@@ -106,36 +126,38 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
   // Abrir modal de aprobación
   const handleOpenApprove = (data: PendingApprovalsData) => {
     setSelectedAdjustment(data);
-    
+
     // 🎯 BUSCAR CATEGORÍA "Aportación Cuenta Común" POR DEFECTO
     // Si no existe la vinculada al adjustment, buscar en la lista de categorías
     let defaultCategoryId = data.adjustment.category_id || data.category?.id || '';
-    
+
     if (!defaultCategoryId) {
       // Buscar "Aportación Cuenta Común" (case-insensitive)
       const aportacionCategory = categories.find(
-        (cat) => 
-          cat.type === 'expense' && 
+        (cat) =>
+          cat.type === 'expense' &&
           cat.name.toLowerCase().includes('aportación') &&
           cat.name.toLowerCase().includes('cuenta') &&
-          cat.name.toLowerCase().includes('común')
+          cat.name.toLowerCase().includes('común'),
       );
-      
+
       if (aportacionCategory) {
         defaultCategoryId = aportacionCategory.id;
       }
     }
-    
+
     setExpenseCategoryId(defaultCategoryId);
     setExpenseDescription(
-      data.adjustment.expense_description || 
-      `${data.category?.name || 'Gasto común'} - ${data.member.display_name || data.member.email}`
+      data.adjustment.expense_description ||
+        `${data.category?.name || 'Gasto común'} - ${
+          data.member.display_name || data.member.email
+        }`,
     );
     setIncomeDescription(
-      data.adjustment.income_description || 
-      `Aporte de ${data.member.display_name || data.member.email} - ${data.adjustment.reason}`
+      data.adjustment.income_description ||
+        `Aporte de ${data.member.display_name || data.member.email} - ${data.adjustment.reason}`,
     );
-    
+
     setShowApproveDialog(true);
   };
 
@@ -162,71 +184,73 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
 
     setShowConfirmDialog(false);
     setIsApproving(true);
-    
+
     const formData = new FormData();
     formData.append('adjustment_id', selectedAdjustment.adjustment.id);
     formData.append('expense_category_id', expenseCategoryId);
     formData.append('expense_description', expenseDescription);
     formData.append('income_description', incomeDescription);
 
-    const result = await approvePrepayment(formData);
-    
+    const result = await approveAdjustmentPrepayment(formData);
+
     if (result.ok) {
       toast.success('✅ Pre-pago aprobado', {
         description: 'Los movimientos se han creado y la contribución se ha actualizado',
         duration: 5000,
       });
       setShowApproveDialog(false);
-      
+
       // Update optimista: eliminar el ajuste de la lista inmediatamente
-      setPendingAdjustments((prev) => 
-        prev.filter((item) => item.adjustment.id !== selectedAdjustment.adjustment.id)
+      setPendingAdjustments((prev) =>
+        prev.filter((item) => item.adjustment.id !== selectedAdjustment.adjustment.id),
       );
-      
+
       // Recargar en background para sincronizar
       setTimeout(() => loadPendingAdjustments(), 1000);
     } else {
       toast.error('message' in result ? result.message : 'Error al aprobar pre-pago');
     }
-    
+
     setIsApproving(false);
   };
 
   // Rechazar pre-pago
   const handleReject = async () => {
     if (!selectedAdjustment) return;
-    
+
     if (!rejectionReason.trim()) {
       toast.error('Debes proporcionar una razón para el rechazo');
       return;
     }
 
     setIsRejecting(true);
-    
+
     const formData = new FormData();
     formData.append('adjustment_id', selectedAdjustment.adjustment.id);
     formData.append('rejection_reason', rejectionReason);
 
     const result = await rejectPrepayment(formData);
-    
+
     if (result.ok) {
       toast.success('❌ Pre-pago rechazado', {
-        description: `Se ha notificado a ${selectedAdjustment.member.display_name || selectedAdjustment.member.email}`,
+        description: `Se ha notificado a ${
+          selectedAdjustment.member.display_name || selectedAdjustment.member.email
+        }`,
         duration: 5000,
       });
       setShowRejectDialog(false);
-      
+
       // Update optimista: eliminar el ajuste de la lista inmediatamente
-      setPendingAdjustments((prev) => 
-        prev.filter((item) => item.adjustment.id !== selectedAdjustment.adjustment.id)
+      setPendingAdjustments((prev) =>
+        prev.filter((item) => item.adjustment.id !== selectedAdjustment.adjustment.id),
       );
-      
+
       // Recargar en background para sincronizar
       setTimeout(() => loadPendingAdjustments(), 1000);
     } else {
       toast.error('message' in result ? result.message : 'Error al rechazar pre-pago');
     }
-    
+
     setIsRejecting(false);
   };
 
@@ -258,7 +282,9 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                 Pre-pagos Pendientes de Aprobación
               </CardTitle>
               <CardDescription>
-                {pendingAdjustments.length} {pendingAdjustments.length === 1 ? 'solicitud' : 'solicitudes'} esperando tu revisión
+                {pendingAdjustments.length}{' '}
+                {pendingAdjustments.length === 1 ? 'solicitud' : 'solicitudes'} esperando tu
+                revisión
               </CardDescription>
             </div>
             <Badge variant="secondary" className="text-lg px-3 py-1">
@@ -271,7 +297,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
             {pendingAdjustments.map((data) => {
               const amount = Math.abs(data.adjustment.amount);
               const createdAt = new Date(data.adjustment.created_at);
-              
+
               return (
                 <div
                   key={data.adjustment.id}
@@ -284,11 +310,11 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                         {data.member.display_name || data.member.email}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {createdAt.toLocaleDateString('es-ES', { 
-                          day: 'numeric', 
-                          month: 'long', 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
+                        {createdAt.toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'long',
+                          hour: '2-digit',
+                          minute: '2-digit',
                         })}
                       </p>
                     </div>
@@ -308,10 +334,12 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                       <p className="text-sm font-medium text-muted-foreground">Razón:</p>
                       <p className="text-sm">{data.adjustment.reason}</p>
                     </div>
-                    
+
                     {data.category && (
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Categoría sugerida:</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Categoría sugerida:
+                        </p>
                         <Badge variant="secondary">
                           {data.category.icon} {data.category.name}
                         </Badge>
@@ -351,7 +379,8 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
           <DialogHeader>
             <DialogTitle>Aprobar Pre-pago</DialogTitle>
             <DialogDescription>
-              Revisa y edita los detalles antes de aprobar. Se crearán 2 movimientos automáticamente.
+              Revisa y edita los detalles antes de aprobar. Se crearán 2 movimientos
+              automáticamente.
             </DialogDescription>
           </DialogHeader>
 
@@ -360,10 +389,12 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
               {/* Info del ajuste */}
               <div className="p-3 bg-muted rounded-lg space-y-1">
                 <p className="text-sm">
-                  <strong>Miembro:</strong> {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
+                  <strong>Miembro:</strong>{' '}
+                  {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
                 </p>
                 <p className="text-sm">
-                  <strong>Monto:</strong> {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                  <strong>Monto:</strong>{' '}
+                  {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
                 </p>
                 <p className="text-sm">
                   <strong>Razón:</strong> {selectedAdjustment.adjustment.reason}
@@ -377,10 +408,12 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                 </p>
                 <div className="space-y-1 text-sm">
                   <p className="text-blue-800 dark:text-blue-200">
-                    ✅ El <strong>paid_amount</strong> aumentará en {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                    ✅ El <strong>paid_amount</strong> aumentará en{' '}
+                    {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
                   </p>
                   <p className="text-blue-800 dark:text-blue-200">
-                    💰 Esto cuenta como pago hacia la contribución del mes {selectedAdjustment.contribution.month}/{selectedAdjustment.contribution.year}
+                    💰 Esto cuenta como pago hacia la contribución del mes{' '}
+                    {selectedAdjustment.contribution.month}/{selectedAdjustment.contribution.year}
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
                     El estado de la contribución se actualizará automáticamente después de aprobar
@@ -396,7 +429,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                   <p className="text-sm font-semibold flex items-center gap-2">
                     1️⃣ Movimiento de Gasto
                   </p>
-                  
+
                   <div className="space-y-2">
                     <div>
                       <Label htmlFor="expense_category">Categoría *</Label>
@@ -427,7 +460,8 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      Monto: {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                      Monto:{' '}
+                      {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
                     </p>
                   </div>
                 </div>
@@ -437,7 +471,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                   <p className="text-sm font-semibold flex items-center gap-2">
                     2️⃣ Ingreso Virtual (Aporte del miembro)
                   </p>
-                  
+
                   <div className="space-y-2">
                     <div>
                       <Label htmlFor="income_description">Descripción *</Label>
@@ -450,7 +484,8 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      Monto: {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                      Monto:{' '}
+                      {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
                     </p>
                   </div>
                 </div>
@@ -468,7 +503,9 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
             </Button>
             <Button
               onClick={handleApproveClick}
-              disabled={isApproving || !expenseCategoryId || !expenseDescription || !incomeDescription}
+              disabled={
+                isApproving || !expenseCategoryId || !expenseDescription || !incomeDescription
+              }
             >
               {isApproving ? (
                 <>
@@ -500,10 +537,12 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
             <div className="space-y-4">
               <div className="p-3 bg-muted rounded-lg space-y-1">
                 <p className="text-sm">
-                  <strong>Miembro:</strong> {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
+                  <strong>Miembro:</strong>{' '}
+                  {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
                 </p>
                 <p className="text-sm">
-                  <strong>Monto:</strong> {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                  <strong>Monto:</strong>{' '}
+                  {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
                 </p>
                 <p className="text-sm">
                   <strong>Razón:</strong> {selectedAdjustment.adjustment.reason}
@@ -569,18 +608,26 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
             <div className="space-y-3">
               <div className="p-3 bg-muted rounded-lg space-y-1">
                 <p className="text-sm">
-                  <strong>Miembro:</strong> {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
+                  <strong>Miembro:</strong>{' '}
+                  {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
                 </p>
                 <p className="text-sm">
-                  <strong>Monto:</strong> {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                  <strong>Monto:</strong>{' '}
+                  {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
                 </p>
               </div>
 
               <div className="space-y-2 text-sm">
                 <p className="font-medium">✅ Se crearán los siguientes movimientos:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
-                  <li>Gasto de {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}</li>
-                  <li>Ingreso virtual de {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}</li>
+                  <li>
+                    Gasto de{' '}
+                    {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                  </li>
+                  <li>
+                    Ingreso virtual de{' '}
+                    {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                  </li>
                 </ul>
                 <p className="font-medium mt-3">📊 Impacto:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
@@ -599,10 +646,7 @@ export function PendingApprovalsPanel({ categories, currency }: PendingApprovals
             >
               Cancelar
             </Button>
-            <Button
-              onClick={handleConfirmApprove}
-              disabled={isApproving}
-            >
+            <Button onClick={handleConfirmApprove} disabled={isApproving}>
               {isApproving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

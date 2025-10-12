@@ -1,19 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useHousehold } from '@/contexts/HouseholdContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  createCommonTransaction,
+  getHouseholdMembersWithRole,
+} from '@/app/app/transactions/unified-actions';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -22,8 +13,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useHousehold } from '@/contexts/HouseholdContext';
+import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { createTransaction, getHouseholdMembersWithRole } from '@/app/app/expenses/actions';
 
 interface AddTransactionDialogProps {
   categories: Array<{ id: string; name: string; icon: string | null; type: string }>;
@@ -47,17 +50,22 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
     console.log('[AddTransactionDialog] Loading household members, isOwner from context:', isOwner);
     if (members.length === 0 && !membersLoading) {
       setMembersLoading(true);
-      getHouseholdMembersWithRole().then((result) => {
-        console.log('[AddTransactionDialog] getHouseholdMembersWithRole result:', result);
-        if (result.ok && result.data) {
-          console.log('[AddTransactionDialog] Setting members:', result.data.members);
-          setMembers(result.data.members);
-        } else {
-          console.error('[AddTransactionDialog] Error loading members:', !result.ok ? result.message : 'Unknown error');
-          toast.error(!result.ok ? result.message : 'Error al cargar miembros');
-        }
-        setMembersLoading(false);
-      });
+      getHouseholdMembersWithRole().then(
+        (result: Awaited<ReturnType<typeof getHouseholdMembersWithRole>>) => {
+          console.log('[AddTransactionDialog] getHouseholdMembersWithRole result:', result);
+          if (result.ok && result.data) {
+            console.log('[AddTransactionDialog] Setting members:', result.data.members);
+            setMembers(result.data.members);
+          } else {
+            console.error(
+              '[AddTransactionDialog] Error loading members:',
+              !result.ok ? result.message : 'Unknown error',
+            );
+            toast.error(!result.ok ? result.message : 'Error al cargar miembros');
+          }
+          setMembersLoading(false);
+        },
+      );
     }
   }, [members.length, membersLoading, isOwner]);
 
@@ -69,13 +77,15 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
     const formData = new FormData(form);
     formData.append('type', type);
 
-    const result = await createTransaction(formData);
+    const result = await createCommonTransaction(formData);
 
     if (!result.ok) {
       toast.error(result.message);
       if (result.fieldErrors) {
         Object.entries(result.fieldErrors).forEach(([field, errors]) => {
-          toast.error(`${field}: ${errors[0]}`);
+          if (Array.isArray(errors) && errors.length > 0) {
+            toast.error(`${field}: ${errors[0]}`);
+          }
         });
       }
       setIsLoading(false);
@@ -171,13 +181,11 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
               disabled={membersLoading || !isOwner}
             >
               <SelectTrigger>
-                <SelectValue placeholder={membersLoading ? "Cargando..." : "Seleccionar"} />
+                <SelectValue placeholder={membersLoading ? 'Cargando...' : 'Seleccionar'} />
               </SelectTrigger>
               <SelectContent>
                 {/* Opción "Cuenta común" solo para GASTOS */}
-                {type === 'expense' && (
-                  <SelectItem value="common">🏦 Cuenta común</SelectItem>
-                )}
+                {type === 'expense' && <SelectItem value="common">🏦 Cuenta común</SelectItem>}
                 {/* Lista de miembros */}
                 {members.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
@@ -227,7 +235,12 @@ export function AddTransactionDialog({ categories }: AddTransactionDialogProps) 
           <input type="hidden" name="currency" value="EUR" />
 
           <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isLoading}
+            >
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>

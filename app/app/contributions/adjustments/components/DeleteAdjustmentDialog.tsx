@@ -6,7 +6,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -86,7 +85,7 @@ export function DeleteAdjustmentDialog({
             <Trash2 className="h-5 w-5 text-destructive" />
             ¿Eliminar ajuste permanentemente?
           </AlertDialogTitle>
-          <AlertDialogDescription>
+          <div className="text-sm text-muted-foreground">
             <strong className="text-destructive">¡ACCIÓN IRREVERSIBLE!</strong>
             <br />
             Al eliminar este ajuste se borrarán:
@@ -95,7 +94,7 @@ export function DeleteAdjustmentDialog({
               <li>Todas las transacciones asociadas</li>
               <li>Se recalculará automáticamente la contribución</li>
             </ul>
-          </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
 
         {/* Detalles del ajuste */}

@@ -1,24 +1,50 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import {
+  getAllHouseholdAdjustments,
+  getMyAdjustments,
+  rejectPrepayment,
+} from '@/app/app/contributions/adjustment-actions';
+import { approveAdjustmentPrepayment } from '@/app/app/transactions/unified-actions';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, XCircle, AlertCircle, Loader2, ExternalLink, FileText } from 'lucide-react';
-import { toast } from 'sonner';
-import { getAllHouseholdAdjustments, getMyAdjustments, approvePrepayment, rejectPrepayment } from '@/app/app/contributions/adjustment-actions';
 import { formatCurrency } from '@/lib/format';
 import type { Database } from '@/types/database';
+import { AlertCircle, CheckCircle, ExternalLink, FileText, Loader2, XCircle } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 type AdjustmentRow = Database['public']['Tables']['contribution_adjustments']['Row'];
-type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'icon' | 'type'>;
+type Category = Pick<
+  Database['public']['Tables']['categories']['Row'],
+  'id' | 'name' | 'icon' | 'type'
+>;
 
 interface AdjustmentData {
   adjustment: AdjustmentRow;
@@ -41,7 +67,12 @@ interface MyAdjustmentsPanelProps {
   currency: string;
 }
 
-export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, currency }: MyAdjustmentsPanelProps) {
+export function MyAdjustmentsPanel({
+  isOwner,
+  currentUserProfileId,
+  categories,
+  currency,
+}: MyAdjustmentsPanelProps) {
   const [adjustments, setAdjustments] = useState<AdjustmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAdjustment, setSelectedAdjustment] = useState<AdjustmentData | null>(null);
@@ -63,11 +94,9 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
   // Cargar ajustes
   const loadAdjustments = async () => {
     setLoading(true);
-    
-    const result = isOwner 
-      ? await getAllHouseholdAdjustments()
-      : await getMyAdjustments();
-    
+
+    const result = isOwner ? await getAllHouseholdAdjustments() : await getMyAdjustments();
+
     if (result.ok && result.data) {
       type RawItem = {
         contributions: {
@@ -80,8 +109,8 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
         expense_category: Category | null;
         [key: string]: unknown;
       };
-      
-      const transformed = ((result.data as unknown) as RawItem[]).map((item) => ({
+
+      const transformed = (result.data as unknown as RawItem[]).map((item) => ({
         adjustment: item as unknown as AdjustmentRow,
         member: {
           profile_id: item.contributions.profile_id,
@@ -98,7 +127,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
     } else if (!result.ok) {
       toast.error('message' in result ? result.message : 'Error al cargar ajustes');
     }
-    
+
     setLoading(false);
   };
 
@@ -108,43 +137,46 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
   }, [isOwner, currentUserProfileId]);
 
   // Filtrar ajustes por estado
-  const pendingAdjustments = adjustments.filter(a => a.adjustment.status === 'pending');
-  const approvedAdjustments = adjustments.filter(a => a.adjustment.status === 'approved');
-  const rejectedAdjustments = adjustments.filter(a => a.adjustment.status === 'rejected');
+  const pendingAdjustments = adjustments.filter((a) => a.adjustment.status === 'pending');
+  const approvedAdjustments = adjustments.filter((a) => a.adjustment.status === 'approved');
+  const rejectedAdjustments = adjustments.filter((a) => a.adjustment.status === 'rejected');
 
   // Abrir modal de aprobación
   const handleOpenApprove = (data: AdjustmentData) => {
     setSelectedAdjustment(data);
-    
+
     // 🎯 BUSCAR CATEGORÍA "Aportación Cuenta Común" POR DEFECTO
-    let defaultExpenseCategoryId = data.adjustment.expense_category_id || data.adjustment.category_id || data.category?.id || '';
-    
+    let defaultExpenseCategoryId =
+      data.adjustment.expense_category_id || data.adjustment.category_id || data.category?.id || '';
+
     if (!defaultExpenseCategoryId) {
       // Buscar "Aportación Cuenta Común" (case-insensitive)
       const aportacionCategory = categories.find(
-        (cat) => 
-          cat.type === 'expense' && 
+        (cat) =>
+          cat.type === 'expense' &&
           cat.name.toLowerCase().includes('aportación') &&
           cat.name.toLowerCase().includes('cuenta') &&
-          cat.name.toLowerCase().includes('común')
+          cat.name.toLowerCase().includes('común'),
       );
-      
+
       if (aportacionCategory) {
         defaultExpenseCategoryId = aportacionCategory.id;
       }
     }
-    
+
     setExpenseCategoryId(defaultExpenseCategoryId);
     setExpenseDescription(
-      data.adjustment.expense_description || 
-      `${data.category?.name || 'Gasto común'} - ${data.member.display_name || data.member.email}`
+      data.adjustment.expense_description ||
+        `${data.category?.name || 'Gasto común'} - ${
+          data.member.display_name || data.member.email
+        }`,
     );
     setIncomeCategoryId(''); // Usuario debe seleccionarlo
     setIncomeDescription(
-      data.adjustment.income_description || 
-      `Aporte de ${data.member.display_name || data.member.email} - ${data.adjustment.reason}`
+      data.adjustment.income_description ||
+        `Aporte de ${data.member.display_name || data.member.email} - ${data.adjustment.reason}`,
     );
-    
+
     setShowApproveDialog(true);
   };
 
@@ -169,7 +201,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
     }
     formData.append('income_description', incomeDescription);
 
-    const result = await approvePrepayment(formData);
+    const result = await approveAdjustmentPrepayment(formData);
 
     if (result.ok) {
       toast.success('Pre-pago aprobado correctamente');
@@ -222,11 +254,23 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">⏳ Pendiente</Badge>;
+        return (
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+            ⏳ Pendiente
+          </Badge>
+        );
       case 'approved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✅ Aprobado</Badge>;
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            ✅ Aprobado
+          </Badge>
+        );
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">❌ Rechazado</Badge>;
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+            ❌ Rechazado
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -320,11 +364,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Aprobar
                 </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleOpenReject(data)}
-                >
+                <Button size="sm" variant="destructive" onClick={() => handleOpenReject(data)}>
                   <XCircle className="w-4 h-4 mr-1" />
                   Rechazar
                 </Button>
@@ -375,9 +415,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                     Pendientes de Aprobación ({pendingAdjustments.length})
                   </span>
                 </AccordionTrigger>
-                <AccordionContent>
-                  {pendingAdjustments.map(renderAdjustmentCard)}
-                </AccordionContent>
+                <AccordionContent>{pendingAdjustments.map(renderAdjustmentCard)}</AccordionContent>
               </AccordionItem>
             )}
 
@@ -390,9 +428,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                     Aprobados ({approvedAdjustments.length})
                   </span>
                 </AccordionTrigger>
-                <AccordionContent>
-                  {approvedAdjustments.map(renderAdjustmentCard)}
-                </AccordionContent>
+                <AccordionContent>{approvedAdjustments.map(renderAdjustmentCard)}</AccordionContent>
               </AccordionItem>
             )}
 
@@ -405,9 +441,7 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                     Rechazados ({rejectedAdjustments.length})
                   </span>
                 </AccordionTrigger>
-                <AccordionContent>
-                  {rejectedAdjustments.map(renderAdjustmentCard)}
-                </AccordionContent>
+                <AccordionContent>{rejectedAdjustments.map(renderAdjustmentCard)}</AccordionContent>
               </AccordionItem>
             )}
           </Accordion>
@@ -430,11 +464,15 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
               <div className="p-3 bg-muted rounded-lg space-y-1">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Miembro:</span>
-                  <span className="text-sm">{selectedAdjustment.member.display_name || selectedAdjustment.member.email}</span>
+                  <span className="text-sm">
+                    {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Monto:</span>
-                  <span className="text-sm font-semibold">{formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}</span>
+                  <span className="text-sm font-semibold">
+                    {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Razón:</span>
@@ -476,18 +514,24 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Monto: {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                      Monto:{' '}
+                      {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
                     </p>
                   </div>
                 </div>
 
                 {/* Movimiento 2: Ingreso virtual */}
                 <div className="space-y-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <Label className="text-sm font-medium text-green-600 dark:text-green-400">2️⃣ Ingreso Virtual (Aporte)</Label>
+                  <Label className="text-sm font-medium text-green-600 dark:text-green-400">
+                    2️⃣ Ingreso Virtual (Aporte)
+                  </Label>
                   <div className="space-y-2">
                     <div>
                       <Label htmlFor="income-category">Categoría (opcional)</Label>
-                      <Select value={incomeCategoryId || undefined} onValueChange={setIncomeCategoryId}>
+                      <Select
+                        value={incomeCategoryId || undefined}
+                        onValueChange={setIncomeCategoryId}
+                      >
                         <SelectTrigger id="income-category">
                           <SelectValue placeholder="Sin categoría" />
                         </SelectTrigger>
@@ -512,7 +556,8 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Monto: {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                      Monto:{' '}
+                      {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
                     </p>
                   </div>
                 </div>
@@ -521,7 +566,11 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApproveDialog(false)} disabled={isApproving}>
+            <Button
+              variant="outline"
+              onClick={() => setShowApproveDialog(false)}
+              disabled={isApproving}
+            >
               Cancelar
             </Button>
             <Button onClick={handleReviewAndApprove} disabled={!expenseCategoryId || isApproving}>
@@ -544,22 +593,36 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
           {selectedAdjustment && (
             <div className="space-y-2 text-sm">
               <p>
-                ✅ Se creará un <strong>gasto</strong> de {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                ✅ Se creará un <strong>gasto</strong> de{' '}
+                {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
               </p>
               <p>
-                ✅ Se creará un <strong>ingreso virtual</strong> de {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                ✅ Se creará un <strong>ingreso virtual</strong> de{' '}
+                {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
               </p>
               <p>
-                ✅ La contribución de <strong>{selectedAdjustment.member.display_name || selectedAdjustment.member.email}</strong> se recalculará
+                ✅ La contribución de{' '}
+                <strong>
+                  {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
+                </strong>{' '}
+                se recalculará
               </p>
             </div>
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={isApproving}>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+              disabled={isApproving}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleConfirmApproval} disabled={isApproving} className="bg-green-600 hover:bg-green-700">
+            <Button
+              onClick={handleConfirmApproval}
+              disabled={isApproving}
+              className="bg-green-600 hover:bg-green-700"
+            >
               {isApproving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -588,11 +651,15 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
               <div className="p-3 bg-muted rounded-lg space-y-1">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Miembro:</span>
-                  <span className="text-sm">{selectedAdjustment.member.display_name || selectedAdjustment.member.email}</span>
+                  <span className="text-sm">
+                    {selectedAdjustment.member.display_name || selectedAdjustment.member.email}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Monto:</span>
-                  <span className="text-sm font-semibold">{formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}</span>
+                  <span className="text-sm font-semibold">
+                    {formatCurrency(Math.abs(selectedAdjustment.adjustment.amount), currency)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Razón:</span>
@@ -615,7 +682,11 @@ export function MyAdjustmentsPanel({ isOwner, currentUserProfileId, categories, 
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={isRejecting}>
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectDialog(false)}
+              disabled={isRejecting}
+            >
               Cancelar
             </Button>
             <Button
