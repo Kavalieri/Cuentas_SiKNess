@@ -149,7 +149,6 @@ Arranque estándar de Next.js en producción:
 npm start  # equivale a: next start
 ```
 
-
 - Opción A: systemd (servicio del SO)
 - Opción B: PM2 (opcional, ver `docs/PM2.md`)
 
@@ -159,7 +158,6 @@ Type=simple
 Environment=NODE_ENV=production
 Environment=DATABASE_URL=postgresql://...
 Environment=JWT_SECRET=...
-
 
 ---
 
@@ -174,8 +172,6 @@ Environment=JWT_SECRET=...
 
 Las contribuciones son bienvenidas. Revisa [CONTRIBUTING.md](./CONTRIBUTING.md) y abre un issue/PR siguiendo Conventional Commits.
 
-
 MIT © 2025 CuentasSiK Contributors. Ver [LICENSE](./LICENSE).
-
 
 soporte@cuentassik.com · [Issues](https://github.com/Kavalieri/CuentasSiK/issues)

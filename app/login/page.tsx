@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, UserPlus } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { sendMagicLink_Action } from './actions';
 
@@ -37,6 +37,11 @@ function LoginForm() {
       }
     }
   }, [searchParams]);
+
+  const handleGoogleLogin = () => {
+    // Redireccionar a Google OAuth
+    window.location.href = '/auth/google';
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,14 +78,10 @@ function LoginForm() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Haz clic en el enlace del correo para acceder a tu cuenta. El enlace es válido
-              durante 1 hora.
+              Haz clic en el enlace del correo para acceder a tu cuenta. El enlace es válido durante
+              1 hora.
             </p>
-            <Button
-              variant="outline"
-              onClick={() => setEmailSent(false)}
-              className="w-full"
-            >
+            <Button variant="outline" onClick={() => setEmailSent(false)} className="w-full">
               Volver a enviar
             </Button>
           </CardContent>
@@ -100,8 +101,7 @@ function LoginForm() {
           <CardDescription>
             {hasInvitation
               ? 'Inicia sesión o crea una cuenta para aceptar tu invitación'
-              : 'Introduce tu email y te enviaremos un enlace mágico para acceder'
-            }
+              : 'Introduce tu email y te enviaremos un enlace mágico para acceder'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -109,10 +109,31 @@ function LoginForm() {
             <Alert>
               <Mail className="h-4 w-4" />
               <AlertDescription>
-                Has recibido una invitación. Después de iniciar sesión, podrás aceptarla automáticamente.
+                Has recibido una invitación. Después de iniciar sesión, podrás aceptarla
+                automáticamente.
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Botón de Google OAuth */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoogleLogin}
+            className="w-full"
+            disabled={isLoading}
+          >
+            🔵 Continuar con Google
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">O</span>
+            </div>
+          </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
