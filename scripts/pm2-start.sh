@@ -46,7 +46,45 @@ if [ -z "$GOOGLE_CLIENT_ID" ]; then
     echo "⚠️ ADVERTENCIA: GOOGLE_CLIENT_ID no está definida (OAuth no funcionará)"
 fi
 
-echo "�🔧 Iniciando PM2 para $PM2_APP..."
+echo "📦 Archivando logs anteriores..."
+
+# Crear directorio de archivo si no existe
+ARCHIVE_DIR="logs/archive"
+mkdir -p "$ARCHIVE_DIR"
+
+# Función para archivar logs con timestamp
+archive_logs() {
+    local app_name="$1"
+    local user_prefix="$2"
+    local timestamp=$(date '+%Y%m%d_%H%M%S')
+
+    # Determinar directorio de logs según el usuario
+    if [ "$ENVIRONMENT" = "prod" ]; then
+        LOG_DIR="/var/www/.pm2/logs"
+    else
+        LOG_DIR="$HOME/.pm2/logs"
+    fi
+
+    # Archivar logs existentes si existen
+    if [ -f "$LOG_DIR/${app_name}-error.log" ]; then
+        ${user_prefix}mv "$LOG_DIR/${app_name}-error.log" "$ARCHIVE_DIR/${app_name}-error_${timestamp}.log"
+        echo "  ✅ Archivado: ${app_name}-error_${timestamp}.log"
+    fi
+
+    if [ -f "$LOG_DIR/${app_name}-out.log" ]; then
+        ${user_prefix}mv "$LOG_DIR/${app_name}-out.log" "$ARCHIVE_DIR/${app_name}-out_${timestamp}.log"
+        echo "  ✅ Archivado: ${app_name}-out_${timestamp}.log"
+    fi
+}
+
+# Archivar logs según el entorno
+if [ "$ENVIRONMENT" = "prod" ]; then
+    archive_logs "$PM2_APP" "sudo -u www-data "
+else
+    archive_logs "$PM2_APP" ""
+fi
+
+echo "🔧 Iniciando PM2 para $PM2_APP..."
 
 # Para producción, ejecutar como www-data
 if [ "$ENVIRONMENT" = "prod" ]; then

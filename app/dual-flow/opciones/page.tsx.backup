@@ -1,0 +1,115 @@
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, Cog, Home, Settings, Tag } from 'lucide-react';
+
+/**
+ * Configuración específica del sistema dual-flow
+ * TODO: Implementar settings simplificados vs sistema actual
+ */
+export default function DualFlowOpcionesPage() {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Opciones Dual-Flow</h1>
+          <p className="text-muted-foreground">
+            Configuración específica para el sistema dual-flow
+          </p>
+        </div>
+        <Badge variant="outline" className="gap-2">
+          <Settings className="h-3 w-3" />
+          Configuración
+        </Badge>
+      </div>
+
+      {/* Grid de configuraciones */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Configuración del Hogar */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Configuración del Hogar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Hogar Activo</div>
+              <div className="text-lg font-semibold">Mi Hogar</div>
+              <p className="text-xs text-muted-foreground">
+                Gestión de miembros y configuración básica
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Gestión de Categorías */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Categorías
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Categorías Activas</div>
+              <div className="text-lg font-semibold">0</div>
+              <p className="text-xs text-muted-foreground">Gestión de categorías de gastos</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Configuración de Períodos */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Períodos Mensuales
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Configuración</div>
+              <div className="text-lg font-semibold">Automática</div>
+              <p className="text-xs text-muted-foreground">
+                Gestión automática de períodos mensuales
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Configuración de Workflows */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Cog className="h-4 w-4" />
+              Workflows
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Workflow de 7 Pasos</div>
+              <div className="text-lg font-semibold">Activo</div>
+              <p className="text-xs text-muted-foreground">Configuración del flujo mensual</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Mensaje de desarrollo */}
+      <Card className="border-dashed border-primary/50">
+        <CardContent className="pt-6">
+          <div className="text-center space-y-2">
+            <div className="text-sm font-medium">🚧 En Desarrollo</div>
+            <p className="text-xs text-muted-foreground">
+              Interfaz simplificada para gestión de household, categorías, períodos, y configuración
+              de workflows dual-flow.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

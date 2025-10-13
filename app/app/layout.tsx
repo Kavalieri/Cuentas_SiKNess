@@ -1,17 +1,19 @@
+import { getTotalBalance } from '@/app/app/expenses/actions';
+import { signOut } from '@/app/login/actions';
+import { BalanceDisplay } from '@/components/shared/BalanceDisplay';
+import { HouseholdSelector } from '@/components/shared/HouseholdSelector';
+import { MobileBottomNav } from '@/components/shared/navigation/MobileBottomNav';
+import { PrivacyToggle } from '@/components/shared/PrivacyToggle';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { HouseholdProvider } from '@/contexts/HouseholdContext';
+import { isSystemAdmin } from '@/lib/adminCheck';
+import { checkDualFlowAccess } from '@/lib/featureFlags';
+import { getCurrentUser, getUserHouseholdId, getUserHouseholds } from '@/lib/supabaseServer';
+import { Calculator, LogOut, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getCurrentUser, getUserHouseholdId, getUserHouseholds } from '@/lib/supabaseServer';
-import { signOut } from '@/app/login/actions';
-import { Button } from '@/components/ui/button';
-import { LogOut, Home, User } from 'lucide-react';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
-import { PrivacyToggle } from '@/components/shared/PrivacyToggle';
-import { HouseholdSelector } from '@/components/shared/HouseholdSelector';
-import { BalanceDisplay } from '@/components/shared/BalanceDisplay';
-import { MobileBottomNav } from '@/components/shared/navigation/MobileBottomNav';
-import { isSystemAdmin } from '@/lib/adminCheck';
-import { getTotalBalance } from '@/app/app/expenses/actions';
-import { HouseholdProvider } from '@/contexts/HouseholdContext';
 
 function SignOutButton() {
   return (
@@ -24,11 +26,7 @@ function SignOutButton() {
   );
 }
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -38,6 +36,9 @@ export default async function AppLayout({
   const userIsSystemAdmin = await isSystemAdmin();
   const householdId = await getUserHouseholdId();
   const userHouseholdsRaw = await getUserHouseholds();
+
+  // Verificar acceso al sistema dual-flow
+  const dualFlowAccess = await checkDualFlowAccess(user.email!);
 
   type Household = {
     id: string;
@@ -49,7 +50,7 @@ export default async function AppLayout({
   const userHouseholds = userHouseholdsRaw as unknown as Household[];
 
   // Determinar el rol del usuario en el household activo
-  const currentHousehold = userHouseholds.find(h => h.id === householdId);
+  const currentHousehold = userHouseholds.find((h) => h.id === householdId);
 
   // ✅ OPTIMIZADO: Usar is_owner directo de la base de datos
   const isOwner = currentHousehold?.is_owner || false;
@@ -58,7 +59,8 @@ export default async function AppLayout({
     householdId,
     isOwner,
     userId: user.profile_id,
-    userEmail: user.email
+    userEmail: user.email,
+    dualFlowAccess: dualFlowAccess.hasAccess,
   });
 
   // Obtener balance total si tiene household
@@ -75,92 +77,99 @@ export default async function AppLayout({
       }}
     >
       <div className="flex min-h-screen flex-col">
-      {/* Header */}
-      <header className="border-b bg-background sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between gap-4">
-            {/* Left: Logo */}
-            <div className="flex items-center gap-6 flex-1">
-              <Link href="/app" className="flex items-center gap-2 font-bold text-lg shrink-0">
-                <Home className="h-5 w-5" />
-                <span className="hidden sm:inline">CuentasSiK</span>
-              </Link>
-            </div>
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="p-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calculator className="h-6 w-6 text-primary" />
+                <h1 className="text-xl font-semibold">CuentasSiK</h1>
 
-            {/* Center: Balance (si existe household) */}
-            {balance && (
-              <div className="hidden lg:flex items-center justify-center flex-1 max-w-xs">
-                <BalanceDisplay
-                  balance={balance.balance}
-                  income={balance.income}
-                  expenses={balance.expenses}
-                />
+                {/* Acceso al Sistema Dual-Flow */}
+                {dualFlowAccess.hasAccess && (
+                  <Link
+                    href="/dual-flow/inicio"
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-full transition-colors"
+                  >
+                    <Zap className="h-4 w-4" />
+                    <span>Dual-Flow Beta</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {dualFlowAccess.accessMethod}
+                    </Badge>
+                  </Link>
+                )}
               </div>
-            )}
 
-            {/* Right: Household Selector + User Menu + Theme + Logout */}
-            <div className="flex items-center gap-2 justify-end flex-1">
-              {/* Selector de household (siempre visible si tiene al menos 1) */}
-              {userHouseholds.length > 0 && householdId && (
+              <div className="flex items-center gap-2 md:gap-4">
+                {balance !== null && balance !== undefined && (
+                  <BalanceDisplay
+                    balance={balance.balance}
+                    income={balance.income}
+                    expenses={balance.expenses}
+                  />
+                )}
                 <HouseholdSelector
                   households={userHouseholds}
-                  activeHouseholdId={householdId}
+                  activeHouseholdId={householdId || ''}
                 />
-              )}
+                <SignOutButton />
+                <ThemeToggle />
+                <PrivacyToggle />
+              </div>
+            </div>
+          </header>
 
-              {/* Botón de Perfil */}
-              <Link href="/app/profile">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline max-w-[120px] truncate">
-                    {user.email?.split('@')[0]}
-                  </span>
-                </Button>
-              </Link>
+          {/* Main Content */}
+          <main className="flex-1 bg-muted/30 pb-20">
+            <div className="container mx-auto px-4 py-8">{children}</div>
+          </main>
+        </div>
 
-              <PrivacyToggle />
-              <ThemeToggle />
-              <SignOutButton />
+        {/* Main Content */}
+        <main className="flex-1 bg-muted/30 pb-20">
+          <div className="container mx-auto px-4 py-8">{children}</div>
+        </main>
+
+        {/* Bottom Navigation (visible en todos los dispositivos) */}
+        <MobileBottomNav hasHousehold={!!householdId} isAdmin={userIsSystemAdmin} />
+
+        {/* Footer */}
+        <footer className="hidden md:block border-t bg-background">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span>© 2025 SiK</span>
+                <span className="hidden sm:inline">•</span>
+                <span className="hidden sm:inline">
+                  Licencia{' '}
+                  <a
+                    href="https://github.com/Kavalieri/CuentasSiK/blob/main/LICENSE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-foreground transition-colors"
+                  >
+                    MIT
+                  </a>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono">
+                  v{process.env.npm_package_version || '0.1.0-alpha'}
+                </span>
+                <span>•</span>
+                <a
+                  href="https://github.com/Kavalieri/CuentasSiK"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                >
+                  GitHub
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 bg-muted/30 pb-20">
-        <div className="container mx-auto px-4 py-8">{children}</div>
-      </main>
-
-      {/* Bottom Navigation (visible en todos los dispositivos) */}
-      <MobileBottomNav hasHousehold={!!householdId} isAdmin={userIsSystemAdmin} />
-
-      {/* Footer */}
-      <footer className="hidden md:block border-t bg-background">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span>© 2025 SiK</span>
-              <span className="hidden sm:inline">•</span>
-              <span className="hidden sm:inline">
-                Licencia <a href="https://github.com/Kavalieri/CuentasSiK/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">MIT</a>
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono">v{process.env.npm_package_version || '0.1.0-alpha'}</span>
-              <span>•</span>
-              <a
-                href="https://github.com/Kavalieri/CuentasSiK"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors"
-              >
-                GitHub
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
     </HouseholdProvider>
   );
 }

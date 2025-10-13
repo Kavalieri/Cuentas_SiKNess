@@ -124,6 +124,31 @@ NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL="admin@example.com"
 - **Producción**: Reinicio automático hasta 10 veces, memoria máxima 500M
 - **Desarrollo**: Reinicio automático hasta 20 veces, memoria máxima 300M, hot-reload activado
 
+### 📁 Gestión de Logs Mejorada
+
+#### Archivado Automático de Logs
+
+Cada vez que inicias un proceso con `./scripts/pm2-start.sh`, los logs anteriores se archivan automáticamente:
+
+```bash
+# Los logs se mueven a logs/archive/ con timestamp
+logs/archive/cuentassik-dev-error_20251013_164714.log
+logs/archive/cuentassik-dev-out_20251013_164714.log
+```
+
+#### Limpieza de Logs Archivados
+
+```bash
+# Limpiar logs más antiguos que 7 días (por defecto)
+./scripts/pm2-clean-logs.sh
+
+# Mantener logs de 30 días
+./scripts/pm2-clean-logs.sh 30
+
+# Ver estadísticas de logs archivados
+./scripts/pm2-clean-logs.sh 0  # No elimina nada, solo muestra stats
+```
+
 ### Logs con Timestamp
 
 ```
@@ -136,11 +161,17 @@ NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL="admin@example.com"
 # Estado de procesos
 sudo -u www-data pm2 status
 
-# Logs en tiempo real
+# Logs en tiempo real (limpios desde el último reinicio)
 sudo -u www-data pm2 logs cuentassik-prod
+
+# Logs con límite de líneas
+sudo -u www-data pm2 logs cuentassik-prod --lines 20 --nostream
 
 # Monitoreo de recursos
 sudo -u www-data pm2 monit
+
+# Ver logs archivados
+ls -lah logs/archive/
 ```
 
 ## 🛡️ Seguridad Implementada
