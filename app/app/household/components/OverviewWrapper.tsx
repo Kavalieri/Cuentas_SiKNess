@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { OverviewTab } from './OverviewTab';
 import { getMonthlyOverviewData } from '@/app/app/household/actions';
 import type { Database } from '@/types/database';
+import { useEffect, useState } from 'react';
+import { OverviewTab } from './OverviewTab';
 
 type Contribution = Database['public']['Tables']['contributions']['Row'];
 
@@ -48,7 +48,7 @@ export function OverviewWrapper({
       const month = selectedMonth.getMonth() + 1;
 
       const result = await getMonthlyOverviewData(year, month);
-      
+
       if (result.ok && result.data) {
         setContributions(result.data.contributions);
         setExpenses(result.data.expensesTotal);

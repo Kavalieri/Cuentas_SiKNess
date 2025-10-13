@@ -4,9 +4,9 @@ import { isOwner } from '@/lib/adminCheck';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
 import { getCurrentUser, getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
+import type { Database } from '@/types/database';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import type { Database } from '@/types/database';
 
 type Contribution = Database['public']['Tables']['contributions']['Row'];
 
@@ -267,11 +267,16 @@ export async function getHouseholdMembers(): Promise<
 /**
  * Obtener datos mensuales para el overview (contribuciones + resumen transacciones)
  */
-export async function getMonthlyOverviewData(year: number, month: number): Promise<Result<{
-  contributions: Contribution[];
-  expensesTotal: number;
-  incomesTotal: number;
-}>> {
+export async function getMonthlyOverviewData(
+  year: number,
+  month: number,
+): Promise<
+  Result<{
+    contributions: Contribution[];
+    expensesTotal: number;
+    incomesTotal: number;
+  }>
+> {
   const householdId = await getUserHouseholdId();
   if (!householdId) {
     return fail('No se pudo determinar el hogar activo');
@@ -294,9 +299,8 @@ export async function getMonthlyOverviewData(year: number, month: number): Promi
 
     // 2. Obtener transacciones del mes
     const startOfMonth = `${year}-${String(month).padStart(2, '0')}-01`;
-    const endOfMonth = month === 12 
-      ? `${year + 1}-01-01` 
-      : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const endOfMonth =
+      month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`;
 
     const { data: transactions, error: transactionsError } = await supabase
       .from('transactions')
@@ -312,11 +316,11 @@ export async function getMonthlyOverviewData(year: number, month: number): Promi
     // 3. Calcular totales
     const typedTransactions = (transactions || []) as Array<{ type: string; amount: number }>;
     const expensesTotal = typedTransactions
-      .filter(t => t.type === 'expense' || t.type === 'expense_direct')
+      .filter((t) => t.type === 'expense' || t.type === 'expense_direct')
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     const incomesTotal = typedTransactions
-      .filter(t => t.type === 'income' || t.type === 'income_direct')
+      .filter((t) => t.type === 'income' || t.type === 'income_direct')
       .reduce((sum, t) => sum + t.amount, 0);
 
     return ok({
@@ -324,7 +328,6 @@ export async function getMonthlyOverviewData(year: number, month: number): Promi
       expensesTotal,
       incomesTotal,
     });
-
   } catch {
     return fail('Error inesperado al obtener datos mensuales');
   }

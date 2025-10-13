@@ -74,13 +74,169 @@ const UnifiedTransactionSchema = z.discriminatedUnion('flow_type', [
 // =====================================================
 
 async function validatePeriodForFlow(
-  _flowType: TransactionFlowType,
-  _year: number,
-  _month: number,
+  flowType: TransactionFlowType,
+  year: number,
+  month: number,
 ): Promise<Result<boolean>> {
-  // TODO: Implementar validación basada en contribution_periods
-  // Por ahora, permitir todos los flujos
+  const periodResult = await getOrCreateContributionPeriod(year, month);
+  if (!periodResult.ok) {
+    return fail(periodResult.message);
+  }
+
+  const period = periodResult.data;
+  if (!period) {
+    return fail('No se pudo obtener información del período');
+  }
+
+  if (flowType === 'common' && !period.can_add_common_flows) {
+    return fail(
+      'Los flujos comunes no están permitidos en este período. El período debe estar en estado LOCKED.',
+    );
+  }
+
+  if (flowType === 'direct' && !period.can_add_direct_flows) {
+    return fail(
+      'Los flujos directos no están permitidos en este período. El período está cerrado.',
+    );
+  }
+
   return ok(true);
+}
+
+/**
+ * Obtener o crear período de contribución para un mes específico
+ */
+export async function getOrCreateContributionPeriod(
+  year: number,
+  month: number,
+): Promise<
+  Result<{
+    id: string;
+    status: 'SETUP' | 'LOCKED' | 'CLOSED';
+    can_add_common_flows: boolean;
+    can_add_direct_flows: boolean;
+  }>
+> {
+  const householdId = await getUserHouseholdId();
+  if (!householdId) {
+    return fail('No se pudo determinar el hogar activo');
+  }
+
+  const supabase = await supabaseServer();
+
+  // Buscar período existente
+  const { data: existingPeriod, error: searchError } = await supabase
+    .from('contribution_periods')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('year', year)
+    .eq('month', month)
+    .single();
+
+  if (searchError && (searchError as { code?: string }).code !== 'PGRST116') {
+    return fail('Error al buscar período de contribución');
+  }
+
+  if (existingPeriod) {
+    const status = existingPeriod.status as 'SETUP' | 'LOCKED' | 'CLOSED';
+    return ok({
+      id: existingPeriod.id,
+      status,
+      can_add_common_flows: status === 'LOCKED',
+      can_add_direct_flows: status === 'SETUP' || status === 'LOCKED',
+    });
+  }
+
+  // Crear nuevo período en estado SETUP
+  const { data: newPeriod, error: createError } = await supabase
+    .from('contribution_periods')
+    .insert({
+      household_id: householdId,
+      year,
+      month,
+      status: 'SETUP',
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (createError || !newPeriod) {
+    return fail('Error al crear período de contribución');
+  }
+
+  return ok({
+    id: newPeriod.id,
+    status: 'SETUP',
+    can_add_common_flows: false,
+    can_add_direct_flows: true,
+  });
+}
+
+/**
+ * Bloquear período y calcular contribuciones
+ */
+export async function lockContributionPeriod(year: number, month: number): Promise<Result> {
+  const householdId = await getUserHouseholdId();
+  if (!householdId) {
+    return fail('No se pudo determinar el hogar activo');
+  }
+
+  const user = await getCurrentUser();
+  if (!user) {
+    return fail('Usuario no autenticado');
+  }
+
+  const supabase = await supabaseServer();
+
+  // Verificar que el usuario sea owner
+  const { data: membership } = await supabase
+    .from('household_members')
+    .select('role')
+    .eq('household_id', householdId)
+    .eq('profile_id', user.profile_id)
+    .single();
+
+  if (!membership || membership.role !== 'owner') {
+    return fail('Solo los owners pueden bloquear períodos de contribución');
+  }
+
+  // Obtener período
+  const periodResult = await getOrCreateContributionPeriod(year, month);
+  if (!periodResult.ok) {
+    return fail(periodResult.message);
+  }
+
+  const period = periodResult.data;
+  if (!period || period.status !== 'SETUP') {
+    return fail('El período ya está bloqueado o cerrado');
+  }
+
+  // Calcular contribuciones usando la función del sistema de períodos
+  const { lockContributionPeriod: lockPeriodFunction } = await import(
+    '@/lib/contributions/periods'
+  );
+  const lockResult = await lockPeriodFunction({ year, month });
+
+  if (!lockResult.ok) {
+    return fail('Error al calcular contribuciones: ' + lockResult.message);
+  }
+
+  // Actualizar estado del período
+  const { error: updateError } = await supabase
+    .from('contribution_periods')
+    .update({
+      status: 'LOCKED',
+      locked_at: new Date().toISOString(),
+      locked_by: user.profile_id,
+    })
+    .eq('id', period.id);
+
+  if (updateError) {
+    return fail('Error al actualizar estado del período');
+  }
+
+  revalidatePath('/app/contributions');
+  return ok();
 }
 
 // =====================================================

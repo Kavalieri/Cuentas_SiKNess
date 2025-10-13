@@ -1,9 +1,10 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Home } from 'lucide-react';
+import { Calendar, Home, User } from 'lucide-react';
 import { GeneralTab } from './GeneralTab';
 import { HouseholdsManagement } from './HouseholdsManagement';
+import { PeriodsTab } from './PeriodsTab';
 
 interface SettingsTabsProps {
   user: {
@@ -24,7 +25,7 @@ interface SettingsTabsProps {
 export function SettingsTabs({ user, households, activeHouseholdId }: SettingsTabsProps) {
   return (
     <Tabs defaultValue="general" className="space-y-6">
-      <TabsList className="grid w-full max-w-md grid-cols-2">
+      <TabsList className="grid w-full max-w-2xl grid-cols-3">
         <TabsTrigger value="general" className="gap-2">
           <User className="h-4 w-4" />
           General
@@ -32,6 +33,10 @@ export function SettingsTabs({ user, households, activeHouseholdId }: SettingsTa
         <TabsTrigger value="households" className="gap-2">
           <Home className="h-4 w-4" />
           Gestión de Hogares
+        </TabsTrigger>
+        <TabsTrigger value="periods" className="gap-2">
+          <Calendar className="h-4 w-4" />
+          Períodos
         </TabsTrigger>
       </TabsList>
 
@@ -45,6 +50,10 @@ export function SettingsTabs({ user, households, activeHouseholdId }: SettingsTa
           activeHouseholdId={activeHouseholdId || ''}
           userId={user.profile_id}
         />
+      </TabsContent>
+
+      <TabsContent value="periods" className="space-y-4">
+        <PeriodsTab userId={user.profile_id} />
       </TabsContent>
     </Tabs>
   );

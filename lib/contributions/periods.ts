@@ -6,8 +6,8 @@
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
 import { getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
-import { z } from 'zod';
 import type { Database } from '@/types/database';
+import { z } from 'zod';
 
 type Contribution = Database['public']['Tables']['contributions']['Row'];
 
@@ -234,13 +234,16 @@ async function calculateContributionsWithDirectExpenses(
 
   // 4. Agrupar gastos directos por miembro
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const directExpensesByMember = (directExpenses || []).reduce((acc: Record<string, number>, expense: any) => {
-    const payerId = expense.real_payer_id;
-    if (payerId) {
-      acc[payerId] = (acc[payerId] || 0) + parseFloat(expense.amount.toString());
-    }
-    return acc;
-  }, {} as Record<string, number>);
+  const directExpensesByMember = (directExpenses || []).reduce(
+    (acc: Record<string, number>, expense: any) => {
+      const payerId = expense.real_payer_id;
+      if (payerId) {
+        acc[payerId] = (acc[payerId] || 0) + parseFloat(expense.amount.toString());
+      }
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   // 5. Calcular contribuciones base según método configurado
   const totalIncome = memberIncomes.reduce(
