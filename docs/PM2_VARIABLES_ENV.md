@@ -158,21 +158,59 @@ logs/archive/cuentassik-dev-out_20251013_164714.log
 ### Comandos de Monitoreo
 
 ```bash
-# Estado de procesos
-sudo -u www-data pm2 status
+# Estado de procesos (dev y prod)
+pm2 status                           # Usuario actual (dev)
+sudo -u www-data pm2 status         # Usuario www-data (prod)
 
 # Logs en tiempo real (limpios desde el último reinicio)
-sudo -u www-data pm2 logs cuentassik-prod
+pm2 logs cuentassik-dev                    # DEV
+sudo -u www-data pm2 logs cuentassik-prod  # PROD
 
 # Logs con límite de líneas
-sudo -u www-data pm2 logs cuentassik-prod --lines 20 --nostream
+pm2 logs cuentassik-dev --lines 20 --nostream         # DEV
+sudo -u www-data pm2 logs cuentassik-prod --lines 20 --nostream  # PROD
 
 # Monitoreo de recursos
-sudo -u www-data pm2 monit
+pm2 monit                            # DEV
+sudo -u www-data pm2 monit          # PROD
 
 # Ver logs archivados
 ls -lah logs/archive/
 ```
+
+### 🎮 Tareas VSCode Disponibles
+
+**Acceso**: `Ctrl+Shift+P` → `Tasks: Run Task`
+
+#### Gestión de Procesos DEV:
+- `🟢 DEV: Iniciar (con archivado de logs)`
+- `🔴 DEV: Detener`
+- `🔄 DEV: Reiniciar (Stop + Start con logs limpios)` ⭐ **Default**
+
+#### Gestión de Procesos PROD:
+- `🟢 PROD: Iniciar (con archivado de logs)`
+- `🔴 PROD: Detener`
+- `🔄 PROD: Reiniciar (Stop + Start con logs limpios)`
+- `🏗️ PROD: Build + Deploy + Reiniciar` ⭐ **Full Deploy**
+
+#### Monitoreo y Logs:
+- `📊 Estado PM2 (Todos los procesos)`
+- `📋 DEV: Ver Logs (últimas 20 líneas / tiempo real)`
+- `📋 PROD: Ver Logs (últimas 20 líneas / tiempo real)`
+- `📁 Ver Logs Archivados`
+- `🧹 Limpiar Logs PM2 (7/30 días)`
+
+#### Utilidades:
+- `🏗️ Build Solo (sin deploy)`
+- `🔍 Verificar Sistema Completo`
+- `🚀 Abrir Testing Dual-Flow`
+
+### 🚀 Separación Dev/Prod
+
+- **DEV**: Usuario `kava`, puerto 3001, NO build automático
+- **PROD**: Usuario `www-data`, puerto 3000, build obligatorio antes de deploy
+- **Logs**: Archivado automático con timestamp en cada reinicio
+- **Tasks**: Separación clara entre entornos para evitar errores
 
 ## 🛡️ Seguridad Implementada
 

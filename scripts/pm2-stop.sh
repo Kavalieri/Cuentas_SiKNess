@@ -18,8 +18,8 @@ elif [ "$TARGET" = "dev" ]; then
     pm2 delete cuentassik-dev
     echo "✅ Proceso de desarrollo detenido"
 elif [ "$TARGET" = "prod" ]; then
-    pm2 stop cuentassik-prod
-    pm2 delete cuentassik-prod
+    sudo -u www-data pm2 stop cuentassik-prod || true
+    sudo -u www-data pm2 delete cuentassik-prod || true
     echo "✅ Proceso de producción detenido"
 else
     echo "❌ Target no válido. Use 'dev', 'prod' o 'all'"

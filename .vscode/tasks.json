@@ -2,6 +2,117 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "🟢 DEV: Iniciar (con archivado de logs)",
+      "type": "shell",
+      "command": "./scripts/pm2-start.sh",
+      "args": ["dev"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔴 DEV: Detener",
+      "type": "shell",
+      "command": "./scripts/pm2-stop.sh",
+      "args": ["dev"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 DEV: Reiniciar (Stop + Start con logs limpios)",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-c", "./scripts/pm2-stop.sh dev && sleep 1 && ./scripts/pm2-start.sh dev"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🟢 PROD: Iniciar (con archivado de logs)",
+      "type": "shell",
+      "command": "./scripts/pm2-start.sh",
+      "args": ["prod"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔴 PROD: Detener",
+      "type": "shell",
+      "command": "./scripts/pm2-stop.sh",
+      "args": ["prod"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🏗️ PROD: Build + Deploy + Reiniciar",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-c", "echo '🏗️ Building for production...' && npm run build && echo '🔄 Restarting production...' && ./scripts/pm2-stop.sh prod && sleep 2 && ./scripts/pm2-start.sh prod && echo '✅ Production deployed!'"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 PROD: Reiniciar (Stop + Start con logs limpios)",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-c", "./scripts/pm2-stop.sh prod && sleep 2 && ./scripts/pm2-start.sh prod"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "🧹 Limpiar Logs PM2 (7 días)",
       "type": "shell",
       "command": "./scripts/pm2-clean-logs.sh",
@@ -32,10 +143,10 @@
       "problemMatcher": []
     },
     {
-      "label": "📊 Ver Estado PM2",
+      "label": "📊 Estado PM2 (Todos los procesos)",
       "type": "shell",
-      "command": "pm2",
-      "args": ["status"],
+      "command": "bash",
+      "args": ["-c", "echo '👤 Procesos usuario kava:' && pm2 status 2>/dev/null || echo 'Sin procesos' && echo '' && echo '👤 Procesos usuario www-data:' && sudo -u www-data pm2 status 2>/dev/null || echo 'Sin procesos'"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -47,7 +158,25 @@
       "problemMatcher": []
     },
     {
-      "label": "📋 Ver Logs PM2 Dev (últimas 20 líneas)",
+      "label": "🏗️ Build Solo (sin deploy)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📋 DEV: Ver Logs (últimas 20 líneas)",
       "type": "shell",
       "command": "pm2",
       "args": ["logs", "cuentassik-dev", "--lines", "20", "--nostream"],
@@ -62,7 +191,7 @@
       "problemMatcher": []
     },
     {
-      "label": "📋 Ver Logs PM2 Dev (tiempo real)",
+      "label": "📋 DEV: Ver Logs (tiempo real)",
       "type": "shell",
       "command": "pm2",
       "args": ["logs", "cuentassik-dev"],
@@ -77,10 +206,40 @@
       "problemMatcher": []
     },
     {
-      "label": "🔄 Reiniciar PM2 Dev (con archivado de logs)",
+      "label": "📋 PROD: Ver Logs (últimas 20 líneas)",
+      "type": "shell",
+      "command": "sudo",
+      "args": ["-u", "www-data", "pm2", "logs", "cuentassik-prod", "--lines", "20", "--nostream"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📋 PROD: Ver Logs (tiempo real)",
+      "type": "shell",
+      "command": "sudo",
+      "args": ["-u", "www-data", "pm2", "logs", "cuentassik-prod"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "� Ver Logs Archivados",
       "type": "shell",
       "command": "bash",
-      "args": ["-c", "./scripts/pm2-stop.sh dev && ./scripts/pm2-start.sh dev"],
+      "args": ["-c", "echo '📁 Logs archivados:' && ls -lah logs/archive/ 2>/dev/null || echo 'No hay logs archivados aún' && echo '' && echo '💾 Espacio usado por logs:' && du -sh logs/ 2>/dev/null || echo 'Directorio logs no existe'"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -92,25 +251,10 @@
       "problemMatcher": []
     },
     {
-      "label": "📁 Ver Logs Archivados",
+      "label": "� Abrir Testing Dual-Flow",
       "type": "shell",
-      "command": "ls",
-      "args": ["-lah", "logs/archive/"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "🚀 Testing Dual-Flow - Abrir Navegador",
-      "type": "shell",
-      "command": "echo",
-      "args": ["Abriendo http://localhost:3001/dual-flow/testing en el navegador..."],
+      "command": "bash",
+      "args": ["-c", "echo '🚀 Testing Dual-Flow disponible en:' && echo '   http://localhost:3001/dual-flow/testing' && echo '' && echo '📊 Estado actual:' && pm2 list | grep cuentassik-dev || echo 'Proceso dev no está ejecutándose'"],
       "group": "test",
       "presentation": {
         "echo": true,
@@ -119,7 +263,21 @@
         "panel": "shared",
         "showReuseMessage": false
       },
-      "dependsOn": ["📊 Ver Estado PM2"],
+      "problemMatcher": []
+    },
+    {
+      "label": "� Verificar Sistema Completo",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-c", "echo '🔍 VERIFICACIÓN SISTEMA COMPLETO' && echo '=================================' && echo '' && echo '👤 Procesos PM2:' && (pm2 list 2>/dev/null | grep -E '(online|stopped)' || echo 'Sin procesos kava') && (sudo -u www-data pm2 list 2>/dev/null | grep -E '(online|stopped)' || echo 'Sin procesos www-data') && echo '' && echo '📁 Logs archivados:' && (ls -1 logs/archive/ 2>/dev/null | wc -l && echo ' archivos') || echo '0 archivos' && echo '' && echo '🌐 URLs disponibles:' && echo '  DEV:  http://localhost:3001' && echo '  PROD: http://localhost:3000' && echo '  TEST: http://localhost:3001/dual-flow/testing'"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
       "problemMatcher": []
     }
   ]
