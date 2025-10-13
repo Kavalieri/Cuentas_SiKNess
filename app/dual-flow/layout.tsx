@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { checkDualFlowAccess } from '@/lib/featureFlags';
-import { getCurrentUser } from '@/lib/supabaseServer';
+import { getCurrentUser, getUserHouseholdId, query } from '@/lib/supabaseServer';
 import { ArrowLeft, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { BottomNavDualFlow } from './components/BottomNavDualFlow';
+import { HouseholdSelectorDualFlow } from './components/HouseholdSelectorDualFlow';
 
 export default async function DualFlowLayout({ children }: { children: React.ReactNode }) {
   // Verificar autenticación
@@ -17,6 +18,21 @@ export default async function DualFlowLayout({ children }: { children: React.Rea
   const accessCheck = await checkDualFlowAccess(user.email!);
   if (!accessCheck.hasAccess) {
     redirect('/app');
+  }
+
+  // Obtener hogar activo del usuario
+  const householdId = await getUserHouseholdId();
+  let currentHouseholdName: string | undefined;
+
+  if (householdId) {
+    const householdResult = await query(
+      'SELECT name FROM households WHERE id = $1',
+      [householdId]
+    );
+    
+    if (householdResult.rows[0]) {
+      currentHouseholdName = householdResult.rows[0].name;
+    }
   }
 
   return (
@@ -33,6 +49,14 @@ export default async function DualFlowLayout({ children }: { children: React.Rea
                 Dual-Flow
               </span>
             </div>
+          </div>
+
+          {/* Selector de Hogar */}
+          <div className="flex-1 flex justify-center">
+            <HouseholdSelectorDualFlow 
+              currentHouseholdId={householdId || undefined}
+              currentHouseholdName={currentHouseholdName}
+            />
           </div>
 
           {/* Link de regreso al sistema anterior */}

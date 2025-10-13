@@ -8,7 +8,7 @@
 -- =============================================================================
 
 -- Limpiar datos existentes (manteniendo estructura)
-TRUNCATE TABLE 
+TRUNCATE TABLE
     user_settings,
     user_active_household,
     member_incomes,
@@ -240,7 +240,7 @@ BEGIN
     RAISE NOTICE '🎯 USUARIOS DISPONIBLES PARA TESTING:';
     RAISE NOTICE '  🔑 Admin: caballeropomes@gmail.com (Casa Test)';
     RAISE NOTICE '  👫 María: maria.lopez@example.com (Hogar López-García)';
-    RAISE NOTICE '  👨 Juan: juan.garcia@example.com (Hogar López-García)';  
+    RAISE NOTICE '  👨 Juan: juan.garcia@example.com (Hogar López-García)';
     RAISE NOTICE '  👩 Ana: ana.martinez@example.com (Casa Ana)';
     RAISE NOTICE '';
     RAISE NOTICE '🚀 LISTO PARA TESTING COMPLETO DEL DUAL-FLOW';
