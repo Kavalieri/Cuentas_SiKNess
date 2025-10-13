@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import type { SettingsInvitation } from '@/app/app/settings/invitations-actions';
+import {
+  getHouseholdInvitations,
+  getHouseholdStats,
+  isOwnerOfHousehold,
+} from '@/app/app/settings/invitations-actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { InvitationsManagement } from './InvitationsManagement';
-import { 
-  getHouseholdInvitations, 
-  getHouseholdStats, 
-  isOwnerOfHousehold 
-} from '@/app/app/settings/invitations-actions';
-import type { SettingsInvitation } from '@/app/app/settings/invitations-actions';
 
 interface InvitationsTabProps {
   userId: string;
@@ -54,11 +54,13 @@ export function InvitationsTab({ userId: _userId }: InvitationsTabProps) {
         // Cargar estadísticas
         const statsResult = await getHouseholdStats();
         if (statsResult.ok) {
-          setStats(statsResult.data || {
-            totalMembers: 0,
-            totalInvitations: 0,
-            pendingInvitations: 0,
-          });
+          setStats(
+            statsResult.data || {
+              totalMembers: 0,
+              totalInvitations: 0,
+              pendingInvitations: 0,
+            },
+          );
         }
 
         setLoading(false);
@@ -95,19 +97,11 @@ export function InvitationsTab({ userId: _userId }: InvitationsTabProps) {
             <AlertCircle className="h-5 w-5" />
             Error al cargar invitaciones
           </CardTitle>
-          <CardDescription>
-            {error}
-          </CardDescription>
+          <CardDescription>{error}</CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
-  return (
-    <InvitationsManagement 
-      invitations={invitations}
-      stats={stats}
-      isOwner={isOwner}
-    />
-  );
+  return <InvitationsManagement invitations={invitations} stats={stats} isOwner={isOwner} />;
 }

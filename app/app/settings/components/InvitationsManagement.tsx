@@ -1,51 +1,51 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { SettingsInvitation } from '@/app/app/settings/invitations-actions';
+import {
+  cancelHouseholdInvitation,
+  createHouseholdInvitation,
+  sendEmailInvitation,
+} from '@/app/app/settings/invitations-actions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from '@/components/ui/alert-dialog';
-import { 
-  Mail, 
-  Copy, 
-  Trash2, 
-  Users, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
-  UserPlus,
-  Link as LinkIcon
-} from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import {
+  CheckCircle,
+  Clock,
+  Copy,
+  Link as LinkIcon,
+  Mail,
+  Trash2,
+  UserPlus,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { 
-  createHouseholdInvitation, 
-  sendEmailInvitation, 
-  cancelHouseholdInvitation 
-} from '@/app/app/settings/invitations-actions';
-import type { SettingsInvitation } from '@/app/app/settings/invitations-actions';
 
 interface InvitationsManagementProps {
   invitations: SettingsInvitation[];
@@ -65,13 +65,29 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
   const getStatusBadge = (status: SettingsInvitation['status']) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">⏳ Pendiente</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+            ⏳ Pendiente
+          </Badge>
+        );
       case 'accepted':
-        return <Badge variant="default" className="bg-green-100 text-green-800">✅ Aceptada</Badge>;
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800">
+            ✅ Aceptada
+          </Badge>
+        );
       case 'expired':
-        return <Badge variant="outline" className="bg-gray-100 text-gray-800">⏰ Expirada</Badge>;
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-800">
+            ⏰ Expirada
+          </Badge>
+        );
       case 'cancelled':
-        return <Badge variant="destructive" className="bg-red-100 text-red-800">❌ Cancelada</Badge>;
+        return (
+          <Badge variant="destructive" className="bg-red-100 text-red-800">
+            ❌ Cancelada
+          </Badge>
+        );
     }
   };
 
@@ -86,7 +102,7 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
     startTransition(async () => {
       const formData = new FormData(e.currentTarget);
       const result = await createHouseholdInvitation(formData);
-      
+
       if (result.ok) {
         toast.success('Invitación creada exitosamente');
         setShowCreateDialog(false);
@@ -102,7 +118,7 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
     startTransition(async () => {
       const formData = new FormData(e.currentTarget);
       const result = await sendEmailInvitation(formData);
-      
+
       if (result.ok) {
         toast.success('Invitación enviada por email exitosamente');
         setShowEmailDialog(false);
@@ -117,9 +133,9 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
     startTransition(async () => {
       const formData = new FormData();
       formData.append('invitationId', invitationId);
-      
+
       const result = await cancelHouseholdInvitation(formData);
-      
+
       if (result.ok) {
         toast.success('Invitación cancelada');
       } else {
@@ -143,9 +159,7 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
         <CardContent>
           <div className="text-center py-8">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              Miembros actuales: {stats.totalMembers}
-            </p>
+            <p className="text-muted-foreground">Miembros actuales: {stats.totalMembers}</p>
           </div>
         </CardContent>
       </Card>
@@ -212,17 +226,12 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
             <form onSubmit={handleCreateInvitation} className="space-y-4">
               <div>
                 <Label htmlFor="email">Email (opcional)</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="usuario@ejemplo.com"
-                />
+                <Input id="email" name="email" type="email" placeholder="usuario@ejemplo.com" />
                 <p className="text-xs text-muted-foreground mt-1">
                   Si especificas un email, la invitación será exclusiva para esa persona.
                 </p>
               </div>
-              
+
               <div>
                 <Label htmlFor="personalMessage">Mensaje personal (opcional)</Label>
                 <Textarea
@@ -245,7 +254,7 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
                     defaultValue="7"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="maxUses">Usos máximos (opcional)</Label>
                   <Input
@@ -296,7 +305,7 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
                   placeholder="usuario@ejemplo.com"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="personalMessageEmail">Mensaje personal (opcional)</Label>
                 <Textarea
@@ -324,17 +333,13 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
       <Card>
         <CardHeader>
           <CardTitle>Invitaciones del Hogar</CardTitle>
-          <CardDescription>
-            Gestiona todas las invitaciones enviadas
-          </CardDescription>
+          <CardDescription>Gestiona todas las invitaciones enviadas</CardDescription>
         </CardHeader>
         <CardContent>
           {invitations.length === 0 ? (
             <div className="text-center py-8">
               <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                No hay invitaciones enviadas aún.
-              </p>
+              <p className="text-muted-foreground">No hay invitaciones enviadas aún.</p>
               <p className="text-sm text-muted-foreground">
                 Crea tu primera invitación usando los botones de arriba.
               </p>
@@ -342,29 +347,37 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
           ) : (
             <div className="space-y-3">
               {invitations.map((invitation) => (
-                <div 
-                  key={invitation.id} 
+                <div
+                  key={invitation.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">
-                        {invitation.email || 'Enlace general'}
-                      </p>
+                      <p className="font-medium">{invitation.email || 'Enlace general'}</p>
                       {getStatusBadge(invitation.status)}
                     </div>
-                    
+
                     <div className="text-sm text-muted-foreground">
-                      <p>Creada: {format(new Date(invitation.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
-                      <p>Expira: {format(new Date(invitation.expires_at), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
+                      <p>
+                        Creada:{' '}
+                        {format(new Date(invitation.created_at), 'dd/MM/yyyy HH:mm', {
+                          locale: es,
+                        })}
+                      </p>
+                      <p>
+                        Expira:{' '}
+                        {format(new Date(invitation.expires_at), 'dd/MM/yyyy HH:mm', {
+                          locale: es,
+                        })}
+                      </p>
                       {invitation.personal_message && (
                         <p className="italic">&ldquo;{invitation.personal_message}&rdquo;</p>
                       )}
                     </div>
-                    
+
                     <div className="text-xs text-muted-foreground">
-                      Usos: {invitation.current_uses}/{invitation.max_uses || '∞'} • 
-                      Por: {invitation.invited_by_email}
+                      Usos: {invitation.current_uses}/{invitation.max_uses || '∞'} • Por:{' '}
+                      {invitation.invited_by_email}
                       {invitation.accepted_by_email && (
                         <> • Aceptada por: {invitation.accepted_by_email}</>
                       )}
@@ -383,7 +396,7 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
                           <Copy className="h-3 w-3" />
                           Copiar
                         </Button>
-                        
+
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="sm" variant="destructive" className="gap-1">
@@ -395,13 +408,13 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Cancelar invitación?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                La invitación será marcada como cancelada y el enlace dejará de funcionar.
-                                Esta acción no se puede deshacer.
+                                La invitación será marcada como cancelada y el enlace dejará de
+                                funcionar. Esta acción no se puede deshacer.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>No, mantener</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogAction
                                 onClick={() => handleCancelInvitation(invitation.id)}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
@@ -412,14 +425,14 @@ export function InvitationsManagement({ invitations, stats, isOwner }: Invitatio
                         </AlertDialog>
                       </>
                     )}
-                    
+
                     {invitation.status === 'accepted' && (
                       <div className="flex items-center gap-1 text-green-600">
                         <CheckCircle className="h-4 w-4" />
                         <span className="text-xs">Aceptada</span>
                       </div>
                     )}
-                    
+
                     {(invitation.status === 'expired' || invitation.status === 'cancelled') && (
                       <div className="flex items-center gap-1 text-gray-500">
                         <XCircle className="h-4 w-4" />

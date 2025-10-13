@@ -1,13 +1,15 @@
 'use server';
 
-import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
-import { query } from '@/lib/supabaseServer';
-import { getCurrentUser, getUserHouseholdId } from '@/lib/supabaseServer';
-import { ok, fail } from '@/lib/result';
+import {
+  cancelInvitation,
+  createFlexibleInvitation,
+} from '@/app/app/household/invitations/actions';
 import type { Result } from '@/lib/result';
-import { createFlexibleInvitation, cancelInvitation } from '@/app/app/household/invitations/actions';
+import { fail, ok } from '@/lib/result';
+import { getCurrentUser, getUserHouseholdId, query } from '@/lib/supabaseServer';
 import crypto from 'crypto';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
 // Schemas de validación
 const CreateInvitationSchema = z.object({
@@ -51,8 +53,9 @@ export async function getHouseholdInvitations(): Promise<Result<SettingsInvitati
       return fail('No hay hogar activo');
     }
 
-    const result = await query(`
-      SELECT 
+    const result = await query(
+      `
+      SELECT
         i.id,
         i.email,
         i.token,
@@ -71,7 +74,9 @@ export async function getHouseholdInvitations(): Promise<Result<SettingsInvitati
       WHERE i.household_id = $1
         AND i.type = 'household'
       ORDER BY i.created_at DESC
-    `, [householdId]);
+    `,
+      [householdId],
+    );
 
     return ok(result.rows as SettingsInvitation[]);
   } catch (error) {
@@ -89,11 +94,14 @@ export async function isOwnerOfHousehold(): Promise<boolean> {
     const householdId = await getUserHouseholdId();
     if (!householdId) return false;
 
-    const result = await query(`
-      SELECT role 
-      FROM household_members 
+    const result = await query(
+      `
+      SELECT role
+      FROM household_members
       WHERE household_id = $1 AND profile_id = $2
-    `, [householdId, user.profile_id]);
+    `,
+      [householdId, user.profile_id],
+    );
 
     return result.rows.length > 0 && result.rows[0]?.role === 'owner';
   } catch {
@@ -102,7 +110,9 @@ export async function isOwnerOfHousehold(): Promise<boolean> {
 }
 
 // Crear invitación general (con o sin email)
-export async function createHouseholdInvitation(formData: FormData): Promise<Result<{ token: string; invitationUrl: string }>> {
+export async function createHouseholdInvitation(
+  formData: FormData,
+): Promise<Result<{ token: string; invitationUrl: string }>> {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -122,8 +132,12 @@ export async function createHouseholdInvitation(formData: FormData): Promise<Res
 
     const parsed = CreateInvitationSchema.safeParse({
       email: formData.get('email') ? String(formData.get('email')) : undefined,
-      personalMessage: formData.get('personalMessage') ? String(formData.get('personalMessage')) : undefined,
-      expiresInDays: formData.get('expiresInDays') ? parseInt(String(formData.get('expiresInDays'))) : 7,
+      personalMessage: formData.get('personalMessage')
+        ? String(formData.get('personalMessage'))
+        : undefined,
+      expiresInDays: formData.get('expiresInDays')
+        ? parseInt(String(formData.get('expiresInDays')))
+        : 7,
       maxUses: formData.get('maxUses') ? parseInt(String(formData.get('maxUses'))) : undefined,
     });
 
@@ -175,7 +189,9 @@ export async function sendEmailInvitation(formData: FormData): Promise<Result> {
 
     const parsed = SendEmailInvitationSchema.safeParse({
       email: String(formData.get('email')),
-      personalMessage: formData.get('personalMessage') ? String(formData.get('personalMessage')) : undefined,
+      personalMessage: formData.get('personalMessage')
+        ? String(formData.get('personalMessage'))
+        : undefined,
     });
 
     if (!parsed.success) {
@@ -185,17 +201,23 @@ export async function sendEmailInvitation(formData: FormData): Promise<Result> {
     const { email, personalMessage } = parsed.data;
 
     // Verificar si el usuario ya existe
-    const existingUser = await query(`
+    const existingUser = await query(
+      `
       SELECT id, email FROM profiles WHERE email = $1
-    `, [email]);
+    `,
+      [email],
+    );
 
     if (existingUser.rows.length === 0) {
       // Crear usuario nuevo
       const newUserId = crypto.randomUUID();
-      await query(`
+      await query(
+        `
         INSERT INTO profiles (id, email, created_at)
         VALUES ($1, $2, NOW())
-      `, [newUserId, email]);
+      `,
+        [newUserId, email],
+      );
     }
 
     // Crear invitación
@@ -256,11 +278,13 @@ export async function cancelHouseholdInvitation(formData: FormData): Promise<Res
 }
 
 // Obtener estadísticas del hogar
-export async function getHouseholdStats(): Promise<Result<{
-  totalMembers: number;
-  totalInvitations: number;
-  pendingInvitations: number;
-}>> {
+export async function getHouseholdStats(): Promise<
+  Result<{
+    totalMembers: number;
+    totalInvitations: number;
+    pendingInvitations: number;
+  }>
+> {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -273,20 +297,26 @@ export async function getHouseholdStats(): Promise<Result<{
     }
 
     // Contar miembros
-    const membersResult = await query(`
+    const membersResult = await query(
+      `
       SELECT COUNT(*) as total
-      FROM household_members 
+      FROM household_members
       WHERE household_id = $1
-    `, [householdId]);
+    `,
+      [householdId],
+    );
 
     // Contar invitaciones
-    const invitationsResult = await query(`
-      SELECT 
+    const invitationsResult = await query(
+      `
+      SELECT
         COUNT(*) as total,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending
-      FROM invitations 
+      FROM invitations
       WHERE household_id = $1 AND type = 'household'
-    `, [householdId]);
+    `,
+      [householdId],
+    );
 
     const stats = {
       totalMembers: parseInt(membersResult.rows[0]?.total || '0'),

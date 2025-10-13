@@ -4,8 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Home, User, Users } from 'lucide-react';
 import { GeneralTab } from './GeneralTab';
 import { HouseholdsManagement } from './HouseholdsManagement';
-import { PeriodsTab } from './PeriodsTab';
 import { InvitationsTab } from './InvitationsTab';
+import { PeriodsTab } from './PeriodsTab';
 
 interface SettingsTabsProps {
   user: {
