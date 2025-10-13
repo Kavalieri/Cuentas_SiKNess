@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -9,15 +9,15 @@ export async function GET(request: NextRequest) {
   const token_hash = requestUrl.searchParams.get('token_hash');
   const type = requestUrl.searchParams.get('type');
   const next = requestUrl.searchParams.get('next') || '/app';
-  
+
   // Manejar errores que vienen directamente de Supabase
   const error = requestUrl.searchParams.get('error');
   const error_code = requestUrl.searchParams.get('error_code');
   const error_description = requestUrl.searchParams.get('error_description');
-  
+
   if (error) {
     console.error('Auth callback error:', { error, error_code, error_description });
-    
+
     // Mensajes de error más amigables
     let friendlyMessage = error_description || error;
     if (error_code === 'otp_expired') {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     } else if (error === 'access_denied') {
       friendlyMessage = 'El enlace es inválido o ya fue usado. Solicita uno nuevo.';
     }
-    
+
     return NextResponse.redirect(
       new URL(`/login?error=${encodeURIComponent(friendlyMessage)}`, request.url),
     );
@@ -74,14 +74,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // ADMIN REDIRECTION: Redirigir admin directamente al dual-flow
+    if (session.user.email === 'caballeropomes@gmail.com') {
+      return NextResponse.redirect(new URL('/dual-flow', request.url));
+    }
+
     // NUEVO: Verificar si hay token de invitación guardado en cookie
     const cookieStore = await cookies();
     const invitationToken = cookieStore.get('invitation_token');
-    
+
     if (invitationToken?.value) {
       // Si hay token de invitación, redirigir a la página de invitación
       return NextResponse.redirect(
-        new URL(`/app/invite?token=${invitationToken.value}`, request.url)
+        new URL(`/app/invite?token=${invitationToken.value}`, request.url),
       );
     }
 
@@ -93,7 +98,7 @@ export async function GET(request: NextRequest) {
   if (token_hash && type) {
     console.log('Using token_hash flow (OTP)');
     const supabase = await supabaseServer();
-    
+
     const { error } = await supabase.auth.verifyOtp({
       token_hash,
       type: type as 'signup' | 'magiclink' | 'recovery' | 'email_change',
@@ -120,13 +125,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=no_session', request.url));
     }
 
+    // ADMIN REDIRECTION: Redirigir admin directamente al dual-flow (OTP flow)
+    if (session.user.email === 'caballeropomes@gmail.com') {
+      return NextResponse.redirect(new URL('/dual-flow', request.url));
+    }
+
     // NUEVO: Verificar si hay token de invitación guardado en cookie
     const cookieStore = await cookies();
     const invitationToken = cookieStore.get('invitation_token');
-    
+
     if (invitationToken?.value) {
       return NextResponse.redirect(
-        new URL(`/app/invite?token=${invitationToken.value}`, request.url)
+        new URL(`/app/invite?token=${invitationToken.value}`, request.url),
       );
     }
 

@@ -1,23 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { formatCurrency } from '@/lib/format';
 import {
-  CheckCircle,
-  Clock,
   AlertTriangle,
   ArrowRight,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  DollarSign,
   Eye,
   ThumbsUp,
-  X,
-  DollarSign,
   Wallet,
-  CreditCard
+  X,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/format';
+import { useState } from 'react';
 
 interface WorkflowTransaction {
   id: string;
@@ -41,73 +41,61 @@ interface WorkflowManagerProps {
 export function WorkflowManager({ transactions = [], showActions = true }: WorkflowManagerProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
 
-  const mockTransactions: WorkflowTransaction[] = transactions.length > 0 ? transactions : [
-    {
-      id: '1',
-      concepto: 'Supermercado Mercadona',
-      categoria: 'Alimentación',
-      importe: 67.85,
-      fecha: '2024-12-10',
-      tipo: 'gasto_directo',
-      estado: 'pending_review',
-      pagadoPor: 'Ana García',
-      requiereAprobacion: true,
-      tipoFlujo: 'personal_to_common'
-    },
-    {
-      id: '2',
-      concepto: 'Gasolina Repsol',
-      categoria: 'Transporte',
-      importe: 45.20,
-      fecha: '2024-12-09',
-      tipo: 'gasto_directo',
-      estado: 'approved',
-      pagadoPor: 'Carlos López',
-      requiereAprobacion: false,
-      tipoFlujo: 'personal_to_common'
-    },
-    {
-      id: '3',
-      concepto: 'Farmacia medicamentos',
-      categoria: 'Salud',
-      importe: 23.45,
-      fecha: '2024-12-08',
-      tipo: 'gasto_directo',
-      estado: 'auto_paired',
-      pagadoPor: 'Ana García',
-      requiereAprobacion: false,
-      pareja: '4',
-      tipoFlujo: 'personal_to_common'
-    },
-    {
-      id: '4',
-      concepto: 'Reembolso farmacia',
-      categoria: 'Salud',
-      importe: 23.45,
-      fecha: '2024-12-08',
-      tipo: 'ingreso_directo',
-      estado: 'auto_paired',
-      pagadoPor: 'Fondo Común',
-      requiereAprobacion: false,
-      pareja: '3',
-      tipoFlujo: 'common_to_personal'
-    }
-  ];
+  // Usar datos reales o array vacío si no hay datos
+  const workflowTransactions: WorkflowTransaction[] =
+    transactions.length > 0
+      ? transactions.map((t) => ({
+          id: t.id,
+          concepto: t.concepto,
+          categoria: t.categoria,
+          importe: t.importe,
+          fecha: t.fecha,
+          tipo: t.tipo,
+          estado: t.estado,
+          pagadoPor: 'Usuario', // TODO: obtener nombre real
+          requiereAprobacion: t.requiere_aprobacion || false,
+          tipoFlujo: t.tipo_flujo,
+        }))
+      : [];
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
       case 'pending_review':
-        return <Badge variant="destructive" className="text-xs">Pendiente Revisión</Badge>;
+        return (
+          <Badge variant="destructive" className="text-xs">
+            Pendiente Revisión
+          </Badge>
+        );
       case 'approved':
-        return <Badge variant="default" className="text-xs">Aprobado</Badge>;
+        return (
+          <Badge variant="default" className="text-xs">
+            Aprobado
+          </Badge>
+        );
       case 'auto_paired':
-        return <Badge variant="secondary" className="text-xs">Auto-Emparejado</Badge>;
+        return (
+          <Badge variant="secondary" className="text-xs">
+            Auto-Emparejado
+          </Badge>
+        );
       case 'rejected':
-        return <Badge variant="outline" className="text-xs">Rechazado</Badge>;
+        return (
+          <Badge variant="outline" className="text-xs">
+            Rechazado
+          </Badge>
+        );
       case 'completed':
-        return <Badge variant="default" className="text-xs">Completado</Badge>;
+        return (
+          <Badge variant="default" className="text-xs">
+            Completado
+          </Badge>
+        );
       default:
-        return <Badge variant="outline" className="text-xs">Desconocido</Badge>;
+        return (
+          <Badge variant="outline" className="text-xs">
+            Desconocido
+          </Badge>
+        );
     }
   };
 
@@ -142,13 +130,16 @@ export function WorkflowManager({ transactions = [], showActions = true }: Workf
     }
   };
 
-  const pendingCount = mockTransactions.filter(t => t.estado === 'pending_review').length;
-  const autopairedCount = mockTransactions.filter(t => t.estado === 'auto_paired').length;
-  const totalAmount = mockTransactions.reduce((sum, t) => {
+  const pendingCount = workflowTransactions.filter((t) => t.estado === 'pending_review').length;
+  const autopairedCount = workflowTransactions.filter((t) => t.estado === 'auto_paired').length;
+  const totalAmount = workflowTransactions.reduce((sum, t) => {
     return sum + (t.tipo.includes('gasto') ? t.importe : -t.importe);
   }, 0);
 
-  const workflowProgress = ((mockTransactions.length - pendingCount) / mockTransactions.length) * 100;
+  const workflowProgress =
+    workflowTransactions.length > 0
+      ? ((workflowTransactions.length - pendingCount) / workflowTransactions.length) * 100
+      : 0;
 
   return (
     <div className="space-y-4">
@@ -167,7 +158,7 @@ export function WorkflowManager({ transactions = [], showActions = true }: Workf
               <span className="text-sm font-medium">{Math.round(workflowProgress)}%</span>
             </div>
             <Progress value={workflowProgress} className="w-full" />
-            
+
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="space-y-1">
                 <div className="text-lg font-bold text-orange-600">{pendingCount}</div>
@@ -178,9 +169,7 @@ export function WorkflowManager({ transactions = [], showActions = true }: Workf
                 <div className="text-xs text-muted-foreground">Auto-Paired</div>
               </div>
               <div className="space-y-1">
-                <div className="text-lg font-bold">
-                  {formatCurrency(Math.abs(totalAmount))}
-                </div>
+                <div className="text-lg font-bold">{formatCurrency(Math.abs(totalAmount))}</div>
                 <div className="text-xs text-muted-foreground">Total Flujo</div>
               </div>
             </div>
@@ -190,9 +179,9 @@ export function WorkflowManager({ transactions = [], showActions = true }: Workf
 
       {/* Transactions List */}
       <div className="space-y-3">
-        {mockTransactions.map((transaction) => (
-          <Card 
-            key={transaction.id} 
+        {workflowTransactions.map((transaction) => (
+          <Card
+            key={transaction.id}
             className={`transition-all duration-200 ${
               selectedTransaction === transaction.id ? 'border-primary shadow-md' : ''
             }`}
@@ -205,15 +194,18 @@ export function WorkflowManager({ transactions = [], showActions = true }: Workf
                     <div className="font-medium">{transaction.concepto}</div>
                     {getEstadoBadge(transaction.estado)}
                   </div>
-                  
+
                   <div className="text-sm text-muted-foreground">
                     {transaction.categoria} • {transaction.pagadoPor} • {transaction.fecha}
                   </div>
-                  
+
                   <div className="text-xs text-muted-foreground">
-                    Flujo: {transaction.tipoFlujo === 'personal_to_common' ? 'Personal → Común' :
-                           transaction.tipoFlujo === 'common_to_personal' ? 'Común → Personal' :
-                           'Fondo Común'}
+                    Flujo:{' '}
+                    {transaction.tipoFlujo === 'personal_to_common'
+                      ? 'Personal → Común'
+                      : transaction.tipoFlujo === 'common_to_personal'
+                      ? 'Común → Personal'
+                      : 'Fondo Común'}
                     {transaction.pareja && ` • Emparejado con #${transaction.pareja}`}
                   </div>
 
@@ -226,13 +218,15 @@ export function WorkflowManager({ transactions = [], showActions = true }: Workf
                 </div>
 
                 <div className="text-right space-y-2">
-                  <div className={`font-semibold ${
-                    transaction.tipo.includes('gasto') ? 'text-red-600' : 'text-green-600'
-                  }`}>
+                  <div
+                    className={`font-semibold ${
+                      transaction.tipo.includes('gasto') ? 'text-red-600' : 'text-green-600'
+                    }`}
+                  >
                     {transaction.tipo.includes('gasto') ? '-' : '+'}
                     {formatCurrency(transaction.importe)}
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     {getEstadoIcon(transaction.estado)}
                     {showActions && transaction.estado === 'pending_review' && (
@@ -245,13 +239,15 @@ export function WorkflowManager({ transactions = [], showActions = true }: Workf
                         </Button>
                       </div>
                     )}
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
+                    <Button
+                      size="sm"
+                      variant="ghost"
                       className="h-7 px-2"
-                      onClick={() => setSelectedTransaction(
-                        selectedTransaction === transaction.id ? null : transaction.id
-                      )}
+                      onClick={() =>
+                        setSelectedTransaction(
+                          selectedTransaction === transaction.id ? null : transaction.id,
+                        )
+                      }
                     >
                       <Eye className="h-3 w-3" />
                     </Button>
@@ -269,9 +265,7 @@ export function WorkflowManager({ transactions = [], showActions = true }: Workf
                     <div>• ID Transacción: {transaction.id}</div>
                     <div>• Tipo de Flujo: {transaction.tipoFlujo}</div>
                     <div>• Requiere Aprobación: {transaction.requiereAprobacion ? 'Sí' : 'No'}</div>
-                    {transaction.pareja && (
-                      <div>• Transacción Pareja: #{transaction.pareja}</div>
-                    )}
+                    {transaction.pareja && <div>• Transacción Pareja: #{transaction.pareja}</div>}
                     <div>• Estado: {transaction.estado}</div>
                   </div>
                 </div>

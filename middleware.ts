@@ -1,8 +1,8 @@
-import { NextResponse, type NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { NextResponse, type NextRequest } from 'next/server';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'change-this-secret-in-production'
+  process.env.JWT_SECRET || 'change-this-secret-in-production',
 );
 const SESSION_COOKIE_NAME = 'session';
 
@@ -33,7 +33,15 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      await jwtVerify(sessionToken, JWT_SECRET);
+      const payload = await jwtVerify(sessionToken, JWT_SECRET);
+
+      // ADMIN REDIRECTION: Si el admin visita /app, redirigir a /dual-flow
+      if (
+        payload.payload.email === 'caballeropomes@gmail.com' &&
+        request.nextUrl.pathname.startsWith('/app')
+      ) {
+        return NextResponse.redirect(new URL('/dual-flow', request.url));
+      }
     } catch {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('error', 'session_expired');
@@ -48,7 +56,13 @@ export async function middleware(request: NextRequest) {
     const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     if (sessionToken) {
       try {
-        await jwtVerify(sessionToken, JWT_SECRET);
+        const payload = await jwtVerify(sessionToken, JWT_SECRET);
+
+        // ADMIN REDIRECTION: Si el admin accede a login y ya está autenticado, ir a dual-flow
+        if (payload.payload.email === 'caballeropomes@gmail.com') {
+          return NextResponse.redirect(new URL('/dual-flow', request.url));
+        }
+
         return NextResponse.redirect(new URL('/app', request.url));
       } catch {
         response.cookies.delete(SESSION_COOKIE_NAME);

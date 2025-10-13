@@ -48,18 +48,29 @@ export default async function OpcionesPage() {
   );
 }
 
-async function OpcionesContent({ householdId: _householdId }: { householdId: string }) {
-  // Configuraciones mock para la UI
-  const mockConfig = {
-    emparejamientoAutomatico: true,
-    umbralEmparejamiento: 5.0, // Diferencia máxima para auto-pairing
-    tiempoRevision: 7, // days
-    notificacionesActivas: true,
-    liquidacionAutomatica: true,
-    diasLiquidacion: 30,
-    limiteGastoPersonal: 200.0,
-    requiereAprobacion: false,
-  };
+async function OpcionesContent({ householdId }: { householdId: string }) {
+  // Importar función para obtener configuración real
+  const { getDualFlowConfigAction } = await import('@/app/dual-flow/actions');
+
+  // Obtener configuración real de la base de datos
+  const configResult = await getDualFlowConfigAction();
+
+  const config = configResult.ok
+    ? configResult.data
+    : {
+        emparejamiento_automatico: true,
+        umbral_emparejamiento_default: 5.0,
+        tiempo_revision_default: 7,
+        limite_gasto_personal: 200.0,
+        requiere_aprobacion_default: false,
+        liquidacion_automatica: true,
+        dias_liquidacion: 30,
+        notificaciones_activas: true,
+        notificar_nuevos_gastos: true,
+        notificar_emparejamientos: true,
+        notificar_limites: true,
+        notificar_liquidaciones: true,
+      };
 
   return (
     <div className="space-y-6">
@@ -94,16 +105,16 @@ async function OpcionesContent({ householdId: _householdId }: { householdId: str
                 Emparejar automáticamente gastos out-of-pocket con reembolsos
               </div>
             </div>
-            <Switch checked={mockConfig.emparejamientoAutomatico} />
+            <Switch checked={config.emparejamiento_automatico} />
           </div>
 
           <div className="space-y-3">
             <Label className="text-sm font-medium">
-              Umbral de Emparejamiento: €{mockConfig.umbralEmparejamiento.toFixed(2)}
+              Umbral de Emparejamiento: €{config.umbral_emparejamiento_default.toFixed(2)}
             </Label>
             <div className="px-3">
               <Slider
-                value={[mockConfig.umbralEmparejamiento]}
+                value={[config.umbral_emparejamiento_default]}
                 max={50}
                 min={0}
                 step={0.5}
@@ -117,11 +128,11 @@ async function OpcionesContent({ householdId: _householdId }: { householdId: str
 
           <div className="space-y-3">
             <Label className="text-sm font-medium">
-              Tiempo de Revisión: {mockConfig.tiempoRevision} días
+              Tiempo de Revisión: {config.tiempo_revision_default} días
             </Label>
             <div className="px-3">
               <Slider
-                value={[mockConfig.tiempoRevision]}
+                value={[config.tiempo_revision_default]}
                 max={30}
                 min={1}
                 step={1}
@@ -153,7 +164,7 @@ async function OpcionesContent({ householdId: _householdId }: { householdId: str
                 id="limite-personal"
                 type="number"
                 step="0.01"
-                defaultValue={mockConfig.limiteGastoPersonal}
+                defaultValue={config.limite_gasto_personal}
                 className="w-full"
               />
               <div className="text-xs text-muted-foreground">
@@ -168,7 +179,7 @@ async function OpcionesContent({ householdId: _householdId }: { householdId: str
               <Input
                 id="dias-liquidacion"
                 type="number"
-                defaultValue={mockConfig.diasLiquidacion}
+                defaultValue={config.dias_liquidacion}
                 className="w-full"
               />
               <div className="text-xs text-muted-foreground">
@@ -184,7 +195,7 @@ async function OpcionesContent({ householdId: _householdId }: { householdId: str
                 Todos los gastos requieren aprobación manual
               </div>
             </div>
-            <Switch checked={mockConfig.requiereAprobacion} />
+            <Switch checked={config.requiere_aprobacion_default} />
           </div>
         </CardContent>
       </Card>
@@ -205,7 +216,7 @@ async function OpcionesContent({ householdId: _householdId }: { householdId: str
                 Alertas de nuevas transacciones y emparejamientos
               </div>
             </div>
-            <Switch checked={mockConfig.notificacionesActivas} />
+            <Switch checked={config.notificaciones_activas} />
           </div>
 
           <div className="grid grid-cols-1 gap-3">
@@ -245,13 +256,13 @@ async function OpcionesContent({ householdId: _householdId }: { householdId: str
                 Liquidar balances pendientes automáticamente cada mes
               </div>
             </div>
-            <Switch checked={mockConfig.liquidacionAutomatica} />
+            <Switch checked={config.liquidacion_automatica} />
           </div>
 
           <div className="p-3 rounded-lg bg-muted/50">
             <div className="text-sm font-medium mb-2">Próxima Liquidación</div>
             <div className="text-xs text-muted-foreground">
-              31 de Diciembre, 2024 • Balances pendientes: €{mockConfig.limiteGastoPersonal - 45.6}
+              31 de Diciembre, 2024 • Balances pendientes: €{config.limite_gasto_personal - 45.6}
             </div>
           </div>
         </CardContent>

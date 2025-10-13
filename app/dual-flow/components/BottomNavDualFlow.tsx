@@ -46,10 +46,10 @@ export function BottomNavDualFlow() {
       description: 'Configuración',
     },
     {
-      href: '/app/profile', // Reutilizar existente
+      href: '/dual-flow/perfil',
       icon: <User className="h-5 w-5" />,
       label: 'Perfil',
-      description: 'Perfil personal',
+      description: 'Perfil dual-flow',
     },
   ];
 
@@ -59,7 +59,7 @@ export function BottomNavDualFlow() {
         {navItems.map((item, index) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== '/app/profile' && pathname.startsWith(item.href));
+            (item.href !== '/dual-flow/perfil' && pathname.startsWith(item.href));
 
           return (
             <Link

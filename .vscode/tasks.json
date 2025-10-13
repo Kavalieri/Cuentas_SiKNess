@@ -1,11 +1,13 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // ========================================
+    // 🎮 PM2 - GESTIÓN DE PROCESOS (LIMPIA)
+    // ========================================
     {
       "label": "🟢 DEV: Iniciar (con archivado de logs)",
       "type": "shell",
-      "command": "./scripts/pm2-start.sh",
-      "args": ["dev"],
+      "command": "./scripts/pm2-dev-start.sh",
       "group": {
         "kind": "build",
         "isDefault": false
@@ -22,8 +24,7 @@
     {
       "label": "🔴 DEV: Detener",
       "type": "shell",
-      "command": "./scripts/pm2-stop.sh",
-      "args": ["dev"],
+      "command": "./scripts/pm2-dev-stop.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -38,7 +39,7 @@
       "label": "🔄 DEV: Reiniciar (Stop + Start con logs limpios)",
       "type": "shell",
       "command": "bash",
-      "args": ["-c", "./scripts/pm2-stop.sh dev && sleep 1 && ./scripts/pm2-start.sh dev"],
+      "args": ["-c", "./scripts/pm2-dev-stop.sh && sleep 1 && ./scripts/pm2-dev-start.sh"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -55,8 +56,7 @@
     {
       "label": "🟢 PROD: Iniciar (con archivado de logs)",
       "type": "shell",
-      "command": "./scripts/pm2-start.sh",
-      "args": ["prod"],
+      "command": "./scripts/pm2-prod-start.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -70,23 +70,7 @@
     {
       "label": "🔴 PROD: Detener",
       "type": "shell",
-      "command": "./scripts/pm2-stop.sh",
-      "args": ["prod"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "🏗️ PROD: Build + Deploy + Reiniciar",
-      "type": "shell",
-      "command": "bash",
-      "args": ["-c", "echo '🏗️ Building for production...' && npm run build && echo '🔄 Restarting production...' && ./scripts/pm2-stop.sh prod && sleep 2 && ./scripts/pm2-start.sh prod && echo '✅ Production deployed!'"],
+      "command": "./scripts/pm2-prod-stop.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -101,7 +85,7 @@
       "label": "🔄 PROD: Reiniciar (Stop + Start con logs limpios)",
       "type": "shell",
       "command": "bash",
-      "args": ["-c", "./scripts/pm2-stop.sh prod && sleep 2 && ./scripts/pm2-start.sh prod"],
+      "args": ["-c", "./scripts/pm2-prod-stop.sh && sleep 2 && ./scripts/pm2-prod-start.sh"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -112,6 +96,108 @@
       },
       "problemMatcher": []
     },
+    {
+      "label": "🏗️ PROD: Build + Deploy + Reiniciar",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🏗️ Building for production...' && npm run build && echo '🔄 Restarting production...' && ./scripts/pm2-prod-stop.sh && sleep 2 && ./scripts/pm2-prod-start.sh && echo '✅ Production deployed!'"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    // ========================================
+    // 📊 PM2 - MONITOREO Y LOGS
+    // ========================================
+    {
+      "label": "📊 Estado PM2 General",
+      "type": "shell",
+      "command": "./scripts/pm2-status.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📋 DEV: Ver Logs (últimas 50 líneas)",
+      "type": "shell",
+      "command": "pm2",
+      "args": ["logs", "cuentassik-dev", "--lines", "50", "--nostream"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "� DEV: Consola en Tiempo Real",
+      "type": "shell",
+      "command": "pm2",
+      "args": ["logs", "cuentassik-dev", "--timestamp"],
+      "isBackground": true,
+      "group": "build",
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📋 PROD: Ver Logs (últimas 50 líneas)",
+      "type": "shell",
+      "command": "pm2",
+      "args": ["logs", "cuentassik-prod", "--lines", "50", "--nostream"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "� PROD: Consola en Tiempo Real",
+      "type": "shell",
+      "command": "pm2",
+      "args": ["logs", "cuentassik-prod", "--timestamp"],
+      "isBackground": true,
+      "group": "build",
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    // ========================================
+    // 🧹 PM2 - MANTENIMIENTO DE LOGS
+    // ========================================
     {
       "label": "🧹 Limpiar Logs PM2 (7 días)",
       "type": "shell",
@@ -142,21 +228,9 @@
       },
       "problemMatcher": []
     },
-    {
-      "label": "📊 Estado PM2 (Todos los procesos)",
-      "type": "shell",
-      "command": "bash",
-      "args": ["-c", "echo '👤 Procesos usuario kava:' && pm2 status 2>/dev/null || echo 'Sin procesos' && echo '' && echo '👤 Procesos usuario www-data:' && sudo -u www-data pm2 status 2>/dev/null || echo 'Sin procesos'"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
+    // ========================================
+    // 🏗️ BUILD Y HERRAMIENTAS
+    // ========================================
     {
       "label": "🏗️ Build Solo (sin deploy)",
       "type": "shell",
@@ -176,85 +250,13 @@
       "problemMatcher": []
     },
     {
-      "label": "📋 DEV: Ver Logs (últimas 20 líneas)",
-      "type": "shell",
-      "command": "pm2",
-      "args": ["logs", "cuentassik-dev", "--lines", "20", "--nostream"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "📋 DEV: Ver Logs (tiempo real)",
-      "type": "shell",
-      "command": "pm2",
-      "args": ["logs", "cuentassik-dev"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "📋 PROD: Ver Logs (últimas 20 líneas)",
-      "type": "shell",
-      "command": "sudo",
-      "args": ["-u", "www-data", "pm2", "logs", "cuentassik-prod", "--lines", "20", "--nostream"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "📋 PROD: Ver Logs (tiempo real)",
-      "type": "shell",
-      "command": "sudo",
-      "args": ["-u", "www-data", "pm2", "logs", "cuentassik-prod"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "� Ver Logs Archivados",
+      "label": "🚀 Abrir Testing Dual-Flow",
       "type": "shell",
       "command": "bash",
-      "args": ["-c", "echo '📁 Logs archivados:' && ls -lah logs/archive/ 2>/dev/null || echo 'No hay logs archivados aún' && echo '' && echo '💾 Espacio usado por logs:' && du -sh logs/ 2>/dev/null || echo 'Directorio logs no existe'"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "� Abrir Testing Dual-Flow",
-      "type": "shell",
-      "command": "bash",
-      "args": ["-c", "echo '🚀 Testing Dual-Flow disponible en:' && echo '   http://localhost:3001/dual-flow/testing' && echo '' && echo '📊 Estado actual:' && pm2 list | grep cuentassik-dev || echo 'Proceso dev no está ejecutándose'"],
+      "args": [
+        "-c",
+        "echo '🚀 Testing Dual-Flow disponible en:' && echo '   http://localhost:3001/dual-flow/testing' && echo '' && echo '📊 Estado actual:' && pm2 list | grep cuentassik-dev || echo 'Proceso dev no está ejecutándose'"
+      ],
       "group": "test",
       "presentation": {
         "echo": true,
@@ -265,20 +267,32 @@
       },
       "problemMatcher": []
     },
+
     {
-      "label": "� Verificar Sistema Completo",
+      "label": "📥 Sincronizar PROD → DEV",
       "type": "shell",
-      "command": "bash",
-      "args": ["-c", "echo '🔍 VERIFICACIÓN SISTEMA COMPLETO' && echo '=================================' && echo '' && echo '👤 Procesos PM2:' && (pm2 list 2>/dev/null | grep -E '(online|stopped)' || echo 'Sin procesos kava') && (sudo -u www-data pm2 list 2>/dev/null | grep -E '(online|stopped)' || echo 'Sin procesos www-data') && echo '' && echo '📁 Logs archivados:' && (ls -1 logs/archive/ 2>/dev/null | wc -l && echo ' archivos') || echo '0 archivos' && echo '' && echo '🌐 URLs disponibles:' && echo '  DEV:  http://localhost:3001' && echo '  PROD: http://localhost:3000' && echo '  TEST: http://localhost:3001/dual-flow/testing'"],
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
+      "command": "${workspaceFolder}/scripts/sync_prod_to_dev.sh"
+    },
+    {
+      "label": "➕ Crear Nueva Migración",
+      "type": "shell",
+      "command": "mkdir -p ${workspaceFolder}/database/migrations/development && cd ${workspaceFolder}/database/migrations/development && FILENAME=$(date +%Y%m%d_%H%M%S)_nueva_migracion.sql && echo '-- Migración: ' $FILENAME > $FILENAME && echo '-- Descripción: [DESCRIBE QUÉ HACE ESTA MIGRACIÓN]' >> $FILENAME && echo '' >> $FILENAME && echo '-- Tu SQL aquí:' >> $FILENAME && echo '' >> $FILENAME && echo '✅ Migración creada:' $FILENAME"
+    },
+    {
+      "label": "🔄 Aplicar Migraciones a DEV",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/apply_migrations_dev.sh",
+      "group": "build"
+    },
+    {
+      "label": "⬆️ Promover Migración (dev → tested)",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/promote_migration.sh"
+    },
+    {
+      "label": "📊 Ver Estado Migraciones",
+      "type": "shell",
+      "command": "echo '📊 DEVELOPMENT:' && ls -1 ${workspaceFolder}/database/migrations/development/*.sql 2>/dev/null | wc -l && echo '✅ TESTED:' && ls -1 ${workspaceFolder}/database/migrations/tested/*.sql 2>/dev/null | wc -l && echo '📦 APPLIED:' && ls -1 ${workspaceFolder}/database/migrations/applied/*.sql 2>/dev/null | wc -l && echo '🗄️ ARCHIVE:' && ls -1 ${workspaceFolder}/database/migrations/applied/archive/*.sql 2>/dev/null | wc -l"
     }
   ]
 }
