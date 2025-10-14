@@ -12,6 +12,7 @@
 **Este proyecto usa PostgreSQL DIRECTO, NO Supabase Cloud**
 
 #### **1. `postgres` (Superusuario PostgreSQL)**
+
 - **Rol**: Administración del servidor PostgreSQL
 - **Permisos**: TODOS (CREATE DATABASE, DROP DATABASE, ALTER, etc.)
 - **Uso**:
@@ -20,6 +21,7 @@
   - Configuración global
   - Administración de usuarios
 - **Cómo usarlo**:
+
   ```bash
   # Sin contraseña (autenticación peer de Linux)
   sudo -u postgres psql
@@ -30,17 +32,18 @@
   ```
 
 #### **2. `cuentassik_user` ⭐ (Usuario de Aplicación - PRINCIPAL)**
-- **Rol**: Usuario de la aplicación Next.js
+
+- **Rol**: `LOGIN` con mínimos privilegios (NO superuser, NO createdb, NO createrole, NO DDL)
 - **Permisos**:
-  - Owner de bases de datos `cuentassik_dev` y `cuentassik_prod`
-  - `SELECT, INSERT, UPDATE, DELETE` en TODAS las tablas
-  - **NO puede**: CREATE/DROP DATABASE, ALTER SYSTEM, crear usuarios
+  - `SELECT, INSERT, UPDATE, DELETE` en tablas
+  - `USAGE, SELECT` en secuencias
 - **Uso**:
   - Aplicación Next.js (DATABASE_URL en .env)
   - Queries desde código TypeScript
   - Consultas manuales para debugging
-  - **NO para aplicar migraciones** (usar `postgres` superuser)
+  - **NO para aplicar migraciones** (usar `postgres` + roles owner)
 - **Configuración**:
+
   ```bash
   # .env.development.local
   DATABASE_URL="postgresql://cuentassik_user:PASSWORD@localhost:5432/cuentassik_dev"
@@ -48,7 +51,9 @@
   # .env.production.local
   DATABASE_URL="postgresql://cuentassik_user:PASSWORD@localhost:5432/cuentassik_prod"
   ```
+
 - **Cómo usarlo**:
+
   ```bash
   # Consulta manual (requiere password si no está en .pgpass)
   psql -U cuentassik_user -d cuentassik_dev
@@ -57,7 +62,14 @@
   sudo -u postgres psql -U cuentassik_user -d cuentassik_dev
   ```
 
-#### **3. `www-data` (Usuario del Sistema Linux - NO PostgreSQL)**
+#### **3. Roles Owner por entorno (NOLOGIN)**
+
+- **`cuentassik_dev_owner`** (DEV) y **`cuentassik_prod_owner`** (PROD)
+  - Propietarios de todos los objetos en cada BD
+  - Usados para DDL/migraciones (con `SET ROLE`)
+
+#### **4. `www-data` (Usuario del Sistema Linux - NO PostgreSQL)**
+
 - **Rol**: Usuario que ejecuta el proceso PM2 de Node.js
 - **Permisos**: Permisos de sistema (archivos, procesos)
 - **NO es usuario de PostgreSQL**: Es del sistema operativo
@@ -65,18 +77,19 @@
 
 ### **Tabla de Operaciones por Usuario**
 
-| Operación | `postgres` | `cuentassik_user` | Código App |
-|-----------|------------|-------------------|------------|
-| Consultar datos (SELECT) | ✅ | ✅ | ✅ (via query()) |
-| Insertar/Actualizar/Borrar datos | ✅ | ✅ | ✅ (via query()) |
-| Crear/Modificar tablas (DDL) | ✅ | ❌ | ❌ |
-| Aplicar migraciones | ✅ | ❌ | ❌ |
-| CREATE/DROP DATABASE | ✅ | ❌ | ❌ |
-| Ver estructura (\d, \dt) | ✅ | ✅ | N/A |
+| Operación                        | `postgres` | `cuentassik_user` | `cuentassik_[env]_owner` |
+| -------------------------------- | ---------- | ----------------- | ------------------------ |
+| Consultar datos (SELECT)         | ✅         | ✅                | ✅                       |
+| Insertar/Actualizar/Borrar datos | ✅         | ✅                | ✅                       |
+| Crear/Modificar tablas (DDL)     | ✅         | ❌                | ✅ (via SET ROLE)        |
+| Aplicar migraciones              | ✅         | ❌                | ✅ (via SET ROLE)        |
+| CREATE/DROP DATABASE             | ✅         | ❌                | ❌                       |
+| Ver estructura (\d, \dt)         | ✅         | ✅                | ✅                       |
 
 ### **⚠️ REGLAS CRÍTICAS**
 
-1. **Migraciones**: SIEMPRE con `sudo -u postgres` (superusuario)
+1. **Migraciones**: SIEMPRE con `sudo -u postgres` (superusuario) y `SET ROLE cuentassik_[env]_owner;` para DDL
+
    ```bash
    # ✅ CORRECTO
    sudo -u postgres psql -d cuentassik_prod -f migration.sql
@@ -86,12 +99,14 @@
    ```
 
 2. **Queries desde código**: SIEMPRE con `cuentassik_user` (via DATABASE_URL)
+
    ```typescript
    // ✅ Esto usa cuentassik_user automáticamente (DATABASE_URL)
    const result = await query('SELECT * FROM transactions WHERE id = $1', [id]);
    ```
 
 3. **Debugging manual**: Usar `cuentassik_user` o `postgres` según necesites
+
    ```bash
    # Para ver datos (cuentassik_user es suficiente)
    psql -U cuentassik_user -d cuentassik_dev -c "SELECT * FROM contributions LIMIT 5;"
@@ -101,9 +116,10 @@
    ```
 
 4. **NUNCA usar psql desde código TypeScript**: Usar `query()` function
+
    ```typescript
    // ❌ PROHIBIDO
-   mcp_shell_execute_command('psql -U postgres -d cuentassik_dev -c "SELECT * FROM table"')
+   mcp_shell_execute_command('psql -U postgres -d cuentassik_dev -c "SELECT * FROM table"');
 
    // ✅ CORRECTO
    const result = await query('SELECT * FROM table WHERE id = $1', [id]);
@@ -122,17 +138,19 @@ El archivo `@/lib/supabaseServer.ts` es un **nombre legacy** de cuando migramos.
 Internamente usa `node-postgres` (pg) para conectarse a PostgreSQL local.
 
 ### Abstracción Personalizada (PostgreSQL via node-postgres)
+
 ```typescript
 // ✅ Usar desde @/lib/supabaseServer (nombre legacy, es PostgreSQL local)
 import {
-  query,           // Wrapper de pg.query() para SQL nativo con parámetros
-  supabaseServer,  // Abstracción legacy (NO es Supabase cloud)
-  getCurrentUser,  // Helper auth local
-  getUserHouseholdId  // Helper household local
+  query, // Wrapper de pg.query() para SQL nativo con parámetros
+  supabaseServer, // Abstracción legacy (NO es Supabase cloud)
+  getCurrentUser, // Helper auth local
+  getUserHouseholdId, // Helper household local
 } from '@/lib/supabaseServer';
 ```
 
 ### SQL Nativo con node-postgres (PREFERIDO)
+
 ```typescript
 // ✅ CORRECTO: query() es un wrapper de pg.query() con SQL parametrizado
 const result = await query(
@@ -148,7 +166,7 @@ const result = await query(
     AND c.month = $3
   ORDER BY c.created_at DESC
   `,
-  [householdId, year, month]
+  [householdId, year, month],
 );
 
 // Verificar resultado
@@ -161,6 +179,7 @@ return result.rows;
 ```
 
 ### Operaciones Simples con Abstracción (SIN JOINS)
+
 ```typescript
 // ✅ Para operaciones sin JOINs (abstracción legacy compatible)
 const { data, error } = await supabaseServer()
@@ -178,6 +197,7 @@ return data;
 ```
 
 ### ❌ NO USAR: Sintaxis Supabase Cloud (Foreign Key Syntax)
+
 ```typescript
 // ❌ INCORRECTO: Esta sintaxis es de Supabase CLOUD, no funciona con PostgreSQL local
 const { data } = await supabase
@@ -200,6 +220,7 @@ const result = await query(
 ## 🔧 **RPCs (Remote Procedure Calls)**
 
 ### RPC Optimizado para Miembros
+
 ```sql
 -- /database/migrations/tested/20241010_007_create_rpc_get_household_members.sql
 CREATE OR REPLACE FUNCTION get_household_members_optimized(p_household_id UUID)
@@ -232,12 +253,12 @@ $$;
 ```
 
 ### Uso del RPC en TypeScript
+
 ```typescript
 // ✅ Llamar RPC con query()
-const membersQuery = await query(
-  `SELECT * FROM get_household_members_optimized($1)`,
-  [householdId]
-);
+const membersQuery = await query(`SELECT * FROM get_household_members_optimized($1)`, [
+  householdId,
+]);
 
 const members = membersQuery.rows || [];
 
@@ -255,6 +276,7 @@ const members = membersQuery.rows || [];
 ```
 
 ### Ventajas de RPCs
+
 - ✅ Performance optimizado (queries compiladas)
 - ✅ Lógica compleja encapsulada
 - ✅ Reutilizable desde múltiples lugares
@@ -266,6 +288,7 @@ const members = membersQuery.rows || [];
 ## 📋 **Schema Principal**
 
 ### Tabla: profiles
+
 ```sql
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id),
@@ -288,6 +311,7 @@ CREATE POLICY "Users can view their own profile"
 ```
 
 ### Tabla: households
+
 ```sql
 CREATE TABLE households (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -306,6 +330,7 @@ CREATE INDEX idx_households_created_at ON households(created_at);
 ```
 
 ### Tabla: household_members (N-N)
+
 ```sql
 CREATE TABLE household_members (
   household_id UUID REFERENCES households(id) ON DELETE CASCADE,
@@ -331,10 +356,12 @@ CREATE INDEX idx_hm_is_owner ON household_members(is_owner);
 ```
 
 **Nota Importante**:
+
 - `is_owner` es un BOOLEAN → Usado para lógica (CORRECTO)
 - `role` es TEXT → Solo para display (REDUNDANTE, future cleanup)
 
 ### Tabla: contributions
+
 ```sql
 CREATE TABLE contributions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -369,6 +396,7 @@ CREATE INDEX idx_contributions_status ON contributions(status);
 ```
 
 ### Tabla: expenses
+
 ```sql
 CREATE TABLE expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -398,6 +426,7 @@ CREATE INDEX idx_expenses_paid_by ON expenses(paid_by);
 ## 🔍 **Queries Comunes**
 
 ### 1. Obtener Household del Usuario
+
 ```typescript
 async function getUserHousehold(userId: string) {
   const result = await query(
@@ -408,7 +437,7 @@ async function getUserHousehold(userId: string) {
     WHERE hm.profile_id = $1
     LIMIT 1
     `,
-    [userId]
+    [userId],
   );
 
   return result.rows?.[0] || null;
@@ -416,6 +445,7 @@ async function getUserHousehold(userId: string) {
 ```
 
 ### 2. Verificar Ownership
+
 ```typescript
 async function isHouseholdOwner(userId: string, householdId: string): Promise<boolean> {
   const result = await query(
@@ -424,7 +454,7 @@ async function isHouseholdOwner(userId: string, householdId: string): Promise<bo
     FROM household_members
     WHERE household_id = $1 AND profile_id = $2
     `,
-    [householdId, userId]
+    [householdId, userId],
   );
 
   return result.rows?.[0]?.is_owner || false;
@@ -432,6 +462,7 @@ async function isHouseholdOwner(userId: string, householdId: string): Promise<bo
 ```
 
 ### 3. Gastos por Categoría
+
 ```typescript
 async function getCategoryExpenses(householdId: string, year: number, month: number) {
   const result = await query(
@@ -449,7 +480,7 @@ async function getCategoryExpenses(householdId: string, year: number, month: num
     GROUP BY c.id, c.name, c.color
     ORDER BY total DESC
     `,
-    [householdId, year, month]
+    [householdId, year, month],
   );
 
   return result.rows || [];
@@ -457,6 +488,7 @@ async function getCategoryExpenses(householdId: string, year: number, month: num
 ```
 
 ### 4. Balance Personal
+
 ```typescript
 async function getPersonalBalance(householdId: string, profileId: string) {
   const result = await query(
@@ -467,7 +499,7 @@ async function getPersonalBalance(householdId: string, profileId: string) {
     FROM expenses
     WHERE household_id = $1
     `,
-    [householdId, profileId]
+    [householdId, profileId],
   );
 
   return result.rows?.[0] || { total_paid: 0, total_owed: 0 };
@@ -479,6 +511,7 @@ async function getPersonalBalance(householdId: string, profileId: string) {
 ## 📝 **Migraciones**
 
 ### Directorio
+
 ```
 /database/migrations/tested/
 ├── 20241010_001_initial_schema.sql
@@ -491,6 +524,7 @@ async function getPersonalBalance(householdId: string, profileId: string) {
 ```
 
 ### Formato de Archivo
+
 ```sql
 -- Migration: 20241010_007_create_rpc_get_household_members
 -- Description: Optimized RPC for fetching household members with income
@@ -523,6 +557,7 @@ COMMIT;
 ```
 
 ### Convenciones
+
 1. ✅ Usar transacciones (BEGIN/COMMIT)
 2. ✅ Documentar performance esperado
 3. ✅ Incluir DROP IF EXISTS
@@ -535,6 +570,7 @@ COMMIT;
 ## ⚡ **Performance**
 
 ### Índices Críticos
+
 ```sql
 -- ✅ Siempre indexar foreign keys
 CREATE INDEX idx_expenses_household ON expenses(household_id);
@@ -548,25 +584,24 @@ CREATE INDEX idx_contributions_period
 ```
 
 ### Explain Analyze
+
 ```typescript
 // ✅ Para debuggear performance
 const result = await query(
   `EXPLAIN ANALYZE
    SELECT ...
    FROM ...
-   WHERE ...`
+   WHERE ...`,
 );
 
 console.log('Query plan:', result.rows);
 ```
 
 ### Benchmarking
+
 ```typescript
 console.time('[Query] get_household_members_optimized');
-const members = await query(
-  `SELECT * FROM get_household_members_optimized($1)`,
-  [householdId]
-);
+const members = await query(`SELECT * FROM get_household_members_optimized($1)`, [householdId]);
 console.timeEnd('[Query] get_household_members_optimized');
 // Output: [Query] get_household_members_optimized: 3.4ms
 ```
@@ -576,6 +611,7 @@ console.timeEnd('[Query] get_household_members_optimized');
 ## 🔐 **Row Level Security (RLS)**
 
 ### Políticas Comunes
+
 ```sql
 -- Users can only see their households
 CREATE POLICY "Users can view their household data"
@@ -612,11 +648,10 @@ database/
 ├── migrations/
 │   ├── development/      # 📝 Trabajo activo (migraciones en desarrollo)
 │   ├── tested/          # ✅ Probadas en DEV (listas para PROD)
-│   ├── applied/         # 📦 Aplicadas en PROD (archivo histórico)
+│   ├── applied/         # 📦 Aplicadas en PROD (incluye seed baseline)
 │   │   └── archive/     # 🗄️ Migraciones antiguas (>3 meses)
 │   └── *.sql           # ❌ NUNCA dejar archivos sueltos aquí
-├── schemas/             # Definiciones de esquema base
-├── seeds/              # Datos de prueba
+├── schemas/             # Definiciones auxiliares (si aplica)
 └── scripts/            # Scripts de automatización
 ```
 
@@ -629,6 +664,7 @@ database/
 **Usuario**: `sudo -u postgres` (superusuario PostgreSQL)
 
 **Qué hace**:
+
 1. Backup de DEV (seguridad)
 2. Exporta SOLO datos de PROD (no estructura)
 3. Limpia datos de DEV
@@ -638,6 +674,7 @@ database/
 **Resultado**: DEV tiene estructura actual + datos reales de PROD
 
 **Cuándo usar**:
+
 - Quieres trabajar con datos reales en desarrollo
 - Necesitas debuggear un issue de producción
 - Testing con volumen realista de datos
@@ -655,6 +692,7 @@ database/
 **Usuario**: `sudo -u postgres` (superusuario PostgreSQL)
 
 **Qué hace**:
+
 1. Backup OBLIGATORIO de PROD
 2. Aplica migraciones del directorio `tested/`
 3. Solo modifica ESTRUCTURA (tablas, columnas, índices, funciones)
@@ -665,12 +703,14 @@ database/
 **Resultado**: PROD tiene nueva estructura + datos intactos
 
 **Cuándo usar**:
+
 - Nuevas tablas o columnas
 - Modificar índices o constraints
 - Crear/actualizar RPCs (funciones)
 - Cualquier cambio de estructura
 
 **⚠️ CRÍTICO**:
+
 - NUNCA incluir `DELETE`, `UPDATE` o `TRUNCATE` de datos en migraciones
 - Solo DDL: `CREATE TABLE`, `ALTER TABLE`, `CREATE INDEX`, `CREATE FUNCTION`, etc.
 
@@ -679,12 +719,14 @@ database/
 ### **🛠️ Workflow Completo de Desarrollo**
 
 **FASE 1: Preparación (datos reales)**
+
 ```bash
 # VSCode Task: "📥 ESCENARIO 1: Sincronizar PROD → DEV"
 # Resultado: DEV tiene datos de PROD
 ```
 
 **FASE 2: Desarrollo (crear migración)**
+
 ```bash
 # VSCode Task: "➕ Crear Nueva Migración"
 # Crea: database/migrations/development/20250110123456_add_column_xyz.sql
@@ -699,6 +741,7 @@ CREATE OR REPLACE FUNCTION ...
 ```
 
 **FASE 3: Aplicar en DEV**
+
 ```bash
 # VSCode Task: "🔧 Aplicar Migraciones en DEV"
 # Aplica migration desde development/ a cuentassik_dev
@@ -706,6 +749,7 @@ CREATE OR REPLACE FUNCTION ...
 ```
 
 **FASE 4: Testing en DEV**
+
 ```bash
 # Verificar manualmente que funciona
 psql -U cuentassik_user -d cuentassik_dev
@@ -715,6 +759,7 @@ psql -U cuentassik_user -d cuentassik_dev
 ```
 
 **FASE 5: Promover a Tested**
+
 ```bash
 # VSCode Task: "✅ Promover a Tested"
 # Mueve migration de development/ a tested/
@@ -722,6 +767,7 @@ psql -U cuentassik_user -d cuentassik_dev
 ```
 
 **FASE 6: Despliegue a PROD**
+
 ```bash
 # VSCode Task: "🚀 ESCENARIO 2: Desplegar a PRODUCCIÓN"
 # Aplica migrations de tested/ a cuentassik_prod
@@ -730,6 +776,7 @@ psql -U cuentassik_user -d cuentassik_dev
 ```
 
 **FASE 7: Verificar PROD**
+
 ```bash
 # Verificar estructura
 sudo -u postgres psql -d cuentassik_prod -c "\d contributions"
@@ -756,6 +803,7 @@ CREATE TABLE _migrations (
 ```
 
 **Cada migración aplicada queda registrada**:
+
 ```sql
 SELECT * FROM _migrations ORDER BY applied_at DESC LIMIT 10;
 
@@ -770,6 +818,7 @@ SELECT * FROM _migrations ORDER BY applied_at DESC LIMIT 10;
 ### **⚠️ REGLAS CRÍTICAS DE MIGRACIONES**
 
 1. **NUNCA modificar datos en migraciones**
+
    ```sql
    -- ❌ PROHIBIDO en migraciones
    DELETE FROM transactions WHERE date < '2024-01-01';
@@ -783,6 +832,7 @@ SELECT * FROM _migrations ORDER BY applied_at DESC LIMIT 10;
    ```
 
 2. **Usar `sudo -u postgres` para aplicar migraciones**
+
    ```bash
    # ✅ CORRECTO
    sudo -u postgres psql -d cuentassik_prod -f migration.sql
@@ -792,15 +842,18 @@ SELECT * FROM _migrations ORDER BY applied_at DESC LIMIT 10;
    ```
 
 3. **Backup SIEMPRE antes de ESCENARIO 2**
+
    - Script lo hace automáticamente
    - Backup va a `/home/kava/workspace/backups/`
    - Formato: `cuentassik_prod_backup_YYYYMMDD_HHMM.sql.gz`
 
 4. **Testar en DEV antes de PROD**
+
    - NUNCA aplicar migración directamente a PROD
    - Flujo: development → aplicar en DEV → testar → promover a tested → aplicar en PROD
 
 5. **Nombre descriptivo de migraciones**
+
    ```bash
    # ✅ BUENO
    20250110_add_adjustments_paid_column.sql
@@ -817,21 +870,24 @@ SELECT * FROM _migrations ORDER BY applied_at DESC LIMIT 10;
 ### **🔍 VSCode Tasks Disponibles**
 
 **Migraciones**:
+
 - `➕ Crear Nueva Migración` - Genera archivo con timestamp
 - `🔧 Aplicar Migraciones en DEV` - Aplica development/ a DEV
 - `✅ Promover a Tested` - Mueve de development/ a tested/
 - `📋 Listar Migraciones por Estado` - Ver qué hay en cada directorio
-- `🔍 Ver Última Migración Aplicada` - Consulta tabla _migrations
+- `🔍 Ver Última Migración Aplicada` - Consulta tabla \_migrations
 
 **Sincronización**:
+
 - `📥 ESCENARIO 1: Sincronizar PROD → DEV` - Copia datos PROD→DEV
 - `📊 ESCENARIO 1: Ver estado sincronización` - Info última sync
 - `🔍 ESCENARIO 1: Verificar diferencias PROD/DEV` - Compara datos
 
 **Producción**:
+
 - `🚀 ESCENARIO 2: Desplegar a PRODUCCIÓN` - Aplica tested/ a PROD
 - `📦 ESCENARIO 2: Backup manual PROD` - Backup bajo demanda
-- `📊 ESCENARIO 2: Estado migraciones PROD` - Ver _migrations en PROD
+- `📊 ESCENARIO 2: Estado migraciones PROD` - Ver \_migrations en PROD
 - `🔄 ESCENARIO 2: Reiniciar PM2` - Restart app después de deploy
 
 **Acceso**: `Ctrl+Shift+P` → `Tasks: Run Task`
@@ -841,6 +897,7 @@ SELECT * FROM _migrations ORDER BY applied_at DESC LIMIT 10;
 ## 🧪 **Testing Queries**
 
 ### En psql
+
 ```sql
 -- Connect
 psql -h localhost -U postgres -d cuentassik_dev

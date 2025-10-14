@@ -15,14 +15,14 @@ export default function CreateHouseholdPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!householdName.trim()) {
       alert('Por favor, ingresa un nombre para el hogar');
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/dual-flow/households', {
         method: 'POST',
@@ -36,7 +36,7 @@ export default function CreateHouseholdPage() {
 
       if (response.ok) {
         const { householdId } = await response.json();
-        
+
         // Redirigir al nuevo hogar
         router.push(`/dual-flow/hogar/switch?id=${householdId}`);
       } else {

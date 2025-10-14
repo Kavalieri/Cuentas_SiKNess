@@ -11,21 +11,25 @@
 ### 1. ✅ Configuración VS Code (.vscode/)
 
 **Archivos actualizados:**
+
 - `tasks.json` → Versión Linux con comandos bash
 - `TASKS_README.md` → Documentación completa de tasks
 
 **Backups creados:**
+
 - `tasks.json.windows.backup` → Original de Windows/PowerShell
 - `TASKS_README.md.supabase.backup` → Documentación Supabase original
 
 **Tasks disponibles (16 total):**
 
 #### Desarrollo (3)
+
 - 🚀 Dev Server
 - 🛑 Stop Dev Server
 - 🧹 Clear All Caches
 
 #### Database (5)
+
 - 📥 Sincronizar PROD → DEV
 - ➕ Crear Nueva Migración
 - 🔄 Aplicar Migraciones a DEV
@@ -33,6 +37,7 @@
 - 📊 Ver Estado Migraciones
 
 #### Producción (5)
+
 - 🏗️ Build Producción
 - 🚀 Desplegar a PRODUCCIÓN
 - 🔄 Reiniciar PM2
@@ -40,6 +45,7 @@
 - 📊 Estado PM2
 
 #### Testing & Monitoring (3)
+
 - 🧪 Run Tests
 - 🔍 Lint
 - 🔍 Type Check
@@ -54,15 +60,18 @@
 **Scripts creados/actualizados:**
 
 1. **sync_prod_to_dev.sh** (NEW)
+
    - Sincroniza base de datos PROD → DEV
    - Backup automático antes de sobrescribir
    - Verificación post-sincronización
 
 2. **apply_migrations_dev.sh** (NEW)
+
    - Aplica migraciones en development/ a DEV
    - Aplicación secuencial con validación
 
 3. **promote_migration.sh** (NEW)
+
    - Mueve migraciones validadas: development/ → tested/
    - Selector interactivo
    - Confirmación de seguridad
@@ -78,18 +87,16 @@
 ### 3. ✅ Base de Datos (database/)
 
 **Estructura completada:**
+
 ```
 database/
-├── seeds/
-│   └── schema_only.sql          # ✅ Schema base v0.3.0 (EN REPO)
-├── schemas/
-│   └── migrations_control.sql   # ✅ Tabla de control (EN REPO)
 ├── migrations/
 │   ├── development/             # 🔒 Ignorado: WIP local
 │   │   └── .gitkeep
 │   ├── tested/                  # ✅ EN REPO: Validadas
 │   │   └── .gitkeep
-│   ├── applied/                 # ✅ EN REPO: Aplicadas en PROD
+│   ├── applied/                 # ✅ EN REPO: Aplicadas en PROD (incluye seed baseline)
+│   │   ├── 20251014_150000_seed.sql
 │   │   ├── .gitkeep
 │   │   └── archive/            # 🔒 Ignorado: 89 históricas obsoletas
 │   │       └── .gitkeep
@@ -99,6 +106,7 @@ database/
 ```
 
 **Git Strategy:**
+
 - ✅ `development/*.sql` → Ignorado (local)
 - ✅ `tested/*.sql` → En repo (validadas)
 - ✅ `applied/*.sql` → En repo (aplicadas)
@@ -111,6 +119,7 @@ database/
 **Archivos actualizados:**
 
 1. **database/README.md** (REESCRITO)
+
    - Setup inicial para nuevos desarrolladores
    - Estructura y políticas de Git
    - Sistema de control de migraciones
@@ -119,12 +128,13 @@ database/
    - Reglas críticas (DO/DON'T)
    - Troubleshooting
    - **Principios de seguridad:**
-     * Migraciones = solo estructura
-     * Nunca borrar campos <3 meses
-     * Backups obligatorios
-     * Testing exhaustivo
+     - Migraciones = solo estructura
+     - Nunca borrar campos <3 meses
+     - Backups obligatorios
+     - Testing exhaustivo
 
 2. **README.md** (ACTUALIZADO)
+
    - Stack tecnológico actualizado (PostgreSQL nativo)
    - Sección "Base de Datos" con setup inicial
    - Referencia a database/README.md
@@ -132,6 +142,7 @@ database/
    - Comandos MCPs simplificados
 
 3. **database/.gitignore** (CONFIGURADO)
+
    - Ignora `development/*.sql` (WIP)
    - Ignora `applied/archive/*.sql` (históricas)
    - Preserva estructura con `.gitkeep`
@@ -146,6 +157,7 @@ database/
 ### 5. ✅ Preparación para Release
 
 **Estado actual:**
+
 - Versión: v0.3.0
 - Branch: main
 - Producción: https://cuentas.sikwow.com ✅ LIVE
@@ -251,6 +263,7 @@ npm run dev
 ## 📊 Estado Final
 
 **Repositorio:**
+
 - ✅ Configurado para Linux
 - ✅ Scripts funcionales
 - ✅ Documentación completa
@@ -259,6 +272,7 @@ npm run dev
 - ✅ Preparado para release
 
 **Producción:**
+
 - ✅ Running en https://cuentas.sikwow.com
 - ✅ PM2 activo
 - ✅ Base de datos sincronizada

@@ -150,7 +150,7 @@ async function PerfilContent({ user, householdId }: { user: any; householdId: st
         </CardHeader>
         <CardContent className="space-y-3">
           <Button variant="ghost" className="w-full justify-start gap-3" asChild>
-            <Link href="/dual-flow/opciones">
+            <Link href="/dual-flow/mas">
               <Zap className="w-4 h-4" />
               Configuración Dual-Flow
             </Link>

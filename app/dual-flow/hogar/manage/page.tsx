@@ -28,9 +28,9 @@ export default async function ManageHouseholdsPage() {
   // Obtener hogar activo
   const activeHouseholdResult = await query(
     'SELECT active_household_id FROM user_settings WHERE profile_id = $1',
-    [currentUser.profile_id]
+    [currentUser.profile_id],
   );
-  
+
   const activeHouseholdId = activeHouseholdResult.rows[0]?.active_household_id;
 
   // Enriquecer con datos adicionales
@@ -39,15 +39,15 @@ export default async function ManageHouseholdsPage() {
       // Obtener número de miembros
       const memberCountResult = await query(
         'SELECT COUNT(*) as count FROM household_members WHERE household_id = $1',
-        [household.id]
+        [household.id],
       );
-      
+
       return {
         ...household,
         member_count: parseInt(memberCountResult.rows[0]?.count || '0'),
         is_active: household.id === activeHouseholdId,
       };
-    })
+    }),
   );
 
   return (
@@ -83,7 +83,7 @@ export default async function ManageHouseholdsPage() {
       {/* Lista de Hogares */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Mis Hogares</h2>
-        
+
         {enrichedHouseholds.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
@@ -130,22 +130,20 @@ export default async function ManageHouseholdsPage() {
                         {household.member_count} miembros
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       {!household.is_active && (
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/dual-flow/hogar/switch?id=${household.id}`}>
-                            Activar
-                          </Link>
+                          <Link href={`/dual-flow/hogar/switch?id=${household.id}`}>Activar</Link>
                         </Button>
                       )}
-                      
+
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/dual-flow/hogar/${household.id}/settings`}>
                           <Settings className="h-4 w-4" />
                         </Link>
                       </Button>
-                      
+
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/dual-flow/hogar/${household.id}`}>
                           <ArrowRight className="h-4 w-4" />

@@ -60,16 +60,23 @@ npm install
 
 ### 2) Base de datos (seed incluida)
 
-```bash
-# Crear base de datos y usuario
-sudo -u postgres psql << 'EOF'
-CREATE DATABASE cuentassik_dev;
-CREATE USER cuentassik_user WITH PASSWORD 'tu_password';
-ALTER DATABASE cuentassik_dev OWNER TO cuentassik_user;
-EOF
+Si es la primera vez, crea los roles descritos en `docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md` (`cuentassik_dev_owner`, `cuentassik_prod_owner`, `cuentassik_user`).
 
-# Aplicar esquema base
-sudo -u postgres psql -d cuentassik_dev -f database/seeds/schema_only.sql
+Para levantar un entorno limpio de desarrollo ejecuta:
+
+```bash
+sudo -u postgres -H bash -lc "cd /tmp && psql -d postgres -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='cuentassik_dev' AND pid <> pg_backend_pid();\""
+sudo -u postgres -H bash -lc "cd /tmp && dropdb --if-exists cuentassik_dev"
+sudo -u postgres -H bash -lc "cd /tmp && createdb --owner=cuentassik_dev_owner cuentassik_dev"
+sudo cp database/migrations/applied/20251014_150000_seed.sql /tmp/cuentassik_seed.sql
+sudo chmod 644 /tmp/cuentassik_seed.sql
+sudo -u postgres -H bash -lc "cd /tmp && psql -v ON_ERROR_STOP=1 --set=SEED_OWNER=cuentassik_dev_owner -d cuentassik_dev -f /tmp/cuentassik_seed.sql"
+```
+
+_(Opcional)_ elimina la copia temporal cuando termine:
+
+```bash
+sudo rm /tmp/cuentassik_seed.sql
 ```
 
 ### 3) Variables de entorno

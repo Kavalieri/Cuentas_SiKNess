@@ -27,9 +27,7 @@ for migration in "$DEV_DIR"/*.sql; do
   echo "🔄 Aplicando: $filename"
 
   # Aplicar migración
-  sudo -u postgres psql -d cuentassik_dev -f "$migration"
-
-  if [ $? -eq 0 ]; then
+  if sudo -u postgres psql -d cuentassik_dev < "$migration"; then
     echo "✅ Aplicada: $filename"
   else
     echo "❌ Error aplicando: $filename"

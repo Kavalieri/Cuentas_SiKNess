@@ -80,6 +80,7 @@ Cuando trabajes en una carpeta específica, **las instrucciones de su AGENTS.md 
 mcp_shell_execute_command('npm run build');
 mcp_shell_execute_command('npm install');
 mcp_shell_execute_command('pm2 restart cuentassik-prod');
+mcp_shell_execute_command('psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev -c "SELECT 1"');
 ```
 
 #### Documentación MCPs
@@ -101,13 +102,20 @@ mcp_shell_execute_command('pm2 restart cuentassik-prod');
    - Usado con `sudo -u postgres` (sin contraseña)
 
 2. **`cuentassik_user`** ⭐ (Usuario de la aplicación - PRINCIPAL)
-   - Owner de las bases de datos `cuentassik_dev` y `cuentassik_prod`
-   - Privilegios: `SELECT, INSERT, DELETE, UPDATE` en TODAS las tablas
-   - Usado en:
-     - Aplicación Next.js (DATABASE_URL en .env)
-     - Migraciones (aplicar cambios de estructura)
-     - Scripts de sincronización
-     - Queries manuales
+
+- Rol `LOGIN` de mínimos privilegios (NO superuser, NO createdb, NO createrole, NO DDL)
+- Privilegios: `SELECT, INSERT, UPDATE, DELETE` en tablas y `USAGE, SELECT` en secuencias
+- NO es owner de los objetos; los owners son roles NOLOGIN por entorno
+- Usado en:
+  - Aplicación Next.js (DATABASE_URL en .env)
+  - Queries manuales para debugging
+  - Scripts de sincronización de datos (no estructura)
+
+3. **`cuentassik_[env]_owner`** (Roles NOLOGIN para DDL)
+
+- `cuentassik_dev_owner` (DEV) y `cuentassik_prod_owner` (PROD)
+- Propietarios de los objetos de cada BD; se usan para DDL/migraciones
+- Recomendado: Conectarse como `postgres` y ejecutar `SET ROLE cuentassik_[env]_owner;` dentro de las migraciones
 
 ### Bases de Datos
 
@@ -135,9 +143,15 @@ const result = await query(
 console.log(result.rows);
 ```
 
-**NO usar comandos psql directos. Usar `query()` en el código.**
+**NO usar comandos psql directos desde el código. Usar `query()` en el código.**
 
 📚 **Documentación completa**: [database/README.md](database/README.md)
+
+### Compatibilidad de Esquemas (Migraciones en curso)
+
+- **Columnas opcionales**: Algunas instalaciones aún no tienen `monthly_periods.phase`, `monthly_periods.is_current` o `member_monthly_income`. Antes de consultarlas, verifica su existencia con `information_schema` y ofrece un _fallback_ a columnas legacy (`status`, `member_incomes`).
+- **Enums**: Utiliza helpers de `lib/dualFlow.ts` en lugar de escribir literales de flujo (`common`, `direct`). Si necesitas nuevos valores, actualiza el enum y crea migración en `database/migrations`.
+- **Consultas parametrizadas**: Siempre usa `query()` con placeholders (`$1, $2`) para evitar inyección y mantener compatibilidad entre DEV/PROD.
 
 ---
 
@@ -179,7 +193,7 @@ Aplicar cambios de estructura (migraciones) a producción SIN tocar datos.
 **Qué hace:**
 
 1. Backup OBLIGATORIO de PROD
-2. Aplica migraciones del directorio `tested/`
+2. Aplica migraciones del directorio `tested/` (conexión como `postgres` y `SET ROLE cuentassik_prod_owner;` para crear/alterar objetos)
 3. Solo modifica ESTRUCTURA (tablas, columnas, índices)
 4. NO toca los datos existentes
 5. Mueve migraciones aplicadas a `applied/`
@@ -219,6 +233,8 @@ mcp_shell_execute_command('pm2 restart cuentassik-prod');
 // Ver logs
 mcp_shell_execute_command('pm2 logs cuentassik-prod --lines 50');
 ```
+
+**Atajos recomendados:** usa las tareas de VS Code en `.vscode/tasks.json` (prefijo 🟢/🔴/🔄) siempre que exista una para la operación que necesites antes de invocar comandos manuales.
 
 ---
 
@@ -324,8 +340,6 @@ Todas las operaciones comunes están disponibles como tareas de VSCode.
 - `🏗️ Build Producción`
 - `🔄 Deploy completo`
 
----
-
 ## ✅ Checklist al Implementar Nueva Funcionalidad
 
 1. ✅ Usa `getUserHouseholdId()` para obtener el hogar activo
@@ -334,8 +348,9 @@ Todas las operaciones comunes están disponibles como tareas de VSCode.
 4. ✅ Usa `revalidatePath()` tras mutaciones
 5. ✅ Mantén el código compilando
 6. ✅ Si modificas DB, crea migración en `development/`
-7. ✅ Prueba en DEV antes de promocionar a `tested/`
-8. ✅ Usa MCPs para Git, GitHub y comandos Shell
+7. ✅ Protege consultas contra diferencias de esquema (columnas/tablas opcionales)
+8. ✅ Prueba en DEV antes de promocionar a `tested/`
+9. ✅ Usa MCPs para Git, GitHub, Shell y consulta de documentación
 
 ---
 

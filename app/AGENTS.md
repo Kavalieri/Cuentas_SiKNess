@@ -8,6 +8,7 @@
 ## 🏗️ **Arquitectura Next.js 15**
 
 ### App Router Structure
+
 ```
 /app/
 ├── layout.tsx              # Root layout (global providers)
@@ -47,6 +48,7 @@
 ## 🎨 **Patrones de Componentes**
 
 ### 1. Server Components (Default)
+
 ```typescript
 // app/page.tsx
 export default async function DashboardPage() {
@@ -54,24 +56,19 @@ export default async function DashboardPage() {
   const [summary, transactions, members] = await Promise.all([
     getMonthSummary(householdId),
     getTransactions(householdId),
-    query(`SELECT * FROM get_household_members_optimized($1)`, [householdId])
+    query(`SELECT * FROM get_household_members_optimized($1)`, [householdId]),
   ]);
 
   // ✅ Pass data a Client Components via props
-  return (
-    <DashboardContent
-      summary={summary}
-      transactions={transactions}
-      members={members}
-    />
-  );
+  return <DashboardContent summary={summary} transactions={transactions} members={members} />;
 }
 ```
 
 ### 2. Client Components (Explicit)
+
 ```typescript
 // app/components/DashboardContent.tsx
-"use client";
+'use client';
 
 import { useState } from 'react';
 
@@ -94,17 +91,14 @@ export function DashboardContent({ summary, transactions, members }: Props) {
 ```
 
 ### 3. Server Actions
+
 ```typescript
 // app/contributions/actions.ts
-"use server";
+'use server';
 
 import { query, getCurrentUser, getUserHouseholdId } from '@/lib/supabaseServer';
 
-export async function getMonthlyContributions(
-  householdId: string,
-  year: number,
-  month: number
-) {
+export async function getMonthlyContributions(householdId: string, year: number, month: number) {
   // ✅ SQL nativo con query()
   const result = await query(
     `
@@ -118,7 +112,7 @@ export async function getMonthlyContributions(
       AND c.month = $3
     ORDER BY c.created_at DESC
     `,
-    [householdId, year, month]
+    [householdId, year, month],
   );
 
   if (!result.rows) {
@@ -131,10 +125,7 @@ export async function getMonthlyContributions(
 
 // ✅ Mutations con revalidatePath
 export async function updateContribution(id: string, data: Partial<Contribution>) {
-  await query(
-    'UPDATE contributions SET ... WHERE id = $1',
-    [id]
-  );
+  await query('UPDATE contributions SET ... WHERE id = $1', [id]);
 
   revalidatePath('/app/contributions');
   return { success: true };
@@ -146,6 +137,7 @@ export async function updateContribution(id: string, data: Partial<Contribution>
 ## 🎯 **Dashboard Grid (Fase 5)**
 
 ### Estructura Actual
+
 ```typescript
 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
   {/* Col 1 - Conditional */}
@@ -166,7 +158,7 @@ export async function updateContribution(id: string, data: Partial<Contribution>
       contributions={monthlyFundData.contributions}
       monthlyFund={monthlyFundData.monthlyFund}
       expenses={summary.expenses}
-      currency={monthlyFundData.currency}  // ⚠️ Pending fix
+      currency={monthlyFundData.currency} // ⚠️ Pending fix
     />
   )}
 
@@ -179,6 +171,7 @@ export async function updateContribution(id: string, data: Partial<Contribution>
 ```
 
 ### Diseño Compacto para Cards
+
 ```typescript
 // ✅ Card que se adapta al grid
 <Card className="h-full flex flex-col">
@@ -188,9 +181,7 @@ export async function updateContribution(id: string, data: Partial<Contribution>
 
   <CardContent className="flex-1 overflow-hidden">
     {/* Contenido scrollable si es necesario */}
-    <div className="max-h-[200px] overflow-y-auto">
-      ...
-    </div>
+    <div className="max-h-[200px] overflow-y-auto">...</div>
   </CardContent>
 </Card>
 ```
@@ -200,6 +191,7 @@ export async function updateContribution(id: string, data: Partial<Contribution>
 ## 🎨 **Estilos con Tailwind**
 
 ### Convenciones
+
 ```typescript
 // ✅ Utility classes, composición
 <div className="flex items-center gap-2 rounded-lg border bg-card p-4">
@@ -215,6 +207,7 @@ import styles from './Component.module.css';
 ```
 
 ### Responsive Design
+
 ```typescript
 // ✅ Mobile-first
 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -230,6 +223,7 @@ import styles from './Component.module.css';
 ```
 
 ### shadcn/ui Components
+
 ```typescript
 // ✅ Usar components de shadcn/ui
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -239,9 +233,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 // ✅ Customizar con className
-<Button className="bg-green-600 hover:bg-green-700">
-  Acción
-</Button>
+<Button className="bg-green-600 hover:bg-green-700">Acción</Button>;
 ```
 
 ---
@@ -249,26 +241,20 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 ## 💾 **Data Loading Patterns**
 
 ### Server Component with Multiple Queries
+
 ```typescript
 export default async function Page() {
   const user = await getCurrentUser();
   const householdId = await getUserHouseholdId();
 
   // ✅ Promise.all para queries paralelas
-  const [
-    summary,
-    transactions,
-    categories,
-    members,
-    contributions,
-    settings
-  ] = await Promise.all([
+  const [summary, transactions, categories, members, contributions, settings] = await Promise.all([
     getMonthSummary(householdId),
     getTransactions(householdId),
     getCategories(householdId),
     query(`SELECT * FROM get_household_members_optimized($1)`, [householdId]),
     getMonthlyContributions(householdId, year, month),
-    getHouseholdSettings(householdId)
+    getHouseholdSettings(householdId),
   ]);
 
   // ✅ Transformar datos si es necesario
@@ -276,7 +262,7 @@ export default async function Page() {
     members: members.rows || [],
     contributions: contributions || [],
     monthlyFund: settings?.monthly_contribution_goal || 0,
-    currency: settings?.currency || 'EUR'
+    currency: settings?.currency || 'EUR',
   };
 
   return <ClientComponent data={monthlyFundData} />;
@@ -284,6 +270,7 @@ export default async function Page() {
 ```
 
 ### Error Handling
+
 ```typescript
 try {
   const result = await query(...);
@@ -305,6 +292,7 @@ try {
 ## 🎭 **TypeScript Types**
 
 ### Interfaces para Props
+
 ```typescript
 // ✅ Definir interfaces claras
 interface MonthlyFundCardProps {
@@ -340,6 +328,7 @@ export function MonthlyFundCard({
 ```
 
 ### Database Types
+
 ```typescript
 // ✅ Tipos para queries
 interface Contribution {
@@ -353,15 +342,60 @@ interface Contribution {
   status: 'pending' | 'paid' | 'overpaid';
   adjustments_total: number | null;
   created_at: string;
-  user_email?: string;  // From JOIN
+  user_email?: string; // From JOIN
 }
 ```
+
+---
+
+## ♊ **Dual-Flow Guidance**
+
+### Esquemas Híbridos
+
+- Detecta columnas nuevas (`monthly_periods.phase`, `monthly_periods.is_current`, `member_monthly_income.amount`) antes de usarlas.
+- Usa `information_schema.columns` para validar existencia y ofrece fallback a columnas legacy (`status`, `member_incomes`).
+- Evita joins con tablas eliminadas (`users`); usa `household_members` + vistas activas.
+
+```typescript
+const metadata = await query<{
+  hasPhase: boolean;
+  hasIncome: boolean;
+}>(
+  `
+    select
+      bool_or(column_name = 'phase') as "hasPhase",
+      bool_or(table_name = 'member_monthly_income') as "hasIncome"
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name in ('monthly_periods', 'member_monthly_income')
+  `,
+);
+
+const selectPeriod = metadata.rows[0]?.hasPhase
+  ? 'select id, phase from monthly_periods order by starts_at desc limit 1'
+  : 'select id, status as phase from monthly_periods order by starts_at desc limit 1';
+
+const periodResult = await query(selectPeriod);
+```
+
+### API de Notificaciones
+
+- Calcula recuentos sólo desde miembros activos; controla que las CTEs de montos usen la tabla disponible.
+- Si `member_monthly_income` no existe, consulta `member_incomes` y castea `null` a `0` en el JSON final.
+- Mantén los tipos enteros/decimales consistentes entre DEV y PROD.
+
+### Server Components
+
+- Carga la metadata de compatibilidad en el server y pásala como `caps` a componentes cliente.
+- Sigue usando `Suspense` + skeletons en `/app/dual-flow/*` para preservar UX.
+- Revalida `/app/dual-flow/*` tras mutaciones que impactan períodos, notificaciones o contribuciones.
 
 ---
 
 ## 🧮 **Cálculos Comunes**
 
 ### Contribuciones con Ajustes
+
 ```typescript
 const totalContributed = contributions.reduce((sum, c) => {
   // ✅ adjustments_total puede ser negativo
@@ -371,24 +405,24 @@ const totalContributed = contributions.reduce((sum, c) => {
 ```
 
 ### Progreso Porcentual
+
 ```typescript
-const progress = goal > 0
-  ? Math.min(100, (current / goal) * 100)
-  : 0;
+const progress = goal > 0 ? Math.min(100, (current / goal) * 100) : 0;
 
 // ✅ Limitar a 100% para barra de progreso
 const clampedProgress = Math.min(progress, 100);
 ```
 
 ### Formateo de Moneda
+
 ```typescript
 import { formatCurrency } from '@/lib/format';
 
 // ✅ Usar código ISO
-const formatted = formatCurrency(amount, 'EUR');  // "1.200,00 €"
+const formatted = formatCurrency(amount, 'EUR'); // "1.200,00 €"
 
 // ❌ NO usar símbolo
-const wrong = formatCurrency(amount, '€');  // Error!
+const wrong = formatCurrency(amount, '€'); // Error!
 ```
 
 ---
@@ -396,37 +430,42 @@ const wrong = formatCurrency(amount, '€');  // Error!
 ## 🎨 **UI Patterns**
 
 ### Loading States
+
 ```typescript
 // ✅ Suspense boundaries
 <Suspense fallback={<LoadingSkeleton />}>
   <DataComponent />
-</Suspense>
+</Suspense>;
 
 // ✅ Loading in client component
-{isLoading ? (
-  <div className="flex items-center justify-center p-8">
-    <Loader2 className="h-8 w-8 animate-spin" />
-  </div>
-) : (
-  <DataDisplay data={data} />
-)}
+{
+  isLoading ? (
+    <div className="flex items-center justify-center p-8">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  ) : (
+    <DataDisplay data={data} />
+  );
+}
 ```
 
 ### Empty States
+
 ```typescript
-{items.length === 0 ? (
-  <div className="flex flex-col items-center justify-center p-8 text-center">
-    <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-    <p className="text-sm text-muted-foreground">
-      No hay datos para mostrar
-    </p>
-  </div>
-) : (
-  <ItemsList items={items} />
-)}
+{
+  items.length === 0 ? (
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+      <p className="text-sm text-muted-foreground">No hay datos para mostrar</p>
+    </div>
+  ) : (
+    <ItemsList items={items} />
+  );
+}
 ```
 
 ### Alert Banners
+
 ```typescript
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -436,7 +475,7 @@ import { AlertTriangle } from 'lucide-react';
   <AlertDescription className="text-yellow-800 dark:text-yellow-200">
     Advertencia importante
   </AlertDescription>
-</Alert>
+</Alert>;
 ```
 
 ---
@@ -444,6 +483,7 @@ import { AlertTriangle } from 'lucide-react';
 ## 🔄 **Revalidation**
 
 ### Después de Mutations
+
 ```typescript
 import { revalidatePath } from 'next/cache';
 
@@ -459,6 +499,7 @@ export async function createExpense(data: ExpenseData) {
 ```
 
 ### Redirect después de Action
+
 ```typescript
 import { redirect } from 'next/navigation';
 
@@ -466,7 +507,7 @@ export async function deleteHousehold(id: string) {
   await query('DELETE FROM households WHERE id = $1', [id]);
 
   revalidatePath('/app/settings');
-  redirect('/app');  // Redirigir a dashboard
+  redirect('/app'); // Redirigir a dashboard
 }
 ```
 
@@ -475,13 +516,14 @@ export async function deleteHousehold(id: string) {
 ## 🐛 **Debug en Desarrollo**
 
 ### Console Logs Temporales
+
 ```typescript
 // ✅ Durante desarrollo (ELIMINAR después)
 console.log('[DashboardPage] 💰 MonthlyFund Data:', {
   members: members.length,
   contributions: contributions.length,
   monthlyFund,
-  currency: settings?.currency
+  currency: settings?.currency,
 });
 
 // ✅ En componente
@@ -490,11 +532,12 @@ console.log('[MonthlyFundCard] Props recibidas:', {
   contributions,
   monthlyFund,
   expenses,
-  currency
+  currency,
 });
 ```
 
 ### React DevTools
+
 - Ver props en tiempo real
 - Inspeccionar state
 - Profiler para performance
@@ -504,6 +547,7 @@ console.log('[MonthlyFundCard] Props recibidas:', {
 ## 📱 **Responsive Cards**
 
 ### Height Management
+
 ```typescript
 // ✅ Card que se adapta al contenedor
 <Card className="h-full flex flex-col">
@@ -521,10 +565,13 @@ console.log('[MonthlyFundCard] Props recibidas:', {
 ```
 
 ### Grid Auto-fit
+
 ```typescript
 // ✅ Auto-fit en grids
 <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
-  {cards.map(card => <Card key={card.id} />)}
+  {cards.map((card) => (
+    <Card key={card.id} />
+  ))}
 </div>
 ```
 
@@ -533,11 +580,13 @@ console.log('[MonthlyFundCard] Props recibidas:', {
 ## 🎯 **Next Steps (Phase 5 → Phase 6)**
 
 ### Pending Phase 5 (5 min)
+
 1. Fix currency prop chain (page.tsx, DashboardContent.tsx)
 2. Remove debug logs
 3. Test in browser
 
 ### Phase 6 (20 min)
+
 1. Verificar que todas las features de `/app/household` están migradas
 2. Buscar referencias con grep
 3. Eliminar directorio `/app/household`
@@ -545,5 +594,5 @@ console.log('[MonthlyFundCard] Props recibidas:', {
 
 ---
 
-**Última actualización**: 2025-01-10
+**Última actualización**: 2025-01-15
 **Fase actual**: 5 (95% complete)

@@ -41,22 +41,13 @@ interface WorkflowManagerProps {
 export function WorkflowManager({ transactions = [], showActions = true }: WorkflowManagerProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
 
-  // Usar datos reales o array vacío si no hay datos
-  const workflowTransactions: WorkflowTransaction[] =
-    transactions.length > 0
-      ? transactions.map((t) => ({
-          id: t.id,
-          concepto: t.concepto,
-          categoria: t.categoria,
-          importe: t.importe,
-          fecha: t.fecha,
-          tipo: t.tipo,
-          estado: t.estado,
-          pagadoPor: 'Usuario', // TODO: obtener nombre real
-          requiereAprobacion: t.requiere_aprobacion || false,
-          tipoFlujo: t.tipo_flujo,
-        }))
-      : [];
+  // Usar datos reales y aplicar valores por defecto cuando falten campos opcionales
+  const workflowTransactions: WorkflowTransaction[] = transactions.map((transaction) => ({
+    ...transaction,
+    pagadoPor: transaction.pagadoPor ?? 'Usuario',
+    requiereAprobacion: transaction.requiereAprobacion ?? false,
+    tipoFlujo: transaction.tipoFlujo ?? 'common_fund',
+  }));
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {

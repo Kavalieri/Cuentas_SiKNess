@@ -125,6 +125,7 @@
   "unwantedRecommendations": [
     // Extensiones que pueden causar conflictos o no son necesarias
     "ms-vscode.vscode-typescript-next",
-    "hookyqr.beautify"
+    "hookyqr.beautify",
+    "adpyke.vscode-sql-formatter"
   ]
 }

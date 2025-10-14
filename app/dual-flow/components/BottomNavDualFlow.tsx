@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { HandHeart, Home, Scale, Settings, User } from 'lucide-react';
+import { ArrowUpDown, Building, Calendar, Home, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -25,31 +25,31 @@ export function BottomNavDualFlow() {
       href: '/dual-flow/inicio',
       icon: <Home className="h-5 w-5" />,
       label: 'Inicio',
-      description: 'Dashboard y workflow',
+      description: 'Resumen general',
     },
     {
-      href: '/dual-flow/contribucion',
-      icon: <HandHeart className="h-5 w-5" />,
-      label: 'Contribución',
-      description: 'Gestión contribuciones',
+      href: '/dual-flow/transacciones',
+      icon: <ArrowUpDown className="h-5 w-5" />,
+      label: 'Transacciones',
+      description: 'Operaciones diarias',
     },
     {
-      href: '/dual-flow/balance',
-      icon: <Scale className="h-5 w-5" />,
-      label: 'Balance',
-      description: 'Transacciones duales',
+      href: '/dual-flow/periodos',
+      icon: <Calendar className="h-5 w-5" />,
+      label: 'Períodos',
+      description: 'Vista temporal',
     },
     {
-      href: '/dual-flow/opciones',
-      icon: <Settings className="h-5 w-5" />,
-      label: 'Opciones',
-      description: 'Configuración',
+      href: '/dual-flow/hogar',
+      icon: <Building className="h-5 w-5" />,
+      label: 'Hogar',
+      description: 'Configuración hogar',
     },
     {
-      href: '/dual-flow/perfil',
-      icon: <User className="h-5 w-5" />,
-      label: 'Perfil',
-      description: 'Perfil dual-flow',
+      href: '/dual-flow/mas',
+      icon: <MoreHorizontal className="h-5 w-5" />,
+      label: 'Más',
+      description: 'Settings y perfil',
     },
   ];
 

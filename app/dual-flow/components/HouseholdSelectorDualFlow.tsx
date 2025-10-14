@@ -1,6 +1,12 @@
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { getCurrentUser, getUserHouseholds } from '@/lib/supabaseServer';
 import { ChevronDown, Home, Plus, Users } from 'lucide-react';
 import Link from 'next/link';

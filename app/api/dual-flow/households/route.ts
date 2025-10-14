@@ -1,6 +1,6 @@
+import { getCurrentUser, query } from '@/lib/supabaseServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { getCurrentUser, query } from '@/lib/supabaseServer';
 import { z } from 'zod';
 
 const CreateHouseholdSchema = z.object({
@@ -26,21 +26,21 @@ export async function POST(request: NextRequest) {
     await query(
       `INSERT INTO households (id, name, created_by, created_at, updated_at)
        VALUES ($1, $2, $3, NOW(), NOW())`,
-      [householdId, name, user.profile_id]
+      [householdId, name, user.profile_id],
     );
 
     // Agregar al usuario como owner del hogar
     await query(
       `INSERT INTO household_members (profile_id, household_id, role, joined_at)
        VALUES ($1, $2, 'owner', NOW())`,
-      [user.profile_id, householdId]
+      [user.profile_id, householdId],
     );
 
     // Crear configuración por defecto del hogar
     await query(
       `INSERT INTO household_settings (household_id, monthly_contribution_goal, calculation_type, currency, updated_at, updated_by)
        VALUES ($1, NULL, 'equal', 'EUR', NOW(), $2)`,
-      [householdId, user.profile_id]
+      [householdId, user.profile_id],
     );
 
     // Establecer como hogar activo del usuario
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
        VALUES ($1, $2, NOW(), NOW())
        ON CONFLICT (profile_id)
        DO UPDATE SET active_household_id = $2, updated_at = NOW()`,
-      [user.profile_id, householdId]
+      [user.profile_id, householdId],
     );
 
     return NextResponse.json({
@@ -57,20 +57,16 @@ export async function POST(request: NextRequest) {
       householdId,
       message: 'Hogar creado exitosamente',
     });
-
   } catch (error) {
     console.error('Error creating household:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Datos inválidos', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

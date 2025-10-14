@@ -1,6 +1,5 @@
+import { getCurrentUser, query } from '@/lib/supabaseServer';
 import { redirect } from 'next/navigation';
-import { query } from '@/lib/supabaseServer';
-import { getCurrentUser } from '@/lib/supabaseServer';
 
 interface PageProps {
   searchParams: {
@@ -25,7 +24,7 @@ export default async function SwitchHouseholdPage({ searchParams }: PageProps) {
     // Verificar que el usuario pertenece al hogar
     const membershipResult = await query(
       'SELECT 1 FROM household_members WHERE profile_id = $1 AND household_id = $2',
-      [user.profile_id, householdId]
+      [user.profile_id, householdId],
     );
 
     if (membershipResult.rows.length === 0) {
@@ -39,7 +38,7 @@ export default async function SwitchHouseholdPage({ searchParams }: PageProps) {
        VALUES ($1, $2, NOW(), NOW())
        ON CONFLICT (profile_id)
        DO UPDATE SET active_household_id = $2, updated_at = NOW()`,
-      [user.profile_id, householdId]
+      [user.profile_id, householdId],
     );
 
     // Redirigir al dashboard con el nuevo hogar
