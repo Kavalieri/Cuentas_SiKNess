@@ -48,16 +48,32 @@
 **Commits**:
 
 - `d534e19` - "feat(sickness): completar Fase 2 - integración completa de contexto con APIs"
-- **PRÓXIMO** - "fix(sickness): eliminar selectores duplicados en topbar"
+- `fecdecb` - "refactor(sickness): eliminar selectores duplicados en topbar"
+- `e42c577` - "refactor(sickness): remover balance del topbar"
+- `c0b7690` - "fix(sickness): seleccionar periodo actual por defecto"
 
 ---
 
-## Fase 3 · Integración y lógica real
+## ⚡ FASE 3 · Dashboard y lógica real (EN PROGRESO 🔄)
 
-- [ ] Conectar selectores a datos reales (queries)
+### Dashboard de Balance ✅ (16/10/2025)
+
+- ✅ **Crear página `/sickness/dashboard/page.tsx`**
+- ✅ **Tarjeta principal de balance destacada** (closing balance prominente)
+- ✅ **Cards de balance inicial y final**
+- ✅ **Sección de ingresos del periodo** con desglose
+- ✅ **Sección de gastos del periodo** con desglose
+- ✅ **Gastos directos pendientes** (card especial naranja)
+- ✅ **Contribuciones pendientes** (card especial amarilla)
+- ✅ **Resumen consolidado del periodo** con cálculo final
+- ✅ **Integración completa con privacy mode**
+- ✅ **Diseño mobile-first responsive**
+
+### Resto de Fase 3 (Pendiente)
+
+- [ ] Lista de transacciones en dashboard
 - [ ] CRUD perfil, hogar y categorías
 - [ ] Workflow de periodo (fases, checklist, cierre)
-- [ ] Dashboard de balance y transacciones
 
 ## Fase 4 · Depuración y migración
 
