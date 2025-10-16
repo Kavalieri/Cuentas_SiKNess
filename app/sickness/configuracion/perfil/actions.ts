@@ -108,7 +108,7 @@ export async function getMemberIncome(householdId: string): Promise<Result<Membe
       WHERE household_id = $1
         AND profile_id = $2
         AND effective_from <= CURRENT_DATE
-      ORDER BY effective_from DESC
+      ORDER BY effective_from DESC, created_at DESC
       LIMIT 1`,
       [householdId, user.profile_id], // Usar profile_id
     );
@@ -226,7 +226,7 @@ export async function updateMemberIncome(formData: FormData): Promise<Result> {
     revalidatePath('/sickness/configuracion');
     revalidatePath('/sickness/inicio');
     revalidatePath('/sickness');
-    
+
     return ok();
   } catch (error) {
     console.error('[updateMemberIncome] Error:', error);
