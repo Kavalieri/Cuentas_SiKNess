@@ -1,4 +1,12 @@
-import { getCurrentUser as authGetCurrentUser, getUserHouseholdId as authGetUserHouseholdId } from './auth';
+/**
+ * PostgreSQL Server - Funciones de servidor para acceso a base de datos
+ * Reemplaza completamente a Supabase Client/Server con PostgreSQL nativo
+ */
+
+import {
+  getCurrentUser as authGetCurrentUser,
+  getUserHouseholdId as authGetUserHouseholdId,
+} from './auth';
 import { query } from './db';
 
 // Re-exportar query para uso directo en actions
@@ -30,14 +38,18 @@ interface QueryArrayResponse<T> {
   count?: number | null;
 }
 
-export const supabaseServer = async () => {
+/**
+ * Cliente PostgreSQL Server-side compatible con sintaxis legacy
+ * Mantiene compatibilidad para migración gradual de código antiguo
+ */
+export const pgServer = async () => {
   return {
     auth: {
       getUser: async () => {
         const user = await authGetCurrentUser();
         return {
           data: { user },
-          error: user ? null : { message: 'Not authenticated' }
+          error: user ? null : { message: 'Not authenticated' },
         };
       },
       signOut: async () => {
@@ -49,14 +61,16 @@ export const supabaseServer = async () => {
         const user = await authGetCurrentUser();
         return {
           data: {
-            session: user ? {
-              user,
-              access_token: 'stub',
-              refresh_token: 'stub',
-              expires_at: Date.now() + 3600000,
-            } : null
+            session: user
+              ? {
+                  user,
+                  access_token: 'stub',
+                  refresh_token: 'stub',
+                  expires_at: Date.now() + 3600000,
+                }
+              : null,
           },
-          error: null
+          error: null,
         };
       },
       exchangeCodeForSession: async (_code: string) => {
@@ -64,14 +78,14 @@ export const supabaseServer = async () => {
         // La autenticación se maneja mediante sesiones de Next.js
         return {
           data: { session: null, user: null },
-          error: { message: 'exchangeCodeForSession no implementado - usar sesiones Next.js' }
+          error: { message: 'exchangeCodeForSession no implementado - usar sesiones Next.js' },
         };
       },
       verifyOtp: async (_params: { token_hash: string; type: string }) => {
         // Este método no se usa realmente en nuestro sistema
         return {
           data: { session: null, user: null },
-          error: { message: 'verifyOtp no implementado - usar sesiones Next.js' }
+          error: { message: 'verifyOtp no implementado - usar sesiones Next.js' },
         };
       },
       admin: {
@@ -91,12 +105,13 @@ export const supabaseServer = async () => {
 
           return {
             data: { users: result.rows },
-            error: null
+            error: null,
           };
         },
         getUserById: async (userId: string) => {
           // Obtener un usuario por ID desde profiles
-          const result = await query(`
+          const result = await query(
+            `
             SELECT
               auth_user_id as id,
               email,
@@ -105,14 +120,16 @@ export const supabaseServer = async () => {
               updated_at
             FROM profiles
             WHERE auth_user_id = $1
-          `, [userId]);
+          `,
+            [userId],
+          );
 
           return {
             data: { user: result.rows[0] || null },
-            error: result.rows[0] ? null : { message: 'Usuario no encontrado' }
+            error: result.rows[0] ? null : { message: 'Usuario no encontrado' },
           };
-        }
-      }
+        },
+      },
     },
     from: (table: string) => ({
       select: (columns?: string, options?: { count?: 'exact'; head?: boolean }) => {
@@ -183,9 +200,13 @@ export const supabaseServer = async () => {
             return { data: res.rows[0] || null, error: null };
           },
           then<T>(resolve: (value: QueryArrayResponse<T>) => T) {
-            return this._exec().then(res => {
+            return this._exec().then((res) => {
               if (this._countMode === 'exact') {
-                return resolve({ data: res.rows as unknown as T[], error: null, count: res.rowCount || 0 });
+                return resolve({
+                  data: res.rows as unknown as T[],
+                  error: null,
+                  count: res.rowCount || 0,
+                });
               }
               return resolve({ data: res.rows as unknown as T[], error: null });
             });
@@ -197,7 +218,11 @@ export const supabaseServer = async () => {
 
             // DEBUG: Advertir sobre sintaxis problemática pero no bloquear
             if (this._columns.includes(':') || this._columns.includes('!')) {
-              console.warn('⚠️ SINTAXIS SUPABASE DETECTADA (retornará vacío):', this._table, this._columns.substring(0, 100));
+              console.warn(
+                '⚠️ SINTAXIS LEGACY DETECTADA (retornará vacío):',
+                this._table,
+                this._columns.substring(0, 100),
+              );
               return { rows: [], rowCount: 0 }; // Retornar vacío en lugar de lanzar error
             }
 
@@ -207,7 +232,7 @@ export const supabaseServer = async () => {
             }
 
             if (this._where.length > 0) {
-              const conds = this._where.map(w => {
+              const conds = this._where.map((w) => {
                 if (w.op === 'IN') {
                   const values = w.value as unknown[];
                   const ph = values.map(() => `$${i++}`).join(',');
@@ -238,7 +263,7 @@ export const supabaseServer = async () => {
               console.error(`[SQL ERROR] Params:`, params);
               throw err;
             }
-          }
+          },
         };
         return builder;
       },
@@ -265,9 +290,9 @@ export const supabaseServer = async () => {
             return {
               async single() {
                 return promise;
-              }
+              },
             };
-          }
+          },
         });
       },
       update: (data: Record<string, unknown>) => ({
@@ -286,16 +311,18 @@ export const supabaseServer = async () => {
                 const keys = Object.keys(updateData);
                 const vals = Object.values(updateData);
                 const sets = keys.map((k, i) => `${k}=$${i + 1}`).join(',');
-                const wheres = whereClause.map((w, i) => `${w.column}=$${keys.length + i + 1}`).join(' AND ');
+                const wheres = whereClause
+                  .map((w, i) => `${w.column}=$${keys.length + i + 1}`)
+                  .join(' AND ');
                 const sql = `UPDATE ${table} SET ${sets} WHERE ${wheres} RETURNING *`;
-                const allVals = [...vals, ...whereClause.map(w => w.value)];
+                const allVals = [...vals, ...whereClause.map((w) => w.value)];
                 const res = await query(sql, allVals);
                 return { data: res.rows[0], error: null };
               } catch (err) {
                 const error = err as { message: string; code?: string };
                 return { data: null, error: { message: error.message, code: error.code } };
               }
-            }
+            },
           };
         },
         async then<T>(resolve: (value: QueryResponse<T>) => T) {
@@ -303,18 +330,23 @@ export const supabaseServer = async () => {
             const keys = Object.keys(this._data);
             const vals = Object.values(this._data);
             const sets = keys.map((k, i) => `${k}=$${i + 1}`).join(',');
-            const wheres = this._where.map((w, i) => `${w.column}=$${keys.length + i + 1}`).join(' AND ');
+            const wheres = this._where
+              .map((w, i) => `${w.column}=$${keys.length + i + 1}`)
+              .join(' AND ');
             const sql = `UPDATE ${table} SET ${sets} WHERE ${wheres} RETURNING *`;
-            const allVals = [...vals, ...this._where.map(w => w.value)];
+            const allVals = [...vals, ...this._where.map((w) => w.value)];
             const res = await query(sql, allVals);
             return resolve({ data: (res.rows[0] as T) || null, error: null });
           } catch (err) {
             const error = err as { message: string; code?: string };
             return resolve({ data: null, error: { message: error.message, code: error.code } });
           }
-        }
+        },
       }),
-      upsert: (data: Record<string, unknown> | Record<string, unknown>[], options?: { onConflict?: string; ignoreDuplicates?: boolean }) => ({
+      upsert: (
+        data: Record<string, unknown> | Record<string, unknown>[],
+        options?: { onConflict?: string; ignoreDuplicates?: boolean },
+      ) => ({
         select() {
           return {
             async single() {
@@ -326,22 +358,30 @@ export const supabaseServer = async () => {
                 if (!firstRecord) return { data: undefined, error: null };
 
                 const keys = Object.keys(firstRecord);
-                const conflictKeys = options?.onConflict || (keys.includes('profile_id') ? 'profile_id' : keys[0]);
-                const ups = keys.map(k => `${k}=EXCLUDED.${k}`).join(',');
+                const conflictKeys =
+                  options?.onConflict || (keys.includes('profile_id') ? 'profile_id' : keys[0]);
+                const ups = keys.map((k) => `${k}=EXCLUDED.${k}`).join(',');
 
-                const valuePlaceholders = records.map((_, rowIdx) =>
-                  `(${keys.map((_, colIdx) => `$${rowIdx * keys.length + colIdx + 1}`).join(',')})`
-                ).join(',');
+                const valuePlaceholders = records
+                  .map(
+                    (_, rowIdx) =>
+                      `(${keys
+                        .map((_, colIdx) => `$${rowIdx * keys.length + colIdx + 1}`)
+                        .join(',')})`,
+                  )
+                  .join(',');
 
-                const allValues = records.flatMap(record => keys.map(k => record[k]));
-                const sql = `INSERT INTO ${table} (${keys.join(',')}) VALUES ${valuePlaceholders} ON CONFLICT (${conflictKeys}) DO UPDATE SET ${ups} RETURNING *`;
+                const allValues = records.flatMap((record) => keys.map((k) => record[k]));
+                const sql = `INSERT INTO ${table} (${keys.join(
+                  ',',
+                )}) VALUES ${valuePlaceholders} ON CONFLICT (${conflictKeys}) DO UPDATE SET ${ups} RETURNING *`;
                 const res = await query(sql, allValues);
                 return { data: res.rows[0], error: null };
               } catch (err) {
                 const error = err as { message: string; code?: string };
                 return { data: undefined, error: { message: error.message, code: error.code } };
               }
-            }
+            },
           };
         },
         async then<T>(resolve: (value: QueryResponse<T>) => T) {
@@ -353,22 +393,28 @@ export const supabaseServer = async () => {
             if (!firstRecord) return resolve({ data: null, error: null });
 
             const keys = Object.keys(firstRecord);
-            const conflictKeys = options?.onConflict || (keys.includes('profile_id') ? 'profile_id' : keys[0]);
-            const ups = keys.map(k => `${k}=EXCLUDED.${k}`).join(',');
+            const conflictKeys =
+              options?.onConflict || (keys.includes('profile_id') ? 'profile_id' : keys[0]);
+            const ups = keys.map((k) => `${k}=EXCLUDED.${k}`).join(',');
 
-            const valuePlaceholders = records.map((_, rowIdx) =>
-              `(${keys.map((_, colIdx) => `$${rowIdx * keys.length + colIdx + 1}`).join(',')})`
-            ).join(',');
+            const valuePlaceholders = records
+              .map(
+                (_, rowIdx) =>
+                  `(${keys.map((_, colIdx) => `$${rowIdx * keys.length + colIdx + 1}`).join(',')})`,
+              )
+              .join(',');
 
-            const allValues = records.flatMap(record => keys.map(k => record[k]));
-            const sql = `INSERT INTO ${table} (${keys.join(',')}) VALUES ${valuePlaceholders} ON CONFLICT (${conflictKeys}) DO UPDATE SET ${ups} RETURNING *`;
+            const allValues = records.flatMap((record) => keys.map((k) => record[k]));
+            const sql = `INSERT INTO ${table} (${keys.join(
+              ',',
+            )}) VALUES ${valuePlaceholders} ON CONFLICT (${conflictKeys}) DO UPDATE SET ${ups} RETURNING *`;
             const res = await query(sql, allValues);
             return resolve({ data: res.rows[0] as T, error: null });
           } catch (err) {
             const error = err as { message: string; code?: string };
             return resolve({ data: null, error: { message: error.message, code: error.code } });
           }
-        }
+        },
       }),
       delete: () => ({
         _where: [] as WhereClause[],
@@ -389,7 +435,7 @@ export const supabaseServer = async () => {
           const params: unknown[] = [];
           let i = 1;
 
-          const conds = this._where.map(w => {
+          const conds = this._where.map((w) => {
             if (w.op === 'IN') {
               const values = w.value as unknown[];
               const ph = values.map(() => `$${i++}`).join(',');
@@ -403,8 +449,8 @@ export const supabaseServer = async () => {
           sql += conds.join(' AND ');
           await query(sql, params);
           return resolve({ data: null, error: null });
-        }
-      })
+        },
+      }),
     }),
 
     // Método RPC para llamar funciones de PostgreSQL
@@ -413,11 +459,12 @@ export const supabaseServer = async () => {
         // Construir la llamada a la función
         const paramKeys = Object.keys(params);
         const paramPlaceholders = paramKeys.map((_, i) => `$${i + 1}`).join(', ');
-        const paramValues = paramKeys.map(k => params[k]);
+        const paramValues = paramKeys.map((k) => params[k]);
 
-        const sql = paramKeys.length > 0
-          ? `SELECT * FROM ${functionName}(${paramPlaceholders})`
-          : `SELECT * FROM ${functionName}()`;
+        const sql =
+          paramKeys.length > 0
+            ? `SELECT * FROM ${functionName}(${paramPlaceholders})`
+            : `SELECT * FROM ${functionName}()`;
 
         const result = await query(sql, paramValues);
 
@@ -434,7 +481,7 @@ export const supabaseServer = async () => {
         console.error(`RPC error calling ${functionName}:`, error);
         return { data: null, error: { message: error.message } };
       }
-    }
+    },
   };
 };
 
@@ -456,12 +503,12 @@ export const getUserRoleInActiveHousehold = async (): Promise<string | null> => 
 
   console.log('[getUserRoleInActiveHousehold] 🔍 Query params:', {
     profile_id: user.profile_id,
-    household_id: householdId
+    household_id: householdId,
   });
 
   const result = await query(
     'SELECT role FROM household_members WHERE profile_id = $1 AND household_id = $2',
-    [user.profile_id, householdId]
+    [user.profile_id, householdId],
   );
 
   console.log('[getUserRoleInActiveHousehold] 📊 Result:', result.rows[0]);
@@ -475,10 +522,7 @@ export const getUserHouseholds = async () => {
 
   // ✅ FASE 0: Usar RPC optimizada get_user_households_optimized
   // Retorna: household_id, household_name, user_role, is_active, member_count, owner_count
-  const result = await query(
-    `SELECT * FROM get_user_households_optimized($1)`,
-    [user.profile_id]
-  );
+  const result = await query(`SELECT * FROM get_user_households_optimized($1)`, [user.profile_id]);
 
   // Mapear a formato esperado por componentes
   return result.rows.map((row: any) => ({
@@ -503,4 +547,3 @@ export const getCurrentProfileId = async (): Promise<string | null> => {
   const user = await authGetCurrentUser();
   return user?.profile_id || null;
 };
-

@@ -1,12 +1,12 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MonthStatusBadge } from '@/components/shared/MonthStatusBadge';
 import { PeriodActions } from '@/components/periods/PeriodActions';
+import { MonthStatusBadge } from '@/components/shared/MonthStatusBadge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/format';
-import { formatPeriodMonth, calculateMonthlySavings } from '@/lib/periods';
 import type { MonthlyPeriod } from '@/lib/periods';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { calculateMonthlySavings, formatPeriodMonth, normalizePeriodPhase } from '@/lib/periods';
+import { DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 
 interface MonthlyPeriodCardProps {
   period: MonthlyPeriod;
@@ -27,6 +27,7 @@ export function MonthlyPeriodCard({
 }: MonthlyPeriodCardProps) {
   const savings = calculateMonthlySavings(period);
   const isSavings = savings >= 0;
+  const periodPhase = normalizePeriodPhase(period.phase, period.status);
 
   return (
     <Card
@@ -37,7 +38,7 @@ export function MonthlyPeriodCard({
         <CardTitle className="text-base font-semibold">
           {formatPeriodMonth(period.year, period.month)}
         </CardTitle>
-        <MonthStatusBadge status={period.status} />
+        <MonthStatusBadge status={period.status} phase={period.phase} />
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -82,15 +83,13 @@ export function MonthlyPeriodCard({
           </div>
 
           {/* Ahorro del Mes */}
-          {period.status !== 'open' && (
+          {periodPhase.phase !== 'active' && periodPhase.phase !== 'preparing' && (
             <div className="rounded-lg bg-muted/50 p-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
                   {isSavings ? 'Ahorro' : 'Déficit'} del mes
                 </span>
-                <span
-                  className={`font-semibold ${isSavings ? 'text-green-600' : 'text-red-600'}`}
-                >
+                <span className={`font-semibold ${isSavings ? 'text-green-600' : 'text-red-600'}`}>
                   {isSavings ? '+' : ''}
                   {formatCurrency(savings)}
                 </span>
@@ -99,7 +98,7 @@ export function MonthlyPeriodCard({
           )}
 
           {/* Notas (si está cerrado) */}
-          {period.status === 'closed' && period.notes && (
+          {periodPhase.phase === 'closed' && period.notes && (
             <div className="text-xs text-muted-foreground">
               <span className="font-medium">Notas:</span> {period.notes}
             </div>

@@ -65,6 +65,30 @@ export interface DualFlowTransaction {
 }
 
 // ============================================================================
+// INTERFAZ: LEDGER UNIFICADO (dual_flow + transactions)
+// ============================================================================
+
+export type UnifiedLedgerSource = 'dual_flow' | 'transactions';
+
+export interface UnifiedLedgerEntry {
+  id: string;
+  source: UnifiedLedgerSource;
+  concepto: string;
+  categoria: string;
+  importe: number;
+  fecha: string;
+  tipo: TransactionTypeDualFlow;
+  estado: DualFlowStatus;
+  tipo_flujo: DualFlowType;
+  requiere_aprobacion: boolean;
+  pagado_por?: string | null;
+  pagado_por_nombre?: string | null;
+  transaccion_pareja?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================================
 // INTERFAZ DE CONFIGURACIÓN: DUAL_FLOW_CONFIG
 // ============================================================================
 

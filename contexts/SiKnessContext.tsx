@@ -128,7 +128,7 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
   useEffect(() => {
     const initializeData = async () => {
       if (isLoading || households.length > 0) return; // Ya inicializado
-      
+
       setIsLoading(true);
       try {
         const response = await fetch('/api/sickness/init');

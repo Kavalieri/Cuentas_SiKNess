@@ -19,11 +19,19 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/app');
+  const pathname = request.nextUrl.pathname;
+  const isApiRoute = pathname.startsWith('/api') || pathname.startsWith('/app/api');
+  const isProtectedRoute = pathname.startsWith('/app');
+  const isDualFlowRoute = pathname.startsWith('/dual-flow');
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth/verify');
   const isLoginRoute = request.nextUrl.pathname.startsWith('/login');
+  const requiresAuth = (isProtectedRoute || isDualFlowRoute) && !isAuthRoute;
 
-  if (isProtectedRoute && !isAuthRoute) {
+  if (isApiRoute) {
+    return response;
+  }
+
+  if (requiresAuth) {
     const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
     if (!sessionToken) {
@@ -33,15 +41,10 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const payload = await jwtVerify(sessionToken, JWT_SECRET);
+      await jwtVerify(sessionToken, JWT_SECRET);
 
-      // ADMIN REDIRECTION: Si el admin visita /app, redirigir a /dual-flow
-      if (
-        payload.payload.email === 'caballeropomes@gmail.com' &&
-        request.nextUrl.pathname.startsWith('/app')
-      ) {
-        return NextResponse.redirect(new URL('/dual-flow', request.url));
-      }
+      // Redirigir SIEMPRE a la nueva interfaz /sickness
+      return NextResponse.redirect(new URL('/sickness', request.url));
     } catch {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('error', 'session_expired');
@@ -56,14 +59,10 @@ export async function middleware(request: NextRequest) {
     const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     if (sessionToken) {
       try {
-        const payload = await jwtVerify(sessionToken, JWT_SECRET);
+        await jwtVerify(sessionToken, JWT_SECRET);
 
-        // ADMIN REDIRECTION: Si el admin accede a login y ya está autenticado, ir a dual-flow
-        if (payload.payload.email === 'caballeropomes@gmail.com') {
-          return NextResponse.redirect(new URL('/dual-flow', request.url));
-        }
-
-        return NextResponse.redirect(new URL('/app', request.url));
+        // Redirigir SIEMPRE a la nueva interfaz /sickness
+        return NextResponse.redirect(new URL('/sickness', request.url));
       } catch {
         response.cookies.delete(SESSION_COOKIE_NAME);
       }

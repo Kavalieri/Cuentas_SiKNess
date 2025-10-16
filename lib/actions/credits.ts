@@ -1,10 +1,10 @@
 'use server';
 
+import { getCurrentUser, getUserHouseholdId, pgServer } from '@/lib/pgServer';
+import type { Result } from '@/lib/result';
+import { fail, ok } from '@/lib/result';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { pgServer, getCurrentUser, getUserHouseholdId } from '@/lib/pgServer';
-import { ok, fail } from '@/lib/result';
-import type { Result } from '@/lib/result';
 
 // ============================================
 // SCHEMAS
@@ -207,8 +207,10 @@ export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
       return fail('Error al obtener créditos aplicados');
     }
 
-    const activeTotal = activeCredits?.reduce((sum, credit) => sum + (credit as any).amount, 0) || 0;
-    const appliedTotal = appliedCredits?.reduce((sum, credit) => sum + (credit as any).amount, 0) || 0;
+    const activeTotal =
+      activeCredits?.reduce((sum, credit) => sum + (credit as any).amount, 0) || 0;
+    const appliedTotal =
+      appliedCredits?.reduce((sum, credit) => sum + (credit as any).amount, 0) || 0;
 
     const summary: CreditsSummary = {
       active: {
@@ -232,7 +234,7 @@ export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
  * Aplica un crédito a una contribución específica
  */
 export async function applyCreditToContribution(
-  formData: FormData
+  formData: FormData,
 ): Promise<Result<{ amountApplied: number; newExpectedAmount: number }>> {
   try {
     const supabase = await pgServer();
@@ -386,7 +388,7 @@ export async function setCreditMonthlyDecision(formData: FormData): Promise<Resu
  */
 export async function createManualCredit(
   profileId: string,
-  amount: number
+  amount: number,
 ): Promise<Result<string>> {
   try {
     const supabase = await pgServer();

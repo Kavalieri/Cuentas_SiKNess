@@ -1,7 +1,9 @@
 /**
- * WRAPPER DE COMPATIBILIDAD - Cliente Browser
- * Este archivo mantiene compatibilidad con código que usa supabaseBrowser
- * En realidad, todo se maneja server-side ahora con cookies httpOnly
+ * WRAPPER DE COMPATIBILIDAD - Cliente Browser (deprecated)
+ * Este archivo mantiene compatibilidad con código legacy que usaba cliente browser
+ * En realidad, todo se maneja server-side ahora con cookies httpOnly y PostgreSQL directo
+ *
+ * ⚠️ DEPRECATED: Usar Server Actions en su lugar
  */
 
 // Tipo para el builder que encadena métodos
@@ -19,12 +21,14 @@ type QueryBuilder = {
   limit: (count?: number) => QueryBuilder;
   single: () => Promise<{ data: null; error: { message: string; hint: string } }>;
   maybeSingle: () => Promise<{ data: null; error: { message: string; hint: string } }>;
-  then: <T>(resolve: (value: { data: null; error: { message: string; hint: string } }) => T) => Promise<T>;
+  then: <T>(
+    resolve: (value: { data: null; error: { message: string; hint: string } }) => T,
+  ) => Promise<T>;
   catch: <T>(reject: (error: unknown) => T) => Promise<T>;
 };
 
-export const supabaseBrowser = () => {
-  console.warn('supabaseBrowser() llamado - toda la auth es server-side ahora');
+export const pgBrowser = () => {
+  console.warn('pgBrowser() llamado - toda la auth es server-side ahora con PostgreSQL directo');
 
   return {
     auth: {
@@ -37,20 +41,22 @@ export const supabaseBrowser = () => {
         console.warn('getUser() desde browser no soportado - usar server components');
         return {
           data: { user: null },
-          error: { message: 'Use server components for auth' }
+          error: { message: 'Use server components for auth' },
         };
-      }
+      },
     },
     from: (table: string) => {
-      console.error(`❌ supabaseBrowser().from("${table}") NO SOPORTADO - usar Server Actions`);
+      console.error(
+        `❌ pgBrowser().from("${table}") NO SOPORTADO - usar Server Actions con PostgreSQL`,
+      );
 
       // Devolver objeto con métodos que fallan explícitamente
       const errorResponse = {
         data: null,
         error: {
           message: 'Client-side queries no soportadas. Usar Server Actions o Server Components.',
-          hint: `Mueve la query de "${table}" a una Server Action`
-        }
+          hint: `Mueve la query de "${table}" a una Server Action`,
+        },
       };
 
       // Builder que encadena métodos y siempre devuelve una Promise con error
@@ -78,8 +84,7 @@ export const supabaseBrowser = () => {
           // Hacer el builder thenable para que pueda usarse como Promise
           then: <T>(resolve: (value: typeof errorResponse) => T) =>
             Promise.resolve(resolve(errorResponse)),
-          catch: <T>(reject: (error: unknown) => T) =>
-            Promise.resolve(reject(errorResponse.error))
+          catch: <T>(reject: (error: unknown) => T) => Promise.resolve(reject(errorResponse.error)),
         };
         return builder;
       };
@@ -90,6 +95,6 @@ export const supabaseBrowser = () => {
         update: (_data?: unknown) => createBuilder(),
         delete: () => createBuilder(),
       };
-    }
+    },
   };
 };

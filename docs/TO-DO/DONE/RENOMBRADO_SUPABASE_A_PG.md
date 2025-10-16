@@ -16,19 +16,19 @@ Renombrado de archivos de compatibilidad y actualización de todas las referenci
 
 ### Archivos de Compatibilidad
 
-| Antes                      | Después              | Propósito                                  |
-| -------------------------- | -------------------- | ------------------------------------------ |
-| `lib/supabaseServer.ts`    | `lib/pgServer.ts`    | Capa de compatibilidad PostgreSQL servidor |
-| `lib/supabaseBrowser.ts`   | `lib/pgBrowser.ts`   | Stub deprecado de cliente browser          |
-| `lib/supabaseAdmin.ts`     | `lib/pgAdmin.ts`     | Wrapper deprecado de funciones admin       |
+| Antes                    | Después            | Propósito                                  |
+| ------------------------ | ------------------ | ------------------------------------------ |
+| `lib/supabaseServer.ts`  | `lib/pgServer.ts`  | Capa de compatibilidad PostgreSQL servidor |
+| `lib/supabaseBrowser.ts` | `lib/pgBrowser.ts` | Stub deprecado de cliente browser          |
+| `lib/supabaseAdmin.ts`   | `lib/pgAdmin.ts`   | Wrapper deprecado de funciones admin       |
 
 ### Funciones Exportadas
 
-| Antes                 | Después            |
-| --------------------- | ------------------ |
-| `supabaseServer()`    | `pgServer()`       |
-| `supabaseBrowser()`   | `pgBrowser()`      |
-| `supabaseAdmin()`     | `pgAdmin()`        |
+| Antes               | Después       |
+| ------------------- | ------------- |
+| `supabaseServer()`  | `pgServer()`  |
+| `supabaseBrowser()` | `pgBrowser()` |
+| `supabaseAdmin()`   | `pgAdmin()`   |
 
 ---
 
@@ -111,6 +111,7 @@ supabase: Awaited<ReturnType<typeof pgServer>>;
 **Razón**: El código en `/archive/legacy/` está deprecado y no forma parte del sistema activo. Los imports rotos son intencionales para evitar uso accidental.
 
 **Archivos afectados**: ~100+ archivos en:
+
 - `/archive/legacy/app/app/`
 - `/archive/legacy/app/dual-flow/`
 - `/archive/legacy/components/`

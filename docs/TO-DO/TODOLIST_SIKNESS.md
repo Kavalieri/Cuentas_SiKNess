@@ -1,6 +1,6 @@
 # 📝 TODOLIST · SiKNess
 
-**Actualizado:** 16/10/2025
+**Actualizado:** 17/10/2025
 
 ---
 
@@ -69,10 +69,21 @@
 - ✅ **Integración completa con privacy mode**
 - ✅ **Diseño mobile-first responsive**
 
+### Configuración - Perfil ✅ (17/10/2025)
+
+- ✅ **Página `/sickness/configuracion/perfil/page.tsx` funcional**
+- ✅ **Actualización de nombre visible** (server action con validación Zod)
+- ✅ **Gestión de ingresos mensuales** (histórico con `member_incomes`)
+- ✅ **Bug fix: ORDER BY created_at DESC** para obtener ingreso más reciente
+- ✅ **Bug fix: Sincronización de input** tras actualizar ingreso
+- ✅ **Información de cuenta** (fecha creación, rol sistema)
+- ✅ **Integración con SiKnessContext**
+
 ### Resto de Fase 3 (Pendiente)
 
+- [ ] **CRUD Hogar** - Gestión de miembros, invitaciones, configuración
+- [ ] **CRUD Categorías** - Listado, crear, editar, eliminar
 - [ ] Lista de transacciones en dashboard
-- [ ] CRUD perfil, hogar y categorías
 - [ ] Workflow de periodo (fases, checklist, cierre)
 
 ## Fase 4 · Depuración y migración

@@ -4,12 +4,13 @@ import { Badge } from '@/components/ui/badge';
 import { getPeriodStatusInfo } from '@/lib/periods';
 
 interface MonthStatusBadgeProps {
-  status: string;
+  status?: string | null;
+  phase?: string | null;
   className?: string;
 }
 
-export function MonthStatusBadge({ status, className }: MonthStatusBadgeProps) {
-  const statusInfo = getPeriodStatusInfo(status);
+export function MonthStatusBadge({ status, phase, className }: MonthStatusBadgeProps) {
+  const statusInfo = getPeriodStatusInfo({ status, phase });
 
   return (
     <Badge variant={statusInfo.variant} className={className}>

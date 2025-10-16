@@ -3,9 +3,9 @@
 
 'use server';
 
+import { getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
-import { getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Database } from '@/types/database';
 import { z } from 'zod';
 

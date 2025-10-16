@@ -97,7 +97,7 @@
     "oderwat.indent-rainbow",
 
     // Bracket Pair Colorizer 2
-    "coenraads.bracket-pair-colorizer-2",
+    //"coenraads.bracket-pair-colorizer-2", deprecated!!
 
     // ============================================================================
     // 🧰 Utilities

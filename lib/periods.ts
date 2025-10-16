@@ -2,8 +2,8 @@
  * Utilidades para trabajar con períodos mensuales
  */
 
-import type { Database } from '@/types/database';
 import { toNumber } from '@/lib/format';
+import type { Database } from '@/types/database';
 
 // Importar tipo generado desde Supabase
 export type MonthlyPeriod = Database['public']['Tables']['monthly_periods']['Row'];

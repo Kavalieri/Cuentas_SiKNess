@@ -1,11 +1,7 @@
 /**
  * Formatea un número como moneda
  */
-export const formatCurrency = (
-  amount: number,
-  currency = 'EUR',
-  locale = 'es-ES',
-): string => {
+export const formatCurrency = (amount: number, currency = 'EUR', locale = 'es-ES'): string => {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
@@ -25,14 +21,14 @@ export const parseCurrency = (value: string): number => {
 
 /**
  * Convierte un valor numeric de PostgreSQL a number
- * 
+ *
  * PostgreSQL devuelve los valores de tipo 'numeric' como strings
  * para preservar precisión exacta. Este helper hace la conversión
  * de forma segura.
- * 
+ *
  * @param value - Valor que puede ser string (de PostgreSQL) o ya number
  * @returns number - El valor como número de JavaScript
- * 
+ *
  * @example
  * const income = toNumber(row.monthly_income); // "1500.00" → 1500
  */

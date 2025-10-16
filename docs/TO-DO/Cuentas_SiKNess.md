@@ -230,7 +230,9 @@ Vinculado al periodo activo seleccionado.
     - **Derecha**: Privacy toggle + Theme toggle
   - **Eliminada duplicación** de selectores (segunda línea redundante removida)
   - **Removido balance del topbar** (mejora visual, balance se mostrará en dashboard)
-  - Diseño compacto mobile-first en `h-14` (56px)- **Sistema de APIs completo** ✅
+  - Diseño compacto mobile-first en `h-14` (56px)
+
+- **Sistema de APIs completo** ✅
 
   - `/api/sickness/init` (GET) - Carga inicial de datos del usuario
     - Hogares disponibles con metadata (miembros, owners)
@@ -256,11 +258,28 @@ Vinculado al periodo activo seleccionado.
   - Dark/Light mode con next-themes (botón sol/luna en topbar)
   - Modo privacidad (botón ojo/ojo tachado en topbar)
 
-### Próximos pasos (Fase 3)
+### Fase 3 - En Progreso 🔄 (17/10/2025)
 
-- Conectar dashboard de balance con datos reales
-- Implementar CRUD completo de perfil, hogar y categorías
-- Workflow de periodos (fases, checklist, cierre)
-- Lista de transacciones con filtros y búsqueda
+- **Dashboard de Balance** ✅ (16/10/2025)
+  - Página `/sickness/dashboard/page.tsx` completa
+  - Tarjetas de resumen (opening, closing, income, expenses)
+  - Gastos directos y contribuciones pendientes destacados
+  - Integración completa con privacy mode
+  - Diseño mobile-first responsive
+
+- **Configuración - Perfil** ✅ (17/10/2025)
+  - Página `/sickness/configuracion/perfil/page.tsx` funcional
+  - Actualización de nombre visible (server action con Zod)
+  - Gestión de ingresos mensuales (histórico con `member_incomes`)
+  - Bug fixes: ORDER BY created_at DESC + sincronización de input
+  - Información de cuenta completa
+  - Integración con SiKnessContext
+
+### Próximos pasos (Fase 3 - Continuación)
+
+- **CRUD Hogar** - Gestión de miembros, invitaciones, objetivo de fondo
+- **CRUD Categorías** - Listado, crear, editar, eliminar categorías
+- **Workflow de periodos** - Fases 1-2-3 + cierre de periodo
+- **Lista de transacciones** - Filtros, búsqueda, paginación
 
 ---

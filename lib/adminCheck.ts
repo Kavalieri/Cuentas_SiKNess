@@ -87,10 +87,7 @@ export async function isOwner(): Promise<boolean> {
  * @param householdId - ID del household
  * @returns true si es owner, false en caso contrario
  */
-export async function isHouseholdOwner(
-  profileId: string,
-  householdId: string
-): Promise<boolean> {
+export async function isHouseholdOwner(profileId: string, householdId: string): Promise<boolean> {
   const supabase = await pgServer();
 
   const { data, error } = await supabase

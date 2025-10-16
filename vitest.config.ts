@@ -1,6 +1,6 @@
-import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
@@ -8,6 +8,20 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    include: [
+      'tests/**/*.test.ts',
+      'tests/**/*.test.tsx',
+      'tests/**/*.spec.ts',
+      'tests/**/*.spec.tsx',
+      '**/__tests__/**/*.test.ts',
+      '**/__tests__/**/*.test.tsx',
+      '**/__tests__/**/*.spec.ts',
+      '**/__tests__/**/*.spec.tsx',
+    ],
+    coverage: {
+      reporter: ['text', 'html'],
+      reportsDirectory: './coverage',
+    },
   },
   resolve: {
     alias: {

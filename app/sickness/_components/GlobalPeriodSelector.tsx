@@ -1,6 +1,5 @@
 'use client';
 
-import { useSiKness } from '@/contexts/SiKnessContext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useSiKness } from '@/contexts/SiKnessContext';
 import { Calendar, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
@@ -80,8 +80,7 @@ export function GlobalPeriodSelector() {
             const isActive =
               activePeriod?.year === selectedYear && activePeriod?.month === monthNumber;
             const isCurrent =
-              currentYear === selectedYear &&
-              new Date().getMonth() + 1 === monthNumber;
+              currentYear === selectedYear && new Date().getMonth() + 1 === monthNumber;
 
             return (
               <Button
@@ -93,9 +92,7 @@ export function GlobalPeriodSelector() {
               >
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-medium">{month.slice(0, 3)}</span>
-                  {isCurrent && (
-                    <span className="text-[10px] text-muted-foreground">Actual</span>
-                  )}
+                  {isCurrent && <span className="text-[10px] text-muted-foreground">Actual</span>}
                 </div>
               </Button>
             );

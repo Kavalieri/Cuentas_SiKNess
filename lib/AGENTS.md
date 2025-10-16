@@ -27,12 +27,14 @@ const income = toNumber(result.rows[0]?.monthly_income); // string → number
 ```
 
 **Tipos de datos numéricos en el esquema:**
+
 - `member_incomes.monthly_income`: `numeric` (sin precisión)
 - `transactions.amount`: `numeric` (sin precisión)
 - `contributions.expected_amount`: `numeric` (sin precisión)
 - `contributions.adjustments_paid_amount`: `numeric(10,2)` (con precisión)
 
 **Por qué `numeric` y no `real`/`double`:**
+
 - ✅ Precisión exacta para valores monetarios (no pierde céntimos)
 - ✅ Soporta valores muy grandes sin límites arbitrarios
 - ✅ Operaciones matemáticas exactas en SQL

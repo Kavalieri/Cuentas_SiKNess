@@ -1,6 +1,6 @@
+import { SESSION_COOKIE_NAME, SESSION_EXPIRY, verifyMagicLink } from '@/lib/auth';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { verifyMagicLink, SESSION_COOKIE_NAME, SESSION_EXPIRY } from '@/lib/auth';
 
 /**
  * Endpoint para verificar magic links
@@ -9,7 +9,8 @@ import { verifyMagicLink, SESSION_COOKIE_NAME, SESSION_EXPIRY } from '@/lib/auth
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const token = searchParams.get('token');
-  const redirect = searchParams.get('redirect') || '/app';
+  // Redirigir SIEMPRE a la nueva interfaz /sickness
+  const redirect = '/sickness';
 
   console.log('🔍 Verify endpoint called');
   console.log('Token received:', token?.substring(0, 20) + '...');
@@ -17,9 +18,7 @@ export async function GET(request: NextRequest) {
 
   if (!token) {
     console.log('❌ No token provided');
-    return NextResponse.redirect(
-      new URL('/login?error=missing_token', request.url)
-    );
+    return NextResponse.redirect(new URL('/login?error=missing_token', request.url));
   }
 
   // Verificar el token y crear sesión
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest) {
   if (!result.success) {
     console.log('❌ Verification failed:', result.error);
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(result.error || 'invalid_token')}`, request.url)
+      new URL(`/login?error=${encodeURIComponent(result.error || 'invalid_token')}`, request.url),
     );
   }
 
@@ -49,9 +48,10 @@ export async function GET(request: NextRequest) {
   // Crear respuesta de redirección
   // Usar el origin del request (respeta proxy/dominio) en lugar de request.url directo
   const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
-  const proto = request.headers.get('x-forwarded-proto') ||
-                (request.headers.get('x-forwarded-ssl') === 'on' ? 'https' : null) ||
-                (host?.includes('localhost') ? 'http' : 'https');
+  const proto =
+    request.headers.get('x-forwarded-proto') ||
+    (request.headers.get('x-forwarded-ssl') === 'on' ? 'https' : null) ||
+    (host?.includes('localhost') ? 'http' : 'https');
 
   const origin = `${proto}://${host}`;
   const redirectUrl = new URL(redirect, origin);

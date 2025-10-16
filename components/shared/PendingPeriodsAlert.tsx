@@ -1,11 +1,11 @@
 'use client';
 
-import { AlertCircle, X } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { MonthlyPeriod } from '@/lib/periods';
-import { formatPeriodMonth } from '@/lib/periods';
+import { formatPeriodMonth, groupPeriodsByPhase } from '@/lib/periods';
+import { AlertCircle, X } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 
 interface PendingPeriodsAlertProps {
   periods: MonthlyPeriod[];
@@ -14,7 +14,9 @@ interface PendingPeriodsAlertProps {
 export function PendingPeriodsAlert({ periods }: PendingPeriodsAlertProps) {
   const [dismissed, setDismissed] = useState(false);
 
-  if (periods.length === 0 || dismissed) {
+  const actionablePeriods = useMemo(() => groupPeriodsByPhase(periods).actionable, [periods]);
+
+  if (actionablePeriods.length === 0 || dismissed) {
     return null;
   }
 
@@ -24,23 +26,26 @@ export function PendingPeriodsAlert({ periods }: PendingPeriodsAlertProps) {
         <AlertCircle className="h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-500" />
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-yellow-900 dark:text-yellow-100">
-            {periods.length === 1
+            {actionablePeriods.length === 1
               ? 'Tienes 1 mes pendiente de cerrar'
-              : `Tienes ${periods.length} meses pendientes de cerrar`}
+              : `Tienes ${actionablePeriods.length} meses pendientes de cerrar`}
           </h3>
           <div className="mt-2 text-sm text-yellow-800 dark:text-yellow-200">
-            {periods.length === 1 ? (
+            {actionablePeriods.length === 1 ? (
               <p>
-                El mes de <strong>{formatPeriodMonth(periods[0]!.year, periods[0]!.month)}</strong>{' '}
+                El mes de{' '}
+                <strong>
+                  {formatPeriodMonth(actionablePeriods[0]!.year, actionablePeriods[0]!.month)}
+                </strong>{' '}
                 está listo para cerrar. Cierra el mes para consolidar el balance y evitar
                 modificaciones accidentales.
               </p>
             ) : (
               <p>
                 Los meses{' '}
-                {periods.map((p, i) => (
+                {actionablePeriods.map((p, i) => (
                   <span key={p.id}>
-                    {i > 0 && (i === periods.length - 1 ? ' y ' : ', ')}
+                    {i > 0 && (i === actionablePeriods.length - 1 ? ' y ' : ', ')}
                     <strong>{formatPeriodMonth(p.year, p.month)}</strong>
                   </span>
                 ))}{' '}
@@ -52,9 +57,12 @@ export function PendingPeriodsAlert({ periods }: PendingPeriodsAlertProps) {
             <Button asChild variant="outline" size="sm">
               <Link href="/app/periods">Ver Períodos</Link>
             </Button>
-            {periods.length === 1 && (
+            {actionablePeriods.length === 1 && (
               <Button asChild variant="default" size="sm">
-                <Link href={`/app/periods/${periods[0]!.id}`}>Cerrar {formatPeriodMonth(periods[0]!.year, periods[0]!.month)}</Link>
+                <Link href={`/app/periods/${actionablePeriods[0]!.id}`}>
+                  Cerrar{' '}
+                  {formatPeriodMonth(actionablePeriods[0]!.year, actionablePeriods[0]!.month)}
+                </Link>
               </Button>
             )}
           </div>

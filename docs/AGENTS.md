@@ -9,7 +9,6 @@
 - Mantén los documentos "sistemas completos" como referencias únicas:
   - PM2: `PM2_SISTEMA_COMPLETO.md`
   - PostgreSQL: `POSTGRESQL_SISTEMA_COMPLETO.md`
-  - Dual-Flow: `MIGRACION_DUAL_FLOW_OPTIMIZADA.md`
 
 ## Estilo
 

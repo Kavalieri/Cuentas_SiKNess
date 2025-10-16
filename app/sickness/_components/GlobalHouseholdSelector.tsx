@@ -1,6 +1,5 @@
 'use client';
 
-import { useSiKness } from '@/contexts/SiKnessContext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useSiKness } from '@/contexts/SiKnessContext';
 import { ChevronDown, Home, Users } from 'lucide-react';
 
 export function GlobalHouseholdSelector() {
@@ -54,9 +54,7 @@ export function GlobalHouseholdSelector() {
                 </span>
               </div>
             </div>
-            {household.isOwner && (
-              <span className="text-xs text-primary">Owner</span>
-            )}
+            {household.isOwner && <span className="text-xs text-primary">Owner</span>}
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />

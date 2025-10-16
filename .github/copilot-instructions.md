@@ -83,6 +83,8 @@
 - Usar MCP de git y github para gestionar el repositorio cómodamente.
 - Si algun elemento documentado resulta no ser cierto, editar actualizando al estado real o deprecar archivando.
 - Revisar tareas pendientes en `docs/TO-DO` y actualizar su estado. Una vez terminadas, mover a `docs/TO-DO/DONE`.
+- Documentar cualquier cambio en la estructura del proyecto o en las dependencias en los `AGENT.md` y `/docs`
+- npm run lint y npm run typecheck para validar compilación, **NO BUILD**
 - ❌ **NUNCA usar Supabase MCPs** (proyecto migrado a PostgreSQL directo)
 - ❌ **NUNCA usar Vercel MCPs** (deploy en servidor propio con PM2)
 - ❌ **NUNCA aplicar migraciones desde la aplicación** (usar `/scripts` y `.vscode/tasks.json` dedicados)

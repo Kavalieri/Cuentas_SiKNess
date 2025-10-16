@@ -1,9 +1,9 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
-import { pgServer, getCurrentUser } from '@/lib/pgServer';
-import { ok, fail } from '@/lib/result';
+import { getCurrentUser, pgServer } from '@/lib/pgServer';
 import type { Result } from '@/lib/result';
+import { fail, ok } from '@/lib/result';
+import { revalidatePath } from 'next/cache';
 
 /**
  * Cambia el household activo del usuario
@@ -41,13 +41,11 @@ export async function setActiveHousehold(householdId: string): Promise<Result> {
   }
 
   // Actualizar settings
-  const { error } = await supabase
-    .from('user_settings')
-    .upsert({
-      profile_id: profile.id,
-      active_household_id: householdId,
-      updated_at: new Date().toISOString(),
-    });
+  const { error } = await supabase.from('user_settings').upsert({
+    profile_id: profile.id,
+    active_household_id: householdId,
+    updated_at: new Date().toISOString(),
+  });
 
   if (error) {
     console.error('Error updating active household:', error);

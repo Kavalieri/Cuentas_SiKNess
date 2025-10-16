@@ -1,8 +1,8 @@
 # 🗂️ Archivo de Código Legacy - CuentasSiK
 
-**Fecha**: 16 Octubre 2025  
-**Acción**: Archivado completo de código legacy y experimental  
-**Ubicación**: `/archive/legacy/`  
+**Fecha**: 16 Octubre 2025
+**Acción**: Archivado completo de código legacy y experimental
+**Ubicación**: `/archive/legacy/`
 **Estado Git**: **EXCLUIDO del repositorio** (`.gitignore`)
 
 ---
@@ -87,15 +87,15 @@ Limpiar el proyecto de código obsoleto y experimental para construir **SiKness*
 
 ### Resumen por Tipo
 
-| Tipo              | Cantidad | Ubicación                     |
-| ----------------- | -------- | ----------------------------- |
-| Pages (App)       | 159      | `/archive/legacy/app/app/`    |
-| Pages (DualFlow)  | 47       | `/archive/legacy/app/dual-flow/` |
-| APIs              | 6        | `/archive/legacy/app/api/`    |
-| Components        | 17       | `/archive/legacy/components/` |
-| Hooks             | 1        | `/archive/legacy/lib/hooks/`  |
-| Documentación     | 7        | `/archive/legacy/docs/`       |
-| **TOTAL**         | **237**  | **archivos legacy**           |
+| Tipo             | Cantidad | Ubicación                        |
+| ---------------- | -------- | -------------------------------- |
+| Pages (App)      | 159      | `/archive/legacy/app/app/`       |
+| Pages (DualFlow) | 47       | `/archive/legacy/app/dual-flow/` |
+| APIs             | 6        | `/archive/legacy/app/api/`       |
+| Components       | 17       | `/archive/legacy/components/`    |
+| Hooks            | 1        | `/archive/legacy/lib/hooks/`     |
+| Documentación    | 7        | `/archive/legacy/docs/`          |
+| **TOTAL**        | **237**  | **archivos legacy**              |
 
 ### Estructura del Archive
 
@@ -211,15 +211,17 @@ cat .gitignore | grep archive
 Si en el futuro necesitas recuperar código legacy:
 
 1. **Desde Git History**:
+
    ```bash
    # Ver commits antes del archivado
    git log --all --full-history -- "app/app/expenses/page.tsx"
-   
+
    # Recuperar archivo específico de un commit anterior
    git checkout <commit-hash> -- app/app/expenses/page.tsx
    ```
 
 2. **Desde Archive Local**:
+
    ```bash
    # Copiar desde archive/legacy/
    cp archive/legacy/app/app/expenses/page.tsx app/app/expenses/
@@ -254,7 +256,8 @@ Con el código legacy archivado y excluido de Git, el proyecto está listo para:
 
 ---
 
-**Estado Final**: 
+**Estado Final**:
+
 - 🟢 Código legacy archivado localmente
 - 🟢 Git limpio (archive/ excluido)
 - 🟢 Sistema SiKness funcional

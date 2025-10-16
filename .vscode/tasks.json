@@ -147,7 +147,7 @@
       "problemMatcher": []
     },
     {
-      "label": "� DEV: Consola en Tiempo Real",
+      "label": "🚀 DEV: Consola en Tiempo Real",
       "type": "shell",
       "command": "pm2",
       "args": ["logs", "cuentassik-dev", "--timestamp"],
@@ -179,7 +179,7 @@
       "problemMatcher": []
     },
     {
-      "label": "� PROD: Consola en Tiempo Real",
+      "label": "🚀 PROD: Consola en Tiempo Real",
       "type": "shell",
       "command": "pm2",
       "args": ["logs", "cuentassik-prod", "--timestamp"],
@@ -248,35 +248,6 @@
         "showReuseMessage": false
       },
       "problemMatcher": []
-    },
-    {
-      "label": "🚀 Abrir Testing Dual-Flow",
-      "type": "shell",
-      "command": "bash",
-      "args": [
-        "-c",
-        "echo '🚀 Testing Dual-Flow disponible en:' && echo '   http://localhost:3001/dual-flow/testing' && echo '' && echo '📊 Estado actual:' && pm2 list | grep cuentassik-dev || echo 'Proceso dev no está ejecutándose'"
-      ],
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-
-    {
-      "label": "📥 Sincronizar PROD → DEV",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/sync_prod_to_dev.sh"
-    },
-    {
-      "label": "➕ Crear Nueva Migración",
-      "type": "shell",
-      "command": "mkdir -p ${workspaceFolder}/database/migrations/development && cd ${workspaceFolder}/database/migrations/development && FILENAME=$(date +%Y%m%d_%H%M%S)_nueva_migracion.sql && echo '-- Migración: ' $FILENAME > $FILENAME && echo '-- Descripción: [DESCRIBE QUÉ HACE ESTA MIGRACIÓN]' >> $FILENAME && echo '' >> $FILENAME && echo '-- Tu SQL aquí:' >> $FILENAME && echo '' >> $FILENAME && echo '✅ Migración creada:' $FILENAME"
     },
     {
       "label": "🔄 Aplicar Migraciones a DEV",

@@ -70,18 +70,8 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Authentication successful, creating response with cookie');
 
-    // Determinar destino: si tiene state usar eso, si no verificar si tiene household
-    let redirectPath = state || '/app';
-
-    // Si no hay state específico, verificar si el usuario tiene household
-    if (!state) {
-      // TODO: Aquí deberíamos verificar si el usuario tiene household
-      // Por ahora siempre redirigir a /app y que el layout maneje el onboarding
-      redirectPath = '/app';
-    }
-
-    // Construir URL completa de redirect con el dominio correcto (IGUAL QUE MAGIC LINKS)
-    const redirectUrl = new URL(redirectPath, origin);
+    // Redirigir SIEMPRE a la nueva interfaz /sickness
+    const redirectUrl = new URL('/sickness', origin);
     console.log('🔗 Redirecting to:', redirectUrl.toString());
 
     // Crear respuesta de redirect
