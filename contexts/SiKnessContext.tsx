@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 // ============================================
 // TYPES
@@ -12,24 +12,20 @@ export type SiKnessPeriodStatus = 'active' | 'locked' | 'closed';
 export interface HouseholdOption {
   id: string;
   name: string;
+  role: string;
   isOwner: boolean;
   memberCount: number;
   ownerCount: number;
-  createdAt: string;
-  isActive: boolean;
 }
 
 export interface PeriodOption {
   id: string;
   year: number;
   month: number;
-  day: number;
-  phase: SiKnessPhase;
-  status: SiKnessPeriodStatus;
+  status: string;
   openingBalance: number;
   closingBalance: number;
-  totalIncome: number;
-  totalExpenses: number;
+  isCurrent: boolean;
 }
 
 export interface BalanceData {
@@ -100,28 +96,71 @@ const SiKnessContext = createContext<SiKnessContextValue | undefined>(undefined)
 
 export function SiKnessProvider({ children, initialData }: SiKnessProviderProps) {
   // Estado del hogar
-  const [householdId, setHouseholdId] = useState<string | null>(
-    initialData?.householdId ?? null
-  );
-  const [households, _setHouseholds] = useState<HouseholdOption[]>(
-    initialData?.households ?? []
-  );
+  const [householdId, setHouseholdId] = useState<string | null>(initialData?.householdId ?? null);
+  const [households, setHouseholds] = useState<HouseholdOption[]>(initialData?.households ?? []);
   const [isOwner, setIsOwner] = useState<boolean>(initialData?.isOwner ?? false);
 
   // Estado del período
   const [activePeriod, setActivePeriod] = useState<PeriodOption | null>(
-    initialData?.activePeriod ?? null
+    initialData?.activePeriod ?? null,
   );
-  const [periods, _setPeriods] = useState<PeriodOption[]>(initialData?.periods ?? []);
+  const [periods, setPeriods] = useState<PeriodOption[]>(initialData?.periods ?? []);
 
   // Estado del balance
   const [balance, setBalance] = useState<BalanceData | null>(initialData?.balance ?? null);
 
   // Usuario
-  const [user] = useState<SiKnessUser | null>(initialData?.user ?? null);
+  const [user, setUser] = useState<SiKnessUser | null>(initialData?.user ?? null);
 
   // Privacidad
-  const [privacyMode, setPrivacyMode] = useState<boolean>(false);
+  const [privacyMode, setPrivacyMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('sickness-privacy-mode') === 'true';
+  });
+
+  // Loading state
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // ============================================
+  // INICIALIZACIÓN
+  // ============================================
+
+  useEffect(() => {
+    const initializeData = async () => {
+      if (isLoading || households.length > 0) return; // Ya inicializado
+      
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/sickness/init');
+        if (!response.ok) throw new Error('Failed to load initial data');
+
+        const data = await response.json();
+
+        setUser(data.user);
+        setHouseholds(data.households || []);
+        setHouseholdId(data.activeHousehold?.id || null);
+        setIsOwner(data.activeHousehold?.isOwner || false);
+        setPeriods(data.periods || []);
+        setActivePeriod(data.activePeriod || null);
+        setBalance(data.balance || null);
+
+        console.log('[SiKnessContext] Initial data loaded successfully');
+      } catch (error) {
+        console.error('[SiKnessContext] Failed to load initial data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo al montar
+
+  // Persistir modo privacidad en localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('sickness-privacy-mode', String(privacyMode));
+  }, [privacyMode]);
 
   // ============================================
   // ACCIONES
@@ -131,27 +170,60 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
     const selectedHousehold = households.find((h) => h.id === id);
     if (!selectedHousehold) return;
 
-    setHouseholdId(id);
-    setIsOwner(selectedHousehold.isOwner);
+    try {
+      const response = await fetch('/api/sickness/household/set-active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId: id }),
+      });
 
-    // Limpiar período y balance al cambiar de hogar
-    setActivePeriod(null);
-    setBalance(null);
+      if (!response.ok) throw new Error('Failed to change household');
 
-    // TODO: Aquí llamaremos a la server action para cambiar hogar activo
-    console.log('[SiKnessContext] Household changed to:', id);
+      const data = await response.json();
+
+      setHouseholdId(id);
+      setIsOwner(selectedHousehold.isOwner);
+      setPeriods(data.periods || []);
+      setActivePeriod(data.currentPeriod || null);
+
+      // Limpiar balance (se recargará al cambiar periodo)
+      setBalance(null);
+
+      console.log('[SiKnessContext] Household changed to:', id);
+    } catch (error) {
+      console.error('[SiKnessContext] Failed to change household:', error);
+    }
   };
 
   const selectPeriod = async (year: number, month: number) => {
     // Buscar período en la lista
     const selectedPeriod = periods.find((p) => p.year === year && p.month === month);
 
-    if (selectedPeriod) {
-      setActivePeriod(selectedPeriod);
+    if (!selectedPeriod) {
+      console.warn('[SiKnessContext] Period not found:', year, month);
+      return;
     }
 
-    // TODO: Aquí llamaremos a la server action para cargar datos del período
-    console.log('[SiKnessContext] Period changed to:', year, month);
+    try {
+      const response = await fetch('/api/sickness/period/set-active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ periodId: selectedPeriod.id }),
+      });
+
+      if (!response.ok) throw new Error('Failed to change period');
+
+      const data = await response.json();
+
+      setActivePeriod(data.period || selectedPeriod);
+
+      // Recargar balance del nuevo periodo
+      await refreshBalance();
+
+      console.log('[SiKnessContext] Period changed to:', year, month);
+    } catch (error) {
+      console.error('[SiKnessContext] Failed to change period:', error);
+    }
   };
 
   const togglePrivacyMode = () => {
@@ -159,17 +231,56 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
   };
 
   const refreshBalance = async () => {
-    if (!householdId || !activePeriod) return;
+    if (!householdId || !activePeriod) {
+      console.warn('[SiKnessContext] Cannot refresh balance: missing household or period');
+      return;
+    }
 
-    // TODO: Llamar server action para obtener balance actualizado
-    console.log('[SiKnessContext] Refreshing balance...');
+    try {
+      const response = await fetch('/api/sickness/balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId,
+          year: activePeriod.year,
+          month: activePeriod.month,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch balance');
+
+      const data = await response.json();
+      setBalance(data.balance || null);
+
+      console.log('[SiKnessContext] Balance refreshed successfully');
+    } catch (error) {
+      console.error('[SiKnessContext] Failed to refresh balance:', error);
+    }
   };
 
   const refreshPeriods = async () => {
-    if (!householdId) return;
+    if (!householdId) {
+      console.warn('[SiKnessContext] Cannot refresh periods: missing household');
+      return;
+    }
 
-    // TODO: Llamar server action para obtener períodos actualizados
-    console.log('[SiKnessContext] Refreshing periods...');
+    // Recargar datos completos del hogar (incluye periodos)
+    try {
+      const response = await fetch('/api/sickness/household/set-active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdId }),
+      });
+
+      if (!response.ok) throw new Error('Failed to refresh periods');
+
+      const data = await response.json();
+      setPeriods(data.periods || []);
+
+      console.log('[SiKnessContext] Periods refreshed successfully');
+    } catch (error) {
+      console.error('[SiKnessContext] Failed to refresh periods:', error);
+    }
   };
 
   // ============================================
