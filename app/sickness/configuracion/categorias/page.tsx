@@ -23,11 +23,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSiKness } from '@/contexts/SiKnessContext';
+import type { EmojiClickData } from 'emoji-picker-react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import type { EmojiClickData } from 'emoji-picker-react';
 import {
   createCategory,
   deleteCategory,
@@ -390,31 +390,31 @@ export default function CategoriasPage() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                  <Label htmlFor="edit-icon">Icono</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="edit-icon"
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                        type="button"
-                      >
-                        <span className="text-2xl mr-2">{formData.icon}</span>
-                        <span className="text-muted-foreground">Seleccionar emoji</span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <EmojiPicker
-                        onEmojiClick={(emojiData: EmojiClickData) => {
-                          setFormData((prev) => ({ ...prev, icon: emojiData.emoji }));
-                        }}
-                        width="100%"
-                        height={350}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="grid gap-2">
+                <Label htmlFor="edit-icon">Icono</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="edit-icon"
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                      type="button"
+                    >
+                      <span className="text-2xl mr-2">{formData.icon}</span>
+                      <span className="text-muted-foreground">Seleccionar emoji</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <EmojiPicker
+                      onEmojiClick={(emojiData: EmojiClickData) => {
+                        setFormData((prev) => ({ ...prev, icon: emojiData.emoji }));
+                      }}
+                      width="100%"
+                      height={350}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="edit-name">Nombre</Label>
                 <Input
                   id="edit-name"
