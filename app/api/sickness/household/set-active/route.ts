@@ -1,7 +1,7 @@
+import { getCurrentUser } from '@/lib/auth';
+import { query } from '@/lib/pgServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/supabaseServer';
-import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     // Obtener información del hogar
     const householdResult = await query(
       `
-      SELECT 
+      SELECT
         h.id,
         h.name,
         hs.currency,
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     const periodResult = await query(
       `
-      SELECT 
+      SELECT
         id,
         year,
         month,
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       `
       INSERT INTO user_active_household (profile_id, household_id)
       VALUES ($1, $2)
-      ON CONFLICT (profile_id) 
+      ON CONFLICT (profile_id)
       DO UPDATE SET household_id = $2, updated_at = NOW()
     `,
       [user.profile_id, householdId],

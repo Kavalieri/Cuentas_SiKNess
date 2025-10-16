@@ -1,4 +1,4 @@
-import { getCurrentUser, supabaseServer } from '@/lib/supabaseServer';
+import { getCurrentUser, pgServer } from '@/lib/pgServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -9,7 +9,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
 
     // Verificar que el usuario es admin (owner de al menos un hogar)
     const { data: isAdmin } = await supabase

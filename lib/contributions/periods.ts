@@ -5,7 +5,7 @@
 
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
-import { getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
+import { getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Database } from '@/types/database';
 import { z } from 'zod';
 
@@ -77,7 +77,7 @@ export async function getContributionPeriodStatus(
     return fail('No se pudo determinar el hogar activo');
   }
 
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // TODO: Implementar tabla contribution_periods
   // Por ahora, simular basado en contributions existentes
@@ -129,7 +129,7 @@ export async function lockContributionPeriod(data: {
   }
 
   const { household_id, year, month } = parsed.data;
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // 1. Verificar que el período está en estado 'setup'
   const periodStatus = await getContributionPeriodStatus(year, month);
@@ -182,7 +182,7 @@ async function calculateContributionsWithDirectExpenses(
   year: number,
   month: number,
 ): Promise<Result<MemberContributionCalculation[]>> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // 1. Obtener configuración del hogar (meta mensual y método de cálculo)
   const { data: household, error: householdError } = await supabase

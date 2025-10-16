@@ -1,18 +1,18 @@
+import { Button } from '@/components/ui/button';
+import { pgServer } from '@/lib/pgServer';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { supabaseServer } from '@/lib/supabaseServer';
 
 export default async function HomePage() {
   // Verificar si hay sesión activa
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Si hay usuario autenticado, redirigir al dashboard
+  // Si hay usuario autenticado, redirigir SIEMPRE a la nueva interfaz /sickness
   if (user) {
-    redirect('/app');
+    redirect('/sickness');
   }
 
   return (

@@ -1,4 +1,4 @@
-import { supabaseServer } from '@/lib/supabaseServer';
+import { pgServer } from '@/lib/pgServer';
 
 /**
  * Verifica si el usuario actual es administrador del sistema
@@ -9,7 +9,7 @@ import { supabaseServer } from '@/lib/supabaseServer';
  * @returns true si es system admin, false en caso contrario
  */
 export async function isSystemAdmin(): Promise<boolean> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   const {
     data: { user },
@@ -42,7 +42,7 @@ export async function isSystemAdmin(): Promise<boolean> {
  * @returns true si es owner, false en caso contrario
  */
 export async function isOwner(): Promise<boolean> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // Obtener usuario actual
   const {
@@ -91,7 +91,7 @@ export async function isHouseholdOwner(
   profileId: string,
   householdId: string
 ): Promise<boolean> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   const { data, error } = await supabase
     .from('household_members')
@@ -112,7 +112,7 @@ export async function isHouseholdOwner(
  * @returns household_id o null si no pertenece a ninguno
  */
 export async function getCurrentHouseholdId(): Promise<string | null> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   const {
     data: { user },
@@ -160,7 +160,7 @@ export async function getCurrentUserMembership(): Promise<{
   householdId: string;
   isOwner: boolean; // ✅ Cambiado de role a isOwner
 } | null> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   const {
     data: { user },
@@ -206,7 +206,7 @@ export async function getCurrentUserMembership(): Promise<{
  * @returns profile_id o null si no hay usuario autenticado
  */
 export async function getCurrentProfileId(): Promise<string | null> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   const {
     data: { user },

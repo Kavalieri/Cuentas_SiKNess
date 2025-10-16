@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { supabaseServer, getCurrentUser } from '@/lib/supabaseServer';
+import { pgServer, getCurrentUser } from '@/lib/pgServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 
@@ -15,7 +15,7 @@ export async function setActiveHousehold(householdId: string): Promise<Result> {
     return fail('Usuario no autenticado');
   }
 
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // Obtener el profile_id del usuario
   const { data: profile } = await supabase
@@ -67,7 +67,7 @@ export async function getActiveHouseholdId(): Promise<string | undefined> {
   const user = await getCurrentUser();
   if (!user) return undefined;
 
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // Obtener el profile_id del usuario
   const { data: profile } = await supabase

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { supabaseServer, getCurrentUser, getUserHouseholdId } from '@/lib/supabaseServer';
+import { pgServer, getCurrentUser, getUserHouseholdId } from '@/lib/pgServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 
@@ -72,7 +72,7 @@ export interface CreditsSummary {
  */
 export async function getActiveCredits(): Promise<Result<MemberCredit[]>> {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -116,7 +116,7 @@ export async function getActiveCredits(): Promise<Result<MemberCredit[]>> {
  */
 export async function getAllCredits(): Promise<Result<MemberCredit[]>> {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -159,7 +159,7 @@ export async function getAllCredits(): Promise<Result<MemberCredit[]>> {
  */
 export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const user = await getCurrentUser();
 
     if (!user) {
@@ -235,7 +235,7 @@ export async function applyCreditToContribution(
   formData: FormData
 ): Promise<Result<{ amountApplied: number; newExpectedAmount: number }>> {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -291,7 +291,7 @@ export async function applyCreditToContribution(
  */
 export async function setCreditAutoApply(formData: FormData): Promise<Result> {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -338,7 +338,7 @@ export async function setCreditAutoApply(formData: FormData): Promise<Result> {
  */
 export async function setCreditMonthlyDecision(formData: FormData): Promise<Result> {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -389,7 +389,7 @@ export async function createManualCredit(
   amount: number
 ): Promise<Result<string>> {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -464,7 +464,7 @@ export async function createManualCredit(
  */
 export async function autoApplyCreditsForPeriod(periodId: string): Promise<Result> {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const {
       data: { user },
     } = await supabase.auth.getUser();

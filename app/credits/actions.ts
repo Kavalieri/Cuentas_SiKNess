@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { supabaseServer } from '@/lib/supabaseServer';
+import { pgServer } from '@/lib/pgServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 
@@ -17,7 +17,7 @@ export async function decideCreditAction(
   creditId: string,
   decision: 'apply_to_month' | 'keep_active' | 'transfer_to_savings'
 ): Promise<Result<{ success: boolean; message: string }>> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // 1. Verificar autenticación
   const { data: { user } } = await supabase.auth.getUser();
@@ -166,7 +166,7 @@ export async function getMyCredits(): Promise<Result<{
   totalActive: number;
   totalReserved: number;
 }>> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // 1. Verificar autenticación
   const { data: { user } } = await supabase.auth.getUser();

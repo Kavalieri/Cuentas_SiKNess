@@ -1,6 +1,6 @@
+import { query } from '@/lib/pgServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/supabaseServer';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     // Obtener información del periodo
     const periodResult = await query(
       `
-      SELECT 
+      SELECT
         opening_balance,
         closing_balance,
         total_income,
@@ -68,9 +68,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ balance });
   } catch (error) {
     console.error('[API /api/sickness/balance] Error:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener el balance' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Error al obtener el balance' }, { status: 500 });
   }
 }

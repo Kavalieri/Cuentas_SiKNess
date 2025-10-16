@@ -12,7 +12,7 @@
  */
 
 import { getCurrentUser } from '@/lib/auth';
-import { query } from '@/lib/supabaseServer';
+import { query } from '@/lib/pgServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 

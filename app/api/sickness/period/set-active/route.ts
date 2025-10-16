@@ -1,7 +1,7 @@
+import { getCurrentUser } from '@/lib/auth';
+import { query } from '@/lib/pgServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/supabaseServer';
-import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     // Obtener información del periodo
     const periodResult = await query(
       `
-      SELECT 
+      SELECT
         id,
         household_id,
         year,

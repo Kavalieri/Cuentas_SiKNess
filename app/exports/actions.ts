@@ -6,7 +6,7 @@
 
 'use server';
 
-import { supabaseServer, getUserHouseholdId } from '@/lib/supabaseServer';
+import { pgServer, getUserHouseholdId } from '@/lib/pgServer';
 import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
 import type { ExportData, ExportOptions } from '@/lib/export/types';
@@ -17,7 +17,7 @@ import type { ExportData, ExportOptions } from '@/lib/export/types';
 export async function getExportData(
   options: ExportOptions
 ): Promise<Result<ExportData>> {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // 1. Verificar autenticación
   const { data: { user } } = await supabase.auth.getUser();

@@ -5,7 +5,7 @@
 
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
-import { getCurrentUser, getUserHouseholdId, supabaseServer } from '@/lib/supabaseServer';
+import { getCurrentUser, getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -88,7 +88,7 @@ export async function createUnifiedTransaction(
     return fail('No tienes un hogar configurado');
   }
 
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   // Obtener profile_id del usuario
   const { data: profile } = await supabase
@@ -117,7 +117,7 @@ async function createCommonFlowTransaction(
   data: z.infer<typeof CommonFlowSchema>,
   householdId: string,
   profileId: string,
-  supabase: Awaited<ReturnType<typeof supabaseServer>>,
+  supabase: Awaited<ReturnType<typeof pgServer>>,
 ): Promise<Result<{ id: string }>> {
   // Asegurar período mensual
   const occurredDate = new Date(data.occurred_at);
@@ -189,7 +189,7 @@ async function createDirectFlowTransaction(
   data: z.infer<typeof DirectFlowSchema>,
   householdId: string,
   profileId: string,
-  supabase: Awaited<ReturnType<typeof supabaseServer>>,
+  supabase: Awaited<ReturnType<typeof pgServer>>,
 ): Promise<Result<{ id: string; pair_id?: string }>> {
   // Solo permitir expense_direct (el sistema crea automáticamente el income_direct)
   if (data.type !== 'expense_direct') {
@@ -305,7 +305,7 @@ export async function migrateAdjustmentTransactions(): Promise<Result> {
  * Helper para obtener transacciones emparejadas
  */
 export async function getTransactionPairs(householdId: string, pairId: string) {
-  const supabase = await supabaseServer();
+  const supabase = await pgServer();
 
   const { data, error } = await supabase
     .from('transactions')

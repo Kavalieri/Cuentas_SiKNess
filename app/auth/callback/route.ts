@@ -1,4 +1,4 @@
-import { supabaseServer } from '@/lib/supabaseServer';
+import { pgServer } from '@/lib/pgServer';
 import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -8,7 +8,9 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code');
   const token_hash = requestUrl.searchParams.get('token_hash');
   const type = requestUrl.searchParams.get('type');
-  const next = requestUrl.searchParams.get('next') || '/app';
+  const nextParam = requestUrl.searchParams.get('next');
+  // Redirigir a la interfaz principal
+  const next = requestUrl.searchParams.get('next') || '/dual-flow/inicio';
 
   // Manejar errores que vienen directamente de Supabase
   const error = requestUrl.searchParams.get('error');
@@ -33,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   // Manejar flujo PKCE (code)
   if (code) {
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
@@ -74,9 +76,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // ADMIN REDIRECTION: Redirigir admin directamente al dual-flow
+    // ADMIN REDIRECTION: Redirigir admin directamente a la interfaz dual-flow
     if (session.user.email === 'caballeropomes@gmail.com') {
-      return NextResponse.redirect(new URL('/dual-flow', request.url));
+      return NextResponse.redirect(new URL('/dual-flow/inicio', request.url));
     }
 
     // NUEVO: Verificar si hay token de invitación guardado en cookie
@@ -90,14 +92,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Sesión creada exitosamente, redirigir a /app (o next)
+    // Sesión creada exitosamente, redirigir al flujo principal (o next)
     return NextResponse.redirect(new URL(next, request.url));
   }
 
   // Manejar flujo OTP antiguo (token_hash) - para compatibilidad
   if (token_hash && type) {
     console.log('Using token_hash flow (OTP)');
-    const supabase = await supabaseServer();
+    const supabase = await pgServer();
 
     const { error } = await supabase.auth.verifyOtp({
       token_hash,
@@ -125,9 +127,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=no_session', request.url));
     }
 
-    // ADMIN REDIRECTION: Redirigir admin directamente al dual-flow (OTP flow)
+    // ADMIN REDIRECTION: Redirigir admin directamente a la interfaz dual-flow (OTP flow)
     if (session.user.email === 'caballeropomes@gmail.com') {
-      return NextResponse.redirect(new URL('/dual-flow', request.url));
+      return NextResponse.redirect(new URL('/dual-flow/inicio', request.url));
     }
 
     // NUEVO: Verificar si hay token de invitación guardado en cookie
