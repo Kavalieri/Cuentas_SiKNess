@@ -37,4 +37,8 @@ Thumbs.db
 dist/
 .vercel
 ecosystem.config.js
+
+# Legacy code (archivado)
 .archive/
+archive/
+/archive/
