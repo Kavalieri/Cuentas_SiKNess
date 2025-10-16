@@ -70,7 +70,7 @@ export async function getUserProfile(): Promise<Result<UserProfile>> {
         created_at as "createdAt"
       FROM profiles
       WHERE id = $1`,
-      [user.id],
+      [user.profile_id], // Usar profile_id en lugar de id
     );
 
     if (result.rows.length === 0) {
@@ -109,7 +109,7 @@ export async function getMemberIncome(householdId: string): Promise<Result<Membe
         AND effective_from <= CURRENT_DATE
       ORDER BY effective_from DESC
       LIMIT 1`,
-      [householdId, user.id],
+      [householdId, user.profile_id], // Usar profile_id
     );
 
     if (result.rows.length === 0) {
@@ -152,7 +152,7 @@ export async function updateDisplayName(formData: FormData): Promise<Result> {
        SET display_name = $1,
            updated_at = now()
        WHERE id = $2`,
-      [parsed.data.displayName, user.id],
+      [parsed.data.displayName, user.profile_id], // Usar profile_id
     );
 
     revalidatePath('/sickness/configuracion/perfil');
@@ -189,7 +189,7 @@ export async function updateMemberIncome(formData: FormData): Promise<Result> {
     const memberCheck = await query(
       `SELECT 1 FROM household_members
        WHERE household_id = $1 AND profile_id = $2`,
-      [householdId, user.id],
+      [householdId, user.profile_id],
     );
 
     if (memberCheck.rows.length === 0) {
@@ -201,7 +201,7 @@ export async function updateMemberIncome(formData: FormData): Promise<Result> {
     await query(
       `INSERT INTO member_incomes (household_id, profile_id, monthly_income, effective_from)
        VALUES ($1, $2, $3, CURRENT_DATE)`,
-      [householdId, user.id, monthlyIncome],
+      [householdId, user.profile_id, monthlyIncome],
     );
 
     revalidatePath('/sickness/configuracion/perfil');
