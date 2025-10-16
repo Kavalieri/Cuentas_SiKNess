@@ -261,6 +261,7 @@ Vinculado al periodo activo seleccionado.
 ### Fase 3 - En Progreso 🔄 (17/10/2025)
 
 - **Dashboard de Balance** ✅ (16/10/2025)
+
   - Página `/sickness/dashboard/page.tsx` completa
   - Tarjetas de resumen (opening, closing, income, expenses)
   - Gastos directos y contribuciones pendientes destacados
@@ -277,9 +278,23 @@ Vinculado al periodo activo seleccionado.
 
 ### Próximos pasos (Fase 3 - Continuación)
 
-- **CRUD Hogar** - Gestión de miembros, invitaciones, objetivo de fondo
-- **CRUD Categorías** - Listado, crear, editar, eliminar categorías
-- **Workflow de periodos** - Fases 1-2-3 + cierre de periodo
-- **Lista de transacciones** - Filtros, búsqueda, paginación
+- **CRUD Categorías** ✅ (17/10/2025)
+  - Página `/sickness/configuracion/categorias/page.tsx` completa (~482 líneas)
+  - Server actions ya existían en `actions.ts`: getHouseholdCategories, createCategory, updateCategory, deleteCategory
+  - UI features:
+    - Listado agrupado por tipo (income/expense) con 33 iconos emoji
+    - Dialog crear categoría con selector de iconos y validación
+    - Dialog editar categoría con misma funcionalidad
+    - Confirmación de eliminación con AlertDialog
+    - Permisos owner-only para operaciones de escritura
+    - Toast notifications con sonner (success/error)
+    - Recarga automática tras mutaciones
+  - Mobile-first responsive design
+  - Sin errores de compilación TypeScript
+  - Commit: f0e902f
+
+- **CRUD Hogar** - Gestión de miembros, invitaciones, objetivo de fondo (PENDIENTE)
+- **Workflow de periodos** - Fases 1-2-3 + cierre de periodo (PENDIENTE)
+- **Lista de transacciones** - Filtros, búsqueda, paginación (PENDIENTE)
 
 ---
