@@ -226,12 +226,11 @@ Vinculado al periodo activo seleccionado.
 
   - Layout optimizado en una sola línea del topbar:
     - **Izquierda**: Menú burguer + GlobalHouseholdSelector
-    - **Centro**: Balance + GlobalPeriodSelector  
+    - **Centro**: GlobalPeriodSelector (sin balance, se mostrará en dashboard)
     - **Derecha**: Privacy toggle + Theme toggle
   - **Eliminada duplicación** de selectores (segunda línea redundante removida)
-  - Diseño compacto mobile-first en `h-14` (56px)
-
-- **Sistema de APIs completo** ✅
+  - **Removido balance del topbar** (mejora visual, balance se mostrará en dashboard)
+  - Diseño compacto mobile-first en `h-14` (56px)- **Sistema de APIs completo** ✅
 
   - `/api/sickness/init` (GET) - Carga inicial de datos del usuario
     - Hogares disponibles con metadata (miembros, owners)

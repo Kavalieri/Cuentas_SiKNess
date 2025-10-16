@@ -10,16 +10,7 @@ import { SiKnessBurgerMenu } from './SiKnessBurgerMenu';
 
 export function SiKnessTopbar() {
   const { theme, setTheme } = useTheme();
-  const { balance, privacyMode, togglePrivacyMode } = useSiKness();
-
-  const formatCurrency = (amount: number | undefined) => {
-    if (amount === undefined || amount === null) return '---';
-    if (privacyMode) return '***';
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(amount);
-  };
+  const { privacyMode, togglePrivacyMode } = useSiKness();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -30,10 +21,8 @@ export function SiKnessTopbar() {
           <GlobalHouseholdSelector />
         </div>
 
-        {/* Balance central y selector de periodo */}
-        <div className="flex flex-col items-center">
-          <span className="text-xs text-muted-foreground">Balance</span>
-          <span className="text-sm font-semibold">{formatCurrency(balance?.closing)}</span>
+        {/* Selector de periodo centrado */}
+        <div className="flex items-center">
           <GlobalPeriodSelector />
         </div>
 

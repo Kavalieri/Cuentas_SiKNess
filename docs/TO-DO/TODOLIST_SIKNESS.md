@@ -28,7 +28,8 @@
 - ✅ Crear `GlobalHouseholdSelector` conectado al contexto
 - ✅ Crear `GlobalPeriodSelector` conectado al contexto
 - ✅ **Eliminar duplicación de selectores en topbar** (17/10/2025)
-- ✅ Layout optimizado: hogar (izq) + periodo/balance (centro) + controles (der)
+- ✅ **Remover balance del topbar** (17/10/2025)
+- ✅ Layout final optimizado: hogar (izq) + periodo (centro) + controles (der)
 
 ### APIs Backend (Todas creadas y funcionales)
 
