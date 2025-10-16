@@ -22,7 +22,7 @@ const createEmptyActivePeriod = (): ActivePeriodState => ({
   status: null,
 });
 
-const HouseholdContext = createContext<HouseholdContextValue | undefined>(undefined);
+export const HouseholdContext = createContext<HouseholdContextValue | undefined>(undefined);
 
 export function HouseholdProvider({
   children,

@@ -2,6 +2,9 @@ export interface HouseholdContextUser {
   id: string;
   email: string;
   displayName?: string | null;
+  role?: string;
+  income?: number;
+  joinedAt?: string;
 }
 
 export interface ActivePeriodState {
