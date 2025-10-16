@@ -1,10 +1,10 @@
 'use server';
 
-import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
-import { ok, fail, type Result } from '@/lib/result';
-import { query } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { query } from '@/lib/db';
+import { fail, ok, type Result } from '@/lib/result';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
 // ============================================================================
 // SCHEMAS
@@ -61,7 +61,7 @@ export async function getHouseholdCategories(householdId: string): Promise<Resul
     const memberCheck = await query(
       `SELECT 1 FROM household_members
        WHERE household_id = $1 AND profile_id = $2`,
-      [householdId, user.id]
+      [householdId, user.profile_id],
     );
 
     if (memberCheck.rows.length === 0) {
@@ -70,7 +70,7 @@ export async function getHouseholdCategories(householdId: string): Promise<Resul
 
     // Obtener categorías
     const result = await query<Category>(
-      `SELECT 
+      `SELECT
         id,
         household_id as "householdId",
         name,
@@ -83,7 +83,7 @@ export async function getHouseholdCategories(householdId: string): Promise<Resul
       FROM categories
       WHERE household_id = $1
       ORDER BY type, name ASC`,
-      [householdId]
+      [householdId],
     );
 
     return ok(result.rows);
@@ -125,7 +125,7 @@ export async function createCategory(formData: FormData): Promise<Result<{ id: s
     const ownerCheck = await query(
       `SELECT 1 FROM household_members
        WHERE household_id = $1 AND profile_id = $2 AND role = 'owner'`,
-      [householdId, user.id]
+      [householdId, user.profile_id],
     );
 
     if (ownerCheck.rows.length === 0) {
@@ -136,7 +136,7 @@ export async function createCategory(formData: FormData): Promise<Result<{ id: s
     const duplicateCheck = await query(
       `SELECT 1 FROM categories
        WHERE household_id = $1 AND LOWER(name) = LOWER($2)`,
-      [householdId, name]
+      [householdId, name],
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -148,7 +148,7 @@ export async function createCategory(formData: FormData): Promise<Result<{ id: s
       `INSERT INTO categories (household_id, name, icon, type, created_by_profile_id)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
-      [householdId, name, icon, type, user.id]
+      [householdId, name, icon, type, user.profile_id],
     );
 
     revalidatePath('/sickness/configuracion/categorias');
@@ -185,7 +185,7 @@ export async function updateCategory(formData: FormData): Promise<Result> {
     // Obtener household_id de la categoría
     const categoryResult = await query<{ householdId: string }>(
       `SELECT household_id as "householdId" FROM categories WHERE id = $1`,
-      [categoryId]
+      [categoryId],
     );
 
     if (categoryResult.rows.length === 0) {
@@ -198,7 +198,7 @@ export async function updateCategory(formData: FormData): Promise<Result> {
     const ownerCheck = await query(
       `SELECT 1 FROM household_members
        WHERE household_id = $1 AND profile_id = $2 AND role = 'owner'`,
-      [householdId, user.id]
+      [householdId, user.profile_id],
     );
 
     if (ownerCheck.rows.length === 0) {
@@ -209,7 +209,7 @@ export async function updateCategory(formData: FormData): Promise<Result> {
     const duplicateCheck = await query(
       `SELECT 1 FROM categories
        WHERE household_id = $1 AND LOWER(name) = LOWER($2) AND id != $3`,
-      [householdId, name, categoryId]
+      [householdId, name, categoryId],
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -224,7 +224,7 @@ export async function updateCategory(formData: FormData): Promise<Result> {
            updated_by_profile_id = $3,
            updated_at = now()
        WHERE id = $4`,
-      [name, icon, user.id, categoryId]
+      [name, icon, user.profile_id, categoryId],
     );
 
     revalidatePath('/sickness/configuracion/categorias');
@@ -259,7 +259,7 @@ export async function deleteCategory(formData: FormData): Promise<Result> {
     // Obtener household_id de la categoría
     const categoryResult = await query<{ householdId: string }>(
       `SELECT household_id as "householdId" FROM categories WHERE id = $1`,
-      [categoryId]
+      [categoryId],
     );
 
     if (categoryResult.rows.length === 0) {
@@ -272,7 +272,7 @@ export async function deleteCategory(formData: FormData): Promise<Result> {
     const ownerCheck = await query(
       `SELECT 1 FROM household_members
        WHERE household_id = $1 AND profile_id = $2 AND role = 'owner'`,
-      [householdId, user.id]
+      [householdId, user.profile_id],
     );
 
     if (ownerCheck.rows.length === 0) {
@@ -283,19 +283,18 @@ export async function deleteCategory(formData: FormData): Promise<Result> {
     const transactionsCheck = await query<{ count: string }>(
       `SELECT COUNT(*) as count FROM transactions
        WHERE category_id = $1`,
-      [categoryId]
+      [categoryId],
     );
 
     const count = transactionsCheck.rows[0] ? parseInt(transactionsCheck.rows[0].count) : 0;
     if (count > 0) {
-      return fail(`No se puede eliminar la categoría porque tiene ${count} transacciones asociadas`);
+      return fail(
+        `No se puede eliminar la categoría porque tiene ${count} transacciones asociadas`,
+      );
     }
 
     // Eliminar categoría
-    await query(
-      `DELETE FROM categories WHERE id = $1`,
-      [categoryId]
-    );
+    await query(`DELETE FROM categories WHERE id = $1`, [categoryId]);
 
     revalidatePath('/sickness/configuracion/categorias');
     return ok();
