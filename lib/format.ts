@@ -24,6 +24,30 @@ export const parseCurrency = (value: string): number => {
 };
 
 /**
+ * Convierte un valor numeric de PostgreSQL a number
+ * 
+ * PostgreSQL devuelve los valores de tipo 'numeric' como strings
+ * para preservar precisión exacta. Este helper hace la conversión
+ * de forma segura.
+ * 
+ * @param value - Valor que puede ser string (de PostgreSQL) o ya number
+ * @returns number - El valor como número de JavaScript
+ * 
+ * @example
+ * const income = toNumber(row.monthly_income); // "1500.00" → 1500
+ */
+export const toNumber = (value: string | number | null | undefined): number => {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+  if (typeof value === 'number') {
+    return value;
+  }
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+/**
  * Formatea una fecha en formato español
  */
 export const formatDate = (date: Date, locale = 'es-ES'): string => {

@@ -3,6 +3,7 @@
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { fail, ok, type Result } from '@/lib/result';
+import { toNumber } from '@/lib/format';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -116,7 +117,7 @@ export async function getMemberIncome(householdId: string): Promise<Result<Membe
       return ok(null); // No hay ingreso configurado aún
     }
 
-    // Convertir monthly_income a número (PostgreSQL lo devuelve como string)
+    // Convertir monthly_income a número (PostgreSQL devuelve numeric como string)
     const rawIncome = result.rows[0];
     if (!rawIncome) {
       return ok(null);
@@ -126,7 +127,7 @@ export async function getMemberIncome(householdId: string): Promise<Result<Membe
       id: rawIncome.id || '',
       householdId: rawIncome.householdId || '',
       profileId: rawIncome.profileId || '',
-      monthlyIncome: Number(rawIncome.monthlyIncome),
+      monthlyIncome: toNumber(rawIncome.monthlyIncome),
       effectiveFrom: rawIncome.effectiveFrom || '',
       createdAt: rawIncome.createdAt || '',
     };
