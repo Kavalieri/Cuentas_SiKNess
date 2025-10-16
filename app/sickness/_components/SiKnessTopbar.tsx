@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import { Eye, EyeOff, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 import { GlobalHouseholdSelector } from './GlobalHouseholdSelector';
 import { GlobalPeriodSelector } from './GlobalPeriodSelector';
 import { SiKnessBurgerMenu } from './SiKnessBurgerMenu';
@@ -11,6 +12,12 @@ import { SiKnessBurgerMenu } from './SiKnessBurgerMenu';
 export function SiKnessTopbar() {
   const { theme, setTheme } = useTheme();
   const { privacyMode, togglePrivacyMode } = useSiKness();
+  const [mounted, setMounted] = useState(false);
+
+  // Evitar hydration error con el tema
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -45,7 +52,13 @@ export function SiKnessTopbar() {
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             title="Cambiar tema"
           >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {!mounted ? (
+              <Sun className="h-4 w-4" />
+            ) : theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>

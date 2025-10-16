@@ -34,7 +34,8 @@ export default function PerfilPage() {
         setProfile(profileResult.data);
         setDisplayName(profileResult.data.displayName || '');
       } else {
-        toast.error(!profileResult.ok ? profileResult.message : 'Error al cargar el perfil');
+        toast.error(profileResult.ok ? 'Perfil no disponible' : profileResult.message);
+        setProfile(null);
       }
 
       // Cargar ingreso si hay hogar activo
@@ -120,7 +121,9 @@ export default function PerfilPage() {
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Mi Perfil</h1>
-          <p className="text-destructive">Error al cargar el perfil</p>
+          <p className="text-destructive">
+            No se pudo cargar el perfil. Por favor, intenta recargar la página.
+          </p>
         </div>
       </div>
     );
