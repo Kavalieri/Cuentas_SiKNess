@@ -279,6 +279,7 @@ Vinculado al periodo activo seleccionado.
 ### Próximos pasos (Fase 3 - Continuación)
 
 - **CRUD Categorías** ✅ (17/10/2025)
+
   - Página `/sickness/configuracion/categorias/page.tsx` completa (~482 líneas)
   - Server actions ya existían en `actions.ts`: getHouseholdCategories, createCategory, updateCategory, deleteCategory
   - UI features:
