@@ -1,8 +1,8 @@
 'use client';
 
-import { useSiKness } from '@/contexts/SiKnessContext';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Eye, EyeOff } from 'lucide-react';
+import { useSiKness } from '@/contexts/SiKnessContext';
+import { Eye, EyeOff, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { GlobalHouseholdSelector } from './GlobalHouseholdSelector';
 import { GlobalPeriodSelector } from './GlobalPeriodSelector';
@@ -24,17 +24,17 @@ export function SiKnessTopbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
-        {/* Menú burguer */}
+        {/* Menú burguer y selector de hogar */}
         <div className="flex items-center gap-2">
           <SiKnessBurgerMenu />
+          <GlobalHouseholdSelector />
         </div>
 
-        {/* Balance central */}
+        {/* Balance central y selector de periodo */}
         <div className="flex flex-col items-center">
           <span className="text-xs text-muted-foreground">Balance</span>
-          <span className="text-sm font-semibold">
-            {formatCurrency(balance?.closing)}
-          </span>
+          <span className="text-sm font-semibold">{formatCurrency(balance?.closing)}</span>
+          <GlobalPeriodSelector />
         </div>
 
         {/* Controles derecha */}
@@ -56,20 +56,8 @@ export function SiKnessTopbar() {
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             title="Cambiar tema"
           >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-        </div>
-      </div>
-
-      {/* Selectores (segunda línea en móvil) */}
-      <div className="border-t bg-muted/30">
-        <div className="container mx-auto flex h-12 items-center justify-between px-4">
-          <GlobalHouseholdSelector />
-          <GlobalPeriodSelector />
         </div>
       </div>
     </header>

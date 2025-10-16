@@ -202,28 +202,37 @@ Vinculado al periodo activo seleccionado.
 
 ---
 
-## 4️⃣ Avances recientes (16/10/2025)
+## 4️⃣ Avances recientes (17/10/2025)
 
 ### Fase 1 - Completada ✅
+
 - Shell global implementado en `/app/sickness/`
 - Topbar con balance, selectores globales y menú burguer
 - Menú burguer con navegación completa a todas las rutas
 - Páginas placeholder creadas para todas las secciones principales
 - Navegación validada en DEV (servidor funcionando correctamente)
 
-### Fase 2 - Completada ✅ (16/10/2025)
+### Fase 2 - Completada ✅ (17/10/2025)
+
 - **SiKnessContext unificado** ✅
+
   - Gestión de estado global: hogar activo, periodo activo, balance, usuario
   - Modo privacidad integrado con persistencia en localStorage
   - Carga inicial automática desde API `/api/sickness/init`
   - Hooks para actualización y sincronización de datos
   - Acciones conectadas a APIs: `selectHousehold`, `selectPeriod`, `refreshBalance`, `refreshPeriods`
-  
-- **Selectores globales** ✅
-  - GlobalHouseholdSelector: dropdown con lista de hogares del usuario (conectado al contexto)
-  - GlobalPeriodSelector: calendario con selección de año/mes (conectado al contexto)
-  
+
+- **Selectores globales (UI refinada)** ✅
+
+  - Layout optimizado en una sola línea del topbar:
+    - **Izquierda**: Menú burguer + GlobalHouseholdSelector
+    - **Centro**: Balance + GlobalPeriodSelector  
+    - **Derecha**: Privacy toggle + Theme toggle
+  - **Eliminada duplicación** de selectores (segunda línea redundante removida)
+  - Diseño compacto mobile-first en `h-14` (56px)
+
 - **Sistema de APIs completo** ✅
+
   - `/api/sickness/init` (GET) - Carga inicial de datos del usuario
     - Hogares disponibles con metadata (miembros, owners)
     - Hogar activo actual con settings
@@ -243,16 +252,16 @@ Vinculado al periodo activo seleccionado.
   - `/api/sickness/period/set-active` (POST) - Cambio de periodo activo
     - Valida acceso al hogar
     - Retorna datos del periodo seleccionado
-    
+
 - **Toggles UI** ✅
   - Dark/Light mode con next-themes (botón sol/luna en topbar)
   - Modo privacidad (botón ojo/ojo tachado en topbar)
 
 ### Próximos pasos (Fase 3)
+
 - Conectar dashboard de balance con datos reales
 - Implementar CRUD completo de perfil, hogar y categorías
 - Workflow de periodos (fases, checklist, cierre)
 - Lista de transacciones con filtros y búsqueda
 
 ---
-

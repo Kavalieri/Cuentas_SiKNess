@@ -12,19 +12,44 @@
 - [x] Añadir selectores globales de hogar y periodo (componentes y mock)
 - [x] Validar navegación y placeholders en DEV ✅ (16/10/2025 - Servidor funcionando correctamente)
 
-## Fase 2 · Componentes globales y contexto ✅ COMPLETADA (16/10/2025)
+## ⚡ FASE 2: Context Global y Selectores (COMPLETADA ✅ 16/10/2025)
 
-- [x] Crear `SiKnessContext` unificado (gestión hogar, periodo, usuario) ✅
-- [x] Implementar `GlobalHouseholdSelector` (dropdown) - Conectado al contexto ✅
-- [x] Implementar `GlobalPeriodSelector` (calendario) - Conectado al contexto ✅
-- [x] Crear APIs de soporte para cambio de hogar y periodo ✅
-  - `/api/sickness/balance` (POST balance del periodo) ✅
-  - `/api/sickness/household/set-active` (POST cambio de hogar) ✅
-  - `/api/sickness/period/set-active` (POST cambio de periodo) ✅
-  - `/api/sickness/init` (GET carga inicial completa) ✅
-- [x] Añadir toggles dark/light y privacidad ✅ (Ya implementado con next-themes)
-- [x] Integrar API `/api/sickness/init` en el contexto para carga inicial automática ✅
-- [x] Conectar acciones del contexto a las APIs (selectHousehold, selectPeriod, refreshBalance) ✅
+**Estado**: ✅ **COMPLETADA** con integración backend completa y UI refinada
+
+### Contexto Unificado
+
+- ✅ Crear `SiKnessContext` con tipos completos (household, period, balance, user)
+- ✅ Implementar provider en `/app/sickness/layout.tsx`
+- ✅ Auto-inicialización con `useEffect` desde `/api/sickness/init`
+- ✅ Persistencia de privacy mode en localStorage
+
+### Selectores Globales
+
+- ✅ Crear `GlobalHouseholdSelector` conectado al contexto
+- ✅ Crear `GlobalPeriodSelector` conectado al contexto
+- ✅ **Eliminar duplicación de selectores en topbar** (17/10/2025)
+- ✅ Layout optimizado: hogar (izq) + periodo/balance (centro) + controles (der)
+
+### APIs Backend (Todas creadas y funcionales)
+
+- ✅ `GET /api/sickness/init` - Carga inicial completa (user, households, periods, balance)
+- ✅ `POST /api/sickness/household/set-active` - Cambiar hogar activo
+- ✅ `POST /api/sickness/period/set-active` - Cambiar periodo activo
+- ✅ `POST /api/sickness/balance` - Calcular balance del periodo
+
+### Acciones Contexto → Backend
+
+- ✅ `selectHousehold()` → POST /api/sickness/household/set-active
+- ✅ `selectPeriod()` → POST /api/sickness/period/set-active
+- ✅ `refreshBalance()` → POST /api/sickness/balance
+- ✅ `refreshPeriods()` → re-fetch household data
+
+**Commits**:
+
+- `d534e19` - "feat(sickness): completar Fase 2 - integración completa de contexto con APIs"
+- **PRÓXIMO** - "fix(sickness): eliminar selectores duplicados en topbar"
+
+---
 
 ## Fase 3 · Integración y lógica real
 
