@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/pgServer';
+import { toNumber } from '@/lib/format';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -87,10 +88,10 @@ export async function POST(req: NextRequest) {
           day: 1, // Por defecto día 1
           phase: 1 as const, // TODO: calcular fase real
           status: p.status || 'active',
-          openingBalance: Number(p.opening_balance) || 0,
-          closingBalance: Number(p.closing_balance) || 0,
-          totalIncome: Number(p.total_income) || 0,
-          totalExpenses: Number(p.total_expenses) || 0,
+          openingBalance: toNumber(p.opening_balance),
+          closingBalance: toNumber(p.closing_balance),
+          totalIncome: toNumber(p.total_income),
+          totalExpenses: toNumber(p.total_expenses),
         };
       }
     }

@@ -2,8 +2,8 @@
 
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { fail, ok, type Result } from '@/lib/result';
 import { toNumber } from '@/lib/format';
+import { fail, ok, type Result } from '@/lib/result';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -190,9 +190,10 @@ export async function updateMemberIncome(formData: FormData): Promise<Result> {
     }
 
     // Validar datos
+    const rawIncome = formData.get('monthlyIncome');
     const parsed = UpdateMemberIncomeSchema.safeParse({
       householdId: formData.get('householdId'),
-      monthlyIncome: Number(formData.get('monthlyIncome')),
+      monthlyIncome: toNumber(typeof rawIncome === 'string' ? rawIncome : null),
     });
 
     if (!parsed.success) {
@@ -220,8 +221,12 @@ export async function updateMemberIncome(formData: FormData): Promise<Result> {
       [householdId, user.profile_id, monthlyIncome],
     );
 
+    // Revalidar TODAS las rutas que muestren datos de ingresos
     revalidatePath('/sickness/configuracion/perfil');
-    revalidatePath('/sickness/dashboard');
+    revalidatePath('/sickness/configuracion');
+    revalidatePath('/sickness/inicio');
+    revalidatePath('/sickness');
+    
     return ok();
   } catch (error) {
     console.error('[updateMemberIncome] Error:', error);

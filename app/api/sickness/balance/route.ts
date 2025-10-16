@@ -1,4 +1,5 @@
 import { query } from '@/lib/pgServer';
+import { toNumber } from '@/lib/format';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -57,12 +58,12 @@ export async function POST(req: NextRequest) {
     );
 
     const balance = {
-      opening: Number(period?.opening_balance) || 0,
-      closing: Number(period?.closing_balance) || 0,
-      income: Number(period?.total_income) || 0,
-      expenses: Number(period?.total_expenses) || 0,
-      directExpenses: Number(directExpensesResult.rows[0]?.total) || 0,
-      pendingContributions: Number(pendingContributionsResult.rows[0]?.total) || 0,
+      opening: toNumber(period?.opening_balance),
+      closing: toNumber(period?.closing_balance),
+      income: toNumber(period?.total_income),
+      expenses: toNumber(period?.total_expenses),
+      directExpenses: toNumber(directExpensesResult.rows[0]?.total),
+      pendingContributions: toNumber(pendingContributionsResult.rows[0]?.total),
     };
 
     return NextResponse.json({ balance });
