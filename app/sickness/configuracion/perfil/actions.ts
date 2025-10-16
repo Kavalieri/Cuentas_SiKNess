@@ -116,7 +116,22 @@ export async function getMemberIncome(householdId: string): Promise<Result<Membe
       return ok(null); // No hay ingreso configurado aún
     }
 
-    return ok(result.rows[0]);
+    // Convertir monthly_income a número (PostgreSQL lo devuelve como string)
+    const rawIncome = result.rows[0];
+    if (!rawIncome) {
+      return ok(null);
+    }
+
+    const income: MemberIncome = {
+      id: rawIncome.id || '',
+      householdId: rawIncome.householdId || '',
+      profileId: rawIncome.profileId || '',
+      monthlyIncome: Number(rawIncome.monthlyIncome),
+      effectiveFrom: rawIncome.effectiveFrom || '',
+      createdAt: rawIncome.createdAt || '',
+    };
+
+    return ok(income);
   } catch (error) {
     console.error('[getMemberIncome] Error:', error);
     return fail('Error al obtener el ingreso del miembro');
