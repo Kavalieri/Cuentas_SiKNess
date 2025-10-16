@@ -97,6 +97,7 @@ export default function PerfilPage() {
       const incomeResult = await getMemberIncome(householdId);
       if (incomeResult.ok && incomeResult.data) {
         setIncome(incomeResult.data);
+        setMonthlyIncome(incomeResult.data.monthlyIncome.toString());
       }
     } else {
       toast.error(result.message);
