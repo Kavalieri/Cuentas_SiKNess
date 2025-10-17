@@ -137,6 +137,7 @@ export async function GET(_request: NextRequest) {
         year,
         month,
         status,
+        phase,
         opening_balance,
         closing_balance,
         created_at
@@ -153,19 +154,20 @@ export async function GET(_request: NextRequest) {
         year: row.year as number,
         month: row.month as number,
         status: row.status as string,
+        phase: row.phase as string,
         openingBalance: parseFloat(row.opening_balance || 0),
         closingBalance: parseFloat(row.closing_balance || 0),
-        isCurrent: row.status === 'active',
+        isCurrent: row.phase === 'active' || row.phase === 'validation',
       })) || [];
 
     // 5. Periodo activo actual
-    // Prioridad: 1) periodo con status='active', 2) periodo del mes actual, 3) más reciente
+    // Prioridad: 1) periodo con phase='active' o 'validation', 2) periodo del mes actual, 3) más reciente
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1; // getMonth() retorna 0-11
 
     const currentPeriod =
-      periods.find((p) => p.isCurrent) || // Primero buscar con status='active'
+      periods.find((p) => p.isCurrent) || // Primero buscar con phase='active' o 'validation'
       periods.find((p) => p.year === currentYear && p.month === currentMonth) || // Luego el mes actual
       periods[0] || // Finalmente el más reciente
       null;

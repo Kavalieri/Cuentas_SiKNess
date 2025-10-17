@@ -55,10 +55,13 @@ export default function BalancePage() {
     }).format(amount);
   };
 
-  const status = ((activePeriod?.status as string) || '').toLowerCase();
+  const phase = activePeriod?.phase || 'preparing';
   const balanceDifference = (balance?.closing || 0) - (balance?.opening || 0);
   const isPositive = balanceDifference >= 0;
-  const canCreateMovement = useMemo(() => status === 'active' || status === 'locked', [status]);
+  const canCreateMovement = useMemo(
+    () => phase === 'active' || phase === 'validation',
+    [phase],
+  );
 
   // Cargar opciones de filtros
   useEffect(() => {
@@ -105,16 +108,16 @@ export default function BalancePage() {
 
   // Determinar badge y mensaje de estado
   const getStatusInfo = () => {
-    switch (status) {
-      case 'setup':
+    switch (phase) {
+      case 'preparing':
         return {
           badge: { variant: 'secondary' as const, text: 'Configuración' },
           canDo: 'Configura los ingresos y gastos directos de cada miembro',
           helpText: 'Período en fase de configuración inicial',
         };
-      case 'locked':
+      case 'validation':
         return {
-          badge: { variant: 'default' as const, text: 'Bloqueado' },
+          badge: { variant: 'default' as const, text: 'Validación' },
           canDo: 'Puedes registrar gastos directos que reducirán las contribuciones individuales',
           helpText: 'Solo owners pueden abrir tras validar las contribuciones calculadas',
         };
@@ -177,8 +180,8 @@ export default function BalancePage() {
         )}
       </div>
 
-      {/* Mostrar contribuciones calculadas si el período está bloqueado */}
-      {status === 'locked' && householdId && (
+      {/* Mostrar contribuciones calculadas si el período está en validación o activo */}
+      {(phase === 'validation' || phase === 'active') && householdId && (
         <ContributionsDisplay householdId={householdId} privacyMode={privacyMode} />
       )}
 

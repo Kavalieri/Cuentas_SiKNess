@@ -10,6 +10,7 @@ type Checklist = {
   year: number | null;
   month: number | null;
   status: string | null;
+  phase: string | null;
   hasHouseholdGoal: boolean;
   calculationType: string | null;
   membersWithIncome: number;
@@ -30,9 +31,10 @@ export async function GET() {
       year: number;
       month: number;
       status: string | null;
+      phase: string | null;
     }>(
       `
-      SELECT id, year, month, status
+      SELECT id, year, month, status, phase
       FROM monthly_periods
       WHERE household_id = $1
       ORDER BY year DESC, month DESC
@@ -77,6 +79,7 @@ export async function GET() {
       year: period?.year ?? null,
       month: period?.month ?? null,
       status: period?.status ?? null,
+      phase: period?.phase ?? null,
       hasHouseholdGoal,
       calculationType,
       membersWithIncome,

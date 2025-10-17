@@ -11,6 +11,7 @@ type Checklist = {
   year: number | null;
   month: number | null;
   status: string | null;
+  phase: string | null; // Fase del workflow
   hasHouseholdGoal: boolean;
   membersWithIncome: number;
   totalMembers: number;
@@ -39,42 +40,39 @@ export default function PeriodoPage() {
   }, [data]);
 
   const progress = useMemo(() => {
-    // 0-100 basado en estado y checklist
+    // 0-100 basado en fase del workflow y checklist
     if (!data) return 0;
     let pct = 0;
     // Checklist base
     if (data.hasHouseholdGoal) pct += 20;
     if (data.totalMembers > 0 && data.membersWithIncome === data.totalMembers) pct += 20;
 
-    const s = (data.status || '').toLowerCase();
-    if (s === 'setup') pct += 10;
-    if (s === 'locked') pct += 40; // validación lista para abrir
-    if (s === 'active') pct += 60; // uso activo
-    if (s === 'closing') pct += 80; // en cierre
-    if (s === 'closed') pct = 100;
+    const phase = data.phase || 'preparing';
+    if (phase === 'preparing') pct += 10;
+    if (phase === 'validation') pct += 40; // validación lista para abrir
+    if (phase === 'active') pct += 60; // uso activo
+    if (phase === 'closing') pct += 80; // en cierre
+    if (phase === 'closed') pct = 100;
     return Math.min(100, pct);
   }, [data]);
 
   const statusLabel = useMemo(() => {
-    const s = data?.status ?? 'unknown';
-    switch (s) {
-      case 'SETUP':
-      case 'setup':
-        return 'Configuración (SETUP)';
-      case 'LOCKED':
+    const phase = data?.phase ?? 'unknown';
+    switch (phase) {
+      case 'preparing':
+        return 'Configuración Inicial';
       case 'validation':
-        return 'Validación/Bloqueado';
+        return 'Validación Pendiente';
       case 'active':
         return 'Abierto (en uso)';
       case 'closing':
         return 'Cierre iniciado';
       case 'closed':
-      case 'CLOSED':
         return 'Cerrado';
       default:
-        return s;
+        return phase || 'Desconocido';
     }
-  }, [data?.status]);
+  }, [data?.phase]);
 
   function refresh() {
     fetchChecklist().then(setData).catch(() => setData(null));

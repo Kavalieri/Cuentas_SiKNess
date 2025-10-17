@@ -22,7 +22,8 @@ export interface PeriodOption {
   id: string;
   year: number;
   month: number;
-  status: string;
+  status: string; // Estado general: 'open', 'pending_close', 'closed'
+  phase: string; // Fase del workflow: 'preparing', 'validation', 'active', 'closing', 'closed'
   openingBalance: number;
   closingBalance: number;
   isCurrent: boolean;
