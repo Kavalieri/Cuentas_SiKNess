@@ -2,6 +2,30 @@
 
 ---
 
+## ⚠️ NOTA: REFACTOR EN PROGRESO
+
+**Fecha**: 17 Octubre 2025
+**Estado**: Planificado para 18 Octubre 2025
+
+Esta guía describe el **estado objetivo** después del refactor planificado. El estado actual tiene problemas conocidos:
+
+- ❌ Balance no detecta correctamente la fase del período (status inconsistente)
+- ❌ Bloqueo/apertura de período sin feedback claro
+- ❌ Guía de fases no intuitiva (texto plano, sin visualización)
+- ❌ Información financiera mal ubicada (debería estar en Gestión de Periodo)
+
+**Plan completo**: Ver `docs/TO-DO/PLAN_REFACTOR_PERIODO_BALANCE.md`
+
+**Cambios principales planificados**:
+1. ✨ Componente `PhaseCard` para visualización moderna de fases
+2. ✨ Componente `ConfirmDialog` para acciones críticas con explicaciones
+3. 🔧 Reorganización de Balance (solo saldo + transacciones + CTA)
+4. 🔧 Gestión de Periodo con información financiera de la contribución por miembro actual y mediante, y estado de saldado que marca el cambio de fase.
+5. 🔧 Fix crítico: normalización de detección de estado
+6. 📊 API `/api/periods/financial-summary` para métricas del período
+
+---
+
 ## 1. Gestión de Periodo (app/sickness/periodo/page.tsx)
 
 ### Objetivo

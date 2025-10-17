@@ -80,12 +80,131 @@
 - ✅ **Integración con SiKnessContext**
 
 
-### Fase 3 · Avance actual
+### Configuración - Hogar ✅ (17/10/2025)
+
+- ✅ **Página `/sickness/configuracion/hogar/page.tsx` funcional**
+- ✅ **Actualización de nombre y objetivo mensual**
+- ✅ **Selector de tipo de cálculo** (igual/proporcional/personalizado)
+- ✅ **Gestión de miembros del hogar** (listado con roles)
+- ✅ **Sistema de invitaciones** (crear, listar, copiar link)
+- ✅ **Integración con SiKnessContext**
+
+### Balance y Transacciones ⚠️ (17/10/2025 - REQUIERE REFACTOR)
+
+- ✅ **Página `/sickness/balance/page.tsx` funcional**
+- ✅ **ContributionsDisplay** cuando período locked
+- ✅ **Filtros de transacciones** (tipo, categoría, miembro)
+- ✅ **Visualización de pares de transacciones** (gastos directos)
+- ⚠️ **BUG CRÍTICO**: Detección de estado del período inconsistente
+- ⚠️ **UX**: Información del período en lugar equivocado (debería estar en Gestión)
+- ⚠️ **UI**: Falta diseño moderno con Cards coherentes
+
+### Gestión de Periodo ⚠️ (17/10/2025 - REQUIERE REFACTOR)
+
+- ✅ **Página `/sickness/periodo/page.tsx` funcional**
+- ✅ **Acciones de periodo** (bloquear, abrir, iniciar cierre, cerrar)
+- ✅ **Checklist básico** de tareas
+- ⚠️ **BUG CRÍTICO**: Feedback poco claro en acciones (bloquear/abrir)
+- ⚠️ **UX**: Guía de fases no intuitiva (texto plano)
+- ⚠️ **UI**: Falta información financiera del período
+- ⚠️ **UI**: Necesita Cards visuales por fase
+
+---
+
+## 🔥 FASE 3.5 · REFACTOR CRÍTICO - Periodo y Balance (PLANIFICADO 18/10/2025)
+
+**Estado**: 📋 Planificado para inicio inmediato
+**Prioridad**: 🚨 CRÍTICA
+**Duración estimada**: 1 día (8 horas)
+
+### Problemas Identificados
+
+1. ❌ **Balance no detecta fase correctamente** → ContributionsDisplay no aparece, CTAs incorrectos
+2. ❌ **Bloqueo/apertura sin feedback claro** → Usuarios no entienden qué hace
+3. ❌ **Guía de fases no intuitiva** → Texto plano sin visualización de progreso
+4. ❌ **Info financiera mal ubicada** → Debe estar en Gestión de Periodo, no Balance
+
+### Plan de Refactor (6 Fases)
+
+#### FASE 1: Fix Crítico - Detección de Estado (30 min) 🔥
+- [ ] Normalizar comparación de status en Balance (`.toLowerCase().trim()`)
+- [ ] Verificar SiKnessContext devuelve status consistente
+- [ ] Testing: ContributionsDisplay aparece cuando locked
+- **Archivo**: `app/sickness/balance/page.tsx:59`
+
+#### FASE 2: Componente PhaseCard (1h) 🎨
+- [ ] Crear `components/periodo/PhaseCard.tsx`
+- [ ] Props: phase, title, icon, status, description, checklist, actions
+- [ ] Estados visuales: completed (verde), active (azul+pulse), pending (gris), locked (amarillo)
+- [ ] Responsive y accesible (ARIA labels)
+
+#### FASE 3: Rediseñar Gestión de Periodo (2h) 🏗️
+- [ ] Header con período actual y barra de progreso
+- [ ] Card de resumen financiero del período
+- [ ] PhaseCard para cada fase (4 cards):
+  * Fase 1: Configuración inicial (Settings icon)
+  * Fase 2: Validación de contribuciones (CheckSquare icon)
+  * Fase 3: Registro de movimientos (Activity icon)
+  * Fase 4: Cierre de período (Lock icon)
+- [ ] Información financiera visible (balance, ingresos, gastos)
+- **Archivo**: `app/sickness/periodo/page.tsx`
+
+#### FASE 4: ConfirmDialog para Acciones Críticas (45 min) 🔔
+- [ ] Crear `components/shared/ConfirmDialog.tsx`
+- [ ] Props: title, description, consequences[], confirmLabel, onConfirm
+- [ ] Usar en: bloquear, abrir, iniciar cierre, cerrar período
+- [ ] Explicaciones claras de cada acción y sus consecuencias
+
+#### FASE 5: Reorganizar Balance (1.5h) 📊
+- [ ] Remover información del período (ya está en Gestión)
+- [ ] Saldo actual ultra-prominente (Card especial)
+- [ ] CTA "Nuevo Movimiento" en Card separada (condicional por estado)
+- [ ] Filtros en Card colapsable
+- [ ] Transacciones en Card con scroll
+- [ ] Mantener ContributionsDisplay cuando locked
+- **Archivo**: `app/sickness/balance/page.tsx`
+
+#### FASE 6: API Financial Summary (30 min) 🔌
+- [ ] Crear `GET /api/periods/financial-summary`
+- [ ] Response: openingBalance, totalIncome, totalExpenses, closingBalance, contributionsPending, directExpenses
+- [ ] Integrar en Gestión de Periodo
+- **Archivo**: `app/api/periods/financial-summary/route.ts`
+
+### Testing E2E Completo
+- [ ] Login como owner
+- [ ] Verificar fase 1 (setup) con checklist visual
+- [ ] Configurar objetivo e ingresos
+- [ ] Bloquear → Ver dialog de confirmación → Verificar fase 2 activa
+- [ ] Ver Balance → Verificar ContributionsDisplay aparece
+- [ ] Abrir período → Dialog → Verificar fase 3
+- [ ] Crear movimiento desde Balance
+- [ ] Iniciar cierre → Dialog → Verificar fase 4
+- [ ] Cerrar período → Dialog → Verificar todas las fases completadas
+
+### Criterios de Éxito Global
+- [ ] Usuario entiende fase actual sin leer documentación
+- [ ] Feedback claro antes y después de cada acción
+- [ ] Info financiera visible en Gestión de Periodo
+- [ ] Balance enfocado en transacciones y saldo
+- [ ] UI moderna, visual, coherente (mobile-first)
+- [ ] Lint + typecheck passing
+- [ ] Sin bugs de detección de estado
+
+**Documentación completa**:
+- 📋 Plan detallado: `docs/TO-DO/PLAN_REFACTOR_PERIODO_BALANCE.md`
+- 📖 Guía operativa: `docs/TO-DO/GUÍA_GESTIÓN_PERIODO_BALANCE.md`
+- 📝 Resumen ejecutivo: `docs/TO-DO/RESUMEN_REFACTOR.md`
+
+---
+
+### Fase 3 · Avance actual (Continuará después del refactor)
 
 - [x] **CRUD Categorías** - Listado, crear, editar, eliminar (completado 17/10/2025)
-- [ ] **CRUD Hogar** - Gestión de miembros, invitaciones por código, objetivo de fondo y método de cálculo (**EN PROGRESO**)
-- [ ] Lista de transacciones en dashboard
-- [ ] Workflow de periodo (fases, checklist, cierre)
+- [x] **CRUD Hogar** - Gestión de miembros, invitaciones, objetivo, tipo de cálculo (completado 17/10/2025)
+- [x] **Balance inicial** - Página funcional con filtros y transacciones (requiere refactor 18/10)
+- [x] **Gestión de periodo inicial** - Página funcional con acciones básicas (requiere refactor 18/10)
+- [ ] **Lista de transacciones mejorada** - Después del refactor
+- [ ] **Workflow de periodo refinado** - Después del refactor
 
 **Documentación y dependencias:**
 - Se actualiza el checklist y la documentación en `Cuentas_SiKNess.md`, `ANALISIS_REFACTOR_SIKNESS.md` y `GUÍA_GESTIÓN_PERIODO_BALANCE.md` tras cada avance.
