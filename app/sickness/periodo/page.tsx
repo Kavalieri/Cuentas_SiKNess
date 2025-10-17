@@ -4,6 +4,8 @@ import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { PhaseCard } from '@/components/periodo/PhaseCard';
+import { CalendarCheck2, ShieldCheck, Rocket, Lock, CheckCircle } from 'lucide-react';
 
 type Checklist = {
   householdId: string;
@@ -182,61 +184,66 @@ export default function PeriodoPage() {
         </div>
       </section>
 
-      <section className="lg:col-span-8 rounded-lg border p-4 space-y-3 mt-6">
-        <h3 className="font-medium">Fase 1 · Checklist</h3>
-        <ul className="list-disc pl-5 text-sm">
-          <li className={data?.hasHouseholdGoal ? 'text-green-600' : 'text-amber-600'}>
-            Objetivo mensual del hogar {data?.hasHouseholdGoal ? 'listo' : 'pendiente'}
-          </li>
-          <li
-            className={
-              data && data.membersWithIncome === data.totalMembers && data.totalMembers > 0
-                ? 'text-green-600'
-                : 'text-amber-600'
-            }
-          >
-            Ingresos de miembros {data && data.membersWithIncome === data.totalMembers ? 'listos' : 'pendientes'}
-          </li>
-        </ul>
-
-        <div className="flex gap-2 mt-2">
-          <button
-            className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-white disabled:opacity-60"
-            disabled={!data?.periodId || !canLock || isPending}
-            onClick={onLock}
-          >
-            Bloquear para validación
-          </button>
-        </div>
+      <section className="lg:col-span-8 mt-6">
+        <PhaseCard
+          phase="preparing"
+          title="Fase 1 · Checklist"
+          icon={<CalendarCheck2 />}
+          status={data?.phase === 'preparing' ? 'active' : data?.phase === 'validation' || data?.phase === 'active' || data?.phase === 'closing' || data?.phase === 'closed' ? 'completed' : 'pending'}
+          description="Configura el objetivo mensual y los ingresos de todos los miembros para poder avanzar."
+          checklist={[
+            { label: 'Objetivo mensual del hogar', done: !!data?.hasHouseholdGoal },
+            { label: 'Ingresos de todos los miembros', done: data ? data.membersWithIncome === data.totalMembers && data.totalMembers > 0 : false },
+          ]}
+          actions={[
+            {
+              label: 'Bloquear para validación',
+              onClick: onLock,
+              variant: 'primary',
+              disabled: !data?.periodId || !canLock || isPending,
+            },
+          ]}
+        />
       </section>
 
-      <section className="lg:col-span-8 rounded-lg border p-4 space-y-3 mt-6">
-        <h3 className="font-medium">Fase 2 · Validación</h3>
-        <p className="text-sm text-muted-foreground">
-          Revisa los cálculos y confirma para abrir el período.
-        </p>
-        <div className="flex gap-2">
-          <button
-            className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-white disabled:opacity-60"
-            disabled={!data?.periodId || isPending}
-            onClick={onOpen}
-          >
-            Abrir período
-          </button>
-        </div>
+      <section className="lg:col-span-8 mt-6">
+        <PhaseCard
+          phase="validation"
+          title="Fase 2 · Validación"
+          icon={<ShieldCheck />}
+          status={data?.phase === 'validation' ? 'active' : data?.phase === 'active' || data?.phase === 'closing' || data?.phase === 'closed' ? 'completed' : 'pending'}
+          description="Revisa los cálculos y confirma para abrir el período."
+          actions={[
+            {
+              label: 'Abrir período',
+              onClick: onOpen,
+              variant: 'primary',
+              disabled: !data?.periodId || isPending,
+            },
+          ]}
+        />
       </section>
 
-      <section className="lg:col-span-8 rounded-lg border p-4 space-y-3 mt-6">
-        <h3 className="font-medium">Fase 3 · Uso activo</h3>
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/sickness/balance"
-              className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-primary-foreground hover:opacity-90"
-            >
-              Ver Balance y Movimientos
-            </Link>
-          </div>
+      <section className="lg:col-span-8 mt-6">
+        <PhaseCard
+          phase="active"
+          title="Fase 3 · Uso activo"
+          icon={<Rocket />}
+          status={data?.phase === 'active' ? 'active' : data?.phase === 'closing' || data?.phase === 'closed' ? 'completed' : 'pending'}
+          description="El período está abierto. Puedes registrar movimientos y consultar el balance."
+          actions={[
+            {
+              label: 'Ver Balance y Movimientos',
+              onClick: () => window.location.href = '/sickness/balance',
+              variant: 'primary',
+              disabled: false,
+            },
+          ]}
+          checklist={[
+            { label: 'Registrar movimientos', done: data?.phase === 'active' || data?.phase === 'closing' || data?.phase === 'closed' },
+          ]}
+        />
+        <div className="mt-3">
           <label className="text-sm text-muted-foreground" htmlFor="reason">
             Motivo/nota para iniciar cierre (opcional)
           </label>
@@ -248,7 +255,7 @@ export default function PeriodoPage() {
             onChange={(e) => setReason(e.target.value)}
           />
           <button
-            className="inline-flex w-fit items-center rounded-md bg-amber-600 px-3 py-2 text-white disabled:opacity-60"
+            className="inline-flex w-fit items-center rounded-md bg-amber-600 px-3 py-2 text-white disabled:opacity-60 mt-2"
             disabled={!data?.periodId || isPending}
             onClick={onStartClosing}
           >
@@ -257,9 +264,16 @@ export default function PeriodoPage() {
         </div>
       </section>
 
-      <section className="lg:col-span-8 rounded-lg border p-4 space-y-3 mt-6">
-        <h3 className="font-medium">Cierre</h3>
-        <div className="flex flex-col gap-2">
+      <section className="lg:col-span-8 mt-6">
+        <PhaseCard
+          phase="closing"
+          title="Cierre"
+          icon={<Lock />}
+          status={data?.phase === 'closing' ? 'active' : data?.phase === 'closed' ? 'completed' : 'pending'}
+          description="Inicia el cierre del período y deja notas si lo deseas."
+          actions={[]}
+        />
+        <div className="mt-3">
           <label className="text-sm text-muted-foreground" htmlFor="notes">
             Notas de cierre (opcional)
           </label>
@@ -271,7 +285,7 @@ export default function PeriodoPage() {
             onChange={(e) => setNotes(e.target.value)}
           />
           <button
-            className="inline-flex w-fit items-center rounded-md bg-red-600 px-3 py-2 text-white disabled:opacity-60"
+            className="inline-flex w-fit items-center rounded-md bg-red-600 px-3 py-2 text-white disabled:opacity-60 mt-2"
             disabled={!data?.periodId || isPending}
             onClick={onClose}
           >
