@@ -1,9 +1,8 @@
 'use client';
 
-import { PeriodActions } from '@/components/periods/PeriodActions';
 import { MonthStatusBadge } from '@/components/shared/MonthStatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, toNumber } from '@/lib/format';
 import type { MonthlyPeriod } from '@/lib/periods';
 import { calculateMonthlySavings, formatPeriodMonth, normalizePeriodPhase } from '@/lib/periods';
 import { DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
@@ -21,9 +20,9 @@ export function MonthlyPeriodCard({
   period,
   onClick,
   showActions = false,
-  hasDescuadre = false,
-  descuadreAmount = 0,
-  onRefresh,
+  hasDescuadre: _hasDescuadre = false,
+  descuadreAmount: _descuadreAmount = 0,
+  onRefresh: _onRefresh,
 }: MonthlyPeriodCardProps) {
   const savings = calculateMonthlySavings(period);
   const isSavings = savings >= 0;
@@ -45,7 +44,7 @@ export function MonthlyPeriodCard({
           {/* Balance Inicial */}
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Balance Inicial</span>
-            <span className="font-medium">{formatCurrency(period.opening_balance)}</span>
+            <span className="font-medium">{formatCurrency(toNumber(period.opening_balance))}</span>
           </div>
 
           {/* Ingresos */}
@@ -55,7 +54,7 @@ export function MonthlyPeriodCard({
               <span className="text-muted-foreground">Ingresos</span>
             </div>
             <span className="font-medium text-green-600">
-              +{formatCurrency(period.total_income)}
+              +{formatCurrency(toNumber(period.total_income))}
             </span>
           </div>
 
@@ -66,7 +65,7 @@ export function MonthlyPeriodCard({
               <span className="text-muted-foreground">Gastos</span>
             </div>
             <span className="font-medium text-red-600">
-              -{formatCurrency(period.total_expenses)}
+              -{formatCurrency(toNumber(period.total_expenses))}
             </span>
           </div>
 
@@ -79,7 +78,7 @@ export function MonthlyPeriodCard({
               <DollarSign className="h-4 w-4 text-primary" />
               <span className="font-semibold">Balance Final</span>
             </div>
-            <span className="text-lg font-bold">{formatCurrency(period.closing_balance)}</span>
+            <span className="text-lg font-bold">{formatCurrency(toNumber(period.closing_balance))}</span>
           </div>
 
           {/* Ahorro del Mes */}
@@ -106,13 +105,9 @@ export function MonthlyPeriodCard({
 
           {/* Acciones de período */}
           {showActions && (
-            <div className="pt-2 border-t">
-              <PeriodActions
-                period={period}
-                hasDescuadre={hasDescuadre}
-                descuadreAmount={descuadreAmount}
-                onRefresh={onRefresh}
-              />
+            <div className="pt-2 border-t text-xs text-muted-foreground">
+              {/* TODO: Reintegrar acciones de período cuando el componente esté disponible */}
+              Acciones de período no disponibles temporalmente.
             </div>
           )}
         </div>

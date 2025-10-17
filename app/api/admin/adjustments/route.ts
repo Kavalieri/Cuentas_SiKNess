@@ -51,10 +51,25 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Error al obtener ajustes' }, { status: 500 });
     }
 
-    // Transformar los datos para el frontend
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transformedData =
-      adjustments?.map((adj: any) => ({
+    // Transformar los datos para el frontend (tipado explícito)
+    type AdjustmentRow = {
+      id: string;
+      contribution_id: string;
+      amount: number;
+      type: string;
+      reason: string | null;
+      created_at: string;
+      movement_id: string | null;
+      contributions: {
+        profile_id: string;
+        year: number;
+        month: number;
+        profiles: { email: string };
+      };
+    };
+
+    const transformedData = (adjustments as unknown as AdjustmentRow[] | undefined)?.map(
+      (adj) => ({
         id: adj.id,
         contribution_id: adj.contribution_id,
         amount: adj.amount,
@@ -65,7 +80,8 @@ export async function GET(_request: NextRequest) {
         profile_email: adj.contributions.profiles.email,
         year: adj.contributions.year,
         month: adj.contributions.month,
-      })) || [];
+      }),
+    ) || [];
 
     return NextResponse.json(transformedData);
   } catch (error) {

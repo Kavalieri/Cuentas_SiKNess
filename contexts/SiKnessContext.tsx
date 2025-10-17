@@ -136,6 +136,10 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
         const data = await response.json();
 
+        // Nota: la redirección sin hogar activo se gestiona vía SSR en
+        // app/sickness/(protected)/layout.tsx. Aquí no hacemos redirecciones
+        // cliente para evitar posibles flashes o bucles.
+
         setUser(data.user);
         setHouseholds(data.households || []);
         setHouseholdId(data.activeHousehold?.id || null);
@@ -242,8 +246,7 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           householdId,
-          year: activePeriod.year,
-          month: activePeriod.month,
+          periodId: activePeriod.id,
         }),
       });
 

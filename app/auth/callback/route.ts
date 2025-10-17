@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code');
   const token_hash = requestUrl.searchParams.get('token_hash');
   const type = requestUrl.searchParams.get('type');
-  const nextParam = requestUrl.searchParams.get('next');
+  // Nota: el parámetro `next` se lee más abajo; evitar variable sin uso para ESLint
   // Redirigir a la interfaz principal
   const next = requestUrl.searchParams.get('next') || '/dual-flow/inicio';
 

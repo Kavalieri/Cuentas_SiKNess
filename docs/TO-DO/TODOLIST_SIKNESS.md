@@ -79,12 +79,18 @@
 - ✅ **Información de cuenta** (fecha creación, rol sistema)
 - ✅ **Integración con SiKnessContext**
 
-### Resto de Fase 3 (Pendiente)
 
-- [ ] **CRUD Hogar** - Gestión de miembros, invitaciones, configuración
-- [ ] **CRUD Categorías** - Listado, crear, editar, eliminar
+### Fase 3 · Avance actual
+
+- [x] **CRUD Categorías** - Listado, crear, editar, eliminar (completado 17/10/2025)
+- [ ] **CRUD Hogar** - Gestión de miembros, invitaciones por código, objetivo de fondo y método de cálculo (**EN PROGRESO**)
 - [ ] Lista de transacciones en dashboard
 - [ ] Workflow de periodo (fases, checklist, cierre)
+
+**Documentación y dependencias:**
+- Se actualiza el checklist y la documentación en `Cuentas_SiKNess.md`, `ANALISIS_REFACTOR_SIKNESS.md` y `GUÍA_GESTIÓN_PERIODO_BALANCE.md` tras cada avance.
+- Las acciones y server actions deben validar con el contexto global (`SiKnessContext`).
+- Toda migración relevante se documenta y se aplica siguiendo las reglas del proyecto.
 
 ## Fase 4 · Depuración y migración
 

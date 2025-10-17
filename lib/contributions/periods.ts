@@ -233,12 +233,12 @@ async function calculateContributionsWithDirectExpenses(
   }
 
   // 4. Agrupar gastos directos por miembro
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const directExpensesByMember = (directExpenses || []).reduce(
-    (acc: Record<string, number>, expense: any) => {
+  type DirectExpenseRow = { real_payer_id: string | null; amount: number };
+  const directExpensesByMember = ((directExpenses || []) as unknown as DirectExpenseRow[]).reduce(
+    (acc: Record<string, number>, expense) => {
       const payerId = expense.real_payer_id;
       if (payerId) {
-        acc[payerId] = (acc[payerId] || 0) + parseFloat(expense.amount.toString());
+        acc[payerId] = (acc[payerId] || 0) + Number(expense.amount);
       }
       return acc;
     },
@@ -246,16 +246,17 @@ async function calculateContributionsWithDirectExpenses(
   );
 
   // 5. Calcular contribuciones base según método configurado
-  const totalIncome = memberIncomes.reduce(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (sum: number, income: any) => sum + parseFloat(income.monthly_income.toString()),
+  type MemberIncomeRow = { profile_id: string; monthly_income: number };
+  const totalIncome = (memberIncomes as unknown as MemberIncomeRow[]).reduce(
+    (sum: number, income) => sum + Number(income.monthly_income),
     0,
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const calculations: MemberContributionCalculation[] = memberIncomes.map((income: any) => {
+  const calculations: MemberContributionCalculation[] = (
+    memberIncomes as unknown as MemberIncomeRow[]
+  ).map((income) => {
     const profileId = income.profile_id;
-    const memberIncome = parseFloat(income.monthly_income.toString());
+    const memberIncome = Number(income.monthly_income);
 
     // Calcular contribución base según método
     let baseContribution = 0;

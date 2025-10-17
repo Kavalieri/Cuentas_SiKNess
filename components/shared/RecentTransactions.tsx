@@ -1,8 +1,10 @@
+"use client";
 import { Badge } from '@/components/ui/badge';
-import { query } from '@/lib/db';
 import { formatCurrency } from '@/lib/format';
 import type { Database } from '@/types/database';
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { TransactionPairItem } from './data-display/TransactionPairItem';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'] & {
   categories?: Database['public']['Tables']['categories']['Row'] | null;
@@ -16,23 +18,41 @@ type Transaction = Database['public']['Tables']['transactions']['Row'] & {
 interface RecentTransactionsProps {
   householdId: string;
   limit?: number;
+  flowType?: 'all' | 'common' | 'direct';
+  year?: number;
+  month?: number;
+  memberId?: string;
+  categoryId?: string;
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
 }
 
-async function getRecentTransactions(
+async function fetchRecentTransactions(
   householdId: string,
-  limit: number = 5,
-): Promise<Transaction[]> {
-  const result = await query<Transaction>(
-    `
-    SELECT * FROM transactions
-    WHERE household_id = $1
-    ORDER BY occurred_at DESC, created_at DESC
-    LIMIT $2
-    `,
-    [householdId, limit],
-  );
-
-  return result.rows;
+  limit = 5,
+  flowType: 'all' | 'common' | 'direct' = 'all',
+  year?: number,
+  month?: number,
+  memberId?: string,
+  categoryId?: string,
+  startDate?: string,
+  endDate?: string,
+) {
+  const params = new URLSearchParams({ householdId, limit: String(limit), flowType });
+  if (year && month) {
+    params.set('year', String(year));
+    params.set('month', String(month));
+  }
+  if (memberId) params.set('memberId', memberId);
+  if (categoryId) params.set('categoryId', categoryId);
+  if (startDate && endDate) {
+    params.set('startDate', startDate);
+    params.set('endDate', endDate);
+  }
+  const res = await fetch(`/api/transactions/recent?${params.toString()}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Error al cargar transacciones');
+  const data = await res.json();
+  return data.transactions as Transaction[];
 }
 
 function TransactionItem({ transaction }: { transaction: Transaction }) {
@@ -70,8 +90,41 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
   );
 }
 
-export async function RecentTransactions({ householdId, limit = 5 }: RecentTransactionsProps) {
-  const transactions = await getRecentTransactions(householdId, limit);
+const RecentTransactions = ({ householdId, limit = 5, flowType = 'all', year, month, memberId, categoryId, startDate, endDate }: RecentTransactionsProps) => {
+  const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchRecentTransactions(householdId, limit, flowType, year, month, memberId, categoryId, startDate, endDate)
+      .then((txs) => {
+        if (!cancelled) setTransactions(txs);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e.message || 'Error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [householdId, limit, flowType, year, month, memberId, categoryId, startDate, endDate]);
+
+  if (error) {
+    return (
+      <div className="bg-card rounded-lg p-6 shadow-sm border">
+        <h2 className="text-lg font-semibold mb-4">Transacciones Recientes</h2>
+        <p className="text-destructive text-center py-8">{error}</p>
+      </div>
+    );
+  }
+
+  if (!transactions) {
+    return (
+      <div className="bg-card rounded-lg p-6 shadow-sm border">
+        <h2 className="text-lg font-semibold mb-4">Transacciones Recientes</h2>
+        <p className="text-muted-foreground text-center py-8">Cargando…</p>
+      </div>
+    );
+  }
 
   if (transactions.length === 0) {
     return (
@@ -82,15 +135,43 @@ export async function RecentTransactions({ householdId, limit = 5 }: RecentTrans
     );
   }
 
+  // Agrupar pares de transacciones directas
+  const pairs: Record<string, { expense?: Transaction; income?: Transaction }> = {};
+  const singles: Transaction[] = [];
+  transactions.forEach(tx => {
+    if (tx.flow_type === 'direct' && tx.transaction_pair_id) {
+  if (!pairs[tx.transaction_pair_id]) pairs[tx.transaction_pair_id] = {};
+      const pair = pairs[tx.transaction_pair_id];
+      if (pair) {
+        if (tx.type === 'expense' || tx.type === 'expense_direct') pair.expense = tx;
+        if (tx.type === 'income' || tx.type === 'income_direct') pair.income = tx;
+      }
+    } else {
+      singles.push(tx);
+    }
+  });
+
   return (
     <div className="bg-card rounded-lg p-6 shadow-sm border">
       <h2 className="text-lg font-semibold mb-4">Transacciones Recientes</h2>
-
       <div className="space-y-0">
-        {transactions.map((transaction) => (
+        {/* Mostrar pares directos */}
+        {Object.values(pairs).map((pair) =>
+          pair.expense && pair.income ? (
+            <TransactionPairItem
+              key={pair.expense.id + '-' + pair.income.id}
+              expense={pair.expense}
+              income={pair.income}
+            />
+          ) : null
+        )}
+        {/* Mostrar transacciones individuales */}
+        {singles.map((transaction) => (
           <TransactionItem key={transaction.id} transaction={transaction} />
         ))}
       </div>
     </div>
   );
-}
+};
+
+export default RecentTransactions;

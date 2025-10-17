@@ -98,10 +98,19 @@ export async function getExportData(options: ExportOptions): Promise<Result<Expo
   }
 
   // Obtener category_ids y user_ids únicos
-  const categoryIds = [
-    ...new Set((transactions as any[]).map((t: any) => t.category_id).filter(Boolean)),
-  ];
-  const userIds = [...new Set((transactions as any[]).map((t: any) => t.paid_by).filter(Boolean))];
+  type TxRow = {
+    id: string;
+    occurred_at: string;
+    type: 'income' | 'expense';
+    amount: number;
+    currency: string;
+    description: string | null;
+    category_id: string | null;
+    paid_by: string | null;
+  };
+  const txRows = transactions as unknown as TxRow[];
+  const categoryIds = [...new Set(txRows.map((t) => t.category_id).filter((v): v is string => !!v))];
+  const userIds = [...new Set(txRows.map((t) => t.paid_by).filter((v): v is string => !!v))];
 
   // Obtener datos relacionados en paralelo
   const [categoriesResult, profilesResult] = await Promise.all([
@@ -121,12 +130,17 @@ export async function getExportData(options: ExportOptions): Promise<Result<Expo
   }
 
   // Crear mapas para lookups eficientes
-  const categoriesMap = new Map((categoriesResult.data as any[])?.map((c: any) => [c.id, c]) || []);
-  const profilesMap = new Map((profilesResult.data as any[])?.map((p: any) => [p.id, p]) || []); // Enriquecer transacciones con datos relacionados
-  const enrichedTransactions = transactions.map((transaction: any) => ({
+  type CategoryRow = { id: string; name: string; icon: string | null; type: string };
+  type ProfileRow = { id: string; email: string };
+  const categoriesData = (categoriesResult.data || []) as unknown as CategoryRow[];
+  const profilesData = (profilesResult.data || []) as unknown as ProfileRow[];
+  const categoriesMap = new Map<string, CategoryRow>(categoriesData.map((c) => [c.id, c]));
+  const profilesMap = new Map<string, ProfileRow>(profilesData.map((p) => [p.id, p]));
+  // Enriquecer transacciones con datos relacionados
+  const enrichedTransactions = txRows.map((transaction) => ({
     ...transaction,
-    categories: transaction.category_id ? categoriesMap.get(transaction.category_id) : null,
-    profiles: transaction.paid_by ? profilesMap.get(transaction.paid_by) : null,
+    categories: transaction.category_id ? categoriesMap.get(transaction.category_id) ?? null : null,
+    profiles: transaction.paid_by ? profilesMap.get(transaction.paid_by) ?? null : null,
   }));
 
   // Tipar transacciones con relaciones anidadas
@@ -149,7 +163,8 @@ export async function getExportData(options: ExportOptions): Promise<Result<Expo
       email: string;
     } | null;
   };
-  const typedTransactions = enrichedTransactions as unknown as TransactionWithRelations[]; // 6. Calcular resumen financiero
+  const typedTransactions = enrichedTransactions as unknown as TransactionWithRelations[];
+  // 6. Calcular resumen financiero
   const totalIncome = typedTransactions
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -194,8 +209,16 @@ export async function getExportData(options: ExportOptions): Promise<Result<Expo
   }
 
   // Obtener profile_ids únicos de las contribuciones
+  type ContributionRow = {
+    id: string;
+    profile_id: string;
+    expected_amount: number | null;
+    paid_amount: number;
+    status: 'pending' | 'partial' | 'paid' | 'overpaid' | null;
+  };
+  const contribRows = (contributions || []) as unknown as ContributionRow[];
   const contributionProfileIds = [
-    ...new Set((contributions as any[])?.map((c: any) => c.profile_id).filter(Boolean) || []),
+    ...new Set(contribRows.map((c) => c.profile_id).filter((v): v is string => !!v)),
   ];
 
   // Obtener perfiles y member_incomes en paralelo
@@ -212,28 +235,27 @@ export async function getExportData(options: ExportOptions): Promise<Result<Expo
   ]);
 
   // Crear mapas para lookup rápido
-  const contributionProfilesMap = new Map(
-    (contributionProfilesResult.data as any[])?.map((p: any) => [p.id, p]) || [],
+  type ContributionProfileRow = { id: string; email: string };
+  type MemberIncomeRow = { profile_id: string; monthly_income: number };
+  const contributionProfilesData = (contributionProfilesResult.data || []) as unknown as ContributionProfileRow[];
+  const memberIncomesData = (memberIncomesResult.data || []) as unknown as MemberIncomeRow[];
+  const contributionProfilesMap = new Map<string, ContributionProfileRow>(
+    contributionProfilesData.map((p) => [p.id, p]),
   );
-  const memberIncomesMap = new Map();
-  (memberIncomesResult.data as any[])?.forEach((mi: any) => {
+  const memberIncomesMap = new Map<string, MemberIncomeRow[]>();
+  memberIncomesData.forEach((mi) => {
     if (!memberIncomesMap.has(mi.profile_id)) {
       memberIncomesMap.set(mi.profile_id, []);
     }
-    memberIncomesMap.get(mi.profile_id).push(mi);
+    memberIncomesMap.get(mi.profile_id)!.push(mi);
   });
 
   // Enriquecer contribuciones con datos relacionados
-  const enrichedContributions =
-    (contributions as any[])?.map((contribution: any) => ({
-      ...contribution,
-      profiles: contribution.profile_id
-        ? contributionProfilesMap.get(contribution.profile_id)
-        : null,
-      member_incomes: contribution.profile_id
-        ? memberIncomesMap.get(contribution.profile_id) || []
-        : [],
-    })) || [];
+  const enrichedContributions = contribRows.map((contribution) => ({
+    ...contribution,
+    profiles: contribution.profile_id ? contributionProfilesMap.get(contribution.profile_id) ?? null : null,
+    member_incomes: contribution.profile_id ? memberIncomesMap.get(contribution.profile_id) || [] : [],
+  }));
 
   // Tipar contribuciones con relaciones anidadas
   type ContributionWithRelations = {

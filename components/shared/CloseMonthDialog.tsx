@@ -1,24 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { closePeriod } from '@/app/sickness/periodo/actions';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
-import { closePeriod } from '@/app/app/periods/actions';
-import { formatPeriodMonth } from '@/lib/periods';
-import { formatCurrency } from '@/lib/format';
+import { Label } from '@/components/ui/label';
+import { formatCurrency, toNumber } from '@/lib/format';
 import type { MonthlyPeriod } from '@/lib/periods';
-import { Lock, TrendingUp, TrendingDown } from 'lucide-react';
+import { formatPeriodMonth } from '@/lib/periods';
+import { Lock, TrendingDown, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface CloseMonthDialogProps {
   period: MonthlyPeriod;
@@ -46,7 +46,7 @@ export function CloseMonthDialog({ period, children }: CloseMonthDialogProps) {
     setIsLoading(false);
   };
 
-  const savings = period.total_income - period.total_expenses;
+  const savings = toNumber(period.total_income) - toNumber(period.total_expenses);
   const isSavings = savings >= 0;
 
   return (
@@ -76,12 +76,12 @@ export function CloseMonthDialog({ period, children }: CloseMonthDialogProps) {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <div className="text-muted-foreground">Balance Inicial</div>
-                <div className="font-medium">{formatCurrency(period.opening_balance)}</div>
+                <div className="font-medium">{formatCurrency(toNumber(period.opening_balance))}</div>
               </div>
 
               <div>
                 <div className="text-muted-foreground">Balance Final</div>
-                <div className="font-bold text-lg">{formatCurrency(period.closing_balance)}</div>
+                <div className="font-bold text-lg">{formatCurrency(toNumber(period.closing_balance))}</div>
               </div>
 
               <div>
@@ -89,9 +89,7 @@ export function CloseMonthDialog({ period, children }: CloseMonthDialogProps) {
                   <TrendingUp className="h-3 w-3 text-green-600" />
                   Ingresos
                 </div>
-                <div className="font-medium text-green-600">
-                  {formatCurrency(period.total_income)}
-                </div>
+                <div className="font-medium text-green-600">{formatCurrency(toNumber(period.total_income))}</div>
               </div>
 
               <div>
@@ -99,9 +97,7 @@ export function CloseMonthDialog({ period, children }: CloseMonthDialogProps) {
                   <TrendingDown className="h-3 w-3 text-red-600" />
                   Gastos
                 </div>
-                <div className="font-medium text-red-600">
-                  {formatCurrency(period.total_expenses)}
-                </div>
+                <div className="font-medium text-red-600">{formatCurrency(toNumber(period.total_expenses))}</div>
               </div>
             </div>
 
@@ -141,7 +137,7 @@ export function CloseMonthDialog({ period, children }: CloseMonthDialogProps) {
               <Lock className="h-4 w-4 shrink-0 text-yellow-600 dark:text-yellow-500 mt-0.5" />
               <div className="text-xs text-yellow-800 dark:text-yellow-200">
                 <strong>Importante:</strong> Los movimientos de este mes quedarán bloqueados para
-                edición. El balance final ({formatCurrency(period.closing_balance)}) se convertirá en
+                edición. El balance final ({formatCurrency(toNumber(period.closing_balance))}) se convertirá en
                 el balance inicial del próximo mes.
               </div>
             </div>

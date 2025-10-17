@@ -24,6 +24,13 @@
         "connectString": "postgresql://cuentassik_user:LkEVkbZvzDvyqhRvoaXo6Um1I@localhost:5432/cuentassik_prod",
         "group": "cuentassik"
       }
-    ]
+    ],
+    "chat.edits2.enabled": true,
+    "chat.editor.wordWrap": "on",
+    "chat.mcp.assisted.nuget.enabled": true,
+    "chat.renderRelatedFiles": true,
+    "inlineChat.enableV2": true,
+    "inlineChat.notebookAgent": true,
+    "chat.checkpoints.showFileChanges": true
   }
 }

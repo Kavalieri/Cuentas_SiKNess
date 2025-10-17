@@ -1,9 +1,9 @@
 "use client";
 
 import { Progress } from '@/components/ui/progress';
+import Link from 'next/link';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import Link from 'next/link';
 
 type Checklist = {
   householdId: string;

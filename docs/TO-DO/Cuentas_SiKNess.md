@@ -292,10 +292,16 @@ Vinculado al periodo activo seleccionado.
     - Recarga automática tras mutaciones
   - Mobile-first responsive design
   - Sin errores de compilación TypeScript
+
   - Commit: f0e902f
 
-- **CRUD Hogar** - Gestión de miembros, invitaciones, objetivo de fondo (PENDIENTE)
-- **Workflow de periodos** - Fases 1-2-3 + cierre de periodo (PENDIENTE)
-- **Lista de transacciones** - Filtros, búsqueda, paginación (PENDIENTE)
+**CRUD Hogar** - Gestión de miembros, invitaciones por código, objetivo de fondo y método de cálculo (**EN PROGRESO**)
+**Workflow de periodos** - Fases 1-2-3 + cierre de periodo (PENDIENTE)
+**Lista de transacciones** - Filtros, búsqueda, paginación (PENDIENTE)
+
+**Documentación y dependencias:**
+- Checklist y avances actualizados en `TODOLIST_SIKNESS.md` y `ANALISIS_REFACTOR_SIKNESS.md`.
+- Validar todas las acciones con el contexto global (`SiKnessContext`).
+- Documentar y aplicar migraciones siguiendo las reglas del proyecto.
 
 ---

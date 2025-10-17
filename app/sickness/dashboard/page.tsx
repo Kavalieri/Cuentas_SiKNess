@@ -1,15 +1,19 @@
+
 'use client';
+import { useSearchParams } from 'next/navigation';
+import React from 'react';
+import { toast } from 'sonner';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import {
-  AlertCircle,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Calendar,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
+    AlertCircle,
+    ArrowDownCircle,
+    ArrowUpCircle,
+    Calendar,
+    TrendingDown,
+    TrendingUp,
+    Wallet,
 } from 'lucide-react';
 
 const MONTHS = [
@@ -29,6 +33,12 @@ const MONTHS = [
 
 export default function DashboardPage() {
   const { activePeriod, balance, privacyMode } = useSiKness();
+  const searchParams = useSearchParams();
+  React.useEffect(() => {
+    if (searchParams?.get('onboarded') === '1') {
+      toast.success('¡Bienvenido! El hogar se ha creado correctamente.');
+    }
+  }, [searchParams]);
 
   // Helper para formatear moneda con modo privacidad
   const formatCurrency = (amount: number) => {

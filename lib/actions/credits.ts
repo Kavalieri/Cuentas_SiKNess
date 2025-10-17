@@ -207,10 +207,15 @@ export async function getCreditsSummary(): Promise<Result<CreditsSummary>> {
       return fail('Error al obtener créditos aplicados');
     }
 
-    const activeTotal =
-      activeCredits?.reduce((sum, credit) => sum + (credit as any).amount, 0) || 0;
-    const appliedTotal =
-      appliedCredits?.reduce((sum, credit) => sum + (credit as any).amount, 0) || 0;
+    type AmountRow = { amount: number };
+    const activeTotal = (activeCredits as unknown as AmountRow[] | undefined)?.reduce(
+      (sum, credit) => sum + Number(credit.amount),
+      0,
+    ) || 0;
+    const appliedTotal = (appliedCredits as unknown as AmountRow[] | undefined)?.reduce(
+      (sum, credit) => sum + Number(credit.amount),
+      0,
+    ) || 0;
 
     const summary: CreditsSummary = {
       active: {

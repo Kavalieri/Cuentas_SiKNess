@@ -318,4 +318,16 @@ interface SiKnessContextValue {
 
 ---
 
-**Próximo paso**: Empezar Fase 1 - Shell Global con placeholders
+
+**Avance actual:**
+- Fase 1 · Shell global y placeholders: ✅ Completada
+- Fase 2 · Contexto global y selectores: ✅ Completada
+- Fase 3 · Dashboard y lógica real: 🔄 EN PROGRESO
+  - CRUD Categorías: ✅ Completado
+  - CRUD Hogar: EN PROGRESO (miembros, invitaciones por código, objetivo de fondo, método de cálculo)
+  - Workflow de periodos y lista de transacciones: PENDIENTE
+
+**Documentación y dependencias:**
+- Checklist y avances actualizados en `TODOLIST_SIKNESS.md` y `Cuentas_SiKNess.md`.
+- Validar todas las acciones con el contexto global (`SiKnessContext`).
+- Documentar y aplicar migraciones siguiendo las reglas del proyecto.

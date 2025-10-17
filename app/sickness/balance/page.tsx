@@ -1,6 +1,7 @@
 
 'use client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import {
@@ -8,12 +9,14 @@ import {
     ArrowDownCircle,
     ArrowUpCircle,
     Calendar,
+    Info,
     TrendingDown,
     TrendingUp,
-    Wallet,
+    Wallet
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
+import { ContributionsDisplay } from './ContributionsDisplay';
 
 const MONTHS = [
   'Enero',
@@ -100,29 +103,84 @@ export default function BalancePage() {
 
   const periodName = `${MONTHS[activePeriod.month - 1]} ${activePeriod.year}`;
 
+  // Determinar badge y mensaje de estado
+  const getStatusInfo = () => {
+    switch (status) {
+      case 'setup':
+        return {
+          badge: { variant: 'secondary' as const, text: 'Configuración' },
+          canDo: 'Configura los ingresos y gastos directos de cada miembro',
+          helpText: 'Período en fase de configuración inicial',
+        };
+      case 'locked':
+        return {
+          badge: { variant: 'default' as const, text: 'Bloqueado' },
+          canDo: 'Puedes registrar gastos directos que reducirán las contribuciones individuales',
+          helpText: 'Solo owners pueden abrir tras validar las contribuciones calculadas',
+        };
+      case 'active':
+        return {
+          badge: { variant: 'default' as const, text: 'Activo', className: 'bg-green-600' },
+          canDo: 'Registra todos los gastos e ingresos del mes',
+          helpText: 'Período abierto para operaciones normales',
+        };
+      case 'closing':
+        return {
+          badge: { variant: 'secondary' as const, text: 'Cerrando' },
+          canDo: 'Período en proceso de cierre',
+          helpText: 'Owner está validando antes del cierre final',
+        };
+      case 'closed':
+        return {
+          badge: { variant: 'destructive' as const, text: 'Cerrado' },
+          canDo: 'No se permiten nuevos movimientos',
+          helpText: 'Período cerrado y archivado',
+        };
+      default:
+        return {
+          badge: { variant: 'outline' as const, text: 'Desconocido' },
+          canDo: '',
+          helpText: '',
+        };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
+
   return (
     <div className="container mx-auto p-4 space-y-6">
-      {/* Banner contextual por estado del periodo */}
-      {status && (
-        <Alert variant={status === 'locked' ? 'default' : status === 'closed' ? 'destructive' : 'default'}>
-          <AlertTitle>
-            {status === 'locked' && 'Período bloqueado para validación'}
-            {status === 'active' && 'Período abierto'}
-            {status === 'closed' && 'Período cerrado'}
-          </AlertTitle>
-          <AlertDescription>
-            {status === 'locked' && 'Solo los owners pueden abrir el período tras validar los datos.'}
-            {status === 'active' && 'Puedes registrar gastos/ingresos según el flujo permitido.'}
-            {status === 'closed' && 'El período está cerrado y no admite nuevos movimientos.'}
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Header mejorado con contexto del periodo */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <Calendar className="h-6 w-6 text-muted-foreground" />
+            <div>
+              <h1 className="text-2xl font-bold">{periodName}</h1>
+              <p className="text-sm text-muted-foreground">Balance y Movimientos</p>
+            </div>
+          </div>
+          <Badge {...statusInfo.badge} className={statusInfo.badge.className}>
+            {statusInfo.badge.text}
+          </Badge>
+        </div>
 
-      {/* Header con nombre del periodo */}
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <Calendar className="h-4 w-4" />
-        <span className="text-sm font-medium">Período: {periodName}</span>
+        {/* Información contextual según estado */}
+        {statusInfo.canDo && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Estado del período</AlertTitle>
+            <AlertDescription>
+              <p className="font-medium">{statusInfo.canDo}</p>
+              <p className="text-xs text-muted-foreground mt-1">{statusInfo.helpText}</p>
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
+
+      {/* Mostrar contribuciones calculadas si el período está bloqueado */}
+      {status === 'locked' && householdId && (
+        <ContributionsDisplay householdId={householdId} privacyMode={privacyMode} />
+      )}
 
       {/* Grid de tarjetas principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

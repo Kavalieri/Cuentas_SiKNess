@@ -26,7 +26,7 @@
 
 ---
 
-## Doble Flujo - Dual flow ⚠️ Sistema troncal a mantener funcional
+## Sistema troncal a mantener funcional
 
 1. Los ingresos serán tipo "ingreso" (Flujo común)
 2. Los gastos serán tipo "gasto" (Flujo común)

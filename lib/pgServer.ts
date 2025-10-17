@@ -4,8 +4,8 @@
  */
 
 import {
-  getCurrentUser as authGetCurrentUser,
-  getUserHouseholdId as authGetUserHouseholdId,
+    getCurrentUser as authGetCurrentUser,
+    getUserHouseholdId as authGetUserHouseholdId,
 } from './auth';
 import { query } from './db';
 
@@ -525,7 +525,17 @@ export const getUserHouseholds = async () => {
   const result = await query(`SELECT * FROM get_user_households_optimized($1)`, [user.profile_id]);
 
   // Mapear a formato esperado por componentes
-  return result.rows.map((row: any) => ({
+  type HouseholdRow = {
+    household_id: string;
+    household_name: string;
+    user_role: 'owner' | 'member';
+    is_active: boolean;
+    member_count: number;
+    owner_count: number;
+    household_created_at: string;
+  };
+  const rows = result.rows as unknown as HouseholdRow[];
+  return rows.map((row) => ({
     id: row.household_id,
     name: row.household_name,
     role: row.user_role,
