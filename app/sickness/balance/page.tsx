@@ -1,22 +1,26 @@
 
-'use client';
+
+"use client";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import {
-    AlertCircle,
-    ArrowDownCircle,
-    ArrowUpCircle,
-    Calendar,
-    Info,
-    TrendingDown,
-    TrendingUp,
-    Wallet
+  AlertCircle,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Calendar,
+  Info,
+  TrendingDown,
+  TrendingUp,
+  Wallet
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
+
+import type { MonthlyPeriodPhase } from '@/lib/periods';
 import { ContributionsDisplay } from './ContributionsDisplay';
+import { NewMovementForm } from './components';
 
 const MONTHS = [
   'Enero',
@@ -36,11 +40,13 @@ const MONTHS = [
 const RecentTransactions = dynamic(() => import('@/components/shared/RecentTransactions'), { ssr: false, loading: () => <div>Cargando transacciones…</div> });
 
 export default function BalancePage() {
-  const { activePeriod, balance, privacyMode, householdId } = useSiKness();
+  // Declarar primero los datos de contexto para que estén disponibles en todo el scope
+  const { activePeriod, periods, selectedPeriod, selectPeriod, balance, privacyMode, householdId, user, isOwner } = useSiKness();
+  const [showNewMovement, setShowNewMovement] = useState(false);
   const [flowType, setFlowType] = useState<'all' | 'common' | 'direct'>('all');
   const [limit, setLimit] = useState(10);
   const [members, setMembers] = useState<Array<{ profile_id: string; email: string; role: string }>>([]);
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; type: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; type: string; icon?: string }>>([]);
   const [memberId, setMemberId] = useState<string>('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
@@ -55,7 +61,7 @@ export default function BalancePage() {
     }).format(amount);
   };
 
-  const phase = activePeriod?.phase || 'preparing';
+  const phase: MonthlyPeriodPhase = (activePeriod?.phase as MonthlyPeriodPhase) || 'preparing';
   const balanceDifference = (balance?.closing || 0) - (balance?.opening || 0);
   const isPositive = balanceDifference >= 0;
   const canCreateMovement = useMemo(
@@ -86,25 +92,11 @@ export default function BalancePage() {
     })();
   }, [householdId]);
 
-  if (!activePeriod) {
-    return (
-      <div className="container mx-auto p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-              No hay período activo
-            </CardTitle>
-            <CardDescription>
-              Selecciona un período en el selector de la barra superior para ver los datos.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  const periodName = `${MONTHS[activePeriod.month - 1]} ${activePeriod.year}`;
+  // Determinar periodo mostrado (UI): prioriza selectedPeriod; fallback a activePeriod; si no, fecha actual
+  const now = new Date();
+  const periodYear = selectedPeriod?.year ?? activePeriod?.year ?? now.getFullYear();
+  const periodMonth = selectedPeriod?.month ?? activePeriod?.month ?? now.getMonth() + 1;
+  const periodName = `${MONTHS[periodMonth - 1]} ${periodYear}`;
 
   // Determinar badge y mensaje de estado
   const getStatusInfo = () => {
@@ -154,6 +146,34 @@ export default function BalancePage() {
     <div className="container mx-auto p-4 space-y-6">
       {/* Header mejorado con contexto del periodo */}
       <div className="space-y-3">
+        {/* Selector de periodo: ahora recuerda y selecciona el actual */}
+        <div className="mb-2">
+          <label className="text-sm font-medium mr-2">Periodo:</label>
+          <select
+            value={`${periodYear}-${periodMonth}`}
+            onChange={e => {
+              const [yearStr, monthStr] = e.target.value.split('-');
+              const year = Number(yearStr);
+              const month = Number(monthStr);
+              selectPeriod(year, month);
+            }}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            {periods && periods.length > 0 ? (
+              periods
+                .slice()
+                .sort((a, b) => (a.year !== b.year ? b.year - a.year : b.month - a.month))
+                .map((p) => (
+                  <option key={p.id} value={`${p.year}-${p.month}`}>
+                    {MONTHS[p.month - 1]} {p.year}
+                    {activePeriod && p.year === activePeriod.year && p.month === activePeriod.month ? ' (actual)' : ''}
+                  </option>
+                ))
+            ) : (
+              <option value={`${periodYear}-${periodMonth}`}>{MONTHS[periodMonth - 1]} {periodYear}</option>
+            )}
+          </select>
+        </div>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <Calendar className="h-6 w-6 text-muted-foreground" />
@@ -180,8 +200,8 @@ export default function BalancePage() {
         )}
       </div>
 
-      {/* Mostrar contribuciones calculadas si el período está en validación o activo */}
-      {(phase === 'validation' || phase === 'active') && householdId && (
+      {/* Mostrar contribuciones calculadas siempre (se calculan en tiempo real) */}
+      {householdId && (
         <ContributionsDisplay householdId={householdId} privacyMode={privacyMode} />
       )}
 
@@ -439,26 +459,34 @@ export default function BalancePage() {
           <button
             className={`px-3 py-1.5 rounded text-sm font-medium border ${canCreateMovement ? 'bg-primary text-primary-foreground hover:opacity-90' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
             disabled={!canCreateMovement}
-            title={status === 'closed' ? 'No se pueden crear movimientos con el período cerrado' : 'Crear nuevo movimiento'}
-            onClick={() => {
-              // TODO: Navegar al formulario de nuevo movimiento cuando esté listo
-              alert('Nuevo movimiento (WIP)');
-            }}
+            title={phase === 'closed' ? 'No se pueden crear movimientos con el período cerrado' : 'Crear nuevo movimiento'}
+            onClick={() => setShowNewMovement(true)}
           >
             Nuevo movimiento
           </button>
         </div>
+
+        {/* Modal para nuevo movimiento */}
+        <NewMovementForm
+          open={showNewMovement}
+          onClose={() => setShowNewMovement(false)}
+          members={members}
+          categories={categories}
+          phase={phase}
+          user={user}
+          isOwner={isOwner}
+        />
       </div>
 
       {/* Transacciones recientes */}
       <div className="mt-4">
-        {householdId && activePeriod && (
+        {householdId && periodYear && periodMonth && (
           <RecentTransactions
             householdId={householdId}
             limit={limit}
             flowType={flowType}
-            year={activePeriod.year}
-            month={activePeriod.month}
+            year={periodYear}
+            month={periodMonth}
             memberId={memberId || undefined}
             categoryId={categoryId || undefined}
             startDate={startDate || undefined}

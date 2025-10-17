@@ -32,7 +32,7 @@ const MONTHS = [
 ];
 
 export default function DashboardPage() {
-  const { activePeriod, balance, privacyMode } = useSiKness();
+  const { activePeriod, selectedPeriod, balance, privacyMode } = useSiKness();
   const searchParams = useSearchParams();
   React.useEffect(() => {
     if (searchParams?.get('onboarded') === '1') {
@@ -49,26 +49,10 @@ export default function DashboardPage() {
     }).format(amount);
   };
 
-  // Si no hay periodo activo
-  if (!activePeriod) {
-    return (
-      <div className="container mx-auto p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-              No hay período activo
-            </CardTitle>
-            <CardDescription>
-              Selecciona un período en el selector de la barra superior para ver los datos.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  const periodName = `${MONTHS[activePeriod.month - 1]} ${activePeriod.year}`;
+  const now = new Date();
+  const shownYear = selectedPeriod?.year ?? activePeriod?.year ?? now.getFullYear();
+  const shownMonth = selectedPeriod?.month ?? activePeriod?.month ?? now.getMonth() + 1;
+  const periodName = `${MONTHS[shownMonth - 1]} ${shownYear}`;
 
   // Calcular diferencia entre balance final e inicial
   const balanceDifference = (balance?.closing || 0) - (balance?.opening || 0);
