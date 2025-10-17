@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { toNumber } from '@/lib/format';
+import { normalizePeriodPhase } from '@/lib/periods';
 import { query } from '@/lib/pgServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -52,12 +53,13 @@ export async function POST(req: NextRequest) {
 
     const household = householdResult.rows[0];
 
-    // Obtener o crear el periodo actual
+    // Fecha actual para heurística de periodo "actual"
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    const periodResult = await query(
+    // Listar períodos (últimos 15 ordenados desc)
+    const periodsRes = await query(
       `
       SELECT
         id,
@@ -67,34 +69,54 @@ export async function POST(req: NextRequest) {
         opening_balance,
         closing_balance,
         total_income,
-        total_expenses
+        total_expenses,
+        created_at
       FROM monthly_periods
       WHERE household_id = $1
-        AND year = $2
-        AND month = $3
-      LIMIT 1
+      ORDER BY year DESC, month DESC
+      LIMIT 15
     `,
-      [householdId, currentYear, currentMonth],
+      [householdId],
     );
 
-    let currentPeriod = null;
-    if (periodResult.rows.length > 0) {
-      const p = periodResult.rows[0];
-      if (p) {
-        currentPeriod = {
-          id: p.id,
-          year: p.year,
-          month: p.month,
-          day: 1, // Por defecto día 1
-          phase: 1 as const, // TODO: calcular fase real
-          status: p.status || 'active',
-          openingBalance: toNumber(p.opening_balance),
-          closingBalance: toNumber(p.closing_balance),
-          totalIncome: toNumber(p.total_income),
-          totalExpenses: toNumber(p.total_expenses),
-        };
-      }
-    }
+    const periods = periodsRes.rows.map((row) => {
+      const { phase } = normalizePeriodPhase(undefined, row.status);
+      return {
+        id: row.id as string,
+        year: Number(row.year),
+        month: Number(row.month),
+        status: (row.status as string) ?? 'open',
+        phase,
+        openingBalance: toNumber(row.opening_balance),
+        closingBalance: toNumber(row.closing_balance),
+        isCurrent: phase === 'active' || (Number(row.year) === currentYear && Number(row.month) === currentMonth),
+        // Extras para currentPeriod (no usados por el listado, pero útiles luego)
+        totalIncome: toNumber(row.total_income),
+        totalExpenses: toNumber(row.total_expenses),
+      };
+    });
+
+    // Elegir currentPeriod: prioridad por isCurrent → mes actual → más reciente
+    const currentPeriodCandidate =
+      periods.find((p) => p.isCurrent) ||
+      periods.find((p) => p.year === currentYear && p.month === currentMonth) ||
+      periods[0] ||
+      null;
+
+    const currentPeriod = currentPeriodCandidate
+      ? {
+          id: currentPeriodCandidate.id,
+          year: currentPeriodCandidate.year,
+          month: currentPeriodCandidate.month,
+          day: 1,
+          phase: currentPeriodCandidate.phase,
+          status: currentPeriodCandidate.status,
+          openingBalance: currentPeriodCandidate.openingBalance,
+          closingBalance: currentPeriodCandidate.closingBalance,
+          totalIncome: currentPeriodCandidate.totalIncome,
+          totalExpenses: currentPeriodCandidate.totalExpenses,
+        }
+      : null;
 
     // Actualizar preferencia de usuario
     await query(
@@ -117,6 +139,7 @@ export async function POST(req: NextRequest) {
             calculationMethod: household.calculation_type || 'equal',
           }
         : null,
+      periods: periods.map(({ totalIncome, totalExpenses, ...rest }) => rest),
       currentPeriod,
     });
   } catch (error) {

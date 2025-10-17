@@ -1,11 +1,14 @@
 "use client";
 
-import { Progress } from '@/components/ui/progress';
-import Link from 'next/link';
-import { useEffect, useMemo, useState, useTransition } from 'react';
-import { toast } from 'sonner';
+import { FinancialSummaryCard } from '@/components/periodo/FinancialSummaryCard';
+import { MemberBreakdown, type MemberBreakdownContribution } from '@/components/periodo/MemberBreakdown';
 import { PhaseCard } from '@/components/periodo/PhaseCard';
-import { CalendarCheck2, ShieldCheck, Rocket, Lock, CheckCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { CalendarCheck2, Lock, Rocket, ShieldCheck } from 'lucide-react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+// import { toast } from '@/components/ui/use-toast';
+import { useSiKness } from '@/contexts/SiKnessContext';
+import { toast } from 'sonner';
 
 type Checklist = {
   householdId: string;
@@ -15,6 +18,8 @@ type Checklist = {
   status: string | null;
   phase: string | null; // Fase del workflow
   hasHouseholdGoal: boolean;
+  monthlyContributionGoal: number | null;
+  calculationType: string | null;
   membersWithIncome: number;
   totalMembers: number;
 };
@@ -26,20 +31,81 @@ async function fetchChecklist(): Promise<Checklist | null> {
   return json?.data ?? null;
 }
 
+function FinancialSummaryCardSection({ checklist, refreshChecklist: _refreshChecklist }: { checklist: Checklist | null, refreshChecklist: () => void }) {
+  const [contributions, setContributions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [_calculating, _setCalculating] = useState(false);
+  const { selectedPeriod } = useSiKness();
+
+  useEffect(() => {
+    if (!checklist?.periodId) return;
+    setLoading(true);
+    fetch('/api/periods/contributions', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        setContributions(json.contributions ?? []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [checklist?.periodId, selectedPeriod?.year, selectedPeriod?.month]);
+
+  if (!checklist || !checklist.hasHouseholdGoal) return null;
+  if (loading) return <div className="mt-4 text-sm text-muted-foreground">Cargando resumen financiero…</div>;
+
+  // Obtener meta mensual y tipo de cálculo
+  const monthlyGoal = Number(checklist.monthlyContributionGoal ?? 0) || 0;
+  const calculationType = checklist.calculationType ?? 'equal';
+
+
+  return (
+    <div className="mt-4">
+      <FinancialSummaryCard
+        contributions={contributions}
+        calculationType={calculationType}
+        monthlyGoal={monthlyGoal}
+      />
+  <MemberBreakdown contributions={contributions as MemberBreakdownContribution[]} />
+    </div>
+  );
+}
+
 export default function PeriodoPage() {
+  const { selectedPeriod, householdId } = useSiKness();
   const [data, setData] = useState<Checklist | null>(null);
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState('');
   const [reason, setReason] = useState('');
+  // Estados de diálogos no utilizados por ahora: se activarán cuando se integre ConfirmDialog
 
   useEffect(() => {
     fetchChecklist().then(setData).catch(() => setData(null));
   }, []);
 
+  // Reconsultar checklist cuando cambie el periodo u hogar seleccionados globalmente
+  useEffect(() => {
+    // Si aún no hay selección, no hacemos nada (se cubrirá por el efecto inicial)
+    if (!selectedPeriod || !householdId) return;
+    fetchChecklist().then(setData).catch(() => setData(null));
+  }, [selectedPeriod, selectedPeriod?.year, selectedPeriod?.month, householdId]);
+
+  // Solo permitir bloquear si existen contribuciones generadas
+  const [contributionsExist, setContributionsExist] = useState(false);
+  useEffect(() => {
+    if (!data?.periodId) {
+      setContributionsExist(false);
+      return;
+    }
+    fetch('/api/periods/contributions', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        setContributionsExist(Array.isArray(json.contributions) && json.contributions.length > 0);
+      });
+  }, [data?.periodId]);
+
   const canLock = useMemo(() => {
     if (!data) return false;
-    return data.hasHouseholdGoal && data.membersWithIncome > 0 && data.totalMembers > 0;
-  }, [data]);
+    return data.hasHouseholdGoal && data.membersWithIncome > 0 && data.totalMembers > 0 && contributionsExist;
+  }, [data, contributionsExist]);
 
   const progress = useMemo(() => {
     // 0-100 basado en fase del workflow y checklist
@@ -107,6 +173,7 @@ export default function PeriodoPage() {
         body: JSON.stringify({ periodId: data.periodId }),
       });
       const json = await res.json();
+  // noop
       if (json.ok) {
         toast.success('Período abierto');
         refresh();
@@ -125,6 +192,7 @@ export default function PeriodoPage() {
         body: JSON.stringify({ periodId: data.periodId, reason: reason || undefined }),
       });
       const json = await res.json();
+  // noop
       if (json.ok) {
         toast.success('Cierre iniciado');
         refresh();
@@ -143,6 +211,7 @@ export default function PeriodoPage() {
         body: JSON.stringify({ periodId: data.periodId, notes: notes || undefined }),
       });
       const json = await res.json();
+  // noop
       if (json.ok) {
         toast.success('Período cerrado');
         refresh();
@@ -161,6 +230,7 @@ export default function PeriodoPage() {
         <div className="rounded-lg border p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">Progreso del período</span>
+            {/* noop */}
             <span className="text-sm font-medium">{progress}%</span>
           </div>
           <Progress value={progress} />
@@ -179,9 +249,15 @@ export default function PeriodoPage() {
               <div>Objetivo común: {data.hasHouseholdGoal ? 'Configurado' : 'No configurado'}</div>
             </>
           ) : (
-            <span>Cargando…</span>
+            <span>
+              {selectedPeriod
+                ? `Periodo: ${selectedPeriod.year}/${selectedPeriod.month} — cargando…`
+                : 'Cargando…'}
+            </span>
           )}
         </div>
+        {/* Resumen financiero en tiempo real */}
+  <FinancialSummaryCardSection checklist={data} refreshChecklist={refresh} />
       </section>
 
       <section className="lg:col-span-8 mt-6">
@@ -190,10 +266,11 @@ export default function PeriodoPage() {
           title="Fase 1 · Checklist"
           icon={<CalendarCheck2 />}
           status={data?.phase === 'preparing' ? 'active' : data?.phase === 'validation' || data?.phase === 'active' || data?.phase === 'closing' || data?.phase === 'closed' ? 'completed' : 'pending'}
-          description="Configura el objetivo mensual y los ingresos de todos los miembros para poder avanzar."
+          description="Configura el objetivo mensual y los ingresos de todos los miembros para poder avanzar. Calcula las contribuciones antes de bloquear."
           checklist={[
             { label: 'Objetivo mensual del hogar', done: !!data?.hasHouseholdGoal },
             { label: 'Ingresos de todos los miembros', done: data ? data.membersWithIncome === data.totalMembers && data.totalMembers > 0 : false },
+            { label: 'Contribuciones generadas', done: contributionsExist },
           ]}
           actions={[
             {

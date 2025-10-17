@@ -3,31 +3,30 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
-import { useGlobalSelectors } from '@/contexts/HouseholdContext';
+import { useSiKness } from '@/contexts/SiKnessContext';
 import { ChevronDown, Crown, Home, Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export function GlobalHouseholdSelector() {
-  const { households, selectHousehold } = useGlobalSelectors();
+  const { households, householdId, selectHousehold } = useSiKness();
   const router = useRouter();
   const [isChanging, setIsChanging] = useState(false);
-
-  const activeHousehold = households.find((h) => h.isActive);
+  const activeHousehold = households.find((h) => h.id === householdId) || null;
 
   const handleHouseholdChange = async (householdId: string) => {
     if (householdId === 'create_new') {
@@ -35,7 +34,7 @@ export function GlobalHouseholdSelector() {
       return;
     }
 
-    if (householdId === activeHousehold?.id) return;
+  if (householdId === activeHousehold?.id) return;
 
     setIsChanging(true);
     try {
@@ -62,11 +61,11 @@ export function GlobalHouseholdSelector() {
     <div className="flex items-center gap-2">
       {/* Selector compacto para móvil */}
       <div className="md:hidden">
-        <Select
-          value={activeHousehold.id}
-          onValueChange={handleHouseholdChange}
-          disabled={isChanging}
-        >
+          <Select
+            value={activeHousehold.id}
+            onValueChange={handleHouseholdChange}
+            disabled={isChanging}
+          >
           <SelectTrigger className="w-auto min-w-[120px] h-8">
             <SelectValue>
               <div className="flex items-center gap-1.5">
@@ -118,7 +117,7 @@ export function GlobalHouseholdSelector() {
               <DropdownMenuItem
                 key={household.id}
                 onClick={() => handleHouseholdChange(household.id)}
-                className={`cursor-pointer ${household.isActive ? 'bg-accent' : ''}`}
+                className={`cursor-pointer ${household.id === activeHousehold.id ? 'bg-accent' : ''}`}
               >
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -143,7 +142,7 @@ export function GlobalHouseholdSelector() {
                       </div>
                     </div>
                   </div>
-                  {household.isActive && (
+                  {household.id === activeHousehold.id && (
                     <Badge variant="secondary" className="text-xs">
                       Activo
                     </Badge>

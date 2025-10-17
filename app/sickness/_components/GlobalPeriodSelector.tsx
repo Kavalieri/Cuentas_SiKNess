@@ -2,11 +2,11 @@
 
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import { Calendar, ChevronDown } from 'lucide-react';
@@ -28,10 +28,11 @@ const MONTHS = [
 ];
 
 export function GlobalPeriodSelector() {
-  const { activePeriod, selectPeriod } = useSiKness();
+  const { selectedPeriod, selectPeriod } = useSiKness();
 
   const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState(activePeriod?.year || currentYear);
+  const initialYear = selectedPeriod?.year ?? currentYear;
+  const [selectedYear, setSelectedYear] = useState(initialYear);
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
@@ -45,8 +46,8 @@ export function GlobalPeriodSelector() {
         <Button variant="ghost" size="sm" className="gap-2">
           <Calendar className="h-4 w-4" />
           <span className="hidden sm:inline">
-            {activePeriod
-              ? `${MONTHS[activePeriod.month - 1]} ${activePeriod.year}`
+            {selectedPeriod
+              ? `${MONTHS[selectedPeriod.month - 1]} ${selectedPeriod.year}`
               : 'Seleccionar período'}
           </span>
           <ChevronDown className="h-4 w-4 opacity-50" />
@@ -77,8 +78,7 @@ export function GlobalPeriodSelector() {
         <div className="grid grid-cols-3 gap-2 p-3">
           {MONTHS.map((month, index) => {
             const monthNumber = index + 1;
-            const isActive =
-              activePeriod?.year === selectedYear && activePeriod?.month === monthNumber;
+            const isActive = selectedPeriod?.year === selectedYear && selectedPeriod?.month === monthNumber;
             const isCurrent =
               currentYear === selectedYear && new Date().getMonth() + 1 === monthNumber;
 

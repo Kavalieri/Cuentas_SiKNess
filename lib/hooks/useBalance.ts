@@ -8,7 +8,7 @@ type Balance = {
 };
 
 export function useBalance() {
-  const { balance, refreshBalance, activePeriod } = useSiKness();
+  const { balance, refreshBalance, activePeriod, selectedPeriod } = useSiKness();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Balance | null>(null);
 
@@ -34,7 +34,7 @@ export function useBalance() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePeriod?.id]);
+  }, [activePeriod?.id, selectedPeriod?.year, selectedPeriod?.month]);
 
   // Si hay datos previos en contexto, preferirlos
   useEffect(() => {

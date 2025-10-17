@@ -8,8 +8,14 @@ import { useEffect, useState } from 'react';
 interface Contribution {
   profile_id: string;
   email: string;
+  income: number;
+  share_percent: number;
+  base_expected: number;
+  direct_expenses: number;
+  expected_after_direct: number;
   expected_amount: number | null;
   paid_amount: number | null;
+  pending_amount: number;
   status: string | null;
   calculation_method: string | null;
 }
@@ -21,6 +27,8 @@ interface ContributionsData {
     year: number;
     month: number;
     status: string | null;
+    calculationType?: string | null;
+    monthlyGoal?: number | null;
   };
 }
 
@@ -71,14 +79,14 @@ export function ContributionsDisplay({ householdId, privacyMode }: { householdId
       <Alert>
         <AlertTitle>Sin contribuciones calculadas</AlertTitle>
         <AlertDescription>
-          No hay contribuciones calculadas para este período. El owner debe bloquear el período para calcular las contribuciones.
+          No hay contribuciones para este período. Usa &quot;Calcular contribuciones&quot; en Gestión de Periodo para ver el desglose y validar antes de bloquear.
         </AlertDescription>
       </Alert>
     );
   }
 
-  const allPaid = data.contributions.every((c) => c.status === 'paid');
-  const somePending = data.contributions.some((c) => c.status === 'pending');
+  const allPaid = data.contributions.every((c) => (c.pending_amount ?? 0) <= 0);
+  const somePending = data.contributions.some((c) => (c.pending_amount ?? 0) > 0);
 
   return (
     <Card className={allPaid ? 'border-green-200 bg-green-50/50 dark:bg-green-950/20' : ''}>
@@ -86,7 +94,7 @@ export function ContributionsDisplay({ householdId, privacyMode }: { householdId
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Contribuciones Calculadas
+            Contribuciones y Desglose
           </CardTitle>
           {allPaid && (
             <Badge variant="default" className="bg-green-600">
@@ -102,36 +110,51 @@ export function ContributionsDisplay({ householdId, privacyMode }: { householdId
           )}
         </div>
         <CardDescription>
-          Validación de contribuciones para{' '}
-          {data.period.year}-{String(data.period.month).padStart(2, '0')}
+          Período {data.period.year}-{String(data.period.month).padStart(2, '0')} · Método {data.period?.calculationType ?? '—'}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {data.contributions.map((contrib) => {
-            const expected = contrib.expected_amount || 0;
-            const paid = contrib.paid_amount || 0;
-            const pending = expected - paid;
+            const expected = contrib.expected_amount ?? contrib.expected_after_direct ?? 0;
+            const paid = contrib.paid_amount ?? 0;
+            const pending = Math.max(0, expected - paid);
             const isPaid = pending <= 0;
-
+            const percent = Math.round((contrib.share_percent ?? 0) * 100);
             return (
-              <div
-                key={contrib.profile_id}
-                className="flex items-center justify-between p-3 rounded-lg border bg-card"
-              >
-                <div className="flex-1 min-w-0">
+              <div key={contrib.profile_id} className="p-3 rounded-lg border bg-card">
+                <div className="flex items-center justify-between">
                   <p className="font-medium truncate">{contrib.email}</p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                    <span>Esperado: {formatCurrency(expected)}</span>
-                    <span>Pagado: {formatCurrency(paid)}</span>
-                    {!isPaid && <span className="text-orange-600 font-medium">Pendiente: {formatCurrency(pending)}</span>}
+                  <Badge variant="outline">{percent}%</Badge>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mt-2">
+                  <div className="flex flex-col">
+                    <span className="text-muted-foreground">Ingreso</span>
+                    <span>{formatCurrency(contrib.income ?? 0)}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-muted-foreground">Base</span>
+                    <span>{formatCurrency(contrib.base_expected ?? 0)}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-muted-foreground">Gastos directos</span>
+                    <span className="text-amber-700">{formatCurrency(contrib.direct_expenses ?? 0)}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-muted-foreground">Esperado neto</span>
+                    <span className="font-medium">{formatCurrency(expected)}</span>
                   </div>
                 </div>
-                <div className="ml-4">
+                <div className="flex items-center justify-between mt-2 text-sm">
+                  <div className="text-muted-foreground">Pagado: {formatCurrency(paid)}</div>
                   {isPaid ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <div className="flex items-center gap-1 text-green-600 font-medium">
+                      <CheckCircle className="h-4 w-4" /> Al día
+                    </div>
                   ) : (
-                    <XCircle className="h-5 w-5 text-orange-500" />
+                    <div className="flex items-center gap-1 text-orange-600 font-medium">
+                      <XCircle className="h-4 w-4" /> Pendiente: {formatCurrency(pending)}
+                    </div>
                   )}
                 </div>
               </div>

@@ -54,6 +54,8 @@ export interface SiKnessContextValue {
   // Período
   activePeriod: PeriodOption | null;
   periods: PeriodOption[];
+  // Nuevo: periodo seleccionado como concepto único (año, mes)
+  selectedPeriod: { year: number; month: number } | null;
 
   // Balance
   balance: BalanceData | null;
@@ -106,6 +108,10 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
     initialData?.activePeriod ?? null,
   );
   const [periods, setPeriods] = useState<PeriodOption[]>(initialData?.periods ?? []);
+  // Periodo seleccionado global (año/mes) — fuente de verdad de la UX
+  const [selectedPeriod, setSelectedPeriod] = useState<{ year: number; month: number } | null>(
+    initialData?.activePeriod ? { year: initialData.activePeriod.year, month: initialData.activePeriod.month } : null,
+  );
 
   // Estado del balance
   const [balance, setBalance] = useState<BalanceData | null>(initialData?.balance ?? null);
@@ -147,6 +153,36 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
         setIsOwner(data.activeHousehold?.isOwner || false);
         setPeriods(data.periods || []);
         setActivePeriod(data.activePeriod || null);
+        // Sincronizar selectedPeriod con localStorage por hogar
+        const newHouseholdId: string | null = data.activeHousehold?.id || null;
+        if (newHouseholdId) {
+          const key = `csik-selected-period-${newHouseholdId}`;
+          const saved = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+          const fromActive = data.activePeriod
+            ? { year: data.activePeriod.year as number, month: data.activePeriod.month as number }
+            : null;
+          if (saved) {
+            const [yStr, mStr] = saved.split('-');
+            const y = Number(yStr);
+            const m = Number(mStr);
+            const isValid = Number.isInteger(y) && Number.isInteger(m) && y > 2000 && m >= 1 && m <= 12;
+            const exists = (data.periods || []).some((p: PeriodOption) => p.year === y && p.month === m);
+            if (isValid && exists) {
+              setSelectedPeriod({ year: y, month: m });
+              // Si difiere del periodo activo del servidor, aplicar selección
+              if (!fromActive || fromActive.year !== y || fromActive.month !== m) {
+                // No await para no bloquear la carga inicial
+                selectPeriod(y, m);
+              }
+            } else {
+              setSelectedPeriod(fromActive);
+            }
+          } else {
+            setSelectedPeriod(fromActive);
+          }
+        } else {
+          setSelectedPeriod(null);
+        }
         setBalance(data.balance || null);
 
         console.log('[SiKnessContext] Initial data loaded successfully');
@@ -191,6 +227,28 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
       setPeriods(data.periods || []);
       setActivePeriod(data.currentPeriod || null);
 
+      // Establecer selectedPeriod desde localStorage si existe, si no, desde currentPeriod
+      const key = `csik-selected-period-${id}`;
+      const saved = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+      if (saved) {
+        const [yStr, mStr] = saved.split('-');
+        const y = Number(yStr);
+        const m = Number(mStr);
+        const isValid = Number.isInteger(y) && Number.isInteger(m) && y > 2000 && m >= 1 && m <= 12;
+        const exists = (data.periods || []).some((p: PeriodOption) => p.year === y && p.month === m);
+        if (isValid && exists) {
+          setSelectedPeriod({ year: y, month: m });
+          // Alinear periodo activo si difiere
+          if (!data.currentPeriod || data.currentPeriod.year !== y || data.currentPeriod.month !== m) {
+            await selectPeriod(y, m);
+          }
+        } else {
+          setSelectedPeriod(data.currentPeriod ? { year: data.currentPeriod.year, month: data.currentPeriod.month } : null);
+        }
+      } else {
+        setSelectedPeriod(data.currentPeriod ? { year: data.currentPeriod.year, month: data.currentPeriod.month } : null);
+      }
+
       // Limpiar balance (se recargará al cambiar periodo)
       setBalance(null);
 
@@ -221,6 +279,11 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
       const data = await response.json();
 
       setActivePeriod(data.period || selectedPeriod);
+      setSelectedPeriod({ year, month });
+      // Persistir selección por hogar
+      if (householdId && typeof window !== 'undefined') {
+        localStorage.setItem(`csik-selected-period-${householdId}`, `${year}-${month}`);
+      }
 
       // Recargar balance del nuevo periodo
       await refreshBalance();
@@ -297,6 +360,7 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
     isOwner,
     activePeriod,
     periods,
+    selectedPeriod,
     balance,
     user,
     privacyMode,

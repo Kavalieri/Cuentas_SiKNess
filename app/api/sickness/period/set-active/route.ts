@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { toNumber } from '@/lib/format';
+import { normalizePeriodPhase } from '@/lib/periods';
 import { query } from '@/lib/pgServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -56,19 +57,23 @@ export async function POST(req: NextRequest) {
     }
 
     const period = p
-      ? {
-          id: p.id,
-          householdId: p.household_id,
-          year: p.year,
-          month: p.month,
-          day: 1,
-          phase: 1 as const, // TODO: calcular fase real
-          status: p.status || 'active',
-          openingBalance: toNumber(p.opening_balance),
-          closingBalance: toNumber(p.closing_balance),
-          totalIncome: toNumber(p.total_income),
-          totalExpenses: toNumber(p.total_expenses),
-        }
+      ? (() => {
+          // Normalizar fase desde status
+          const { phase } = normalizePeriodPhase(undefined, p.status);
+          return {
+            id: p.id,
+            householdId: p.household_id,
+            year: p.year,
+            month: p.month,
+            day: 1,
+            phase,
+            status: p.status || 'open',
+            openingBalance: toNumber(p.opening_balance),
+            closingBalance: toNumber(p.closing_balance),
+            totalIncome: toNumber(p.total_income),
+            totalExpenses: toNumber(p.total_expenses),
+          };
+        })()
       : null;
 
     return NextResponse.json({ period });

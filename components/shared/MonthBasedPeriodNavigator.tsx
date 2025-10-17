@@ -2,14 +2,8 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useGlobalSelectors } from '@/contexts/HouseholdContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSiKness } from '@/contexts/SiKnessContext';
 import { addMonths, subMonths } from 'date-fns';
 import { AlertCircle, CheckCircle, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
@@ -62,29 +56,31 @@ const getPeriodStatusInfo = (status: string | null) => {
 };
 
 export function MonthBasedPeriodNavigator() {
-  const { periods, selectMonth } = useGlobalSelectors();
+  const { periods, selectedPeriod, selectPeriod } = useSiKness();
 
   // Obtener fecha actual
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
 
-  // Encontrar el período actual (mes actual)
-  const currentPeriod = periods.find((p) => p.year === currentYear && p.month === currentMonth);
+  // Período mostrado = el seleccionado global; si no hay, usar mes actual si existe en la lista
+  const shownYear = selectedPeriod?.year ?? currentYear;
+  const shownMonth = selectedPeriod?.month ?? currentMonth;
+  const currentPeriod = periods.find((p) => p.year === shownYear && p.month === shownMonth);
 
   const statusInfo = getPeriodStatusInfo(currentPeriod?.status || null);
 
   const handleMonthChange = (year: number, month: number) => {
-    selectMonth(year, month);
+    void selectPeriod(year, month);
   };
 
   const handlePreviousMonth = () => {
-    const newDate = subMonths(new Date(currentYear, currentMonth - 1), 1);
+    const newDate = subMonths(new Date(shownYear, shownMonth - 1), 1);
     handleMonthChange(newDate.getFullYear(), newDate.getMonth() + 1);
   };
 
   const handleNextMonth = () => {
-    const newDate = addMonths(new Date(currentYear, currentMonth - 1), 1);
+    const newDate = addMonths(new Date(shownYear, shownMonth - 1), 1);
     handleMonthChange(newDate.getFullYear(), newDate.getMonth() + 1);
   };
 
@@ -97,7 +93,7 @@ export function MonthBasedPeriodNavigator() {
         </Button>
 
         <div className="text-sm font-medium px-2">
-          {MONTH_NAMES[currentMonth - 1]} {currentYear}
+          {MONTH_NAMES[shownMonth - 1]} {shownYear}
         </div>
 
         <Button variant="ghost" size="sm" onClick={handleNextMonth} className="h-8 w-8 p-0">
@@ -113,8 +109,8 @@ export function MonthBasedPeriodNavigator() {
 
         <div className="flex items-center gap-2 min-w-[200px]">
           <Select
-            value={currentMonth.toString()}
-            onValueChange={(value) => handleMonthChange(currentYear, parseInt(value))}
+            value={shownMonth.toString()}
+            onValueChange={(value) => handleMonthChange(shownYear, parseInt(value))}
           >
             <SelectTrigger className="w-[100px] h-8">
               <SelectValue />
@@ -129,8 +125,8 @@ export function MonthBasedPeriodNavigator() {
           </Select>
 
           <Select
-            value={currentYear.toString()}
-            onValueChange={(value) => handleMonthChange(parseInt(value), currentMonth)}
+            value={shownYear.toString()}
+            onValueChange={(value) => handleMonthChange(parseInt(value), shownMonth)}
           >
             <SelectTrigger className="w-[80px] h-8">
               <SelectValue />

@@ -33,11 +33,7 @@ export async function closePeriod(periodId: string, notes?: string): Promise<Res
     if (!closedId) {
       return fail('No se pudo cerrar el período');
     }
-
-    // Revalidar páginas relacionadas
-    revalidatePath('/sickness');
     revalidatePath('/sickness/periodo');
-
     return ok({ periodId: closedId });
   } catch (error) {
     console.error('[closePeriod] Error:', error);
@@ -50,23 +46,17 @@ export async function closePeriod(periodId: string, notes?: string): Promise<Res
  */
 export async function lockPeriod(periodId: string): Promise<Result<{ periodId: string }>> {
   try {
-    const user = await getCurrentUser();
-    if (!user) return fail('No autenticado');
-
-    const householdId = await getUserHouseholdId();
-    if (!householdId) return fail('No tienes un hogar activo');
-
-    const result = await query<{ id: string }>(
-      'SELECT public.lock_contributions_period($1, $2, $3) AS id',
-      [householdId, periodId, user.profile_id],
+    // Solo cambiar la fase, no recalcular contribuciones
+    const { rows } = await query(
+      `SELECT lock_contributions_period($1) AS locked`,
+      [periodId],
     );
-
-    const id = result.rows[0]?.id;
-    if (!id) return fail('No se pudo bloquear el período para validación');
-
-    revalidatePath('/sickness');
-    revalidatePath('/sickness/periodo');
-    return ok({ periodId: id });
+    if (rows[0]?.locked) {
+      revalidatePath('/sickness');
+      revalidatePath('/sickness/periodo');
+      return ok({ periodId });
+    }
+    return fail('No se pudo bloquear el período');
   } catch (error) {
     console.error('[lockPeriod] Error:', error);
     return fail('Error en operación');
