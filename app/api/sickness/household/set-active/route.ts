@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
             calculationMethod: household.calculation_type || 'equal',
           }
         : null,
-      periods: periods.map(({ totalIncome, totalExpenses, ...rest }) => rest),
+      periods: periods.map(({ totalIncome: _totalIncome, totalExpenses: _totalExpenses, ...rest }) => rest),
       currentPeriod,
     });
   } catch (error) {

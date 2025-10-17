@@ -43,13 +43,24 @@ export async function closePeriod(periodId: string, notes?: string): Promise<Res
 
 /**
  * Pasa el período a fase 'validation' (bloquea cálculo de contribuciones)
+ * La función SQL requiere 3 parámetros: (household_id, period_id, locked_by)
  */
 export async function lockPeriod(periodId: string): Promise<Result<{ periodId: string }>> {
   try {
-    // Solo cambiar la fase, no recalcular contribuciones
+    const user = await getCurrentUser();
+    if (!user) {
+      return fail('No autenticado');
+    }
+
+    const householdId = await getUserHouseholdId();
+    if (!householdId) {
+      return fail('No tienes un hogar activo');
+    }
+
+    // Llamar función SQL con los 3 parámetros requeridos
     const { rows } = await query(
-      `SELECT lock_contributions_period($1) AS locked`,
-      [periodId],
+      `SELECT lock_contributions_period($1, $2, $3) AS locked`,
+      [householdId, periodId, user.profile_id],
     );
     if (rows[0]?.locked) {
       revalidatePath('/sickness');

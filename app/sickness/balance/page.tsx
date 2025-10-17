@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
+import { normalizePeriodPhase } from '@/lib/periods';
 import {
   AlertCircle,
   ArrowDownCircle,
@@ -61,7 +62,12 @@ export default function BalancePage() {
     }).format(amount);
   };
 
-  const phase: MonthlyPeriodPhase = (activePeriod?.phase as MonthlyPeriodPhase) || 'preparing';
+  // Normalizar phase desde activePeriod (puede venir como string legacy)
+  const normalizedPhaseData = activePeriod?.phase
+    ? normalizePeriodPhase(activePeriod.phase, activePeriod.status || null)
+    : { phase: 'preparing' as MonthlyPeriodPhase, legacyStatus: 'active' };
+  const phase: MonthlyPeriodPhase = normalizedPhaseData.phase === 'unknown' ? 'preparing' : normalizedPhaseData.phase;
+
   const balanceDifference = (balance?.closing || 0) - (balance?.opening || 0);
   const isPositive = balanceDifference >= 0;
   const canCreateMovement = useMemo(
