@@ -224,7 +224,7 @@ export async function updateMemberIncome(formData: FormData): Promise<Result> {
     // Revalidar TODAS las rutas que muestren datos de ingresos
     revalidatePath('/sickness/configuracion/perfil');
     revalidatePath('/sickness/configuracion');
-    revalidatePath('/sickness/inicio');
+  revalidatePath('/sickness/balance');
     revalidatePath('/sickness');
 
     return ok();

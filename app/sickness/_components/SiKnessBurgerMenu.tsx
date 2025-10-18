@@ -2,15 +2,15 @@
 
 import { Button } from '@/components/ui/button';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
 } from '@/components/ui/sheet';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { BarChart3, Calendar, Home, LogOut, Menu, Shield, Tag, User, Users } from 'lucide-react';
+import { BarChart3, Calendar, LogOut, Menu, Shield, Tag, User, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -32,6 +32,21 @@ export function SiKnessBurgerMenu() {
 
   const navSections: NavSection[] = [
     {
+      title: 'Operación',
+      items: [
+        {
+          icon: BarChart3,
+          label: 'Balance y Transacciones',
+          href: '/sickness/balance',
+        },
+        {
+          icon: Calendar,
+          label: 'Contribución y Periodos',
+          href: '/sickness/periodo',
+        },
+      ],
+    },
+    {
       title: 'Configuración',
       items: [
         {
@@ -49,21 +64,6 @@ export function SiKnessBurgerMenu() {
           icon: Tag,
           label: 'Categorías',
           href: '/sickness/configuracion/categorias',
-        },
-      ],
-    },
-    {
-      title: 'Operación',
-      items: [
-        {
-          icon: Calendar,
-          label: 'Gestión del Período',
-          href: '/sickness/periodo',
-        },
-        {
-          icon: BarChart3,
-          label: 'Balance y Transacciones',
-          href: '/sickness/balance',
         },
       ],
     },
@@ -85,7 +85,7 @@ export function SiKnessBurgerMenu() {
         <SheetHeader>
           <SheetTitle>CuentasSiK</SheetTitle>
           <SheetDescription>
-            {user?.email || 'Usuario'}
+            {user?.displayName || 'Usuario'}
             {user?.isSystemAdmin && (
               <span className="ml-2 inline-flex items-center gap-1 text-xs text-primary">
                 <Shield className="h-3 w-3" />
@@ -96,21 +96,8 @@ export function SiKnessBurgerMenu() {
         </SheetHeader>
 
         <div className="mt-8 flex flex-col gap-6">
-          {/* Dashboard principal */}
-          <div>
-            <Link
-              href="/sickness"
-              onClick={handleLinkClick}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              <Home className="h-4 w-4" />
-              <span>Inicio</span>
-            </Link>
-          </div>
-
-          <hr className="border-t" />
-
           {/* Secciones navegables */}
+
           {navSections.map((section) => (
             <div key={section.title}>
               <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">

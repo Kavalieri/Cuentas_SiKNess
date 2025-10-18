@@ -68,12 +68,12 @@ export default function DashboardPage() {
 
       {/* Grid de tarjetas principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Balance Actual - PROMINENTE */}
+  {/* Balance actual - PROMINENTE */}
         <Card className="md:col-span-2 lg:col-span-2 border-2 border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Wallet className="h-5 w-5 text-primary" />
-              Balance Actual
+              Balance actual
             </CardTitle>
             <CardDescription>Saldo disponible en cuenta común</CardDescription>
           </CardHeader>
@@ -98,12 +98,12 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Balance Inicial */}
+  {/* Balance inicial */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <ArrowUpCircle className="h-4 w-4 text-blue-500" />
-              Balance Inicial
+              Balance inicial
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -112,12 +112,12 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Balance Final */}
+  {/* Balance final */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <ArrowDownCircle className="h-4 w-4 text-purple-500" />
-              Balance Final
+              Balance final
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -218,7 +218,7 @@ export default function DashboardPage() {
       {/* Resumen final */}
       <Card>
         <CardHeader>
-          <CardTitle>Resumen del Período</CardTitle>
+          <CardTitle>Resumen del período</CardTitle>
           <CardDescription>Estado financiero consolidado</CardDescription>
         </CardHeader>
         <CardContent>

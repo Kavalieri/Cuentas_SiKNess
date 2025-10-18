@@ -1,7 +1,6 @@
 "use client";
 
-import { FinancialSummaryCard } from '@/components/periodo/FinancialSummaryCard';
-import { MemberBreakdown, type MemberBreakdownContribution } from '@/components/periodo/MemberBreakdown';
+import { ContributionsOverview, type CombinedMemberContribution } from '@/components/periodo/ContributionsOverview';
 import { PhaseCard } from '@/components/periodo/PhaseCard';
 import { Progress } from '@/components/ui/progress';
 import { CalendarCheck2, Lock, Rocket, ShieldCheck } from 'lucide-react';
@@ -24,26 +23,36 @@ type Checklist = {
   totalMembers: number;
 };
 
-async function fetchChecklist(): Promise<Checklist | null> {
-  const res = await fetch('/api/periods/checklist', { cache: 'no-store' });
+async function fetchChecklist(params?: { year?: number; month?: number; periodId?: string }): Promise<Checklist | null> {
+  const qs = new URLSearchParams();
+  if (params?.periodId) qs.set('periodId', params.periodId);
+  if (params?.year) qs.set('year', String(params.year));
+  if (params?.month) qs.set('month', String(params.month));
+  const url = qs.toString() ? `/api/periods/checklist?${qs.toString()}` : '/api/periods/checklist';
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) return null;
   const json = await res.json();
   return json?.data ?? null;
 }
 
 function FinancialSummaryCardSection({ checklist, refreshChecklist: _refreshChecklist }: { checklist: Checklist | null, refreshChecklist: () => void }) {
-  const [contributions, setContributions] = useState([]);
+  const [contributions, setContributions] = useState<CombinedMemberContribution[]>([]);
   const [loading, setLoading] = useState(true);
   const [_calculating, _setCalculating] = useState(false);
-  const { selectedPeriod } = useSiKness();
+  const { selectedPeriod, privacyMode } = useSiKness();
 
   useEffect(() => {
     if (!checklist?.periodId) return;
     setLoading(true);
-    fetch('/api/periods/contributions', { cache: 'no-store' })
+    const qs = new URLSearchParams();
+    if (selectedPeriod?.year) qs.set('year', String(selectedPeriod.year));
+    if (selectedPeriod?.month) qs.set('month', String(selectedPeriod.month));
+    if (checklist?.periodId) qs.set('periodId', checklist.periodId);
+    const url = `/api/periods/contributions?${qs.toString()}`;
+    fetch(url, { cache: 'no-store' })
       .then((res) => res.json())
       .then((json) => {
-        setContributions(json.contributions ?? []);
+        setContributions((json.contributions ?? []) as CombinedMemberContribution[]);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -59,34 +68,31 @@ function FinancialSummaryCardSection({ checklist, refreshChecklist: _refreshChec
 
   return (
     <div className="mt-4">
-      <FinancialSummaryCard
+      <ContributionsOverview
         contributions={contributions}
         calculationType={calculationType}
         monthlyGoal={monthlyGoal}
+        phase={checklist?.phase}
+        privacyMode={privacyMode}
       />
-  <MemberBreakdown contributions={contributions as MemberBreakdownContribution[]} />
     </div>
   );
 }
 
-export default function PeriodoPage() {
-  const { selectedPeriod, householdId } = useSiKness();
+export default function PeriodosYContribucionPage() {
+  // Usamos solo el selector global de periodo (contexto)
+  const { householdId, selectedPeriod } = useSiKness();
   const [data, setData] = useState<Checklist | null>(null);
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState('');
   const [reason, setReason] = useState('');
-  // Estados de diálogos no utilizados por ahora: se activarán cuando se integre ConfirmDialog
 
+  // Reconsultar checklist cuando cambie el hogar o el periodo seleccionado
   useEffect(() => {
-    fetchChecklist().then(setData).catch(() => setData(null));
-  }, []);
-
-  // Reconsultar checklist cuando cambie el periodo u hogar seleccionados globalmente
-  useEffect(() => {
-    // Si aún no hay selección, no hacemos nada (se cubrirá por el efecto inicial)
-    if (!selectedPeriod || !householdId) return;
-    fetchChecklist().then(setData).catch(() => setData(null));
-  }, [selectedPeriod, selectedPeriod?.year, selectedPeriod?.month, householdId]);
+    if (!householdId) return;
+    const params = selectedPeriod ? { year: selectedPeriod.year, month: selectedPeriod.month } : undefined;
+    fetchChecklist(params).then(setData).catch(() => setData(null));
+  }, [householdId, selectedPeriod]);
 
   // Solo permitir bloquear si existen contribuciones generadas
   const [contributionsExist, setContributionsExist] = useState(false);
@@ -95,12 +101,17 @@ export default function PeriodoPage() {
       setContributionsExist(false);
       return;
     }
-    fetch('/api/periods/contributions', { cache: 'no-store' })
+    const qs = new URLSearchParams();
+    if (selectedPeriod?.year) qs.set('year', String(selectedPeriod.year));
+    if (selectedPeriod?.month) qs.set('month', String(selectedPeriod.month));
+    if (data?.periodId) qs.set('periodId', data.periodId);
+    const url = `/api/periods/contributions?${qs.toString()}`;
+    fetch(url, { cache: 'no-store' })
       .then((res) => res.json())
       .then((json) => {
         setContributionsExist(Array.isArray(json.contributions) && json.contributions.length > 0);
       });
-  }, [data?.periodId]);
+  }, [data?.periodId, selectedPeriod?.year, selectedPeriod?.month]);
 
   const canLock = useMemo(() => {
     if (!data) return false;
@@ -138,12 +149,13 @@ export default function PeriodoPage() {
       case 'closed':
         return 'Cerrado';
       default:
-        return phase || 'Desconocido';
+        return 'Desconocido';
     }
   }, [data?.phase]);
 
   function refresh() {
-    fetchChecklist().then(setData).catch(() => setData(null));
+    const params = selectedPeriod ? { year: selectedPeriod.year, month: selectedPeriod.month } : undefined;
+    fetchChecklist(params).then(setData).catch(() => setData(null));
   }
 
   const onLock = () => {
@@ -222,54 +234,50 @@ export default function PeriodoPage() {
   };
 
   return (
+
     <div className="p-4 lg:grid lg:grid-cols-12 lg:gap-6">
       <div className="lg:col-span-8 space-y-6">
-        <h1 className="text-2xl font-semibold">Gestión de Periodos</h1>
+  <h1 className="text-2xl font-semibold">Contribución y periodos</h1>
         <p className="text-muted-foreground mt-2">Workflow guiado para el ciclo mensual.</p>
         {/* Progreso del periodo */}
         <div className="rounded-lg border p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">Progreso del período</span>
-            {/* noop */}
             <span className="text-sm font-medium">{progress}%</span>
           </div>
           <Progress value={progress} />
         </div>
+        {/* Estado actual y checklist */}
+        <section className="rounded-lg border p-4 mt-6">
+          <h2 className="text-lg font-medium">Estado actual</h2>
+          <div className="mt-2 text-sm text-muted-foreground">
+            {data ? (
+              <>
+                <div>
+                  Periodo: {data.year}/{data.month} — Estado: <strong>{statusLabel}</strong>
+                </div>
+                <div>Miembros: {data.membersWithIncome}/{data.totalMembers} con ingresos configurados</div>
+                <div>Objetivo común: {data.hasHouseholdGoal ? 'Configurado' : 'No configurado'}</div>
+              </>
+            ) : (
+              <span>Cargando…</span>
+            )}
+          </div>
+          {/* Resumen financiero en tiempo real */}
+          <FinancialSummaryCardSection checklist={data} refreshChecklist={refresh} />
+        </section>
       </div>
-
-      <section className="lg:col-span-8 rounded-lg border p-4 mt-6 lg:mt-0">
-        <h2 className="text-lg font-medium">Estado actual</h2>
-        <div className="mt-2 text-sm text-muted-foreground">
-          {data ? (
-            <>
-              <div>
-                Periodo: {data.year}/{data.month} — Estado: <strong>{statusLabel}</strong>
-              </div>
-              <div>Miembros: {data.membersWithIncome}/{data.totalMembers} con ingresos configurados</div>
-              <div>Objetivo común: {data.hasHouseholdGoal ? 'Configurado' : 'No configurado'}</div>
-            </>
-          ) : (
-            <span>
-              {selectedPeriod
-                ? `Periodo: ${selectedPeriod.year}/${selectedPeriod.month} — cargando…`
-                : 'Cargando…'}
-            </span>
-          )}
-        </div>
-        {/* Resumen financiero en tiempo real */}
-  <FinancialSummaryCardSection checklist={data} refreshChecklist={refresh} />
-      </section>
 
       <section className="lg:col-span-8 mt-6">
         <PhaseCard
           phase="preparing"
-          title="Fase 1 · Checklist"
+          title="Configuración Inicial"
           icon={<CalendarCheck2 />}
-          status={data?.phase === 'preparing' ? 'active' : data?.phase === 'validation' || data?.phase === 'active' || data?.phase === 'closing' || data?.phase === 'closed' ? 'completed' : 'pending'}
+          status={data?.phase === 'preparing' ? 'active' : ['validation','active','closing','closed'].includes(data?.phase ?? '') ? 'completed' : 'pending'}
           description="Configura el objetivo mensual y los ingresos de todos los miembros para poder avanzar. Calcula las contribuciones antes de bloquear."
           checklist={[
-            { label: 'Objetivo mensual del hogar', done: !!data?.hasHouseholdGoal },
-            { label: 'Ingresos de todos los miembros', done: data ? data.membersWithIncome === data.totalMembers && data.totalMembers > 0 : false },
+            { label: 'Objetivo mensual definido', done: !!data?.hasHouseholdGoal },
+            { label: 'Ingresos de miembros informados', done: data ? data.membersWithIncome === data.totalMembers && data.totalMembers > 0 : false },
             { label: 'Contribuciones generadas', done: contributionsExist },
           ]}
           actions={[
@@ -286,9 +294,9 @@ export default function PeriodoPage() {
       <section className="lg:col-span-8 mt-6">
         <PhaseCard
           phase="validation"
-          title="Fase 2 · Validación"
+          title="Validación Pendiente"
           icon={<ShieldCheck />}
-          status={data?.phase === 'validation' ? 'active' : data?.phase === 'active' || data?.phase === 'closing' || data?.phase === 'closed' ? 'completed' : 'pending'}
+          status={data?.phase === 'validation' ? 'active' : ['active','closing','closed'].includes(data?.phase ?? '') ? 'completed' : 'pending'}
           description="Revisa los cálculos y confirma para abrir el período."
           actions={[
             {
@@ -304,9 +312,9 @@ export default function PeriodoPage() {
       <section className="lg:col-span-8 mt-6">
         <PhaseCard
           phase="active"
-          title="Fase 3 · Uso activo"
+          title="Abierto (en uso)"
           icon={<Rocket />}
-          status={data?.phase === 'active' ? 'active' : data?.phase === 'closing' || data?.phase === 'closed' ? 'completed' : 'pending'}
+          status={data?.phase === 'active' ? 'active' : ['closing','closed'].includes(data?.phase ?? '') ? 'completed' : 'pending'}
           description="El período está abierto. Puedes registrar movimientos y consultar el balance."
           actions={[
             {
@@ -344,7 +352,7 @@ export default function PeriodoPage() {
       <section className="lg:col-span-8 mt-6">
         <PhaseCard
           phase="closing"
-          title="Cierre"
+          title="Cierre iniciado"
           icon={<Lock />}
           status={data?.phase === 'closing' ? 'active' : data?.phase === 'closed' ? 'completed' : 'pending'}
           description="Inicia el cierre del período y deja notas si lo deseas."
@@ -377,18 +385,21 @@ export default function PeriodoPage() {
             <h4 className="font-medium mb-2">Checklist rápida</h4>
             <ul className="text-sm space-y-1">
               <li>
-                <span className={data?.hasHouseholdGoal ? 'text-green-600' : 'text-amber-600'}>• Objetivo mensual</span>
+                <span className={data?.hasHouseholdGoal ? 'text-green-600' : 'text-amber-600'}>• Configuración Inicial</span>
               </li>
               <li>
                 <span className={data && data.membersWithIncome === data.totalMembers && data.totalMembers > 0 ? 'text-green-600' : 'text-amber-600'}>
-                  • Ingresos de miembros
+                  • Validación Pendiente
                 </span>
               </li>
               <li>
-                <span className="text-muted-foreground">• Validar y abrir</span>
+                <span className={['active','closing','closed'].includes(data?.phase ?? '') ? 'text-green-600' : 'text-muted-foreground'}>• Abierto (en uso)</span>
               </li>
               <li>
-                <span className="text-muted-foreground">• Uso y cierre</span>
+                <span className={data?.phase === 'closing' || data?.phase === 'closed' ? 'text-green-600' : 'text-muted-foreground'}>• Cierre iniciado</span>
+              </li>
+              <li>
+                <span className={data?.phase === 'closed' ? 'text-green-600' : 'text-muted-foreground'}>• Cerrado</span>
               </li>
             </ul>
           </div>

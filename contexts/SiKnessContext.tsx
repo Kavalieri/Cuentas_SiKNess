@@ -263,7 +263,9 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
     const selectedPeriod = periods.find((p) => p.year === year && p.month === month);
 
     if (!selectedPeriod) {
-      console.warn('[SiKnessContext] Period not found:', year, month);
+      // Nota: puede ocurrir brevemente al inicializar si periods aún no está sincronizado.
+      // Bajamos a debug para no ensuciar la consola del navegador.
+      console.debug('[SiKnessContext] Period not found (yet):', year, month);
       return;
     }
 

@@ -92,8 +92,8 @@ export async function acceptInvitationByCode(formData: FormData): Promise<Result
   // Revalidar rutas afectadas
   revalidatePath('/sickness', 'layout');
   revalidatePath('/sickness', 'page');
-  revalidatePath('/sickness/dashboard', 'layout');
-  revalidatePath('/sickness/dashboard', 'page');
+  revalidatePath('/sickness/balance', 'layout');
+  revalidatePath('/sickness/balance', 'page');
   return ok({ joinedHouseholdId: invitation.household_id });
 }
 // Server actions para gestión de miembros del hogar - SiKNess

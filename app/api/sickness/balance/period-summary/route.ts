@@ -18,14 +18,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'householdId y periodId requeridos' }, { status: 400 });
     }
 
-    // Obtener información del periodo
+    // Obtener información del periodo (saldos)
     const periodResult = await query(
       `
       SELECT
         opening_balance,
-        closing_balance,
-        total_income,
-        total_expenses
+        closing_balance
       FROM monthly_periods
       WHERE id = $1 AND household_id = $2
     `,
@@ -38,29 +36,35 @@ export async function GET(req: NextRequest) {
 
     const period = periodResult.rows[0];
 
-    // Obtener gastos directos del periodo
-    const directExpensesResult = await query(
+    // Calcular ingresos y gastos del período desde transacciones (incluye flujo común y directo)
+    const incomeResult = await query(
       `
-      SELECT COALESCE(SUM(amount), 0) as total
+      SELECT COALESCE(SUM(amount), 0) AS total
       FROM transactions
       WHERE household_id = $1
-        AND flow_type = 'direct'
-        AND type IN ('expense', 'expense_direct')
         AND period_id = $2
+        AND type IN ('income', 'income_direct')
     `,
       [householdId, periodId],
     );
 
-    const directExpenses = directExpensesResult.rows[0] || { total: 0 };
+    const expenseResult = await query(
+      `
+      SELECT COALESCE(SUM(amount), 0) AS total
+      FROM transactions
+      WHERE household_id = $1
+        AND period_id = $2
+        AND type IN ('expense', 'expense_direct')
+    `,
+      [householdId, periodId],
+    );
 
     return NextResponse.json({
-      periodSummary: {
-        opening: toNumber(period?.opening_balance ?? 0),
-        closing: toNumber(period?.closing_balance ?? 0),
-        income: toNumber(period?.total_income ?? 0),
-        expenses: toNumber(period?.total_expenses ?? 0),
-        directExpenses: toNumber(directExpenses.total),
-      },
+      // Estructura alineada con la UI (page.tsx)
+      opening_balance: toNumber(period?.opening_balance ?? 0),
+      closing_balance: toNumber(period?.closing_balance ?? 0),
+      total_income: toNumber(incomeResult.rows[0]?.total ?? 0),
+      total_expenses: toNumber(expenseResult.rows[0]?.total ?? 0),
     });
   } catch (error) {
     console.error('[API] Error fetching period summary:', error);

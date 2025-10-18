@@ -11,10 +11,7 @@ import { z } from 'zod';
 
 type Contribution = Database['public']['Tables']['contributions']['Row'];
 
-interface HouseholdSettings {
-  monthly_target?: number;
-  calculation_type?: string;
-}
+// (sin interfaz de settings local; se consulta directamente en DB)
 
 // =====================================================
 // TIPOS Y ENUMS
@@ -177,7 +174,7 @@ export async function lockContributionPeriod(data: {
 /**
  * Calcula contribuciones considerando gastos directos del período
  */
-async function calculateContributionsWithDirectExpenses(
+export async function calculateContributionsWithDirectExpenses(
   householdId: string,
   year: number,
   month: number,
@@ -185,30 +182,29 @@ async function calculateContributionsWithDirectExpenses(
   const supabase = await pgServer();
 
   // 1. Obtener configuración del hogar (meta mensual y método de cálculo)
-  const { data: household, error: householdError } = await supabase
-    .from('households')
-    .select('settings')
-    .eq('id', householdId)
+  const { data: settingsRow, error: settingsError } = await supabase
+    .from('household_settings')
+    .select('monthly_contribution_goal, calculation_type')
+    .eq('household_id', householdId)
     .single();
 
-  if (householdError) {
+  if (settingsError) {
     return fail('Error al obtener configuración del hogar');
   }
 
-  const settings = household?.settings as HouseholdSettings;
-  const targetAmount = settings?.monthly_target || 0;
-  const calculationMethod = settings?.calculation_type || 'proportional';
+  const targetAmount = Number(settingsRow?.monthly_contribution_goal) || 0;
+  const calculationMethod = settingsRow?.calculation_type || 'proportional';
 
   if (targetAmount <= 0) {
     return fail('Configura primero la meta de contribución mensual');
   }
 
   // 2. Obtener miembros e ingresos
+  // La columna is_active NO existe en member_incomes. Solo filtrar por household_id.
   const { data: memberIncomes, error: incomesError } = await supabase
     .from('member_incomes')
     .select('profile_id, monthly_income')
-    .eq('household_id', householdId)
-    .eq('is_active', true);
+    .eq('household_id', householdId);
 
   if (incomesError || !memberIncomes?.length) {
     return fail('Configura primero los ingresos de los miembros');

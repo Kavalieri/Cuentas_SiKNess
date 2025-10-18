@@ -249,22 +249,22 @@ const PHASE_BADGE_INFO: Record<
   { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: string }
 > = {
   preparing: {
-    label: 'Configuración',
+    label: 'Configuración Inicial',
     variant: 'secondary',
     icon: '🛠️',
   },
   validation: {
-    label: 'Validación',
+    label: 'Validación Pendiente',
     variant: 'secondary',
     icon: '🧪',
   },
   active: {
-    label: 'Activo',
+    label: 'Abierto (en uso)',
     variant: 'default',
     icon: '🟢',
   },
   closing: {
-    label: 'Cierre en curso',
+    label: 'Cierre iniciado',
     variant: 'secondary',
     icon: '⏳',
   },

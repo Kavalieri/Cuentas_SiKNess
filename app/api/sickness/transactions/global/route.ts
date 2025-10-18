@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
     // Construir query dinámicamente según filtros
     const conditions: string[] = ['t.household_id = $1'];
-    const params: any[] = [householdId];
+    const params: unknown[] = [householdId];
     let paramIndex = 2;
 
     if (flowType && flowType !== 'all') {

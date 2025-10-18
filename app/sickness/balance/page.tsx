@@ -1,8 +1,9 @@
 
-
 "use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
+import type { MonthlyPeriodPhase } from '@/lib/periods';
 import { normalizePeriodPhase } from '@/lib/periods';
 import {
     AlertCircle,
@@ -12,11 +13,48 @@ import {
     TrendingUp,
     Wallet
 } from 'lucide-react';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+// Importar componentes de esta carpeta
+import { DeleteDirectButton } from './DeleteDirectButton';
+import { EditDirectExpenseButton } from './EditDirectExpenseButton';
 
-import type { MonthlyPeriodPhase } from '@/lib/periods';
 // Eliminado ContributionsDisplay: la contribución no se muestra en balance
 import { NewMovementForm } from './components';
+
+interface Transaction {
+  id: string;
+  type: string;
+  flow_type: string;
+  amount: number;
+  description?: string;
+  occurred_at: string;
+  category_id?: string;
+  profile_id?: string;
+  real_payer_id?: string;
+  transaction_pair_id?: string;
+  category_name?: string;
+  category_icon?: string;
+  profile_email?: string;
+  real_payer_email?: string;
+}
+
+interface GlobalBalance {
+  balance: {
+    opening: number;
+    closing: number;
+    income: number;
+    expenses: number;
+    directExpenses: number;
+    pendingContributions: number;
+  };
+}
+
+interface PeriodSummary {
+  opening_balance: number;
+  closing_balance: number;
+  total_income: number;
+  total_expenses: number;
+}
 
 export default function BalancePage() {
   // Declarar primero los datos de contexto para que estén disponibles en todo el scope
@@ -25,22 +63,22 @@ export default function BalancePage() {
   const [flowType, setFlowType] = useState<'all' | 'common' | 'direct'>('all');
   const [limit, setLimit] = useState(10);
   const [members, setMembers] = useState<Array<{ profile_id: string; email: string; role: string }>>([]);
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; type: string; icon?: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; icon?: string; type?: string }>>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [memberId, setMemberId] = useState<string>('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  
+
   // Estados para balance global y resumen del periodo
-  const [globalBalance, setGlobalBalance] = useState<any>(null);
-  const [periodSummary, setPeriodSummary] = useState<any>(null);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [globalBalance, setGlobalBalance] = useState<GlobalBalance | null>(null);
+  const [periodSummary, setPeriodSummary] = useState<PeriodSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Cargar balance global
   const loadGlobalBalance = useCallback(async () => {
     if (!householdId) return;
-    
+
     try {
       const response = await fetch(`/api/sickness/balance/global?householdId=${householdId}`);
       if (!response.ok) throw new Error('Error al cargar balance global');
@@ -54,7 +92,7 @@ export default function BalancePage() {
   // Cargar resumen del periodo
   const loadPeriodSummary = useCallback(async () => {
     if (!householdId || !activePeriod?.id) return;
-    
+
     try {
       const response = await fetch(
         `/api/sickness/balance/period-summary?householdId=${householdId}&periodId=${activePeriod.id}`
@@ -70,13 +108,13 @@ export default function BalancePage() {
   // Cargar transacciones globales
   const loadTransactions = useCallback(async () => {
     if (!householdId) return;
-    
+
     try {
       const params = new URLSearchParams({
         householdId,
         limit: limit.toString(),
       });
-      
+
       if (flowType !== 'all') params.append('flowType', flowType);
       if (memberId) params.append('memberId', memberId);
       if (categoryId) params.append('categoryId', categoryId);
@@ -174,7 +212,7 @@ export default function BalancePage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Wallet className="h-6 w-6 text-primary" />
-          Balance y Movimientos
+          Balance y Transacciones
         </h1>
         <p className="text-sm text-muted-foreground">Consulta el estado financiero y los movimientos del mes seleccionado.</p>
       </div>
@@ -185,19 +223,19 @@ export default function BalancePage() {
 
       {/* Grid de tarjetas principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Balance Actual - PROMINENTE */}
+  {/* Balance actual - PROMINENTE */}
         <Card className="md:col-span-2 lg:col-span-2 border-2 border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Wallet className="h-5 w-5 text-primary" />
-              Balance Actual
+              Balance actual
             </CardTitle>
             <CardDescription>Saldo disponible en cuenta común</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="text-4xl font-bold tracking-tight">
-                {formatCurrency(globalBalance?.current_balance || 0)}
+                {formatCurrency(globalBalance?.balance.closing || 0)}
               </div>
               <div className="flex items-center gap-2 text-sm">
                 {isPositive ? (
@@ -215,12 +253,12 @@ export default function BalancePage() {
           </CardContent>
         </Card>
 
-        {/* Balance Inicial */}
+  {/* Balance inicial */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <ArrowUpCircle className="h-4 w-4 text-blue-500" />
-              Balance Inicial
+              Balance inicial
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -229,12 +267,12 @@ export default function BalancePage() {
           </CardContent>
         </Card>
 
-        {/* Balance Final */}
+  {/* Balance final */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <ArrowDownCircle className="h-4 w-4 text-purple-500" />
-              Balance Final
+              Balance final
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -291,74 +329,76 @@ export default function BalancePage() {
         </Card>
       </div>
 
-      {/* Tercera fila: Gastos directos y Contribuciones pendientes */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Gastos Directos Pendientes */}
-        <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-900">
+      {/* Tercera fila oculta temporalmente (Gastos directos y Contribuciones pendientes) */}
+      {false && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-900">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Wallet className="h-5 w-5 text-orange-500" />
+                Gastos Directos
+              </CardTitle>
+              <CardDescription>Gastos pagados de bolsillo por miembros</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-orange-600">
+                {formatCurrency(globalBalance?.balance.directExpenses || 0)}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Estos gastos se descontarán de las aportaciones individuales
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-yellow-200 bg-yellow-50/50 dark:bg-yellow-950/20 dark:border-yellow-900">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+                Contribuciones Pendientes
+              </CardTitle>
+              <CardDescription>Aportaciones aún no realizadas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-yellow-600">
+                {formatCurrency(globalBalance?.balance.pendingContributions || 0)}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Total esperado menos lo ya aportado al fondo común
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Resumen del período oculto temporalmente para simplificar la vista (parece redundante) */}
+      {false && (
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Wallet className="h-5 w-5 text-orange-500" />
-              Gastos Directos
-            </CardTitle>
-            <CardDescription>Gastos pagados de bolsillo por miembros</CardDescription>
+            <CardTitle>Resumen del período</CardTitle>
+            <CardDescription>Estado financiero consolidado</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-600">
-              {formatCurrency(globalBalance?.directExpenses || 0)}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="font-medium">Balance inicial</span>
+                <span className="text-lg">{formatCurrency(periodSummary?.opening_balance || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b text-green-600">
+                <span className="font-medium">+ Ingresos</span>
+                <span className="text-lg">{formatCurrency(periodSummary?.total_income || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b text-red-600">
+                <span className="font-medium">- Gastos</span>
+                <span className="text-lg">{formatCurrency(periodSummary?.total_expenses || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center py-3 bg-primary/5 px-3 rounded-lg">
+                <span className="font-bold text-lg">Balance del período</span>
+                <span className="text-2xl font-bold">{formatCurrency(periodSummary?.closing_balance || 0)}</span>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Estos gastos se descontarán de las aportaciones individuales
-            </p>
           </CardContent>
         </Card>
-
-        {/* Contribuciones Pendientes */}
-        <Card className="border-yellow-200 bg-yellow-50/50 dark:bg-yellow-950/20 dark:border-yellow-900">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-              Contribuciones Pendientes
-            </CardTitle>
-            <CardDescription>Aportaciones aún no realizadas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-yellow-600">
-              {formatCurrency(globalBalance?.pendingContributions || 0)}
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Total esperado menos lo ya aportado al fondo común
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Resumen final */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumen del Período</CardTitle>
-          <CardDescription>Estado financiero consolidado</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="font-medium">Balance inicial</span>
-              <span className="text-lg">{formatCurrency(periodSummary?.opening_balance || 0)}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b text-green-600">
-              <span className="font-medium">+ Ingresos</span>
-              <span className="text-lg">{formatCurrency(periodSummary?.total_income || 0)}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b text-red-600">
-              <span className="font-medium">- Gastos</span>
-              <span className="text-lg">{formatCurrency(periodSummary?.total_expenses || 0)}</span>
-            </div>
-            <div className="flex justify-between items-center py-3 bg-primary/5 px-3 rounded-lg">
-              <span className="font-bold text-lg">Balance del período</span>
-              <span className="text-2xl font-bold">{formatCurrency(periodSummary?.closing_balance || 0)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      )}
 
       {/* Filtros de transacciones */}
       <div className="flex flex-wrap gap-4 items-center mt-6">
@@ -449,10 +489,21 @@ export default function BalancePage() {
           open={showNewMovement}
           onClose={() => setShowNewMovement(false)}
           members={members}
-          categories={categories}
+          categories={categories.map((c) => ({
+            id: c.id,
+            name: c.name,
+            icon: c.icon,
+            type: c.type ?? ''
+          }))}
           phase={phase}
           user={user}
           isOwner={isOwner}
+          periodId={activePeriod?.id}
+          onSuccess={async () => {
+            await loadTransactions();
+            await loadGlobalBalance();
+            await loadPeriodSummary();
+          }}
         />
       </div>
 
@@ -476,7 +527,7 @@ export default function BalancePage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {transactions.map((tx: any) => (
+              {transactions.map((tx) => (
                 <div
                   key={tx.id}
                   className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -491,7 +542,17 @@ export default function BalancePage() {
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                      <span>{new Date(tx.occurred_at).toLocaleDateString('es-ES')}</span>
+                      <span>
+                        {new Date(tx.occurred_at).toLocaleDateString('es-ES', {
+                          day: '2-digit', month: '2-digit', year: 'numeric'
+                        })}
+                        {' '}
+                        <span className="ml-1 text-[11px] text-muted-foreground">
+                          {new Date(tx.occurred_at).toLocaleTimeString('es-ES', {
+                            hour: '2-digit', minute: '2-digit'
+                          })}
+                        </span>
+                      </span>
                       {tx.category_name && (
                         <>
                           <span>•</span>
@@ -509,15 +570,49 @@ export default function BalancePage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex-shrink-0 ml-4">
+                  <div className="flex-shrink-0 ml-4 flex items-center gap-2">
                     <span
                       className={`text-lg font-semibold ${
-                        tx.type === 'income' ? 'text-green-600' : 'text-red-600'
+                        (tx.type === 'income' || tx.type === 'income_direct') ? 'text-green-600' : 'text-red-600'
                       }`}
                     >
-                      {tx.type === 'income' ? '+' : '-'}
+                      {(tx.type === 'income' || tx.type === 'income_direct') ? '+' : '-'}
                       {formatCurrency(tx.amount)}
                     </span>
+                    {/* Botones editar/eliminar solo para owner y gastos directos */}
+                    {isOwner && tx.flow_type === 'direct' && (
+                      <div className="flex gap-1">
+                        {/* Botón editar */}
+                        <EditDirectExpenseButton
+                          tx={tx}
+                          householdId={householdId || undefined}
+                          onSuccess={async () => {
+                            await loadTransactions();
+                            await loadGlobalBalance();
+                            await loadPeriodSummary();
+                          }}
+                          categories={categories.map((c) => ({
+                            id: c.id,
+                            name: c.name,
+                            icon: c.icon,
+                            type: c.type ?? ''
+                          }))}
+                        />
+                        {/* Botón eliminar (Server Action) */}
+                        <DeleteDirectButton
+                          txId={tx.id}
+                          householdId={householdId || ''}
+                          onDone={async () => {
+                            await loadTransactions();
+                            await loadGlobalBalance();
+                            await loadPeriodSummary();
+                          }}
+                        />
+                      </div>
+                    )}
+
+
+
                   </div>
                 </div>
               ))}
@@ -530,7 +625,7 @@ export default function BalancePage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Wallet className="h-6 w-6 text-primary" />
-          Balance y Movimientos
+          Balance y Transacciones
         </h1>
       </div>
     </div>

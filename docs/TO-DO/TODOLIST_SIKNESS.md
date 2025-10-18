@@ -126,11 +126,17 @@
 
 ### Plan de Refactor (6 Fases)
 
-#### FASE 1: Fix Crítico - Detección de Estado (30 min) 🔥
-- [ ] Normalizar comparación de status en Balance (`.toLowerCase().trim()`)
-- [ ] Verificar SiKnessContext devuelve status consistente
-- [ ] Testing: ContributionsDisplay aparece cuando locked
-- **Archivo**: `app/sickness/balance/page.tsx:59`
+#### FASE 1: Fix Crítico - Detección de Estado (30 min) 🔥 ✅ COMPLETADA
+- [x] ✅ **Root cause identificado**: DB tiene campos `status` Y `phase` separados
+- [x] ✅ API `/api/sickness/init` actualizada para leer y retornar `phase`
+- [x] ✅ Context `SiKnessContext` tipo actualizado con campo `phase`
+- [x] ✅ Balance page usa `phase` para toda la lógica de workflow
+- [x] ✅ Período page usa `phase` para cálculo de progreso y labels
+- [x] ✅ API `/api/periods/checklist` retorna `phase` en respuesta
+- [x] ✅ TypeScript typecheck pasa con cero errores
+- [x] ✅ **Committed**: `cb8cfa5` - "fix(sickness): use phase field for workflow detection instead of status"
+- **Resultado**: ContributionsDisplay funciona, badges correctos, CTAs habilitan/deshabilitan correctamente
+- **Tiempo real**: 20 min (10 min adelantados sobre cronograma)
 
 #### FASE 2: Componente PhaseCard (1h) 🎨
 - [ ] Crear `components/periodo/PhaseCard.tsx`

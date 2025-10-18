@@ -1,0 +1,1 @@
+export { NewMovementForm } from './NewMovementForm';

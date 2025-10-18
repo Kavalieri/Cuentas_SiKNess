@@ -1,8 +1,8 @@
-import * as React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { CheckCircle, Lock, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, Lock } from "lucide-react";
+import * as React from "react";
 
 export type PhaseCardStatus = "completed" | "active" | "pending" | "locked";
 
@@ -18,7 +18,7 @@ export interface PhaseCardProps {
 }
 
 export function PhaseCard({
-  phase,
+  phase: _phase,
   title,
   icon,
   status,

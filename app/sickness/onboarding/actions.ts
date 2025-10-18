@@ -113,8 +113,8 @@ export async function acceptInvitationByCode(formData: FormData): Promise<void> 
   // Revalidar rutas afectadas (layout y página) para evitar estados estancados
   revalidatePath('/sickness', 'layout');
   revalidatePath('/sickness', 'page');
-  revalidatePath('/sickness/dashboard', 'layout');
-  revalidatePath('/sickness/dashboard', 'page');
+  revalidatePath('/sickness/balance', 'layout');
+  revalidatePath('/sickness/balance', 'page');
   redirect('/sickness?onboarded=1');
 }
 
@@ -156,7 +156,7 @@ export async function createHousehold(formData: FormData): Promise<void> {
   // Revalidar rutas afectadas (layout y página) para evitar estados estancados
   revalidatePath('/sickness', 'layout');
   revalidatePath('/sickness', 'page');
-  revalidatePath('/sickness/dashboard', 'layout');
-  revalidatePath('/sickness/dashboard', 'page');
+  revalidatePath('/sickness/balance', 'layout');
+  revalidatePath('/sickness/balance', 'page');
   redirect('/sickness?onboarded=1');
 }

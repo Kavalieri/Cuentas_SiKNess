@@ -241,7 +241,7 @@ export default function HogarMembersClient({
               const res = await import('./actions').then(m => m.acceptInvitationByCode(fd));
               if (res.ok) {
                 toast.success('Te has unido al hogar correctamente');
-                window.location.href = '/sickness/dashboard?onboarded=1';
+                window.location.href = '/sickness/balance?onboarded=1';
               } else {
                 toast.error(res.message || 'No se pudo unir al hogar');
               }
