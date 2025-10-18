@@ -14,7 +14,6 @@ type Checklist = {
   periodId: string | null;
   year: number | null;
   month: number | null;
-  status: string | null;
   phase: string | null; // Fase del workflow
   hasHouseholdGoal: boolean;
   monthlyContributionGoal: number | null;
@@ -32,6 +31,7 @@ async function fetchChecklist(params?: { year?: number; month?: number; periodId
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) return null;
   const json = await res.json();
+  // Solo usamos 'phase' como fuente de verdad. Si el backend envía 'status', lo ignoramos.
   return json?.data ?? null;
 }
 
@@ -127,15 +127,30 @@ export default function PeriodosYContribucionPage() {
     if (data.totalMembers > 0 && data.membersWithIncome === data.totalMembers) pct += 20;
 
     const phase = data.phase || 'preparing';
-    if (phase === 'preparing') pct += 10;
-    if (phase === 'validation') pct += 40; // validación lista para abrir
-    if (phase === 'active') pct += 60; // uso activo
-    if (phase === 'closing') pct += 80; // en cierre
-    if (phase === 'closed') pct = 100;
+    switch (phase) {
+      case 'preparing':
+        pct += 10;
+        break;
+      case 'validation':
+        pct += 40;
+        break;
+      case 'active':
+        pct += 60;
+        break;
+      case 'closing':
+        pct += 80;
+        break;
+      case 'closed':
+        pct = 100;
+        break;
+      default:
+        break;
+    }
     return Math.min(100, pct);
   }, [data]);
 
-  const statusLabel = useMemo(() => {
+  // Etiqueta de fase actual para mostrar en UI
+  const phaseLabel = useMemo(() => {
     const phase = data?.phase ?? 'unknown';
     switch (phase) {
       case 'preparing':
@@ -254,7 +269,7 @@ export default function PeriodosYContribucionPage() {
             {data ? (
               <>
                 <div>
-                  Periodo: {data.year}/{data.month} — Estado: <strong>{statusLabel}</strong>
+                  Periodo: {data.year}/{data.month} — Fase: <strong>{phaseLabel}</strong>
                 </div>
                 <div>Miembros: {data.membersWithIncome}/{data.totalMembers} con ingresos configurados</div>
                 <div>Objetivo común: {data.hasHouseholdGoal ? 'Configurado' : 'No configurado'}</div>

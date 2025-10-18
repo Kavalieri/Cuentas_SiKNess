@@ -10,7 +10,6 @@ type Checklist = {
   periodId: string | null;
   year: number | null;
   month: number | null;
-  status: string | null;
   phase: string | null;
   hasHouseholdGoal: boolean;
   monthlyContributionGoal: number | null;
@@ -37,30 +36,29 @@ export async function GET(req: NextRequest) {
       id: string;
       year: number;
       month: number;
-      status: string | null;
       phase: string | null;
     }>(
       qPeriodId
         ? `
-            SELECT id, year, month, status, phase
-            FROM monthly_periods
-            WHERE household_id = $1 AND id = $2
-            LIMIT 1
-          `
-        : qYear && qMonth
-          ? `
-              SELECT id, year, month, status, phase
+              SELECT id, year, month, phase
               FROM monthly_periods
-              WHERE household_id = $1 AND year = $2 AND month = $3
+              WHERE household_id = $1 AND id = $2
               LIMIT 1
             `
-          : `
-              SELECT id, year, month, status, phase
-              FROM monthly_periods
-              WHERE household_id = $1
-              ORDER BY year DESC, month DESC
-              LIMIT 1
-            `,
+          : qYear && qMonth
+            ? `
+                SELECT id, year, month, phase
+                FROM monthly_periods
+                WHERE household_id = $1 AND year = $2 AND month = $3
+                LIMIT 1
+              `
+            : `
+                SELECT id, year, month, phase
+                FROM monthly_periods
+                WHERE household_id = $1
+                ORDER BY year DESC, month DESC
+                LIMIT 1
+              `,
       qPeriodId ? [householdId, qPeriodId] : qYear && qMonth ? [householdId, Number(qYear), Number(qMonth)] : [householdId],
     );
 
@@ -100,7 +98,6 @@ export async function GET(req: NextRequest) {
       periodId: period?.id ?? null,
       year: period?.year ?? null,
       month: period?.month ?? null,
-      status: period?.status ?? null,
       phase: period?.phase ?? null,
       hasHouseholdGoal,
       monthlyContributionGoal,

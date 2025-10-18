@@ -153,11 +153,9 @@ export default function BalancePage() {
     }).format(amount);
   };
 
-  // Normalizar phase desde activePeriod (puede venir como string legacy)
-  const normalizedPhaseData = activePeriod?.phase
-    ? normalizePeriodPhase(activePeriod.phase, activePeriod.status || null)
-    : { phase: 'preparing' as MonthlyPeriodPhase, legacyStatus: 'active' };
-  const phase: MonthlyPeriodPhase = normalizedPhaseData.phase === 'unknown' ? 'preparing' : normalizedPhaseData.phase;
+  // Usar solo phase como fuente de verdad (legacy status eliminado)
+  let rawPhase = activePeriod?.phase ? normalizePeriodPhase(activePeriod.phase) : 'preparing';
+  const phase: MonthlyPeriodPhase = rawPhase === 'unknown' ? 'preparing' : rawPhase;
 
   // Calcular diferencia de balance (para el periodo actual)
   const balanceDifference = (periodSummary?.closing_balance || 0) - (periodSummary?.opening_balance || 0);
@@ -477,7 +475,7 @@ export default function BalancePage() {
           <button
             className={`px-3 py-1.5 rounded text-sm font-medium border ${canCreateMovement ? 'bg-primary text-primary-foreground hover:opacity-90' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
             disabled={!canCreateMovement}
-            title={phase === 'closed' ? 'No se pueden crear movimientos con el período cerrado' : 'Crear nuevo movimiento'}
+            title={phase === 'closed' ? 'No se pueden crear movimientos con el período cerrado' : phase === 'preparing' ? 'No se pueden crear movimientos en la fase de configuración inicial' : 'Crear nuevo movimiento'}
             onClick={() => setShowNewMovement(true)}
           >
             Nuevo movimiento

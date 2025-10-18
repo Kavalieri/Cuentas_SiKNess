@@ -42,11 +42,13 @@ export interface UnifiedTransactionData {
 // ESQUEMAS DE VALIDACIÓN UNIFICADOS
 // =====================================================
 
+const categoryIdSchema = z.preprocess(
+  (val) => (val === '' || val === 'none' || val == null ? null : val),
+  z.string().uuid().nullable(),
+);
+
 const BaseTransactionSchema = z.object({
-  category_id: z
-    .string()
-    .transform((val) => (val === '' || val === 'none' ? null : val))
-    .pipe(z.string().uuid().nullable()),
+  category_id: categoryIdSchema.optional(),
   amount: z.coerce.number().positive('El monto debe ser mayor a 0'),
   currency: z.string().min(1).default('EUR'),
   description: z.string().optional(),

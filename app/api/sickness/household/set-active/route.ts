@@ -1,6 +1,5 @@
 import { getCurrentUser } from '@/lib/auth';
 import { toNumber } from '@/lib/format';
-import { normalizePeriodPhase } from '@/lib/periods';
 import { query } from '@/lib/pgServer';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -80,16 +79,14 @@ export async function POST(req: NextRequest) {
     );
 
     const periods = periodsRes.rows.map((row) => {
-      const { phase } = normalizePeriodPhase(undefined, row.status);
       return {
         id: row.id as string,
         year: Number(row.year),
         month: Number(row.month),
-        status: (row.status as string) ?? 'open',
-        phase,
+        phase: row.phase ?? 'unknown',
         openingBalance: toNumber(row.opening_balance),
         closingBalance: toNumber(row.closing_balance),
-        isCurrent: phase === 'active' || (Number(row.year) === currentYear && Number(row.month) === currentMonth),
+        isCurrent: (row.phase === 'active') || (Number(row.year) === currentYear && Number(row.month) === currentMonth),
         // Extras para currentPeriod (no usados por el listado, pero útiles luego)
         totalIncome: toNumber(row.total_income),
         totalExpenses: toNumber(row.total_expenses),
@@ -110,7 +107,6 @@ export async function POST(req: NextRequest) {
           month: currentPeriodCandidate.month,
           day: 1,
           phase: currentPeriodCandidate.phase,
-          status: currentPeriodCandidate.status,
           openingBalance: currentPeriodCandidate.openingBalance,
           closingBalance: currentPeriodCandidate.closingBalance,
           totalIncome: currentPeriodCandidate.totalIncome,

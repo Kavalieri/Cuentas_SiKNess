@@ -1,3 +1,4 @@
+import { MonthStatusBadge } from '@/components/shared/MonthStatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { query } from '@/lib/db';
 import type { MonthlyPeriod } from '@/lib/periods';
@@ -15,17 +16,9 @@ async function getCurrentPeriod(householdId: string): Promise<MonthlyPeriod | nu
   return result.rows[0] || null;
 }
 
-function getPeriodStatusBadge(status: string) {
-  const statusConfig = {
-    active: { label: 'Activo', variant: 'default' as const },
-    preparing: { label: 'Preparando', variant: 'secondary' as const },
-    validation: { label: 'Validación', variant: 'outline' as const },
-    closing: { label: 'Cerrando', variant: 'destructive' as const },
-    closed: { label: 'Cerrado', variant: 'secondary' as const },
-  };
-
-  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
-  return <Badge variant={config.variant}>{config.label}</Badge>;
+// Dejado para compatibilidad, pero no usado ya que mostramos por phase
+function getPeriodStatusBadge(_status: string) {
+  return <Badge variant="outline">Desconocido</Badge>;
 }
 
 export async function PeriodStatus({ householdId }: PeriodStatusProps) {
@@ -69,7 +62,8 @@ export async function PeriodStatus({ householdId }: PeriodStatusProps) {
             {monthNames[period.month - 1]} {period.year}
           </p>
         </div>
-        {getPeriodStatusBadge(period.status)}
+        {/* Mostrar badge por phase */}
+        <MonthStatusBadge phase={period.phase} />
       </div>
     </div>
   );

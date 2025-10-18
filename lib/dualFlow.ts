@@ -1,13 +1,13 @@
 import { query } from '@/lib/pgServer';
 import type {
-  DualFlowBalance,
-  DualFlowConfig,
-  DualFlowMetrics,
-  DualFlowStats,
-  DualFlowTransaction,
-  DualFlowWorkflow,
-  PairingCandidate,
-  TransactionTypeDualFlow,
+    DualFlowBalance,
+    DualFlowConfig,
+    DualFlowMetrics,
+    DualFlowStats,
+    DualFlowTransaction,
+    DualFlowWorkflow,
+    PairingCandidate,
+    TransactionTypeDualFlow,
 } from '@/types/dualFlow';
 
 const DEFAULT_CURRENCY = 'EUR';
@@ -179,6 +179,95 @@ function buildWorkflowSelect(
 	`;
 }
 
+// ---------------------------------------------------------------------------
+// Compatibilidad de esquema: resolver periodo y fase con fallback a status
+// ---------------------------------------------------------------------------
+
+type PhaseLike = 'preparing' | 'validation' | 'active' | 'closing' | 'closed';
+
+function mapLegacyStatusToPhase(status: string | null | undefined): PhaseLike {
+  const s = (status || '').toLowerCase();
+  // Mapear distintos posibles valores legacy a fases unificadas
+  if (s === 'closed') return 'closed';
+  if (s === 'pending_close') return 'closing';
+  if (s === 'future') return 'preparing';
+  // Algunos entornos usan 'open' o 'active' como estado activo
+  if (s === 'open' || s === 'active') return 'active';
+  // Fallback seguro
+  return 'active';
+}
+
+async function getOrCreatePeriodIdAndPhase(
+  householdId: string,
+  occurredAt: string | Date,
+): Promise<{ periodId: string; phase: PhaseLike }> {
+  const d = new Date(occurredAt as string);
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth() + 1;
+
+  // 1) Asegurar periodo
+  const ensured = await query<{ id: string }>(
+    `
+      SELECT ensure_monthly_period($1, $2, $3) AS id
+    `,
+    [householdId, year, month],
+  );
+  const periodId = ensured.rows?.[0]?.id;
+  if (!periodId) {
+    throw new Error('No se pudo asegurar el período mensual');
+  }
+
+  // 2) ¿Existe columna phase?
+  const phaseExistsRes = await query<{ exists: boolean }>(
+    `
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'monthly_periods'
+          AND column_name = 'phase'
+      ) AS exists
+    `,
+  );
+  const phaseExists = Boolean(phaseExistsRes.rows?.[0]?.exists);
+
+  if (phaseExists) {
+    const period = await query<{ phase: string; household_id: string }>(
+      `
+        SELECT phase, household_id
+        FROM monthly_periods
+        WHERE id = $1
+        LIMIT 1
+      `,
+      [periodId],
+    );
+    const row = period.rows?.[0];
+    if (!row || row.household_id !== householdId) {
+      throw new Error('Período inválido o no pertenece al hogar');
+    }
+    // phase ya es PhaseLike en entornos nuevos; permitir 'validation' si existe
+    const phase = (row.phase as PhaseLike) ?? 'active';
+    return { periodId, phase };
+  }
+
+  // Fallback: usar status legacy
+  const legacy = await query<{ status: string | null; household_id: string }>(
+    `
+      SELECT status, household_id
+      FROM monthly_periods
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [periodId],
+  );
+  const legacyRow = legacy.rows?.[0];
+  if (!legacyRow || legacyRow.household_id !== householdId) {
+    throw new Error('Período inválido o no pertenece al hogar');
+  }
+  const phase = mapLegacyStatusToPhase(legacyRow.status);
+  return { periodId, phase };
+}
+
 // ============================================================================
 // OPERACIONES CRUD
 // ============================================================================
@@ -195,6 +284,39 @@ export async function createDualFlowTransaction(
     transaction.creado_por,
   );
 
+  // Resolver periodo y fase para aplicar reglas de negocio
+  const { periodId, phase } = await getOrCreatePeriodIdAndPhase(
+    transaction.household_id,
+    transaction.fecha,
+  );
+
+  // Reglas globales de bloqueo por fase
+  if (phase === 'preparing') {
+    throw new Error(
+      'El período todavía no está iniciado. Debe bloquearse primero para poder registrar movimientos.',
+    );
+  }
+  if (phase === 'closing' || phase === 'closed') {
+    throw new Error('El período no permite registrar nuevos movimientos en esta fase.');
+  }
+
+  // Reglas por flujo y tipo
+  if (mapping.flowType === 'common') {
+    if (phase !== 'active') {
+      throw new Error('Los movimientos del flujo común solo pueden crearse cuando el período está activo.');
+    }
+  } else if (mapping.flowType === 'direct') {
+    // Solo gastos directos; el ingreso se genera automáticamente por el sistema
+    if (mapping.ledgerType === 'income_direct') {
+      throw new Error(
+        'En el flujo directo solo se pueden crear gastos directos; el ingreso de equilibrio se genera automáticamente.',
+      );
+    }
+    if (phase !== 'validation' && phase !== 'active') {
+      throw new Error('Los gastos directos solo pueden registrarse en fases de validación o activo.');
+    }
+  }
+
   const paidBy = transaction.pagado_por ?? null;
   const realPayer = mapping.flowType === 'direct' ? paidBy : null;
   const profileId = transaction.pagado_por ?? transaction.creado_por;
@@ -210,6 +332,7 @@ export async function createDualFlowTransaction(
 				currency,
 				description,
 				occurred_at,
+        performed_at,
 				profile_id,
 				paid_by,
 				real_payer_id,
@@ -220,11 +343,13 @@ export async function createDualFlowTransaction(
 				requires_approval,
 				auto_paired,
 				review_days,
-				pairing_threshold
+				pairing_threshold,
+        period_id
 			)
 			VALUES (
-				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-				$11, $12, $13, $14, $15, $16, $17, $18, $19
+				$1, $2, $3, $4, $5, $6, $7, $8, $9,
+        $10, $11, $12, $13, $14, $15, $16,
+        $17, $18, $19, $20
 			)
 			RETURNING id
 		`,
@@ -237,6 +362,7 @@ export async function createDualFlowTransaction(
       currency,
       transaction.concepto,
       transaction.fecha,
+      transaction.fecha,
       profileId,
       paidBy,
       realPayer,
@@ -248,6 +374,7 @@ export async function createDualFlowTransaction(
       false,
       transaction.dias_revision ?? DEFAULT_REVIEW_DAYS,
       transaction.umbral_emparejamiento ?? DEFAULT_PAIRING_THRESHOLD,
+      periodId,
     ],
   );
 

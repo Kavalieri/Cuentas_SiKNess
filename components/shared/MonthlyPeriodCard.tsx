@@ -26,7 +26,7 @@ export function MonthlyPeriodCard({
 }: MonthlyPeriodCardProps) {
   const savings = calculateMonthlySavings(period);
   const isSavings = savings >= 0;
-  const periodPhase = normalizePeriodPhase(period.phase, period.status);
+  const normalizedPhase = normalizePeriodPhase(period.phase);
 
   return (
     <Card
@@ -37,7 +37,7 @@ export function MonthlyPeriodCard({
         <CardTitle className="text-base font-semibold">
           {formatPeriodMonth(period.year, period.month)}
         </CardTitle>
-        <MonthStatusBadge status={period.status} phase={period.phase} />
+  <MonthStatusBadge phase={period.phase} />
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -82,7 +82,7 @@ export function MonthlyPeriodCard({
           </div>
 
           {/* Ahorro del Mes */}
-          {periodPhase.phase !== 'active' && periodPhase.phase !== 'preparing' && (
+          {normalizedPhase !== 'active' && normalizedPhase !== 'preparing' && normalizedPhase !== 'unknown' && (
             <div className="rounded-lg bg-muted/50 p-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
@@ -97,7 +97,7 @@ export function MonthlyPeriodCard({
           )}
 
           {/* Notas (si está cerrado) */}
-          {periodPhase.phase === 'closed' && period.notes && (
+          {normalizedPhase === 'closed' && period.notes && (
             <div className="text-xs text-muted-foreground">
               <span className="font-medium">Notas:</span> {period.notes}
             </div>

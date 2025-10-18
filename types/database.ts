@@ -754,7 +754,6 @@ export type Database = {
           notes: string | null;
           opening_balance: number | null;
           phase: string;
-          status: string;
           total_expenses: number | null;
           total_income: number | null;
           updated_at: string;
@@ -772,7 +771,6 @@ export type Database = {
           notes?: string | null;
           opening_balance?: number | null;
           phase?: string;
-          status?: string;
           total_expenses?: number | null;
           total_income?: number | null;
           updated_at?: string;
@@ -790,7 +788,6 @@ export type Database = {
           notes?: string | null;
           opening_balance?: number | null;
           phase?: string;
-          status?: string;
           total_expenses?: number | null;
           total_income?: number | null;
           updated_at?: string;

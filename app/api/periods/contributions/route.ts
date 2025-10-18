@@ -2,7 +2,6 @@
 
 import { getCurrentUser, getUserHouseholdId } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { normalizePeriodPhase } from '@/lib/periods';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -26,25 +25,24 @@ export async function GET(req: NextRequest) {
       id: string;
       year: number;
       month: number;
-      status: string | null;
       phase: string | null;
     }>(
       qPeriodId
         ? `
-            SELECT id, year, month, status, phase
+            SELECT id, year, month, phase
             FROM monthly_periods
             WHERE household_id = $1 AND id = $2
             LIMIT 1
           `
         : qYear && qMonth
           ? `
-              SELECT id, year, month, status, phase
+              SELECT id, year, month, phase
               FROM monthly_periods
               WHERE household_id = $1 AND year = $2 AND month = $3
               LIMIT 1
             `
           : `
-              SELECT id, year, month, status, phase
+              SELECT id, year, month, phase
               FROM monthly_periods
               WHERE household_id = $1
               ORDER BY year DESC, month DESC
@@ -169,8 +167,7 @@ export async function GET(req: NextRequest) {
     );
 
     // Determinar fase normalizada del periodo (para reglas de gasto directo)
-    const normalized = normalizePeriodPhase(period.phase, period.status);
-    const currentPhase = normalized.phase; // 'preparing' | 'validation' | 'active' | 'closing' | 'closed' | 'unknown'
+  const currentPhase = period.phase ?? 'unknown'; // 'preparing' | 'validation' | 'active' | 'closing' | 'closed' | 'unknown'
     const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase === 'active';
 
     // Ensamblar respuesta enriquecida por miembro (incluir a todos los miembros)
@@ -212,7 +209,6 @@ export async function GET(req: NextRequest) {
       period: {
         year: period.year,
         month: period.month,
-        status: period.status,
         calculationType,
         monthlyGoal,
         phase: currentPhase,

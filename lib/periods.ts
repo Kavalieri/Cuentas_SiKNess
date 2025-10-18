@@ -5,12 +5,8 @@
 import { toNumber } from '@/lib/format';
 import type { Database } from '@/types/database';
 
-// Importar tipo generado desde Supabase
 export type MonthlyPeriod = Database['public']['Tables']['monthly_periods']['Row'];
-
 export type MonthlyPeriodPhase = 'preparing' | 'validation' | 'active' | 'closing' | 'closed';
-
-export type LegacyMonthlyPeriodStatus = 'open' | 'pending_close' | 'closed' | 'active' | 'future';
 
 const KNOWN_PHASES: readonly MonthlyPeriodPhase[] = [
   'preparing',
@@ -19,66 +15,14 @@ const KNOWN_PHASES: readonly MonthlyPeriodPhase[] = [
   'closing',
   'closed',
 ];
-
 const KNOWN_PHASE_SET = new Set<MonthlyPeriodPhase>(KNOWN_PHASES);
 
-const LEGACY_STATUS_TO_PHASE: Record<LegacyMonthlyPeriodStatus, MonthlyPeriodPhase> = {
-  open: 'active',
-  active: 'active',
-  future: 'preparing',
-  pending_close: 'closing',
-  closed: 'closed',
-};
-
-const DEFAULT_LEGACY_STATUS_BY_PHASE: Record<MonthlyPeriodPhase, LegacyMonthlyPeriodStatus> = {
-  preparing: 'future',
-  validation: 'open',
-  active: 'open',
-  closing: 'pending_close',
-  closed: 'closed',
-};
-
-export type NormalizedPeriodPhase = {
-  phase: MonthlyPeriodPhase | 'unknown';
-  legacyStatus: LegacyMonthlyPeriodStatus | 'unknown';
-};
-
-const sanitizePhaseValue = (value?: string | null): string | null =>
-  value ? value.toString().trim().toLowerCase() : null;
-
-export function normalizePeriodPhase(
-  phase?: string | null,
-  status?: string | null,
-): NormalizedPeriodPhase {
-  const normalizedPhase = sanitizePhaseValue(phase);
+export function normalizePeriodPhase(phase?: string | null): MonthlyPeriodPhase | 'unknown' {
+  const normalizedPhase = phase ? phase.toString().trim().toLowerCase() : null;
   if (normalizedPhase && KNOWN_PHASE_SET.has(normalizedPhase as MonthlyPeriodPhase)) {
-    const matchedPhase = normalizedPhase as MonthlyPeriodPhase;
-    return {
-      phase: matchedPhase,
-      legacyStatus: DEFAULT_LEGACY_STATUS_BY_PHASE[matchedPhase],
-    };
+    return normalizedPhase as MonthlyPeriodPhase;
   }
-
-  const normalizedStatus = sanitizePhaseValue(status);
-  if (normalizedStatus) {
-    if (KNOWN_PHASE_SET.has(normalizedStatus as MonthlyPeriodPhase)) {
-      const matchedPhase = normalizedStatus as MonthlyPeriodPhase;
-      return {
-        phase: matchedPhase,
-        legacyStatus: DEFAULT_LEGACY_STATUS_BY_PHASE[matchedPhase],
-      };
-    }
-
-    if (normalizedStatus in LEGACY_STATUS_TO_PHASE) {
-      const legacyStatus = normalizedStatus as LegacyMonthlyPeriodStatus;
-      return {
-        phase: LEGACY_STATUS_TO_PHASE[legacyStatus],
-        legacyStatus,
-      };
-    }
-  }
-
-  return { phase: 'unknown', legacyStatus: 'unknown' };
+  return 'unknown';
 }
 
 export interface MonthInfo {
@@ -280,7 +224,6 @@ export type PeriodStatusInfo = {
   variant: 'default' | 'secondary' | 'destructive' | 'outline';
   icon: string;
   phase: MonthlyPeriodPhase | 'unknown';
-  legacyStatus: LegacyMonthlyPeriodStatus | 'unknown';
 };
 
 export interface PeriodGrouping {
@@ -293,48 +236,24 @@ export interface PeriodGrouping {
 }
 
 /**
- * Obtiene el badge de estado de un período con soporte para fase y status legacy
+ * Obtiene el badge de estado de un período según la fase
  */
 export function getPeriodStatusInfo(
-  input:
-    | string
-    | null
-    | undefined
-    | {
-        phase?: string | null;
-        status?: string | null;
-      },
+  phase?: string | null,
 ): PeriodStatusInfo {
-  const payload =
-    typeof input === 'string' || input == null ? { status: input ?? undefined } : input;
-
-  const normalized = normalizePeriodPhase(payload.phase, payload.status);
-
-  if (normalized.phase !== 'unknown') {
-    const info = PHASE_BADGE_INFO[normalized.phase];
+  const normalizedPhase = normalizePeriodPhase(phase);
+  if (normalizedPhase !== 'unknown') {
+    const info = PHASE_BADGE_INFO[normalizedPhase];
     return {
       ...info,
-      phase: normalized.phase,
-      legacyStatus: normalized.legacyStatus,
+      phase: normalizedPhase,
     };
   }
-
-  if (normalized.legacyStatus !== 'unknown') {
-    const derivedPhase = LEGACY_STATUS_TO_PHASE[normalized.legacyStatus];
-    const info = PHASE_BADGE_INFO[derivedPhase];
-    return {
-      ...info,
-      phase: derivedPhase,
-      legacyStatus: normalized.legacyStatus,
-    };
-  }
-
   return {
     label: 'Desconocido',
     variant: 'outline',
     icon: '❓',
     phase: 'unknown',
-    legacyStatus: normalized.legacyStatus,
   };
 }
 
@@ -365,8 +284,7 @@ export function groupPeriodsByPhase(periods: MonthlyPeriod[]): PeriodGrouping {
   const actionable: MonthlyPeriod[] = [];
 
   for (const period of periods) {
-    const normalized = normalizePeriodPhase(period.phase, period.status);
-    const { phase } = normalized;
+    const phase = normalizePeriodPhase(period.phase);
 
     if (phase !== 'unknown') {
       if (OPEN_PHASE_LOOKUP[phase]) {
@@ -385,14 +303,6 @@ export function groupPeriodsByPhase(periods: MonthlyPeriod[]): PeriodGrouping {
       if (UPCOMING_PHASE_LOOKUP[phase]) {
         upcoming.push(period);
       }
-
-      continue;
-    }
-
-    const statusValue = period.status?.toLowerCase();
-    if (statusValue === 'pending_close') {
-      closing.push(period);
-      actionable.push(period);
     }
   }
 
@@ -406,17 +316,4 @@ export function groupPeriodsByPhase(periods: MonthlyPeriod[]): PeriodGrouping {
   };
 }
 
-/**
- * Determina el estado inicial de un período al crearlo
- */
-export function getInitialPeriodStatus(year: number, month: number): LegacyMonthlyPeriodStatus {
-  if (isCurrentMonth(year, month)) {
-    return 'open';
-  }
-
-  if (isPastMonth(year, month)) {
-    return 'pending_close';
-  }
-
-  return 'open';
-}
+// Eliminada función legacy getInitialPeriodStatus
