@@ -1,48 +1,26 @@
 
 
 "use client";
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import { normalizePeriodPhase } from '@/lib/periods';
 import {
-  AlertCircle,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Calendar,
-  Info,
-  TrendingDown,
-  TrendingUp,
-  Wallet
+    AlertCircle,
+    ArrowDownCircle,
+    ArrowUpCircle,
+    TrendingDown,
+    TrendingUp,
+    Wallet
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 
 import type { MonthlyPeriodPhase } from '@/lib/periods';
-import { ContributionsDisplay } from './ContributionsDisplay';
+// Eliminado ContributionsDisplay: la contribución no se muestra en balance
 import { NewMovementForm } from './components';
-
-const MONTHS = [
-  'Enero',
-  'Febrero',
-  'Marzo',
-  'Abril',
-  'Mayo',
-  'Junio',
-  'Julio',
-  'Agosto',
-  'Septiembre',
-  'Octubre',
-  'Noviembre',
-  'Diciembre',
-];
-
-const RecentTransactions = dynamic(() => import('@/components/shared/RecentTransactions'), { ssr: false, loading: () => <div>Cargando transacciones…</div> });
 
 export default function BalancePage() {
   // Declarar primero los datos de contexto para que estén disponibles en todo el scope
-  const { activePeriod, periods, selectedPeriod, selectPeriod, balance, privacyMode, householdId, user, isOwner } = useSiKness();
+  const { activePeriod, privacyMode, householdId, user, isOwner } = useSiKness();
   const [showNewMovement, setShowNewMovement] = useState(false);
   const [flowType, setFlowType] = useState<'all' | 'common' | 'direct'>('all');
   const [limit, setLimit] = useState(10);
@@ -52,6 +30,81 @@ export default function BalancePage() {
   const [categoryId, setCategoryId] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  
+  // Estados para balance global y resumen del periodo
+  const [globalBalance, setGlobalBalance] = useState<any>(null);
+  const [periodSummary, setPeriodSummary] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Cargar balance global
+  const loadGlobalBalance = useCallback(async () => {
+    if (!householdId) return;
+    
+    try {
+      const response = await fetch(`/api/sickness/balance/global?householdId=${householdId}`);
+      if (!response.ok) throw new Error('Error al cargar balance global');
+      const data = await response.json();
+      setGlobalBalance(data);
+    } catch (error) {
+      console.error('Error loading global balance:', error);
+    }
+  }, [householdId]);
+
+  // Cargar resumen del periodo
+  const loadPeriodSummary = useCallback(async () => {
+    if (!householdId || !activePeriod?.id) return;
+    
+    try {
+      const response = await fetch(
+        `/api/sickness/balance/period-summary?householdId=${householdId}&periodId=${activePeriod.id}`
+      );
+      if (!response.ok) throw new Error('Error al cargar resumen del periodo');
+      const data = await response.json();
+      setPeriodSummary(data);
+    } catch (error) {
+      console.error('Error loading period summary:', error);
+    }
+  }, [householdId, activePeriod?.id]);
+
+  // Cargar transacciones globales
+  const loadTransactions = useCallback(async () => {
+    if (!householdId) return;
+    
+    try {
+      const params = new URLSearchParams({
+        householdId,
+        limit: limit.toString(),
+      });
+      
+      if (flowType !== 'all') params.append('flowType', flowType);
+      if (memberId) params.append('memberId', memberId);
+      if (categoryId) params.append('categoryId', categoryId);
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await fetch(`/api/sickness/transactions/global?${params}`);
+      if (!response.ok) throw new Error('Error al cargar transacciones');
+      const data = await response.json();
+      setTransactions(data.transactions || []);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    }
+  }, [householdId, limit, flowType, memberId, categoryId, startDate, endDate]);
+
+  // Cargar todos los datos
+  useEffect(() => {
+    const loadAllData = async () => {
+      setLoading(true);
+      await Promise.all([
+        loadGlobalBalance(),
+        loadPeriodSummary(),
+        loadTransactions(),
+      ]);
+      setLoading(false);
+    };
+    loadAllData();
+  }, [loadGlobalBalance, loadPeriodSummary, loadTransactions]);
 
   // Helper para formatear moneda con modo privacidad
   const formatCurrency = (amount: number) => {
@@ -68,7 +121,8 @@ export default function BalancePage() {
     : { phase: 'preparing' as MonthlyPeriodPhase, legacyStatus: 'active' };
   const phase: MonthlyPeriodPhase = normalizedPhaseData.phase === 'unknown' ? 'preparing' : normalizedPhaseData.phase;
 
-  const balanceDifference = (balance?.closing || 0) - (balance?.opening || 0);
+  // Calcular diferencia de balance (para el periodo actual)
+  const balanceDifference = (periodSummary?.closing_balance || 0) - (periodSummary?.opening_balance || 0);
   const isPositive = balanceDifference >= 0;
   const canCreateMovement = useMemo(
     () => phase === 'active' || phase === 'validation',
@@ -99,117 +153,35 @@ export default function BalancePage() {
   }, [householdId]);
 
   // Determinar periodo mostrado (UI): prioriza selectedPeriod; fallback a activePeriod; si no, fecha actual
-  const now = new Date();
-  const periodYear = selectedPeriod?.year ?? activePeriod?.year ?? now.getFullYear();
-  const periodMonth = selectedPeriod?.month ?? activePeriod?.month ?? now.getMonth() + 1;
-  const periodName = `${MONTHS[periodMonth - 1]} ${periodYear}`;
+  // const now = new Date();
+  // const periodYear = selectedPeriod?.year ?? activePeriod?.year ?? now.getFullYear();
+  // const periodMonth = selectedPeriod?.month ?? activePeriod?.month ?? now.getMonth() + 1;
+  // const periodName = `${MONTHS[periodMonth - 1]} ${periodYear}`;
 
-  // Determinar badge y mensaje de estado
-  const getStatusInfo = () => {
-    switch (phase) {
-      case 'preparing':
-        return {
-          badge: { variant: 'secondary' as const, text: 'Configuración' },
-          canDo: 'Configura los ingresos y gastos directos de cada miembro',
-          helpText: 'Período en fase de configuración inicial',
-        };
-      case 'validation':
-        return {
-          badge: { variant: 'default' as const, text: 'Validación' },
-          canDo: 'Puedes registrar gastos directos que reducirán las contribuciones individuales',
-          helpText: 'Solo owners pueden abrir tras validar las contribuciones calculadas',
-        };
-      case 'active':
-        return {
-          badge: { variant: 'default' as const, text: 'Activo', className: 'bg-green-600' },
-          canDo: 'Registra todos los gastos e ingresos del mes',
-          helpText: 'Período abierto para operaciones normales',
-        };
-      case 'closing':
-        return {
-          badge: { variant: 'secondary' as const, text: 'Cerrando' },
-          canDo: 'Período en proceso de cierre',
-          helpText: 'Owner está validando antes del cierre final',
-        };
-      case 'closed':
-        return {
-          badge: { variant: 'destructive' as const, text: 'Cerrado' },
-          canDo: 'No se permiten nuevos movimientos',
-          helpText: 'Período cerrado y archivado',
-        };
-      default:
-        return {
-          badge: { variant: 'outline' as const, text: 'Desconocido' },
-          canDo: '',
-          helpText: '',
-        };
-    }
-  };
+  // Buscar el periodo completo con id y phase para pasar al formulario (CRÍTICO BUG #2)
+  // const selectedPeriodFull = useMemo(() => {
+  //   if (!selectedPeriod) return activePeriod;
+  //   return periods.find((p) => p.year === selectedPeriod.year && p.month === selectedPeriod.month) || activePeriod;
+  // }, [selectedPeriod, periods, activePeriod]);
 
-  const statusInfo = getStatusInfo();
+  // Determinar badge y mensaje de estado (ya no se usa en esta vista)
+  // const statusInfo = getStatusInfo();
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      {/* Header mejorado con contexto del periodo */}
-      <div className="space-y-3">
-        {/* Selector de periodo: ahora recuerda y selecciona el actual */}
-        <div className="mb-2">
-          <label className="text-sm font-medium mr-2">Periodo:</label>
-          <select
-            value={`${periodYear}-${periodMonth}`}
-            onChange={e => {
-              const [yearStr, monthStr] = e.target.value.split('-');
-              const year = Number(yearStr);
-              const month = Number(monthStr);
-              selectPeriod(year, month);
-            }}
-            className="border rounded px-2 py-1 text-sm"
-          >
-            {periods && periods.length > 0 ? (
-              periods
-                .slice()
-                .sort((a, b) => (a.year !== b.year ? b.year - a.year : b.month - a.month))
-                .map((p) => (
-                  <option key={p.id} value={`${p.year}-${p.month}`}>
-                    {MONTHS[p.month - 1]} {p.year}
-                    {activePeriod && p.year === activePeriod.year && p.month === activePeriod.month ? ' (actual)' : ''}
-                  </option>
-                ))
-            ) : (
-              <option value={`${periodYear}-${periodMonth}`}>{MONTHS[periodMonth - 1]} {periodYear}</option>
-            )}
-          </select>
-        </div>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-6 w-6 text-muted-foreground" />
-            <div>
-              <h1 className="text-2xl font-bold">{periodName}</h1>
-              <p className="text-sm text-muted-foreground">Balance y Movimientos</p>
-            </div>
-          </div>
-          <Badge {...statusInfo.badge} className={statusInfo.badge.className}>
-            {statusInfo.badge.text}
-          </Badge>
-        </div>
 
-        {/* Información contextual según estado */}
-        {statusInfo.canDo && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>Estado del período</AlertTitle>
-            <AlertDescription>
-              <p className="font-medium">{statusInfo.canDo}</p>
-              <p className="text-xs text-muted-foreground mt-1">{statusInfo.helpText}</p>
-            </AlertDescription>
-          </Alert>
-        )}
+    <div className="container mx-auto p-4 space-y-6">
+      {/* Header simplificado: solo título general */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Wallet className="h-6 w-6 text-primary" />
+          Balance y Movimientos
+        </h1>
+        <p className="text-sm text-muted-foreground">Consulta el estado financiero y los movimientos del mes seleccionado.</p>
       </div>
 
+
       {/* Mostrar contribuciones calculadas siempre (se calculan en tiempo real) */}
-      {householdId && (
-        <ContributionsDisplay householdId={householdId} privacyMode={privacyMode} />
-      )}
+    {/* Eliminado: la contribución no se muestra en balance */}
 
       {/* Grid de tarjetas principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -225,7 +197,7 @@ export default function BalancePage() {
           <CardContent>
             <div className="space-y-2">
               <div className="text-4xl font-bold tracking-tight">
-                {formatCurrency(balance?.closing || 0)}
+                {formatCurrency(globalBalance?.current_balance || 0)}
               </div>
               <div className="flex items-center gap-2 text-sm">
                 {isPositive ? (
@@ -252,7 +224,7 @@ export default function BalancePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(balance?.opening || 0)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(periodSummary?.opening_balance || 0)}</div>
             <p className="text-xs text-muted-foreground mt-1">Apertura del período</p>
           </CardContent>
         </Card>
@@ -266,7 +238,7 @@ export default function BalancePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(balance?.closing || 0)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(periodSummary?.closing_balance || 0)}</div>
             <p className="text-xs text-muted-foreground mt-1">Cierre proyectado</p>
           </CardContent>
         </Card>
@@ -285,12 +257,12 @@ export default function BalancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600">
-              {formatCurrency(balance?.income || 0)}
+              {formatCurrency(periodSummary?.total_income || 0)}
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Aportaciones</span>
-                <span className="font-medium">{formatCurrency(balance?.income || 0)}</span>
+                <span className="font-medium">{formatCurrency(periodSummary?.total_income || 0)}</span>
               </div>
             </div>
           </CardContent>
@@ -307,12 +279,12 @@ export default function BalancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-red-600">
-              {formatCurrency(balance?.expenses || 0)}
+              {formatCurrency(periodSummary?.total_expenses || 0)}
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Gastos comunes</span>
-                <span className="font-medium">{formatCurrency(balance?.expenses || 0)}</span>
+                <span className="font-medium">{formatCurrency(periodSummary?.total_expenses || 0)}</span>
               </div>
             </div>
           </CardContent>
@@ -332,7 +304,7 @@ export default function BalancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-orange-600">
-              {formatCurrency(balance?.directExpenses || 0)}
+              {formatCurrency(globalBalance?.directExpenses || 0)}
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Estos gastos se descontarán de las aportaciones individuales
@@ -351,7 +323,7 @@ export default function BalancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-yellow-600">
-              {formatCurrency(balance?.pendingContributions || 0)}
+              {formatCurrency(globalBalance?.pendingContributions || 0)}
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Total esperado menos lo ya aportado al fondo común
@@ -370,19 +342,19 @@ export default function BalancePage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b">
               <span className="font-medium">Balance inicial</span>
-              <span className="text-lg">{formatCurrency(balance?.opening || 0)}</span>
+              <span className="text-lg">{formatCurrency(periodSummary?.opening_balance || 0)}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b text-green-600">
               <span className="font-medium">+ Ingresos</span>
-              <span className="text-lg">{formatCurrency(balance?.income || 0)}</span>
+              <span className="text-lg">{formatCurrency(periodSummary?.total_income || 0)}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b text-red-600">
               <span className="font-medium">- Gastos</span>
-              <span className="text-lg">{formatCurrency(balance?.expenses || 0)}</span>
+              <span className="text-lg">{formatCurrency(periodSummary?.total_expenses || 0)}</span>
             </div>
             <div className="flex justify-between items-center py-3 bg-primary/5 px-3 rounded-lg">
-              <span className="font-bold text-lg">Balance actual</span>
-              <span className="text-2xl font-bold">{formatCurrency(balance?.closing || 0)}</span>
+              <span className="font-bold text-lg">Balance del período</span>
+              <span className="text-2xl font-bold">{formatCurrency(periodSummary?.closing_balance || 0)}</span>
             </div>
           </div>
         </CardContent>
@@ -484,21 +456,82 @@ export default function BalancePage() {
         />
       </div>
 
+      {/* Transacciones globales */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5" />
+            Últimos Movimientos
+          </CardTitle>
+          <CardDescription>
+            Mostrando {transactions.length} transacciones globales (sin filtro de período)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Cargando transacciones...</div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No se encontraron transacciones con los filtros aplicados
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {transactions.map((tx: any) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{tx.description || 'Sin descripción'}</span>
+                      {tx.flow_type === 'direct' && (
+                        <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded">
+                          Directo
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                      <span>{new Date(tx.occurred_at).toLocaleDateString('es-ES')}</span>
+                      {tx.category_name && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            {tx.category_icon && <span>{tx.category_icon}</span>}
+                            {tx.category_name}
+                          </span>
+                        </>
+                      )}
+                      {tx.profile_email && (
+                        <>
+                          <span>•</span>
+                          <span>{tx.profile_email}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 ml-4">
+                    <span
+                      className={`text-lg font-semibold ${
+                        tx.type === 'income' ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {tx.type === 'income' ? '+' : '-'}
+                      {formatCurrency(tx.amount)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Transacciones recientes */}
-      <div className="mt-4">
-        {householdId && periodYear && periodMonth && (
-          <RecentTransactions
-            householdId={householdId}
-            limit={limit}
-            flowType={flowType}
-            year={periodYear}
-            month={periodMonth}
-            memberId={memberId || undefined}
-            categoryId={categoryId || undefined}
-            startDate={startDate || undefined}
-            endDate={endDate || undefined}
-          />
-        )}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Wallet className="h-6 w-6 text-primary" />
+          Balance y Movimientos
+        </h1>
       </div>
     </div>
   );
