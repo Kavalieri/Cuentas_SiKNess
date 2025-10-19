@@ -57,6 +57,23 @@ export async function lockPeriod(periodId: string): Promise<Result<{ periodId: s
       return fail('No tienes un hogar activo');
     }
 
+    // Pre-chequeo de fase para evitar excepciones de la función SQL
+    const phaseRes = await query<{ phase: string }>(
+      `SELECT phase::text AS phase
+       FROM monthly_periods
+       WHERE id = $1 AND household_id = $2
+       LIMIT 1`,
+      [periodId, householdId],
+    );
+
+    const currentPhase = phaseRes.rows[0]?.phase ?? null;
+    if (!currentPhase) {
+      return fail('Período no encontrado en tu hogar');
+    }
+    if (currentPhase !== 'preparing' && currentPhase !== 'validation') {
+      return fail(`Fase actual no permite bloqueo: ${currentPhase}`);
+    }
+
     // Llamar función SQL con los 3 parámetros requeridos
     const { rows } = await query(
       `SELECT lock_contributions_period($1, $2, $3) AS locked`,
@@ -69,8 +86,12 @@ export async function lockPeriod(periodId: string): Promise<Result<{ periodId: s
     }
     return fail('No se pudo bloquear el período');
   } catch (error) {
-    console.error('[lockPeriod] Error:', error);
-    return fail('Error en operación');
+    const err = error as { message?: string; detail?: string; hint?: string } | undefined;
+    const message = err?.message || String(error);
+    console.error('[lockPeriod] Error:', message);
+    // Intentar extraer detalle de Postgres (ej. RAISE EXCEPTION ...)
+    const pgHint = err?.detail || err?.hint || undefined;
+    return fail(pgHint ? `${message} - ${pgHint}` : message);
   }
 }
 
@@ -130,6 +151,35 @@ export async function startClosing(periodId: string, reason?: string): Promise<R
   }
 }
 
+/**
+ * Revierte la fase del período a la fase anterior permitida
+ * (validation->preparing, active->validation, closing->active, closed->closing)
+ */
+export async function reopenPeriod(periodId: string, reason?: string): Promise<Result<{ periodId: string }>> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return fail('No autenticado');
+
+    const householdId = await getUserHouseholdId();
+    if (!householdId) return fail('No tienes un hogar activo');
+
+    const result = await query<{ id: string }>(
+      'SELECT public.reopen_monthly_period($1, $2, $3, $4) AS id',
+      [householdId, periodId, user.profile_id, reason ?? null],
+    );
+
+    const id = result.rows[0]?.id;
+    if (!id) return fail('No se pudo revertir la fase');
+
+    revalidatePath('/sickness');
+    revalidatePath('/sickness/periodo');
+    return ok({ periodId: id });
+  } catch (error) {
+    console.error('[reopenPeriod] Error:', error);
+    return fail('Error en operación');
+  }
+}
+
 // =========================
 // Wrappers para formularios
 // =========================
@@ -170,4 +220,15 @@ export async function closePeriodAction(formData: FormData): Promise<Result> {
   });
   if (!parsed.success) return fail('Datos inválidos');
   return closePeriod(parsed.data.periodId, parsed.data.notes);
+}
+
+export async function reopenPeriodAction(formData: FormData): Promise<Result> {
+  'use server';
+  const schema = PeriodIdSchema.extend({ reason: z.string().optional() });
+  const parsed = schema.safeParse({
+    periodId: String(formData.get('periodId') || ''),
+    reason: formData.get('reason') ? String(formData.get('reason')) : undefined,
+  });
+  if (!parsed.success) return fail('Datos inválidos');
+  return reopenPeriod(parsed.data.periodId, parsed.data.reason);
 }

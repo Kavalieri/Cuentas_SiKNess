@@ -129,7 +129,20 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    const periods = periodsRes.rows.map((row: any) => {
+    type PeriodRow = {
+      id: string;
+      year: number | string;
+      month: number | string;
+      opening_balance: number | string | null;
+      closing_balance: number | string | null;
+      total_income: number | string | null;
+      total_expenses: number | string | null;
+      created_at: string;
+      phase?: string | null;
+      status?: string | null;
+    };
+
+    const periods = periodsRes.rows.map((row: PeriodRow) => {
       const phaseValue: string = hasPhase ? row.phase : legacyStatusToPhase(row.status);
       return {
         id: row.id as string,

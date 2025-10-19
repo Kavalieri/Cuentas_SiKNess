@@ -68,3 +68,9 @@ export async function getMembers(input: unknown): Promise<Result> {
 
 - ❌ No usar `run_in_terminal` para DB; nunca desde código de app.
 - ❌ No retornar tipos implícitos; exporta tipos cuando apliquen.
+
+## LEGACY: dualFlow
+
+- `lib/dualFlow.ts` está deshabilitado y solo exporta un stub que lanza error si se usa.
+- Si necesitas crear movimientos, utiliza siempre `lib/transactions/unified.ts`.
+- El código histórico de dual-flow queda en `archive/legacy/lib/dualFlow.ts` (solo referencia).

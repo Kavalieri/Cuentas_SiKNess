@@ -69,6 +69,35 @@ describe('createUnifiedTransaction - reglas por fase', () => {
     currentPhase = 'active';
   });
 
+    it('bloquea creación si no hay owner en el hogar', async () => {
+      // Simular household sin owner
+  vi.spyOn(require('@/lib/pgServer'), 'getUserHouseholds').mockResolvedValue([
+        {
+          household_id: 'd0c3fe46-f19e-4d60-bc13-fd8b2f7be228',
+          household_name: 'Casa Test',
+          user_role: 'member',
+          household_created_at: '2025-10-06T18:50:58.715981+02',
+          is_active: true,
+          member_count: 1,
+          owner_count: 0,
+        },
+      ]);
+      const res = await createUnifiedTransaction({
+        flow_type: 'direct',
+        type: 'expense_direct',
+        amount: 10,
+        currency: 'EUR',
+        occurred_at: '2025-10-10T12:00:00Z',
+        real_payer_id: '11111111-1111-1111-1111-111111111111',
+        period_id: '22222222-2222-2222-2222-222222222222',
+      });
+      expect(res.ok).toBe(false);
+      if (!res.ok) {
+        expect(res.message).toMatch(/no hay propietario|owner/i);
+      }
+  vi.restoreAllMocks();
+    });
+
   it('bloquea todo en preparing (gasto directo)', async () => {
     currentPhase = 'preparing';
     const res = await createUnifiedTransaction({

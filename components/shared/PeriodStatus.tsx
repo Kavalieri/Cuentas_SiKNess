@@ -17,7 +17,7 @@ async function getCurrentPeriod(householdId: string): Promise<MonthlyPeriod | nu
 }
 
 // Dejado para compatibilidad, pero no usado ya que mostramos por phase
-function getPeriodStatusBadge(_status: string) {
+function _getPeriodStatusBadge(_status: string) {
   return <Badge variant="outline">Desconocido</Badge>;
 }
 

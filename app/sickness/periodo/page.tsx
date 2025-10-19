@@ -4,6 +4,7 @@ import { ContributionsOverview, type CombinedMemberContribution } from '@/compon
 import { PhaseCard } from '@/components/periodo/PhaseCard';
 import { Progress } from '@/components/ui/progress';
 import { CalendarCheck2, Lock, Rocket, ShieldCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 // import { toast } from '@/components/ui/use-toast';
 import { useSiKness } from '@/contexts/SiKnessContext';
@@ -81,7 +82,8 @@ function FinancialSummaryCardSection({ checklist, refreshChecklist: _refreshChec
 
 export default function PeriodosYContribucionPage() {
   // Usamos solo el selector global de periodo (contexto)
-  const { householdId, selectedPeriod } = useSiKness();
+  const router = useRouter();
+  const { householdId, selectedPeriod, refreshPeriods, selectPeriod, isOwner } = useSiKness();
   const [data, setData] = useState<Checklist | null>(null);
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState('');
@@ -115,7 +117,8 @@ export default function PeriodosYContribucionPage() {
 
   const canLock = useMemo(() => {
     if (!data) return false;
-    return data.hasHouseholdGoal && data.membersWithIncome > 0 && data.totalMembers > 0 && contributionsExist;
+    const phaseOk = data.phase === 'preparing' || data.phase === 'validation';
+    return phaseOk && data.hasHouseholdGoal && data.membersWithIncome > 0 && data.totalMembers > 0 && contributionsExist;
   }, [data, contributionsExist]);
 
   const progress = useMemo(() => {
@@ -184,7 +187,14 @@ export default function PeriodosYContribucionPage() {
       const json = await res.json();
       if (json.ok) {
         toast.success('Período bloqueado para validación');
+        // Refrescar contexto global (periodos y periodo seleccionado) para propagar fase
+        await refreshPeriods().catch(() => {});
+        if (selectedPeriod) {
+          await selectPeriod(selectedPeriod.year, selectedPeriod.month).catch(() => {});
+        }
+        // Refresco local de checklist y una invalidación ligera del árbol
         refresh();
+        router.refresh();
       } else {
         toast.error(json.message ?? 'Error al bloquear período');
       }
@@ -203,7 +213,12 @@ export default function PeriodosYContribucionPage() {
   // noop
       if (json.ok) {
         toast.success('Período abierto');
+        await refreshPeriods().catch(() => {});
+        if (selectedPeriod) {
+          await selectPeriod(selectedPeriod.year, selectedPeriod.month).catch(() => {});
+        }
         refresh();
+        router.refresh();
       } else {
         toast.error(json.message ?? 'Error al abrir período');
       }
@@ -222,7 +237,12 @@ export default function PeriodosYContribucionPage() {
   // noop
       if (json.ok) {
         toast.success('Cierre iniciado');
+        await refreshPeriods().catch(() => {});
+        if (selectedPeriod) {
+          await selectPeriod(selectedPeriod.year, selectedPeriod.month).catch(() => {});
+        }
         refresh();
+        router.refresh();
       } else {
         toast.error(json.message ?? 'Error al iniciar cierre');
       }
@@ -241,9 +261,37 @@ export default function PeriodosYContribucionPage() {
   // noop
       if (json.ok) {
         toast.success('Período cerrado');
+        await refreshPeriods().catch(() => {});
+        if (selectedPeriod) {
+          await selectPeriod(selectedPeriod.year, selectedPeriod.month).catch(() => {});
+        }
         refresh();
+        router.refresh();
       } else {
         toast.error(json.message ?? 'Error al cerrar período');
+      }
+    });
+  };
+
+  const onReopen = (reason?: string) => {
+    if (!data?.periodId) return;
+    startTransition(async () => {
+      const res = await fetch('/api/periods/reopen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ periodId: data.periodId, reason: reason || undefined }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        toast.success('Fase revertida');
+        await refreshPeriods().catch(() => {});
+        if (selectedPeriod) {
+          await selectPeriod(selectedPeriod.year, selectedPeriod.month).catch(() => {});
+        }
+        refresh();
+        router.refresh();
+      } else {
+        toast.error(json.message ?? 'Error al revertir fase');
       }
     });
   };
@@ -302,6 +350,14 @@ export default function PeriodosYContribucionPage() {
               variant: 'primary',
               disabled: !data?.periodId || !canLock || isPending,
             },
+            ...(isOwner && data?.phase === 'validation'
+              ? [{
+                  label: 'Revertir a Configuración',
+                  onClick: () => onReopen('Revertir a preparing para seguir configurando'),
+                  variant: 'secondary' as const,
+                  disabled: !data?.periodId || isPending,
+                }]
+              : []),
           ]}
         />
       </section>
@@ -318,8 +374,16 @@ export default function PeriodosYContribucionPage() {
               label: 'Abrir período',
               onClick: onOpen,
               variant: 'primary',
-              disabled: !data?.periodId || isPending,
+              disabled: !data?.periodId || isPending || data?.phase !== 'validation',
             },
+            ...(isOwner && data?.phase === 'active'
+              ? [{
+                  label: 'Revertir a Validación',
+                  onClick: () => onReopen('Revertir a validation para revisar cálculos'),
+                  variant: 'secondary' as const,
+                  disabled: !data?.periodId || isPending,
+                }]
+              : []),
           ]}
         />
       </section>
@@ -361,6 +425,15 @@ export default function PeriodosYContribucionPage() {
           >
             Iniciar cierre
           </button>
+          {isOwner && data?.phase === 'closing' && (
+            <button
+              className="ml-2 inline-flex w-fit items-center rounded-md bg-slate-700 px-3 py-2 text-white disabled:opacity-60 mt-2"
+              disabled={!data?.periodId || isPending}
+              onClick={() => onReopen('Revertir a active para continuar el mes')}
+            >
+              Revertir a Abierto
+            </button>
+          )}
         </div>
       </section>
 
@@ -371,7 +444,16 @@ export default function PeriodosYContribucionPage() {
           icon={<Lock />}
           status={data?.phase === 'closing' ? 'active' : data?.phase === 'closed' ? 'completed' : 'pending'}
           description="Inicia el cierre del período y deja notas si lo deseas."
-          actions={[]}
+          actions={[
+            ...(isOwner && data?.phase === 'closed'
+              ? [{
+                  label: 'Revertir a Cierre Iniciado',
+                  onClick: () => onReopen('Revertir a closing para ajustes finales'),
+                  variant: 'secondary' as const,
+                  disabled: !data?.periodId || isPending,
+                }]
+              : []),
+          ]}
         />
         <div className="mt-3">
           <label className="text-sm text-muted-foreground" htmlFor="notes">
@@ -391,6 +473,15 @@ export default function PeriodosYContribucionPage() {
           >
             Cerrar período definitivamente
           </button>
+          {isOwner && data?.phase === 'closed' && (
+            <button
+              className="ml-2 inline-flex w-fit items-center rounded-md bg-slate-700 px-3 py-2 text-white disabled:opacity-60 mt-2"
+              disabled={!data?.periodId || isPending}
+              onClick={() => onReopen('Revertir a closing para rectificar cierre')}
+            >
+              Revertir a Cierre Iniciado
+            </button>
+          )}
         </div>
       </section>
       {/* Checklist fija lateral en desktop */}

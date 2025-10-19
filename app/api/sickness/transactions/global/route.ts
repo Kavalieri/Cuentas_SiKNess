@@ -79,7 +79,8 @@ export async function GET(req: NextRequest) {
       LEFT JOIN profiles p ON t.profile_id = p.id
       LEFT JOIN profiles rp ON t.real_payer_id = rp.id
       ${whereClause}
-      ORDER BY t.occurred_at DESC, t.created_at DESC
+  -- Ordenar por la fecha/hora real del evento, luego fecha contable y finalmente captura
+  ORDER BY t.performed_at DESC NULLS LAST, t.occurred_at DESC, t.created_at DESC
       LIMIT $${paramIndex}
     `,
       [...params, limit],

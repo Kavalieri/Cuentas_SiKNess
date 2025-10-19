@@ -1,6 +1,7 @@
 
 "use client";
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import type { MonthlyPeriodPhase } from '@/lib/periods';
@@ -58,8 +59,9 @@ interface PeriodSummary {
 
 export default function BalancePage() {
   // Declarar primero los datos de contexto para que estén disponibles en todo el scope
-  const { activePeriod, privacyMode, householdId, user, isOwner } = useSiKness();
+  const { activePeriod, selectedPeriod, periods, privacyMode, householdId, user, isOwner } = useSiKness();
   const [showNewMovement, setShowNewMovement] = useState(false);
+  const [showPhaseAlert, setShowPhaseAlert] = useState(false);
   const [flowType, setFlowType] = useState<'all' | 'common' | 'direct'>('all');
   const [limit, setLimit] = useState(10);
   const [members, setMembers] = useState<Array<{ profile_id: string; email: string; role: string }>>([]);
@@ -153,17 +155,44 @@ export default function BalancePage() {
     }).format(amount);
   };
 
-  // Usar solo phase como fuente de verdad (legacy status eliminado)
-  let rawPhase = activePeriod?.phase ? normalizePeriodPhase(activePeriod.phase) : 'preparing';
+  // Determinar periodo seleccionado completo (con phase, id, etc)
+  const selectedPeriodFull = useMemo(() => {
+    if (!selectedPeriod) return activePeriod;
+    return periods.find((p) => p.year === selectedPeriod.year && p.month === selectedPeriod.month) || activePeriod;
+  }, [selectedPeriod, periods, activePeriod]);
+
+  // Usar solo phase del periodo seleccionado
+  const rawPhase = selectedPeriodFull?.phase ? normalizePeriodPhase(selectedPeriodFull.phase) : 'preparing';
   const phase: MonthlyPeriodPhase = rawPhase === 'unknown' ? 'preparing' : rawPhase;
+
+  // DEBUG: Ver qué fase tenemos y qué periodo está seleccionado
+  useEffect(() => {
+    console.log('🔍 DEBUG Balance Page:', {
+      selectedPeriod,
+      selectedPeriodFull,
+      rawPhase,
+      phase,
+      canCreateMovement: phase === 'active' || phase === 'validation' || phase === 'closing'
+    });
+  }, [selectedPeriod, selectedPeriodFull, rawPhase, phase]);
 
   // Calcular diferencia de balance (para el periodo actual)
   const balanceDifference = (periodSummary?.closing_balance || 0) - (periodSummary?.opening_balance || 0);
   const isPositive = balanceDifference >= 0;
   const canCreateMovement = useMemo(
-    () => phase === 'active' || phase === 'validation',
+    () => phase === 'active' || phase === 'validation' || phase === 'closing',
     [phase],
   );
+
+  // Handler para intentar crear nuevo movimiento
+  const handleNewMovementClick = useCallback(() => {
+    console.log('🔘 Click en Nuevo movimiento:', { selectedPeriod, selectedPeriodFull, phase, canCreateMovement });
+    if (!canCreateMovement) {
+      setShowPhaseAlert(true);
+      return;
+    }
+    setShowNewMovement(true);
+  }, [canCreateMovement, phase, selectedPeriod, selectedPeriodFull]);
 
   // Cargar opciones de filtros
   useEffect(() => {
@@ -473,14 +502,38 @@ export default function BalancePage() {
         </label>
         <div className="ml-auto flex items-center gap-2">
           <button
-            className={`px-3 py-1.5 rounded text-sm font-medium border ${canCreateMovement ? 'bg-primary text-primary-foreground hover:opacity-90' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
-            disabled={!canCreateMovement}
-            title={phase === 'closed' ? 'No se pueden crear movimientos con el período cerrado' : phase === 'preparing' ? 'No se pueden crear movimientos en la fase de configuración inicial' : 'Crear nuevo movimiento'}
-            onClick={() => setShowNewMovement(true)}
+            className="px-3 py-1.5 rounded text-sm font-medium border bg-primary text-primary-foreground hover:opacity-90"
+            onClick={handleNewMovementClick}
           >
             Nuevo movimiento
           </button>
         </div>
+
+        {/* Alerta de fase bloqueada */}
+        {showPhaseAlert && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {phase === 'preparing'
+                    ? 'No se pueden crear movimientos mientras el período está en configuración inicial. Espera a que se active el período.'
+                    : phase === 'closed'
+                    ? 'No se pueden crear movimientos en un período cerrado. Los movimientos deben registrarse en el período activo.'
+                    : 'No se pueden crear movimientos en este momento.'}
+                </AlertDescription>
+              </Alert>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setShowPhaseAlert(false)}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal para nuevo movimiento */}
         <NewMovementForm
@@ -496,7 +549,7 @@ export default function BalancePage() {
           phase={phase}
           user={user}
           isOwner={isOwner}
-          periodId={activePeriod?.id}
+          periodId={selectedPeriodFull?.id}
           onSuccess={async () => {
             await loadTransactions();
             await loadGlobalBalance();

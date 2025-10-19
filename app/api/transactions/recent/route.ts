@@ -54,7 +54,9 @@ export async function GET(request: Request) {
       params.push(categoryId);
     }
 
-    text += ` ORDER BY occurred_at DESC, created_at DESC LIMIT $${paramIndex++}`;
+  // Ordenar priorizando la fecha/hora real del evento (performed_at),
+  // con respaldo en occurred_at (fecha contable) y created_at (captura)
+  text += ` ORDER BY performed_at DESC NULLS LAST, occurred_at DESC, created_at DESC LIMIT $${paramIndex++}`;
     params.push(limit);
 
     const result = await query(text, params);

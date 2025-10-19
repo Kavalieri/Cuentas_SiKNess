@@ -98,13 +98,21 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
     try {
       // Reglas por fase
       const selectedType = type;
+
+      // Validación de fase: preparing y closed están bloqueados (pero no deberían llegar aquí)
       if (phase === 'preparing') {
-        setError('En preparación no se pueden crear movimientos');
+        setError('En configuración inicial no se pueden crear movimientos');
         setLoading(false);
         return;
       }
+      if (phase === 'closed') {
+        setError('No se pueden crear movimientos en un período cerrado');
+        setLoading(false);
+        return;
+      }
+
+      // En validation solo gastos directos
       if (phase === 'validation') {
-        // Solo gastos directos
         if (selectedType !== 'direct_expense') {
           setError('En validación solo puedes registrar gastos directos');
           setLoading(false);

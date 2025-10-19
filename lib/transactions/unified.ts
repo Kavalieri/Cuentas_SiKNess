@@ -3,11 +3,54 @@
 
 'use server';
 
+import { normalizePeriodPhase } from '@/lib/periods';
 import { getCurrentUser, getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+
+// =====================================================
+// HELPERS DE FECHA/HORA
+// =====================================================
+
+/**
+ * Normaliza un input de fecha/hora proveniente de un input `datetime-local` o ISO.
+ * - occurred_at: SOLO fecha (YYYY-MM-DD) en zona local del usuario preservando día/mes/año
+ * - performed_at: Timestamp completo ISO en UTC (para auditoría)
+ */
+function normalizeDateInputs(
+  input: string,
+): { occurredDate: Date; occurred_at_date: string; performed_at_ts: string } {
+  // Preservar día/mes/año exactamente como viene del formulario
+  const m = input.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!m) {
+    // Fallback robusto
+    const d = new Date(input);
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    const occurred_at_date = `${y}-${mo}-${da}`;
+    const performed_at_ts = new Date(d.getTime()).toISOString();
+    return { occurredDate: d, occurred_at_date, performed_at_ts };
+  }
+
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const da = Number(m[3]);
+  const hh = m[4] ? Number(m[4]) : 0;
+  const mm = m[5] ? Number(m[5]) : 0;
+  const ss = m[6] ? Number(m[6]) : 0;
+
+  // Construir Date local con componentes (evita sesgos de parsing ISO ambiguo)
+  // Importante: tratamos la fecha/hora introducida por el usuario como "naive" (sin TZ)
+  // y la fijamos en UTC para preservar exactamente la hora tecleada (12:30 -> 12:30Z),
+  // evitando desplazamientos por la zona horaria del servidor.
+  const d = new Date(Date.UTC(y, mo - 1, da, hh, mm, ss));
+  const occurred_at_date = `${String(y).padStart(4, '0')}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}`;
+  const performed_at_ts = d.toISOString();
+  return { occurredDate: d, occurred_at_date, performed_at_ts };
+}
 
 // =====================================================
 // TIPOS UNIFICADOS
@@ -115,6 +158,8 @@ export async function createUnifiedTransaction(
     return fail('Usuario no encontrado');
   }
 
+  // Nota: No validamos owner_count aquí; la regla global del sistema ya garantiza al menos un propietario.
+
   // Validaciones específicas por flujo
   const userEmail = userEmailOrNull(user);
 
@@ -140,6 +185,66 @@ export async function createUnifiedTransaction(
 }
 
 // =====================================================
+// HELPER: Obtener fase normalizada del período (sin usar status legacy)
+// =====================================================
+
+async function getNormalizedPeriodPhase(
+  supabase: Awaited<ReturnType<typeof pgServer>>,
+  periodId: string,
+): Promise<{
+  phase: 'preparing' | 'validation' | 'active' | 'closing' | 'closed' | 'unknown';
+  year?: number;
+  month?: number;
+  household_id?: string;
+  error?: string;
+}> {
+  // Leer únicamente la columna phase (fuente de verdad) y metadatos año/mes
+  const { data } = await supabase
+    .from('monthly_periods')
+    .select('phase, year, month, household_id')
+    .eq('id', periodId)
+    .maybeSingle();
+
+  const row = (data ?? null) as {
+    phase: string | null;
+    year: number | null;
+    month: number | null;
+    household_id: string | null;
+  } | null;
+
+  if (!row) {
+    // Intentar obtener metadatos mínimos para mensajes
+    const metaRes = await supabase
+      .from('monthly_periods')
+      .select('year, month, household_id')
+      .eq('id', periodId)
+      .maybeSingle();
+
+    const meta = (metaRes.data ?? null) as {
+      year?: number | null;
+      month?: number | null;
+      household_id?: string | null;
+    } | null;
+
+    return {
+      phase: 'unknown',
+      year: meta?.year ?? undefined,
+      month: meta?.month ?? undefined,
+      household_id: meta?.household_id ?? undefined,
+      error: 'No se pudo determinar la fase del período',
+    };
+  }
+
+  const phaseNorm = normalizePeriodPhase(row.phase);
+  return {
+    phase: phaseNorm,
+    year: row.year ?? undefined,
+    month: row.month ?? undefined,
+    household_id: row.household_id ?? undefined,
+  };
+}
+
+// =====================================================
 // FLUJO COMÚN (reemplaza expenses/actions.ts)
 // =====================================================
 
@@ -150,53 +255,35 @@ async function createCommonFlowTransaction(
   userEmail: string | null,
   supabase: Awaited<ReturnType<typeof pgServer>>,
 ): Promise<Result<{ id: string }>> {
-  // Determinar periodo: usar period_id explícito si existe, sino calcular desde occurred_at
-  let periodId: string;
-
-  if (data.period_id) {
-    // Usar periodo explícito desde UI (selectedPeriod)
-    periodId = data.period_id;
-    console.log('[createCommonFlowTransaction] Using explicit period_id from UI:', periodId);
-  } else {
-    // Legacy: calcular desde occurred_at
-    console.log('[createCommonFlowTransaction] No period_id provided, calculating from occurred_at');
-    const occurredDate = new Date(data.occurred_at);
-    const year = occurredDate.getFullYear();
-    const month = occurredDate.getMonth() + 1;
-
-    const { data: calculatedPeriodId, error: periodError } = await supabase.rpc('ensure_monthly_period', {
-      p_household_id: householdId,
-      p_year: year,
-      p_month: month,
-    });
-
-    if (periodError) {
-      return fail(`Error al crear período mensual: ${periodError.message}`);
-    }
-    periodId = calculatedPeriodId;
+  // Determinar período desde la fecha del formulario (ignorando cualquier selección de UI)
+  const { occurred_at_date, performed_at_ts } = normalizeDateInputs(data.occurred_at);
+  // SIEMPRE derivar periodo desde occurred_at (ignorar period_id para evitar inconsistencias UI)
+  const year = Number(occurred_at_date.slice(0, 4));
+  const month = Number(occurred_at_date.slice(5, 7));
+  const { data: calculatedPeriodId, error: periodError } = await supabase.rpc('ensure_monthly_period', {
+    p_household_id: householdId,
+    p_year: year,
+    p_month: month,
+  });
+  if (periodError) {
+    return fail(`Error al crear período mensual: ${periodError.message}`);
   }
+  const periodId = calculatedPeriodId as string;
 
   // Comprobar fase del período y reglas de flujo
-  const { data: periodRow, error: periodErr } = await supabase
-    .from('monthly_periods')
-    .select('phase, household_id, status')
-    .eq('id', periodId)
-    .single();
-  if (periodErr || !periodRow || periodRow.household_id !== householdId) {
+  const periodInfo = await getNormalizedPeriodPhase(supabase, periodId);
+  if (periodInfo.error || !periodInfo.household_id || periodInfo.household_id !== householdId) {
     return fail('Período inválido o no pertenece al hogar');
   }
 
   // Bloqueos por fase para flujo común (income/expense)
-  if (periodRow.phase === 'preparing') {
-    return fail('El período todavía no está iniciado. Debe bloquearse primero para poder registrar movimientos.');
+  if (periodInfo.phase === 'preparing') {
+    return fail('El período está en configuración inicial; no se permiten movimientos.');
   }
-  if (periodRow.phase === 'closed') {
-    return fail('El período está cerrado. No se pueden registrar nuevos movimientos.');
+  if (periodInfo.phase === 'closed') {
+    return fail('El período está cerrado; no se pueden registrar movimientos.');
   }
-  if (periodRow.phase !== 'active') {
-    // En validation y closing no permitimos flujo común
-    return fail('Los movimientos comunes solo pueden crearse cuando el período está activo');
-  }
+  // En validation y closing también permitimos movimientos comunes
 
   // Determinar paid_by
   let paidBy: string | null = profileId; // Default: usuario actual
@@ -221,8 +308,8 @@ async function createCommonFlowTransaction(
       amount: data.amount,
       currency: data.currency,
       description: data.description || null,
-      occurred_at: data.occurred_at,
-      performed_at: data.occurred_at,
+      occurred_at: occurred_at_date,
+      performed_at: performed_at_ts,
       period_id: periodId,
       paid_by: paidBy,
       flow_type: 'common',
@@ -273,59 +360,40 @@ async function createDirectFlowTransaction(
     );
   }
 
-  // Determinar periodo: usar period_id explícito si existe, sino calcular desde occurred_at
-  let periodId: string;
-
-  if (data.period_id) {
-    // Usar periodo explícito desde UI (selectedPeriod)
-    periodId = data.period_id;
-    console.log('[createDirectFlowTransaction] Using explicit period_id from UI:', periodId);
-  } else {
-    // Legacy: calcular desde occurred_at
-    console.log('[createDirectFlowTransaction] No period_id provided, calculating from occurred_at');
-    const occurredDate = new Date(data.occurred_at);
-    const year = occurredDate.getFullYear();
-    const month = occurredDate.getMonth() + 1;
-
-    const { data: calculatedPeriodId, error: periodError } = await supabase.rpc('ensure_monthly_period', {
-      p_household_id: householdId,
-      p_year: year,
-      p_month: month,
-    });
-
-    if (periodError) {
-      console.error('[createDirectFlowTransaction] Period error:', periodError);
-      return fail(`Error al crear período mensual: ${periodError.message}`);
-    }
-    periodId = calculatedPeriodId;
+  // Determinar periodo siempre desde occurred_at (ignorar period_id de UI)
+  const { occurred_at_date, performed_at_ts } = normalizeDateInputs(data.occurred_at);
+  const year = Number(occurred_at_date.slice(0, 4));
+  const month = Number(occurred_at_date.slice(5, 7));
+  const { data: calculatedPeriodId, error: periodError } = await supabase.rpc('ensure_monthly_period', {
+    p_household_id: householdId,
+    p_year: year,
+    p_month: month,
+  });
+  if (periodError) {
+    console.error('[createDirectFlowTransaction] Period error:', periodError);
+    return fail(`Error al crear período mensual: ${periodError.message}`);
   }
+  const periodId = calculatedPeriodId as string;
 
   console.log('[createDirectFlowTransaction] Period ID:', periodId);
 
   // Reglas de fase para gastos directos
-  const { data: periodRow, error: periodErr } = await supabase
-    .from('monthly_periods')
-    .select('phase, household_id, status')
-    .eq('id', periodId)
-    .single();
-  if (periodErr || !periodRow || periodRow.household_id !== householdId) {
+  const periodInfo = await getNormalizedPeriodPhase(supabase, periodId);
+  if (periodInfo.error || !periodInfo.household_id || periodInfo.household_id !== householdId) {
     return fail('Período inválido o no pertenece al hogar');
   }
 
   // BLOQUEO TOTAL en preparing: nadie puede crear nada
-  if (periodRow.phase === 'preparing') {
-    return fail('El período todavía no está iniciado. Debe bloquearse primero para poder registrar gastos directos.');
+  if (periodInfo.phase === 'preparing') {
+    return fail('El período está en configuración inicial; no se permiten movimientos.');
   }
 
   // Bloqueo si está cerrado
-  if (periodRow.phase === 'closed') {
-    return fail('El período está cerrado. No se pueden registrar nuevos movimientos.');
+  if (periodInfo.phase === 'closed') {
+    return fail('El período está cerrado; no se pueden registrar movimientos.');
   }
 
-  // Gastos directos solo en validation o active
-  if (periodRow.phase !== 'validation' && periodRow.phase !== 'active') {
-    return fail('Los gastos directos solo pueden registrarse en fases de validación o activo');
-  }
+  // Permitir direct en validation, active y closing
 
   // Generar UUID para emparejar las transacciones
   const pairId = crypto.randomUUID();
@@ -340,8 +408,8 @@ async function createDirectFlowTransaction(
     amount: data.amount,
     currency: data.currency,
     description: data.description || null,
-    occurred_at: data.occurred_at,
-    performed_at: data.occurred_at,
+    occurred_at: occurred_at_date,
+    performed_at: performed_at_ts,
     period_id: periodId,
     flow_type: 'direct',
     transaction_pair_id: pairId,
@@ -386,8 +454,8 @@ async function createDirectFlowTransaction(
         amount: data.amount,
         currency: data.currency,
         description: `Equilibrio: ${data.description || 'Gasto directo'}`,
-        occurred_at: data.occurred_at,
-        performed_at: data.occurred_at,
+        occurred_at: occurred_at_date,
+        performed_at: performed_at_ts,
         period_id: periodId,
         flow_type: 'direct',
         transaction_pair_id: pairId,
