@@ -57,36 +57,88 @@ export async function POST(req: NextRequest) {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    // Listar períodos (últimos 15 ordenados desc)
-    const periodsRes = await query(
+    // Compatibilidad de esquema: ¿existe columna phase?
+    const hasPhaseResult = await query(
       `
-      SELECT
-        id,
-        year,
-        month,
-        status,
-        opening_balance,
-        closing_balance,
-        total_income,
-        total_expenses,
-        created_at
-      FROM monthly_periods
-      WHERE household_id = $1
-      ORDER BY year DESC, month DESC
-      LIMIT 15
-    `,
+        SELECT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'monthly_periods'
+            AND column_name = 'phase'
+        ) AS has_phase
+      `,
+    );
+    const hasPhase: boolean = Boolean(hasPhaseResult.rows?.[0]?.has_phase);
+
+    // Listar períodos (últimos 15 ordenados desc), incluyendo phase si existe
+    const periodsRes = await query(
+      hasPhase
+        ? `
+          SELECT
+            id,
+            year,
+            month,
+            phase,
+            opening_balance,
+            closing_balance,
+            total_income,
+            total_expenses,
+            created_at
+          FROM monthly_periods
+          WHERE household_id = $1
+          ORDER BY year DESC, month DESC
+          LIMIT 15
+        `
+        : `
+          SELECT
+            id,
+            year,
+            month,
+            status,
+            opening_balance,
+            closing_balance,
+            total_income,
+            total_expenses,
+            created_at
+          FROM monthly_periods
+          WHERE household_id = $1
+          ORDER BY year DESC, month DESC
+          LIMIT 15
+        `,
       [householdId],
     );
 
-    const periods = periodsRes.rows.map((row) => {
+    // Mapear status legacy → phase cuando phase no exista aún en el esquema
+    const legacyStatusToPhase = (status?: string | null): string => {
+      switch ((status || '').toLowerCase()) {
+        case 'open':
+          return 'active';
+        case 'pending_close':
+          return 'closing';
+        case 'closed':
+          return 'closed';
+        case 'setup':
+        case 'preparing':
+          return 'preparing';
+        case 'locked':
+        case 'validation':
+          return 'validation';
+        default:
+          return 'preparing';
+      }
+    };
+
+    const periods = periodsRes.rows.map((row: any) => {
+      const phaseValue: string = hasPhase ? row.phase : legacyStatusToPhase(row.status);
       return {
         id: row.id as string,
         year: Number(row.year),
         month: Number(row.month),
-        phase: row.phase ?? 'unknown',
+        phase: phaseValue ?? 'unknown',
         openingBalance: toNumber(row.opening_balance),
         closingBalance: toNumber(row.closing_balance),
-        isCurrent: (row.phase === 'active') || (Number(row.year) === currentYear && Number(row.month) === currentMonth),
+        isCurrent: (phaseValue === 'active') || (Number(row.year) === currentYear && Number(row.month) === currentMonth),
         // Extras para currentPeriod (no usados por el listado, pero útiles luego)
         totalIncome: toNumber(row.total_income),
         totalExpenses: toNumber(row.total_expenses),
