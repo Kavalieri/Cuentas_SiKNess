@@ -72,7 +72,18 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
         <div>
           <p className="font-medium text-sm">{transaction.description}</p>
           <p className="text-xs text-muted-foreground">
-            {new Date(transaction.occurred_at).toLocaleDateString('es-ES')}
+            {(() => {
+              const src = transaction.performed_at || transaction.occurred_at;
+              const d = new Date(src as string);
+              return (
+                <>
+                  {d.toLocaleDateString('es-ES')}
+                  {transaction.performed_at && (
+                    <span className="ml-1">{d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                  )}
+                </>
+              );
+            })()}
           </p>
         </div>
       </div>

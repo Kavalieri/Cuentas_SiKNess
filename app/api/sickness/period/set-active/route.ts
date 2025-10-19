@@ -122,7 +122,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ period });
   } catch (error) {
-    console.error('[API /api/sickness/period/set-active] Error:', error);
-    return NextResponse.json({ error: 'Error al cambiar de periodo' }, { status: 500 });
+    const err = error as { message?: string; detail?: string; hint?: string } | undefined;
+    const parts = [err?.message, err?.detail, err?.hint].filter(Boolean);
+    const message = parts.length > 0 ? parts.join(' - ') : 'Error al cambiar de periodo';
+    console.error('[API /api/sickness/period/set-active] Error:', message, error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

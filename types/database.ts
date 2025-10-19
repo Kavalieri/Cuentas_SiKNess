@@ -1632,8 +1632,13 @@ export type Database = {
         Returns: undefined;
       };
       reopen_monthly_period: {
-        Args: { p_period_id: string; p_reason?: string; p_reopened_by: string };
-        Returns: undefined;
+        // Nota: La función en DB tiene dos overloads:
+        // 1) reopen_monthly_period(p_household_id uuid, p_period_id uuid, p_reopened_by uuid, p_reason text)
+        // 2) reopen_monthly_period(p_period_id uuid, p_reopened_by uuid, p_reason text)
+        // Ambos retornan uuid (id del período). Mantenemos la firma compacta (sin household_id)
+        // para compatibilidad con llamadas RPC tipadas, pero reflejamos el tipo de retorno correcto.
+        Args: { p_period_id: string; p_reason?: string | null; p_reopened_by: string };
+        Returns: string;
       };
       reserve_credit_for_next_month: {
         Args: { p_credit_id: string; p_reserved_by: string };

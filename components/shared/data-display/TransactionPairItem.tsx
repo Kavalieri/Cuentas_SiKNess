@@ -5,6 +5,7 @@ type Transaction = {
   amount: number;
   description: string | null;
   occurred_at: string;
+  performed_at?: string | null;
   flow_type: string;
   type: string;
   real_payer_id?: string | null;
@@ -37,8 +38,19 @@ export function TransactionPairItem({ expense, income }: TransactionPairItemProp
         </div>
       </div>
       <div className="flex justify-between text-xs text-muted-foreground mt-1">
-  <span>Miembro: {expense.real_payer_id ?? 'N/A'}</span>
-        <span>Fecha: {new Date(expense.occurred_at).toLocaleDateString('es-ES')}</span>
+        <span>Miembro: {expense.real_payer_id ?? 'N/A'}</span>
+        {(() => {
+          const src = expense.performed_at || expense.occurred_at;
+          const d = new Date(src as string);
+          return (
+            <span>
+              Fecha: {d.toLocaleDateString('es-ES')}
+              {expense.performed_at && (
+                <span className="ml-1">{d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+              )}
+            </span>
+          );
+        })()}
       </div>
     </div>
   );

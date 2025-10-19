@@ -29,6 +29,7 @@ interface Transaction {
   amount: number;
   description?: string;
   occurred_at: string;
+  performed_at?: string | null;
   category_id?: string;
   profile_id?: string;
   real_payer_id?: string;
@@ -594,15 +595,20 @@ export default function BalancePage() {
                     </div>
                     <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                       <span>
-                        {new Date(tx.occurred_at).toLocaleDateString('es-ES', {
-                          day: '2-digit', month: '2-digit', year: 'numeric'
-                        })}
-                        {' '}
-                        <span className="ml-1 text-[11px] text-muted-foreground">
-                          {new Date(tx.occurred_at).toLocaleTimeString('es-ES', {
-                            hour: '2-digit', minute: '2-digit'
-                          })}
-                        </span>
+                        {(() => {
+                          const src = tx.performed_at || tx.occurred_at;
+                          const d = new Date(src as string);
+                          return (
+                            <>
+                              {d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              {tx.performed_at && (
+                                <span className="ml-1 text-[11px] text-muted-foreground">
+                                  {d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </span>
                       {tx.category_name && (
                         <>

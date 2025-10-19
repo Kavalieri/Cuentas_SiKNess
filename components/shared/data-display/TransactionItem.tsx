@@ -32,7 +32,9 @@ export function TransactionItem({
 }: TransactionItemProps) {
   const { formatPrivateCurrency } = usePrivateFormat();
   
-  const date = new Date(transaction.occurred_at);
+  // Preferir performed_at (fecha/hora real). Fallback a occurred_at (fecha contable)
+  const dateSrc = transaction.performed_at || transaction.occurred_at;
+  const date = new Date(dateSrc as string);
   const isIncome = transaction.type === 'income';
   
   const Icon = isIncome ? ArrowUpCircle : ArrowDownCircle;
@@ -50,7 +52,14 @@ export function TransactionItem({
               {transaction.description || 'Sin descripción'}
             </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+              <span>
+                {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                {transaction.performed_at && (
+                  <span className="ml-1 text-[10px]">
+                    {date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </span>
               {transaction.categories && (
                 <>
                   <span>•</span>
@@ -89,6 +98,11 @@ export function TransactionItem({
                     month: 'long', 
                     year: 'numeric' 
                   })}
+                  {transaction.performed_at && (
+                    <span className="ml-2 text-xs">
+                      {date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
                 </span>
                 {transaction.categories && (
                   <>

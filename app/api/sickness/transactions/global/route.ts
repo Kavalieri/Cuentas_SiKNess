@@ -68,6 +68,7 @@ export async function GET(req: NextRequest) {
         t.currency,
         t.description,
         t.occurred_at,
+        t.performed_at,
         t.flow_type,
         t.real_payer_id,
         c.name as category_name,

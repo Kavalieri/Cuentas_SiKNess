@@ -7,6 +7,17 @@ import { fail, ok } from '@/lib/result';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+// Helper para formatear errores de Postgres con detalles útiles sin filtrar SQL
+function formatPgError(error: unknown): string {
+  const err = error as { message?: string; detail?: string; hint?: string; code?: string } | undefined;
+  const parts: string[] = [];
+  if (err?.message) parts.push(err.message);
+  if (err?.detail) parts.push(err.detail);
+  if (err?.hint) parts.push(err.hint);
+  // Evitar mensajes vacíos
+  return parts.filter(Boolean).join(' - ') || 'Error en operación';
+}
+
 /**
  * Cierra un período mensual ejecutando la función SQL close_monthly_period
  * y revalida las rutas afectadas.
@@ -37,7 +48,7 @@ export async function closePeriod(periodId: string, notes?: string): Promise<Res
     return ok({ periodId: closedId });
   } catch (error) {
     console.error('[closePeriod] Error:', error);
-    return fail('Error en operación');
+    return fail(formatPgError(error));
   }
 }
 
@@ -119,7 +130,7 @@ export async function openPeriod(periodId: string): Promise<Result<{ periodId: s
     return ok({ periodId: id });
   } catch (error) {
     console.error('[openPeriod] Error:', error);
-    return fail('Error en operación');
+    return fail(formatPgError(error));
   }
 }
 
@@ -147,7 +158,7 @@ export async function startClosing(periodId: string, reason?: string): Promise<R
     return ok({ periodId: id });
   } catch (error) {
     console.error('[startClosing] Error:', error);
-    return fail('Error en operación');
+    return fail(formatPgError(error));
   }
 }
 
@@ -176,7 +187,7 @@ export async function reopenPeriod(periodId: string, reason?: string): Promise<R
     return ok({ periodId: id });
   } catch (error) {
     console.error('[reopenPeriod] Error:', error);
-    return fail('Error en operación');
+    return fail(formatPgError(error));
   }
 }
 

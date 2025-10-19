@@ -129,32 +129,36 @@ export async function POST(req: NextRequest) {
       }
     };
 
+    // Tipado flexible de la fila devuelta por PG
     type PeriodRow = {
-      id: string;
-      year: number | string;
-      month: number | string;
-      opening_balance: number | string | null;
-      closing_balance: number | string | null;
-      total_income: number | string | null;
-      total_expenses: number | string | null;
-      created_at: string;
-      phase?: string | null;
-      status?: string | null;
+      id: unknown;
+      year: unknown;
+      month: unknown;
+      opening_balance: unknown;
+      closing_balance: unknown;
+      total_income: unknown;
+      total_expenses: unknown;
+      created_at: unknown;
+      phase?: unknown;
+      status?: unknown;
     };
 
-    const periods = periodsRes.rows.map((row: PeriodRow) => {
-      const phaseValue: string = hasPhase ? row.phase : legacyStatusToPhase(row.status);
+    const periods = periodsRes.rows.map((r) => {
+      const row = r as PeriodRow;
+      const phaseValue: string = hasPhase
+        ? (row.phase as string | null | undefined) ?? 'preparing'
+        : legacyStatusToPhase(row.status as string | null | undefined);
       return {
-        id: row.id as string,
+        id: String(row.id),
         year: Number(row.year),
         month: Number(row.month),
         phase: phaseValue ?? 'unknown',
-        openingBalance: toNumber(row.opening_balance),
-        closingBalance: toNumber(row.closing_balance),
+        openingBalance: toNumber(row.opening_balance as number | string | null | undefined),
+        closingBalance: toNumber(row.closing_balance as number | string | null | undefined),
         isCurrent: (phaseValue === 'active') || (Number(row.year) === currentYear && Number(row.month) === currentMonth),
         // Extras para currentPeriod (no usados por el listado, pero útiles luego)
-        totalIncome: toNumber(row.total_income),
-        totalExpenses: toNumber(row.total_expenses),
+        totalIncome: toNumber(row.total_income as number | string | null | undefined),
+        totalExpenses: toNumber(row.total_expenses as number | string | null | undefined),
       };
     });
 

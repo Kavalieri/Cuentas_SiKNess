@@ -15,6 +15,7 @@ export type CombinedMemberContribution = {
   expected_amount?: number | null;
   paid_amount?: number | null;
   pending_amount?: number | null;
+  overpaid_amount?: number | null;
   status?: string | null;
   calculation_method?: string | null;
 };
@@ -97,8 +98,10 @@ export function ContributionsOverview({
               (contrib.expected_amount ?? contrib.expected_after_direct ?? expectedBase - direct) ?? 0,
             );
             const paid = Number(contrib.paid_amount ?? 0);
-            const pending = Math.max(0, expected - paid);
+            const pending = Number(contrib.pending_amount ?? Math.max(0, expected - paid));
+            const overpaid = Number(contrib.overpaid_amount ?? 0);
             const isPaid = pending <= 0.000001; // tolerancia flotante
+            const isOverpaid = overpaid > 0.000001;
             const percent = Math.round(((contrib.share_percent ?? 0) as number) * 100);
 
             return (
@@ -136,7 +139,11 @@ export function ContributionsOverview({
                   <div className="text-muted-foreground">
                     Pagado: {formatCurrency(paid, privacyMode)}
                   </div>
-                  {isPaid ? (
+                  {isOverpaid ? (
+                    <div className="flex items-center gap-1 text-blue-600 font-medium">
+                      <CheckCircle className="h-4 w-4" /> Pagado de más: {formatCurrency(overpaid, privacyMode)}
+                    </div>
+                  ) : isPaid ? (
                     <div className="flex items-center gap-1 text-green-600 font-medium">
                       <CheckCircle className="h-4 w-4" /> Al día
                     </div>

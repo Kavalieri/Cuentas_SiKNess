@@ -9,6 +9,7 @@ interface EditDirectExpenseButtonProps {
     description?: string;
     category_id?: string;
     occurred_at?: string;
+    performed_at?: string | null;
   };
   householdId?: string;
   onSuccess?: () => void;
@@ -22,7 +23,10 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, categories
       amount: tx.amount,
       description: tx.description || '',
       categoryId: tx.category_id || '',
-      occurredAt: tx.occurred_at ? tx.occurred_at.slice(0, 10) : '',
+      // Prefill desde performed_at si disponible; fallback a occurred_at
+      occurredAt: tx.performed_at
+        ? tx.performed_at.slice(0, 16)
+        : (tx.occurred_at ? (tx.occurred_at.length > 10 ? tx.occurred_at.slice(0, 16) : `${tx.occurred_at}T00:00`) : ''),
     },
   });
 
@@ -88,9 +92,9 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, categories
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium">Fecha</label>
+              <label className="block text-sm font-medium">Fecha y hora</label>
               <input
-                type="date"
+                type="datetime-local"
                 {...register('occurredAt', { required: true })}
                 className="border rounded px-2 py-1 w-full"
               />

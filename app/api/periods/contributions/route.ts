@@ -170,6 +170,26 @@ export async function GET(req: NextRequest) {
   const currentPhase = period.phase ?? 'unknown'; // 'preparing' | 'validation' | 'active' | 'closing' | 'closed' | 'unknown'
     const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase === 'active';
 
+    // Sumar ingresos realizados por miembro en el periodo (flujo común y directo ingresos)
+  const incomesAgg = await query<{ profile_id: string | null; total: string }>(
+      `
+        SELECT profile_id, SUM(CASE WHEN type IN ('income','income_direct') THEN amount ELSE 0 END)::numeric::text AS total
+        FROM transactions
+        WHERE household_id = $1
+          AND (type = 'income' OR type = 'income_direct')
+          AND (
+            period_id = $2
+            OR (period_id IS NULL AND occurred_at >= $3 AND occurred_at < $4)
+          )
+        GROUP BY profile_id
+      `,
+      [householdId, period.id, startDate, endDate]
+    );
+    const incomesMap = new Map<string, number>();
+    for (const r of incomesAgg.rows) {
+      if (r.profile_id) incomesMap.set(r.profile_id, Number(r.total));
+    }
+
     // Ensamblar respuesta enriquecida por miembro (incluir a todos los miembros)
     const enriched = members.map((m) => {
       const income = incomeMap.get(m.profile_id) ?? 0;
@@ -185,8 +205,15 @@ export async function GET(req: NextRequest) {
       // - Sumamos directExpenses al "paid" cuando la fase sea 'validation' o 'active'
       // Esto hace que el pendiente (expected - paid) se reduzca por los gastos directos en fase 2+,
       // sin restarlo también desde expected.
-      const paid = Number(existing?.paid_amount ?? 0) + (shouldCountDirectAsPaid ? directExpenses : 0);
+      // paid base = lo registrado en contributions
+      // Si fase activa/validación: sumar gastos directos como aportación implícita (reduce pendiente)
+      // y sumar ingresos realizados por el miembro en el periodo (aportaciones explícitas a la cuenta común)
+      const paidDirect = shouldCountDirectAsPaid ? directExpenses : 0;
+      const paidIncomes = shouldCountDirectAsPaid ? (incomesMap.get(m.profile_id) ?? 0) : 0;
+      const paid = Number(existing?.paid_amount ?? 0) + paidDirect + paidIncomes;
       const finalExpected = existing?.expected_amount ?? baseExpected;
+      const pending = Math.max(0, (finalExpected ?? 0) - paid);
+      const overpaid = Math.max(0, paid - (finalExpected ?? 0));
       return {
         profile_id: m.profile_id,
         email: m.email,
@@ -197,7 +224,8 @@ export async function GET(req: NextRequest) {
         expected_amount: finalExpected,
         expected_after_direct: expectedAfterDirect,
         paid_amount: paid,
-        pending_amount: Math.max(0, (finalExpected ?? 0) - paid),
+        pending_amount: pending,
+        overpaid_amount: overpaid,
         status: existing?.status ?? 'pending',
         calculation_method: existing?.calculation_method ?? calculationType,
       };
