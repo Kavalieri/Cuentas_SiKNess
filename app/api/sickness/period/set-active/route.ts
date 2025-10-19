@@ -17,22 +17,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'periodId requerido' }, { status: 400 });
     }
 
-    // Obtener información del periodo
-    const periodResult = await query(
+    // Detectar compatibilidad de esquema: ¿existe columna phase?
+    const hasPhaseResult = await query(
       `
-      SELECT
-        id,
-        household_id,
-        year,
-        month,
-        status,
-        opening_balance,
-        closing_balance,
-        total_income,
-        total_expenses
-      FROM monthly_periods
-      WHERE id = $1
-    `,
+        SELECT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'monthly_periods'
+            AND column_name = 'phase'
+        ) AS has_phase
+      `,
+    );
+
+    const hasPhase: boolean = Boolean(hasPhaseResult.rows?.[0]?.has_phase);
+
+    // Obtener información del periodo (incluyendo phase si existe)
+    const periodResult = await query(
+      hasPhase
+        ? `
+          SELECT
+            id,
+            household_id,
+            year,
+            month,
+            phase,
+            opening_balance,
+            closing_balance,
+            total_income,
+            total_expenses
+          FROM monthly_periods
+          WHERE id = $1
+        `
+        : `
+          SELECT
+            id,
+            household_id,
+            year,
+            month,
+            status,
+            opening_balance,
+            closing_balance,
+            total_income,
+            total_expenses
+          FROM monthly_periods
+          WHERE id = $1
+        `,
       [periodId],
     );
 
@@ -55,6 +85,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No tienes acceso a este periodo' }, { status: 403 });
     }
 
+    // Mapear status legacy → phase cuando phase no exista aún en el esquema
+    const legacyStatusToPhase = (status?: string | null): string => {
+      switch ((status || '').toLowerCase()) {
+        case 'open':
+          return 'active';
+        case 'pending_close':
+          return 'closing';
+        case 'closed':
+          return 'closed';
+        case 'setup':
+        case 'preparing':
+          return 'preparing';
+        case 'locked':
+        case 'validation':
+          return 'validation';
+        default:
+          return 'preparing';
+      }
+    };
+
     const period = p
       ? {
           id: p.id,
@@ -62,7 +112,7 @@ export async function POST(req: NextRequest) {
           year: p.year,
           month: p.month,
           day: 1,
-          phase: p.phase ?? 'unknown',
+          phase: hasPhase ? (p.phase ?? 'preparing') : legacyStatusToPhase(p.status),
           openingBalance: toNumber(p.opening_balance),
           closingBalance: toNumber(p.closing_balance),
           totalIncome: toNumber(p.total_income),
