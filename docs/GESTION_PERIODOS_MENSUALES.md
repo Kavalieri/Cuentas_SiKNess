@@ -58,27 +58,30 @@ Todos los demás están vacíos (phase='preparing', 0 transacciones, 0 contribuc
        │ Usuario selecciona mes/año → Diálogo confirmación → Crear
        ▼
 ┌─────────────┐
-│  'preparing'│  ← FASE 1: Configuración inicial
-│             │    - Configurar ingresos de miembros
-│             │    - Seleccionar método de cálculo (proporcional/igual/personalizado)
-│             │    - [OPCIONAL] Anular sistema de contribución → Saldar a 0€
-│             │    - [OPCIONAL] Solo gastos directos sin contribución obligatoria
+│  'preparing'│  ← FASE 1: Validación de requisitos (Checklist)
+│             │    - Verificar: Todos los miembros indicaron ingresos
+│             │    - Verificar: Objetivo común configurado (en Gestión del Hogar)
+│             │    - Verificar: Método de cálculo definido (en Gestión del Hogar)
+│             │    - [NUEVO] Checkbox: "Ignorar sistema de contribuciones"
+│             │    - Botón: "Bloquear para Validación" (sin cambios)
 └──────┬──────┘
-       │ Owner → "Calcular Contribuciones" (avanza a Fase 2)
-       │ [Si anulado: Contribuciones = 0€ para todos los miembros]
+       │ Owner → "Bloquear para Validación"
+       │ [Si normal: Bloquea ingresos/objetivo, avanza a 'validation']
+       │ [Si ignorado: NO bloquea, todos saldados a 0€, avanza a 'validation']
        ▼
 ┌─────────────┐
 │ 'validation'│  ← FASE 2: Validación de aportaciones
 │             │    - Miembros realizan aportaciones (pagos comunes)
 │             │    - Gastos directos cuentan como contribución implícita
 │             │    - Owner valida que todos hayan aportado su parte
+│             │    [Si ignorado: Todos ya saldados, pasa directamente]
 └──────┬──────┘
-       │ Owner → "Bloquear Período" (no más cambios de configuración)
+       │ Owner → "Iniciar Período" (desbloquea operativa)
        ▼
 ┌─────────────┐
 │   'active'  │  ← FASE 3: Operativa mensual
 │             │    - Registro de gastos/ingresos comunes
-│             │    - Registro de gastos directos (cuentan automáticamente)
+│             │    - Registro de gastos directos
 │             │    - Visualización de balances en tiempo real
 └──────┬──────┘
        │ Owner → "Cerrar Período" (fin de mes, reconciliación)
@@ -108,70 +111,87 @@ Todos los demás están vacíos (phase='preparing', 0 transacciones, 0 contribuc
     'closed'
 ```
 
-### FASE 1 ('preparing') - Configuración Inicial - DETALLES
+### FASE 1 ('preparing') - Validación Inicial - DETALLES
 
-**Tarjeta UI de Configuración**:
+**Tarjeta de Validación (Checklist) - SIN CAMBIOS EN LA LÓGICA EXISTENTE**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ 📋 Configuración del Período: [mes/año]                     │
+│ ✅ Validación del Período: [mes/año]                        │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│ 👥 Ingresos de Miembros                                     │
-│ ├─ Oscar: 1,500€ [Editar]                                   │
-│ └─ getrecek: 1,150€ [Editar]                                │
+│ � Checklist de Requisitos                                  │
 │                                                              │
-│ 🧮 Método de Cálculo de Contribuciones                      │
-│ ○ Proporcional a ingresos (recomendado)                    │
-│ ○ Iguales para todos                                        │
-│ ○ Personalizado                                             │
+│ ✅ Todos los miembros han indicado sus ingresos            │
+│    ├─ Oscar: 1,500€                                         │
+│    └─ getrecek: 1,150€                                      │
 │                                                              │
-│ ⚙️ Opciones Avanzadas                                       │
+│ ✅ Objetivo común configurado: 1,200€/mes                   │
+│    (Se configura en Menú → Gestión del Hogar)              │
+│                                                              │
+│ ✅ Método de cálculo definido: Proporcional a ingresos     │
+│    (Se configura en Menú → Gestión del Hogar)              │
+│                                                              │
+│ ⚠️ [NUEVO] Opciones del Período                            │
 │ ┌───────────────────────────────────────────────────────┐  │
-│ │ ☑️ Anular sistema de contribución obligatoria         │  │
+│ │ ☐ Ignorar sistema de contribuciones                   │  │
 │ │                                                        │  │
-│ │ ⚠️ Al activar esta opción:                            │  │
-│ │ • NO se calcularán contribuciones esperadas           │  │
-│ │ • Todos los miembros quedarán SALDADOS a 0€          │  │
-│ │ • Solo se registrarán gastos directos                 │  │
-│ │ • Útil para meses pasados sin cálculo de contribución│  │
+│ │ Útil para meses pasados donde NO se hizo ingreso     │  │
+│ │ común y todo se gestionó con gastos directos.        │  │
 │ │                                                        │  │
-│ │ Caso de uso: Importar gastos de meses previos        │  │
-│ │ sin obligación de contribución retroactiva            │  │
+│ │ ⚠️ Al activar:                                        │  │
+│ │ • Se ignora la checklist de contribuciones           │  │
+│ │ • Todos los miembros quedan SALDADOS a 0€           │  │
+│ │ • Solo se registrarán gastos directos                │  │
+│ │ • NO se bloquean ingresos ni objetivo                │  │
 │ └───────────────────────────────────────────────────────┘  │
 │                                                              │
-│ [Guardar Configuración]  [Calcular Contribuciones →]       │
+│ [Bloquear para Validación →]                                │
+│ (Sin cambios - botón actual)                                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Comportamiento con "Anular contribución"**:
-- ✅ Checkbox activo → `contribution_disabled = true` en `monthly_periods`
-- ✅ Al calcular contribuciones:
-  - Si `contribution_disabled = true` → Crear registros en `contributions` con `expected_amount = 0`
-  - Todos los miembros aparecen como "Saldado (0€)"
-- ✅ Gastos directos se registran normalmente, pero NO afectan balance de contribución
-- ✅ Ideal para meses pasados con gastos pero sin obligación de contribución
+**Comportamiento del botón "Bloquear para Validación"**:
 
-**Casos de uso**:
-1. **Importar datos históricos**: Meses pasados con gastos pero sin contribución calculada
-2. **Meses de transición**: Primer mes del hogar, solo registro de gastos sin obligación
-3. **Meses excepcionales**: Vacaciones, mudanzas, etc. donde no aplica contribución normal
+**A) Flujo NORMAL (checkbox NO marcado)**:
+1. ✅ Valida que todos los requisitos de checklist estén cumplidos
+2. ✅ Bloquea ingresos personales de miembros para este período
+3. ✅ Bloquea objetivo común del hogar para este período
+4. ✅ Avanza a fase 'validation' (Fase 2)
+5. ✅ Contribuciones ya están calculadas según método configurado
 
-### Fases y Sus Características (ACTUALIZADO)
+**B) Flujo CON "Ignorar contribuciones" (checkbox SÍ marcado)**:
+1. ✅ Ignora validación de checklist (no se requieren ingresos/objetivo)
+2. ✅ NO bloquea nada (no hay valores que bloquear)
+3. ✅ Crea contribuciones con `expected_amount = 0€` para todos
+4. ✅ Avanza a fase 'validation' (o directamente a 'active')
+5. ✅ Todos aparecen como "Saldado (0€)"
 
-| Fase | Crear Trans. | Editar Config. | Calcular Contrib. | Anular Contrib. | Descripción |
-|------|--------------|----------------|-------------------|-----------------|-------------|
-| `preparing` | ❌ No | ✅ Sí | ❌ No (pendiente) | ✅ Sí | Solo configuración inicial + opción anular |
-| `validation` | ⚠️ Solo Owner | ⚠️ Solo ingresos | ✅ Sí (ya calculadas) | ❌ No | Miembros aportan su parte |
-| `active` | ✅ Sí | ❌ No | ❌ No | ❌ No | Operativa mensual |
-| `closing` | ❌ No | ❌ No | ❌ No | ❌ No | Reconciliación automática |
-| `closed` | ❌ No | ❌ No | ❌ No | ❌ No | Solo lectura |
-| `reopened` | ✅ Sí | ⚠️ Limitado | ⚠️ Recalcular | ⚠️ Limitado | Correcciones excepcionales |
+**Campo de BD**: 
+- `monthly_periods.contribution_disabled = true` cuando checkbox marcado
+- Este campo se lee al calcular balances para determinar si gastos directos afectan o no
+
+**Casos de uso para "Ignorar contribuciones"**:
+1. **Meses pasados**: Importar gastos de meses previos sin obligación retroactiva
+2. **Primer mes**: Hogar nuevo que solo registra gastos sin sistema de aportación aún
+3. **Meses excepcionales**: Situaciones donde no aplica el sistema normal de contribución
+
+### Fases y Sus Características (CORREGIDO - Mantiene lógica existente)
+
+| Fase | Crear Trans. | Editar Ingresos | Validar Checklist | Ignorar Contrib. | Descripción |
+|------|--------------|-----------------|-------------------|------------------|-------------|
+| `preparing` | ❌ No | ✅ Sí | ✅ Sí | ✅ Sí | Validación de requisitos (checklist) + opción ignorar |
+| `validation` | ⚠️ Solo Owner | ❌ Bloqueados | ❌ Ya validado | ❌ No | Miembros aportan su parte |
+| `active` | ✅ Sí | ❌ Bloqueados | ❌ No aplica | ❌ No | Operativa mensual |
+| `closing` | ❌ No | ❌ Bloqueados | ❌ No aplica | ❌ No | Reconciliación automática |
+| `closed` | ❌ No | ❌ Bloqueados | ❌ No aplica | ❌ No | Solo lectura |
+| `reopened` | ✅ Sí | ⚠️ Limitado | ⚠️ Recalcular | ❌ No | Correcciones excepcionales |
 
 **Notas importantes**:
-- **Anular contribución**: Solo disponible en fase `'preparing'` antes de calcular
-- **Gastos directos sin contribución**: Cuando `contribution_disabled = true`, gastos directos se registran pero NO afectan balance
-- **Meses pasados**: Pueden crearse con contribución anulada para importar datos históricos sin obligación retroactiva
+- **Bloqueo de valores**: Al pasar de 'preparing' a 'validation', se bloquean ingresos personales y objetivo del hogar PARA ESE PERÍODO
+- **Ignorar contribución**: Solo disponible en fase `'preparing'`, marcando checkbox ANTES de "Bloquear para Validación"
+- **Checklist**: La tarjeta de validación verifica que los datos existen en Gestión del Hogar (NO los crea ni los edita)
+- **Método y objetivo**: Se configuran en Menú → Gestión del Hogar, NO en la tarjeta del período
 
 ---
 
@@ -275,8 +295,8 @@ export async function createPeriodWithCategories(
   // 1. Crear período en fase 'preparing'
   const periodResult = await query<{ id: string }>(
     `INSERT INTO monthly_periods (
-      household_id, year, month, 
-      status, phase, 
+      household_id, year, month,
+      status, phase,
       opening_balance, closing_balance,
       contribution_disabled
     )
@@ -377,7 +397,7 @@ export function PeriodSelector({ currentPeriod, onPeriodChange }) {
           <DialogHeader>
             <DialogTitle>Crear Nuevo Período</DialogTitle>
           </DialogHeader>
-          
+
           <p>
             No existe un período para <strong>{selectedDate?.month}/{selectedDate?.year}</strong>.
           </p>
@@ -410,61 +430,131 @@ export function PeriodSelector({ currentPeriod, onPeriodChange }) {
 }
 ```
 
-### 4. Cálculo de Contribuciones con Anulación
+### 4. Lógica de "Bloquear para Validación" (Sin cambios en botón/lógica existente)
 
 ```typescript
-// lib/contributions/calculate.ts
+// app/sickness/periodos/actions.ts
 
-export async function calculateContributions(
-  householdId: string,
-  year: number,
-  month: number
+export async function blockPeriodForValidation(
+  periodId: string,
+  options?: {
+    ignore_contributions?: boolean; // NUEVO: Checkbox "Ignorar contribuciones"
+  }
 ): Promise<Result> {
-  // 1. Verificar si el período tiene contribución anulada
-  const periodResult = await query<{ contribution_disabled: boolean }>(
-    `SELECT contribution_disabled FROM monthly_periods
-     WHERE household_id = $1 AND year = $2 AND month = $3`,
-    [householdId, year, month]
+  // 1. Obtener período
+  const periodResult = await query<{ household_id: string; year: number; month: number }>(
+    `SELECT household_id, year, month FROM monthly_periods WHERE id = $1`,
+    [periodId]
   );
 
   if (!periodResult.rows[0]) {
     return fail('Período no encontrado');
   }
 
-  const contributionDisabled = periodResult.rows[0].contribution_disabled;
+  const { household_id, year, month } = periodResult.rows[0];
 
-  // 2. Obtener configuración del hogar
-  const settings = await getHouseholdSettings(householdId);
-  const members = await getHouseholdMembers(householdId);
-
-  // 3. Calcular contribuciones
-  for (const member of members) {
-    let expectedAmount = 0;
-
-    if (!contributionDisabled) {
-      // Cálculo normal según método configurado
-      if (settings.calculation_type === 'proportional') {
-        const memberIncome = await getMemberIncome(householdId, member.profile_id);
-        const totalIncome = members.reduce((sum, m) => sum + m.income, 0);
-        expectedAmount = (settings.monthly_contribution_goal * memberIncome) / totalIncome;
-      } else if (settings.calculation_type === 'equal') {
-        expectedAmount = settings.monthly_contribution_goal / members.length;
-      }
-      // ... otros métodos
-    }
-    // Si contributionDisabled = true, expectedAmount queda en 0
-
-    // 4. Insertar/actualizar contribución
+  if (options?.ignore_contributions) {
+    // FLUJO B: Ignorar sistema de contribuciones
+    // NO se valida checklist, NO se bloquean valores
+    
+    // 1. Marcar período como contribution_disabled
     await query(
-      `INSERT INTO contributions (
-        household_id, profile_id, year, month,
-        expected_amount, paid_amount, status
-      )
-      VALUES ($1, $2, $3, $4, $5, 0, 'pending')
-      ON CONFLICT (household_id, profile_id, year, month)
-      DO UPDATE SET expected_amount = $5`,
-      [householdId, member.profile_id, year, month, expectedAmount]
+      `UPDATE monthly_periods 
+       SET contribution_disabled = true, phase = 'validation'
+       WHERE id = $1`,
+      [periodId]
     );
+
+    // 2. Crear contribuciones con expected_amount = 0 para todos
+    const members = await getHouseholdMembers(household_id);
+    for (const member of members) {
+      await query(
+        `INSERT INTO contributions (
+          household_id, profile_id, year, month,
+          expected_amount, paid_amount, status
+        )
+        VALUES ($1, $2, $3, $4, 0, 0, 'completed')
+        ON CONFLICT (household_id, profile_id, year, month)
+        DO UPDATE SET expected_amount = 0, status = 'completed'`,
+        [household_id, member.profile_id, year, month]
+      );
+    }
+
+    return ok({ message: 'Período configurado sin sistema de contribuciones' });
+
+  } else {
+    // FLUJO A: Validación NORMAL (lógica existente, sin cambios)
+    
+    // 1. Validar checklist
+    const validation = await validatePeriodRequirements(household_id, year, month);
+    if (!validation.ok) {
+      return fail('Checklist incompleta: ' + validation.message);
+    }
+
+    // 2. Bloquear ingresos personales para este período
+    const members = await getHouseholdMembers(household_id);
+    for (const member of members) {
+      const income = await getCurrentIncome(household_id, member.profile_id);
+      await query(
+        `INSERT INTO member_incomes_snapshot (
+          household_id, profile_id, period_id, year, month, income_amount
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)`,
+        [household_id, member.profile_id, periodId, year, month, income]
+      );
+    }
+
+    // 3. Bloquear objetivo común para este período
+    const settings = await getHouseholdSettings(household_id);
+    await query(
+      `INSERT INTO household_goal_snapshot (
+        household_id, period_id, year, month, goal_amount, calculation_type
+      )
+      VALUES ($1, $2, $3, $4, $5, $6)`,
+      [household_id, periodId, year, month, settings.monthly_contribution_goal, settings.calculation_type]
+    );
+
+    // 4. Calcular contribuciones según método configurado
+    await calculateContributions(household_id, year, month);
+
+    // 5. Avanzar a fase 'validation'
+    await query(
+      `UPDATE monthly_periods SET phase = 'validation' WHERE id = $1`,
+      [periodId]
+    );
+
+    return ok({ message: 'Período bloqueado y listo para validación' });
+  }
+}
+
+// Función de validación de checklist (sin cambios)
+async function validatePeriodRequirements(
+  householdId: string,
+  year: number,
+  month: number
+): Promise<Result> {
+  // Verificar que todos los miembros tienen ingresos indicados
+  const membersWithoutIncome = await query(
+    `SELECT COUNT(*) as count
+     FROM household_members hm
+     LEFT JOIN member_incomes mi ON mi.profile_id = hm.profile_id AND mi.household_id = hm.household_id
+     WHERE hm.household_id = $1 AND mi.income_amount IS NULL`,
+    [householdId]
+  );
+
+  if (membersWithoutIncome.rows[0].count > 0) {
+    return fail('Todos los miembros deben indicar sus ingresos');
+  }
+
+  // Verificar que existe objetivo común configurado
+  const settings = await getHouseholdSettings(householdId);
+  if (!settings.monthly_contribution_goal || settings.monthly_contribution_goal <= 0) {
+    return fail('Debe configurar el objetivo común en Gestión del Hogar');
+  }
+
+  // Verificar que existe método de cálculo definido
+  if (!settings.calculation_type) {
+    return fail('Debe definir el método de cálculo en Gestión del Hogar');
   }
 
   return ok();
@@ -558,13 +648,15 @@ WHERE id IN (
 - [ ] Asegurar recarga completa de UI tras cambio de período (key o router.refresh())
 - [ ] Añadir indicadores visuales de fase del período en selector
 
-### Fase 4: UI de Configuración - Fase 'preparing' 🔧
-- [ ] Crear página `/app/sickness/periodos/[id]/configurar`
-- [ ] Tarjeta de configuración de ingresos de miembros
-- [ ] Selector de método de cálculo (proporcional/igual/personalizado)
-- [ ] **Checkbox "Anular contribución obligatoria"** con explicación
-- [ ] Botón "Calcular Contribuciones" → Avanza a fase 'validation'
-- [ ] Validación: Solo owner puede acceder y configurar
+### Fase 4: UI de Validación - Fase 'preparing' 🔧
+- [ ] **MANTENER** tarjeta actual de validación (checklist)
+- [ ] **AÑADIR** checkbox "☐ Ignorar sistema de contribuciones"
+- [ ] **AÑADIR** texto explicativo bajo checkbox (caso de uso meses pasados)
+- [ ] **MANTENER** botón "Bloquear para Validación" (sin cambios)
+- [ ] **MODIFICAR** lógica del botón para soportar opción ignorar:
+  - Sin checkbox: Valida checklist → Bloquea valores → Calcula → Avanza
+  - Con checkbox: Ignora checklist → NO bloquea → Contribuciones = 0€ → Avanza
+- [ ] Validación: Solo owner puede acceder y bloquear
 
 ### Fase 5: Testing y Documentación 📚
 - [ ] Tests E2E del flujo completo:
@@ -591,7 +683,10 @@ WHERE id IN (
 - [ ] ✅ Todos los períodos nuevos se crean en fase `'preparing'`
 - [ ] ✅ Categorías base se copian automáticamente al crear período
 - [ ] ✅ Selector recarga UI completamente tras crear período
-- [ ] ✅ Checkbox de anulación de contribución funcional en fase `'preparing'`
+- [ ] ✅ Checkbox de "Ignorar contribuciones" funcional en fase `'preparing'`
+- [ ] ✅ Botón "Bloquear para Validación" mantiene nombre y comportamiento base
+- [ ] ✅ Flujo normal (sin checkbox): Valida checklist → Bloquea ingresos/objetivo → Calcula contribuciones
+- [ ] ✅ Flujo ignorar (con checkbox): Salta validación → NO bloquea → Contribuciones = 0€
 - [ ] ✅ Contribuciones con `expected_amount = 0` cuando anuladas
 - [ ] ✅ Balance muestra "Saldado (0€)" para todos con contribución anulada
 - [ ] ✅ Gastos directos se registran normalmente incluso con contribución anulada
