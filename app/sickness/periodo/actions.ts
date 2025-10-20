@@ -56,7 +56,10 @@ export async function closePeriod(periodId: string, notes?: string): Promise<Res
  * Pasa el período a fase 'validation' (bloquea cálculo de contribuciones)
  * La función SQL requiere 3 parámetros: (household_id, period_id, locked_by)
  */
-export async function lockPeriod(periodId: string): Promise<Result<{ periodId: string }>> {
+export async function lockPeriod(
+  periodId: string,
+  contributionDisabled = false,
+): Promise<Result<{ periodId: string }>> {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -85,6 +88,42 @@ export async function lockPeriod(periodId: string): Promise<Result<{ periodId: s
       return fail(`Fase actual no permite bloqueo: ${currentPhase}`);
     }
 
+    // Si se ignora el sistema de contribuciones, actualizar el campo y saltar validaciones
+    if (contributionDisabled) {
+      await query(
+        `UPDATE monthly_periods
+         SET contribution_disabled = TRUE,
+             phase = 'validation',
+             updated_at = NOW()
+         WHERE id = $1 AND household_id = $2`,
+        [periodId, householdId],
+      );
+
+      // Crear contribuciones automáticamente a 0€ para todos los miembros
+      await query(
+        `INSERT INTO contributions (household_id, profile_id, year, month, expected_amount, paid_amount, status)
+         SELECT $1, hm.profile_id, mp.year, mp.month, 0, 0, 'paid'
+         FROM monthly_periods mp
+         CROSS JOIN household_members hm
+         WHERE mp.id = $2
+           AND mp.household_id = $1
+           AND hm.household_id = $1
+         ON CONFLICT (household_id, profile_id, year, month)
+         DO UPDATE SET
+           expected_amount = 0,
+           paid_amount = 0,
+           status = 'paid',
+           updated_at = NOW()`,
+        [householdId, periodId],
+      );
+
+      revalidatePath('/sickness');
+      revalidatePath('/sickness/periodo');
+      revalidatePath('/sickness/credito-deuda');
+      return ok({ periodId });
+    }
+
+    // Flujo normal: validación completa de contribuciones
     // Llamar función SQL con los 3 parámetros requeridos
     const { rows } = await query(
       `SELECT lock_contributions_period($1, $2, $3) AS locked`,

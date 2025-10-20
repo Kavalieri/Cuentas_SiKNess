@@ -15,6 +15,7 @@ export interface PhaseCardProps {
   checklist?: { label: string; done: boolean }[];
   actions?: { label: string; onClick: () => void; variant?: string; disabled?: boolean }[];
   className?: string;
+  children?: React.ReactNode;
 }
 
 export function PhaseCard({
@@ -26,6 +27,7 @@ export function PhaseCard({
   checklist,
   actions,
   className,
+  children,
 }: PhaseCardProps) {
   // Color y estado visual según status
   let borderColor = "border-muted";
@@ -98,22 +100,33 @@ export function PhaseCard({
           {statusLabel}
         </Badge>
       </CardHeader>
+
       {checklist && checklist.length > 0 && (
-        <CardContent className="py-2">
-          <ul className="space-y-1">
+        <CardContent>
+          <ul className="space-y-2">
             {checklist.map((item, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm">
+              <li key={i} className="flex items-center space-x-2 text-sm">
                 {item.done ? (
-                  <CheckCircle className="text-green-500" size={16} />
+                  <CheckCircle className="h-4 w-4 text-green-600" />
                 ) : (
-                  <span className="inline-block w-4 h-4 rounded-full border border-muted-foreground" />
+                  <div className="h-4 w-4 rounded-full border-2 border-gray-400" />
                 )}
-                <span className={item.done ? "line-through text-muted-foreground" : ""}>{item.label}</span>
+                <span className={item.done ? "text-muted-foreground" : ""}>
+                  {item.label}
+                </span>
               </li>
             ))}
           </ul>
         </CardContent>
       )}
+
+      {/* Contenido personalizado opcional (ej: checkboxes, formularios) */}
+      {children && (
+        <CardContent className="py-3 border-t">
+          {children}
+        </CardContent>
+      )}
+
       {actions && actions.length > 0 && (
         <CardFooter className="mt-auto flex flex-row gap-2 pt-2">
           {actions.map((action, i) => (

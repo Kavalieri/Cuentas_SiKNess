@@ -3,6 +3,7 @@
 import { ContributionsOverview, type CombinedMemberContribution } from '@/components/periodo/ContributionsOverview';
 import { PhaseCard } from '@/components/periodo/PhaseCard';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarCheck2, Lock, Rocket, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -88,6 +89,7 @@ export default function PeriodosYContribucionPage() {
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState('');
   const [reason, setReason] = useState('');
+  const [ignoreContributions, setIgnoreContributions] = useState(false);
 
   // Reconsultar checklist cuando cambie el hogar o el periodo seleccionado
   useEffect(() => {
@@ -182,7 +184,10 @@ export default function PeriodosYContribucionPage() {
       const res = await fetch('/api/periods/lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ periodId: data.periodId }),
+        body: JSON.stringify({ 
+          periodId: data.periodId,
+          contribution_disabled: ignoreContributions,
+        }),
       });
       const json = await res.json();
       if (json.ok) {
@@ -359,7 +364,30 @@ export default function PeriodosYContribucionPage() {
                 }]
               : []),
           ]}
-        />
+        >
+          {data?.phase === 'preparing' && (
+            <div className="mt-4 flex items-start space-x-2 p-3 bg-muted/50 rounded-md">
+              <Checkbox
+                id="ignore-contributions"
+                checked={ignoreContributions}
+                onCheckedChange={(checked) => setIgnoreContributions(checked === true)}
+                disabled={isPending}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="ignore-contributions"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Ignorar sistema de contribuciones
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  Útil para meses pasados donde no se hizo ingreso común y todo se manejó con gastos directos.
+                  Todos los miembros quedarán saldados automáticamente a 0€.
+                </p>
+              </div>
+            </div>
+          )}
+        </PhaseCard>
       </section>
 
       <section className="lg:col-span-8 mt-6">
