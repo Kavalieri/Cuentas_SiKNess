@@ -272,9 +272,11 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
     if (!selectedPeriod) {
       console.debug('[SiKnessContext] Period not found:', year, month);
+      console.debug('[SiKnessContext] onPeriodNotFound callback:', onPeriodNotFound ? 'EXISTS' : 'MISSING');
 
       // Si hay callback, delegamos la decisión al componente
       if (onPeriodNotFound) {
+        console.debug('[SiKnessContext] Calling onPeriodNotFound callback...');
         onPeriodNotFound(year, month);
         return;
       }

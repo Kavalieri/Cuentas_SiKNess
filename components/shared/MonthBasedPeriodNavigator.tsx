@@ -1,23 +1,24 @@
+// ARCHIVO ELIMINADO: Este selector ha sido migrado y ya no se usa.
 'use client';
 
-import { useState } from 'react';
+import { createPeriodWithCategories } from '@/app/dual-flow/periodos/actions';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { createPeriodWithCategories } from '@/app/dual-flow/periodos/actions';
 import { addMonths, subMonths } from 'date-fns';
 import { AlertCircle, CheckCircle, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 const MONTH_NAMES = [
@@ -69,6 +70,7 @@ const getPeriodStatusInfo = (status: string | null) => {
 };
 
 export function MonthBasedPeriodNavigator() {
+  console.log('🟢 [MonthBasedPeriodNavigator] COMPONENT RENDERED');
   const { periods, selectedPeriod, selectPeriod, householdId, refreshPeriods } = useSiKness();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [pendingPeriod, setPendingPeriod] = useState<{ year: number; month: number } | null>(null);
@@ -87,11 +89,17 @@ export function MonthBasedPeriodNavigator() {
   const statusInfo = getPeriodStatusInfo(currentPeriod?.status || null);
 
   const handleMonthChange = (year: number, month: number) => {
+    console.log('🔵 [MonthBasedPeriodNavigator] handleMonthChange called:', year, month);
     // Usar callback para detectar si el período no existe
     void selectPeriod(year, month, (y, m) => {
+      console.log('🔔 Period not found callback triggered:', y, m);
       // Si el período no existe, ofrecemos crearlo
-      setPendingPeriod({ year: y, month: m });
-      setShowCreateDialog(true);
+      // Usamos setTimeout para asegurar que el setState se ejecuta después del batch de React
+      setTimeout(() => {
+        setPendingPeriod({ year: y, month: m });
+        setShowCreateDialog(true);
+        console.log('✅ Dialog should be open now');
+      }, 0);
     });
   };
 

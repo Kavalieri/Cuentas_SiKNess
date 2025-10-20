@@ -9,7 +9,6 @@ import { useTheme } from 'next-themes';
 import { useState } from 'react';
 import { BurgerMenu } from './BurgerMenu';
 import { GlobalHouseholdSelector } from './GlobalHouseholdSelector';
-import { MonthBasedPeriodNavigator } from './MonthBasedPeriodNavigator';
 
 export function Topbar() {
   const { theme, setTheme } = useTheme();
@@ -48,7 +47,7 @@ export function Topbar() {
             <div className="hidden md:flex items-center gap-3">
               <GlobalHouseholdSelector />
               <div className="h-4 w-px bg-border" />
-              <MonthBasedPeriodNavigator />
+              {/* Selector de periodo duplicado eliminado: MonthBasedPeriodNavigator */}
             </div>
           </div>
 
