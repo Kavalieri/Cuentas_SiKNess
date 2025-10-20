@@ -49,6 +49,11 @@ export function SiKnessBurgerMenu() {
           label: 'Contribución y Periodos',
           href: '/sickness/periodo',
         },
+        {
+          icon: BarChart3, // O puedes usar BarChart2 si prefieres
+          label: 'Estadísticas',
+          href: '/sickness/statistics',
+        },
       ],
     },
     {
