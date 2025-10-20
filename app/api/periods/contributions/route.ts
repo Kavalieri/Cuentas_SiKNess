@@ -170,24 +170,28 @@ export async function GET(req: NextRequest) {
   const currentPhase = period.phase ?? 'unknown'; // 'preparing' | 'validation' | 'active' | 'closing' | 'closed' | 'unknown'
     const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase === 'active';
 
-    // Sumar ingresos realizados por miembro en el periodo (flujo común y directo ingresos)
-  const incomesAgg = await query<{ profile_id: string | null; total: string }>(
+    // Sumar aportaciones a la cuenta común por miembro en el período
+    // Regla: contar cualquier ingreso común del miembro, excepto "Pago Préstamo".
+    const commonIncomesAgg = await query<{ profile_id: string | null; total: string }>(
       `
-        SELECT profile_id, SUM(CASE WHEN type IN ('income','income_direct') THEN amount ELSE 0 END)::numeric::text AS total
-        FROM transactions
-        WHERE household_id = $1
-          AND (type = 'income' OR type = 'income_direct')
+        SELECT t.paid_by as profile_id, SUM(t.amount)::numeric::text AS total
+        FROM transactions t
+        LEFT JOIN categories c ON c.id = t.category_id
+        WHERE t.household_id = $1
+          AND t.type = 'income'
+          AND t.flow_type = 'common'
+          AND (c.name IS NULL OR c.name <> 'Pago Préstamo')
           AND (
-            period_id = $2
-            OR (period_id IS NULL AND occurred_at >= $3 AND occurred_at < $4)
+            t.period_id = $2
+            OR (t.period_id IS NULL AND t.occurred_at >= $3 AND t.occurred_at < $4)
           )
-        GROUP BY profile_id
+        GROUP BY t.paid_by
       `,
       [householdId, period.id, startDate, endDate]
     );
-    const incomesMap = new Map<string, number>();
-    for (const r of incomesAgg.rows) {
-      if (r.profile_id) incomesMap.set(r.profile_id, Number(r.total));
+    const commonIncomesMap = new Map<string, number>();
+    for (const r of commonIncomesAgg.rows) {
+      if (r.profile_id) commonIncomesMap.set(r.profile_id, Number(r.total));
     }
 
     // Ensamblar respuesta enriquecida por miembro (incluir a todos los miembros)
@@ -209,8 +213,9 @@ export async function GET(req: NextRequest) {
       // Si fase activa/validación: sumar gastos directos como aportación implícita (reduce pendiente)
       // y sumar ingresos realizados por el miembro en el periodo (aportaciones explícitas a la cuenta común)
       const paidDirect = shouldCountDirectAsPaid ? directExpenses : 0;
-      const paidIncomes = shouldCountDirectAsPaid ? (incomesMap.get(m.profile_id) ?? 0) : 0;
-      const paid = Number(existing?.paid_amount ?? 0) + paidDirect + paidIncomes;
+      const paidCommon = shouldCountDirectAsPaid ? (commonIncomesMap.get(m.profile_id) ?? 0) : 0;
+      // Evitamos usar contributions.paid_amount para no cruzar datos ni contar doble.
+      const paid = paidDirect + paidCommon;
       const finalExpected = existing?.expected_amount ?? baseExpected;
       const pending = Math.max(0, (finalExpected ?? 0) - paid);
       const overpaid = Math.max(0, paid - (finalExpected ?? 0));
@@ -221,6 +226,7 @@ export async function GET(req: NextRequest) {
         share_percent: sharePercent,
         base_expected: baseExpected,
         direct_expenses: directExpenses,
+        common_contributions: paidCommon,
         expected_amount: finalExpected,
         expected_after_direct: expectedAfterDirect,
         paid_amount: paid,

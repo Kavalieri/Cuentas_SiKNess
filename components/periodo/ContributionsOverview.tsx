@@ -11,6 +11,7 @@ export type CombinedMemberContribution = {
   share_percent?: number; // 0..1
   base_expected?: number;
   direct_expenses?: number;
+  common_contributions?: number; // ingresos a 'Aportación Cuenta Conjunta' (flow common)
   expected_after_direct?: number;
   expected_amount?: number | null;
   paid_amount?: number | null;
@@ -98,10 +99,12 @@ export function ContributionsOverview({
               (contrib.expected_amount ?? contrib.expected_after_direct ?? expectedBase - direct) ?? 0,
             );
             const paid = Number(contrib.paid_amount ?? 0);
-            const pending = Number(contrib.pending_amount ?? Math.max(0, expected - paid));
-            const overpaid = Number(contrib.overpaid_amount ?? 0);
-            const isPaid = pending <= 0.000001; // tolerancia flotante
-            const isOverpaid = overpaid > 0.000001;
+            const pendingRaw = Number(expected - paid);
+            const pendingCents = Math.round(pendingRaw * 100);
+            const isSettled = pendingCents <= 0; // alcanzado 100% o más (tolerancia de céntimo)
+            const pending = pendingCents > 0 ? pendingCents / 100 : 0;
+            const overpaidCents = Math.max(0, -pendingCents);
+            const overpaid = overpaidCents > 0 ? overpaidCents / 100 : 0;
             const percent = Math.round(((contrib.share_percent ?? 0) as number) * 100);
 
             return (
@@ -118,7 +121,7 @@ export function ContributionsOverview({
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mt-2">
                   <div className="flex flex-col">
-                    <span className="text-muted-foreground">Ingreso</span>
+                    <span className="text-muted-foreground">Ingreso (declarado)</span>
                     <span>{formatCurrency(Number(contrib.income ?? 0), privacyMode)}</span>
                   </div>
                   <div className="flex flex-col">
@@ -136,16 +139,18 @@ export function ContributionsOverview({
                 </div>
 
                 <div className="flex items-center justify-between mt-2 text-sm">
-                  <div className="text-muted-foreground">
-                    Pagado: {formatCurrency(paid, privacyMode)}
+                  <div className="text-muted-foreground flex flex-col">
+                    <span>Pagado total: {formatCurrency(paid, privacyMode)}</span>
+                    <span className="text-xs">Aportación común: {formatCurrency(Number(contrib.common_contributions ?? 0), privacyMode)}</span>
+                    {overpaid > 0 && (
+                      <span className="text-xs text-green-700 font-medium">
+                        A favor: +{formatCurrency(overpaid, privacyMode)}
+                      </span>
+                    )}
                   </div>
-                  {isOverpaid ? (
-                    <div className="flex items-center gap-1 text-blue-600 font-medium">
-                      <CheckCircle className="h-4 w-4" /> Pagado de más: {formatCurrency(overpaid, privacyMode)}
-                    </div>
-                  ) : isPaid ? (
+                  {isSettled ? (
                     <div className="flex items-center gap-1 text-green-600 font-medium">
-                      <CheckCircle className="h-4 w-4" /> Al día
+                      <CheckCircle className="h-4 w-4" /> Saldado
                     </div>
                   ) : (
                     <div className="flex items-center gap-1 text-orange-600 font-medium">

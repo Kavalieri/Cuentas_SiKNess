@@ -195,7 +195,7 @@ export async function GET(_request: NextRequest) {
          FROM transactions
          WHERE household_id = $1
          AND flow_type = 'direct'
-         AND type = 'expense'
+         AND type IN ('expense', 'expense_direct')
          AND EXTRACT(YEAR FROM occurred_at) = $2
          AND EXTRACT(MONTH FROM occurred_at) = $3`,
         [activeHouseholdId, currentPeriod.year, currentPeriod.month],

@@ -16,7 +16,9 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 // Importar componentes de esta carpeta
+import { DeleteCommonButton } from './DeleteCommonButton';
 import { DeleteDirectButton } from './DeleteDirectButton';
+import { EditCommonMovementButton } from './EditCommonMovementButton';
 import { EditDirectExpenseButton } from './EditDirectExpenseButton';
 
 // Eliminado ContributionsDisplay: la contribución no se muestra en balance
@@ -78,6 +80,13 @@ export default function BalancePage() {
   const [periodSummary, setPeriodSummary] = useState<PeriodSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Determinar periodo seleccionado completo (con phase, id, etc)
+  // Prioriza el periodo elegido por el usuario y, si no hay, usa el activo
+  const selectedPeriodFull = useMemo(() => {
+    if (!selectedPeriod) return activePeriod;
+    return periods.find((p) => p.year === selectedPeriod.year && p.month === selectedPeriod.month) || activePeriod;
+  }, [selectedPeriod, periods, activePeriod]);
+
   // Cargar balance global
   const loadGlobalBalance = useCallback(async () => {
     if (!householdId) return;
@@ -92,13 +101,13 @@ export default function BalancePage() {
     }
   }, [householdId]);
 
-  // Cargar resumen del periodo
+  // Cargar resumen del periodo (usar SIEMPRE el periodo seleccionado/activo actual)
   const loadPeriodSummary = useCallback(async () => {
-    if (!householdId || !activePeriod?.id) return;
+    if (!householdId || !selectedPeriodFull?.id) return;
 
     try {
       const response = await fetch(
-        `/api/sickness/balance/period-summary?householdId=${householdId}&periodId=${activePeriod.id}`
+        `/api/sickness/balance/period-summary?householdId=${householdId}&periodId=${selectedPeriodFull.id}`
       );
       if (!response.ok) throw new Error('Error al cargar resumen del periodo');
       const data = await response.json();
@@ -106,7 +115,7 @@ export default function BalancePage() {
     } catch (error) {
       console.error('Error loading period summary:', error);
     }
-  }, [householdId, activePeriod?.id]);
+  }, [householdId, selectedPeriodFull?.id]);
 
   // Cargar transacciones globales
   const loadTransactions = useCallback(async () => {
@@ -156,11 +165,7 @@ export default function BalancePage() {
     }).format(amount);
   };
 
-  // Determinar periodo seleccionado completo (con phase, id, etc)
-  const selectedPeriodFull = useMemo(() => {
-    if (!selectedPeriod) return activePeriod;
-    return periods.find((p) => p.year === selectedPeriod.year && p.month === selectedPeriod.month) || activePeriod;
-  }, [selectedPeriod, periods, activePeriod]);
+  // selectedPeriodFull ya definido más arriba
 
   // Usar solo phase del periodo seleccionado
   const rawPhase = selectedPeriodFull?.phase ? normalizePeriodPhase(selectedPeriodFull.phase) : 'preparing';
@@ -636,7 +641,7 @@ export default function BalancePage() {
                       {(tx.type === 'income' || tx.type === 'income_direct') ? '+' : '-'}
                       {formatCurrency(tx.amount)}
                     </span>
-                    {/* Botones editar/eliminar solo para owner y gastos directos */}
+                    {/* Botones editar/eliminar para owner */}
                     {isOwner && tx.flow_type === 'direct' && (
                       <div className="flex gap-1">
                         {/* Botón editar */}
@@ -668,6 +673,31 @@ export default function BalancePage() {
                       </div>
                     )}
 
+                    {isOwner && tx.flow_type === 'common' && (
+                      <div className="flex gap-1">
+                        <EditCommonMovementButton
+                          tx={tx}
+                          householdId={householdId || undefined}
+                          onSuccess={async () => {
+                            await loadTransactions();
+                            await loadGlobalBalance();
+                            await loadPeriodSummary();
+                          }}
+                          categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+                          members={members.map((m) => ({ profile_id: m.profile_id, email: m.email }))}
+                        />
+                        <DeleteCommonButton
+                          txId={tx.id}
+                          householdId={householdId || ''}
+                          onDone={async () => {
+                            await loadTransactions();
+                            await loadGlobalBalance();
+                            await loadPeriodSummary();
+                          }}
+                        />
+                      </div>
+                    )}
+
 
 
                   </div>
@@ -678,13 +708,7 @@ export default function BalancePage() {
         </CardContent>
       </Card>
 
-      {/* Transacciones recientes */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Wallet className="h-6 w-6 text-primary" />
-          Balance y Transacciones
-        </h1>
-      </div>
+      {/* Título duplicado eliminado */}
     </div>
   );
 }

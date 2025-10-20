@@ -219,7 +219,7 @@ export async function calculateContributionsWithDirectExpenses(
     .from('transactions')
     .select('real_payer_id, amount')
     .eq('household_id', householdId)
-    .eq('type', 'expense_direct')
+    .in('type', ['expense', 'expense_direct'])
     .eq('flow_type', 'direct')
     .gte('occurred_at', startDate)
     .lt('occurred_at', endDate);

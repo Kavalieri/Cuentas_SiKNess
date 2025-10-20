@@ -1,12 +1,12 @@
 'use client';
 
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { usePrivateFormat } from '@/lib/hooks/usePrivateFormat';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/types/database';
+import { ArrowDownCircle, ArrowUpCircle, Edit, Trash2 } from 'lucide-react';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'icon'>;
@@ -31,15 +31,15 @@ export function TransactionItem({
   showActions = false,
 }: TransactionItemProps) {
   const { formatPrivateCurrency } = usePrivateFormat();
-  
+
   // Preferir performed_at (fecha/hora real). Fallback a occurred_at (fecha contable)
   const dateSrc = transaction.performed_at || transaction.occurred_at;
   const date = new Date(dateSrc as string);
   const isIncome = transaction.type === 'income';
-  
+
   const Icon = isIncome ? ArrowUpCircle : ArrowDownCircle;
-  const amountColor = isIncome 
-    ? 'text-green-600 dark:text-green-400' 
+  const amountColor = isIncome
+    ? 'text-green-600 dark:text-green-400'
     : 'text-red-600 dark:text-red-400';
 
   if (variant === 'compact') {
@@ -93,10 +93,10 @@ export function TransactionItem({
               </div>
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <span>
-                  {date.toLocaleDateString('es-ES', { 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
+                  {date.toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
                   })}
                   {transaction.performed_at && (
                     <span className="ml-2 text-xs">

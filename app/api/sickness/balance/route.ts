@@ -31,14 +31,14 @@ export async function POST(req: NextRequest) {
 
     const period = periodResult.rows[0];
 
-    // Obtener gastos directos del periodo
+    // Obtener gastos directos del periodo (incluye expense y expense_direct)
     const directExpensesResult = await query(
       `
       SELECT COALESCE(SUM(amount), 0) as total
       FROM transactions
       WHERE household_id = $1
         AND flow_type = 'direct'
-        AND type = 'expense'
+        AND type IN ('expense', 'expense_direct')
         AND period_id = $2
     `,
       [householdId, periodId],
@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
       SELECT COALESCE(SUM(expected_amount - paid_amount), 0) as total
       FROM contributions
       WHERE household_id = $1
-        AND EXTRACT(YEAR FROM created_at) = (SELECT year FROM monthly_periods WHERE id = $2)
-        AND EXTRACT(MONTH FROM created_at) = (SELECT month FROM monthly_periods WHERE id = $2)
+        AND year = (SELECT year FROM monthly_periods WHERE id = $2)
+        AND month = (SELECT month FROM monthly_periods WHERE id = $2)
         AND (expected_amount - paid_amount) > 0
     `,
       [householdId, periodId],

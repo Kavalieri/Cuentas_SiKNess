@@ -2,6 +2,7 @@
 // Acciones para editar/eliminar movimientos (gastos directos y compensatorios)
 
 'use server';
+import { getCurrentProfileId, isHouseholdOwner } from '@/lib/adminCheck';
 import { query } from '@/lib/db';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
@@ -53,7 +54,10 @@ export async function deleteDirectExpenseWithCompensatory(formData: FormData): P
   // Si existe lógica que crea el movimiento compensatorio como gasto negativo, cámbiala a ingreso positivo.
   // Ejemplo: Si usas createTransaction({ type: 'expense', ... }), debe ser type: 'income' y amount positivo.
   // Si tienes lógica específica, revisa la función deleteDirectExpenseWithCompensatory y asegúrate que el movimiento compensatorio se crea como ingreso.
-  revalidatePath('/app/sickness/balance');
+  revalidatePath('/sickness/balance');
+  // Revalidar endpoints usados por tarjetas de resumen
+  revalidatePath('/api/sickness/balance/period-summary');
+  revalidatePath('/api/sickness/balance/global');
   return ok();
 }
 
@@ -62,12 +66,25 @@ export async function deleteDirectExpenseById(params: { movementId: string; hous
   const { movementId, householdId } = params;
   if (!movementId || !householdId) return fail('Parámetros inválidos');
   await deleteDirectExpenseInternal(movementId, householdId);
-  revalidatePath('/app/sickness/balance');
+  revalidatePath('/sickness/balance');
+  revalidatePath('/api/sickness/balance/period-summary');
+  revalidatePath('/api/sickness/balance/global');
   return ok();
 }
 
 // Implementación compartida
 async function deleteDirectExpenseInternal(movementId: string, householdId: string) {
+  const profileId = await getCurrentProfileId();
+  // Asegurar auditoría: marcar quién elimina antes del borrado
+  if (profileId) {
+    await query(
+      `UPDATE transactions
+       SET updated_by_profile_id = $1, updated_at = now()
+       WHERE (id = $2 OR (transaction_pair_id = (SELECT transaction_pair_id FROM transactions WHERE id = $2) AND flow_type = 'direct'))
+         AND household_id = $3`,
+      [profileId, movementId, householdId]
+    );
+  }
   // Buscar el par compensatorio
   const pairRes = await query(
     `SELECT transaction_pair_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
@@ -112,7 +129,9 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   );
   const pairId = pairRes.rows[0]?.transaction_pair_id;
 
-  // Actualizar gasto directo
+  const profileId = await getCurrentProfileId();
+
+  // Actualizar gasto directo (con auditoría)
   await query(
     `UPDATE transactions
      SET amount = $1,
@@ -120,9 +139,10 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
          category_id = $3,
          occurred_at = $4,
          performed_at = $5,
-         updated_at = now()
-     WHERE id = $6 AND household_id = $7 AND flow_type = 'direct'`,
-    [amount, description || null, categoryId ?? null, occurred_at_date, performed_at_ts, movementId, householdId]
+         updated_at = now(),
+         updated_by_profile_id = $6
+     WHERE id = $7 AND household_id = $8 AND flow_type = 'direct'`,
+    [amount, description || null, categoryId ?? null, occurred_at_date, performed_at_ts, profileId ?? null, movementId, householdId]
   );
 
   // Actualizar ingreso compensatorio si existe
@@ -133,16 +153,154 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
            description = $2,
            occurred_at = $3,
            performed_at = $4,
-           updated_at = now()
-       WHERE transaction_pair_id = $5
+           updated_at = now(),
+           updated_by_profile_id = $5
+       WHERE transaction_pair_id = $6
          AND flow_type = 'direct'
          AND type IN ('income','income_direct')
-         AND household_id = $6`,
-      [amount, `Ingreso automático por gasto directo: ${description || ''}`, occurred_at_date, performed_at_ts, pairId, householdId]
+         AND household_id = $7`,
+      [amount, `Ingreso automático por gasto directo: ${description || ''}`, occurred_at_date, performed_at_ts, profileId ?? null, pairId, householdId]
     );
   }
 
   // Nota: la ruta real es /sickness/balance (App Router)
   revalidatePath('/sickness/balance');
+  revalidatePath('/api/sickness/balance/period-summary');
+  revalidatePath('/api/sickness/balance/global');
   return ok();
+}
+
+// ==============================
+// FLUJO COMÚN: EDITAR / BORRAR
+// ==============================
+
+const EditCommonSchema = z.object({
+  movementId: z.string().uuid(),
+  householdId: z.string().uuid(),
+  amount: z.coerce.number().positive(),
+  description: z.string().optional(),
+  categoryId: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
+    .optional(),
+  occurredAt: z.string().min(1, 'Fecha/hora requerida'),
+  // paidBy: 'common' | uuid
+  paidBy: z.string().optional(),
+});
+
+// Edita un movimiento del flujo común (income/expense)
+export async function editCommonMovement(formData: FormData): Promise<Result> {
+  const parsed = EditCommonSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
+  }
+
+  const { movementId, householdId, amount, description, categoryId, occurredAt, paidBy } = parsed.data;
+
+  // Permisos: solo owners pueden editar movimientos comunes
+  const profileId = await getCurrentProfileId();
+  if (!profileId) return fail('No autenticado');
+  const owner = await isHouseholdOwner(profileId, householdId);
+  if (!owner) return fail('No autorizado: se requiere ser owner del hogar');
+
+  // Verificar movimiento y tipo
+  const txRes = await query<{ type: string; flow_type: string }>(
+    `SELECT type, flow_type FROM transactions WHERE id = $1 AND household_id = $2`,
+    [movementId, householdId]
+  );
+  if (txRes.rows.length === 0) return fail('Movimiento no encontrado');
+  const tx = txRes.rows[0];
+  if (!tx || tx.flow_type !== 'common') return fail('El movimiento no pertenece al flujo común');
+
+  // Parsear fecha/hora y recalcular periodo
+  const { occurred_at_date, performed_at_ts } = parseDateTimeInput(occurredAt);
+  if (!occurred_at_date || !performed_at_ts) return fail('Fecha inválida');
+  const y = Number(occurred_at_date.slice(0, 4));
+  const m = Number(occurred_at_date.slice(5, 7));
+  const periodIdRes = await query<{ ensure_monthly_period: string }>(
+    `SELECT ensure_monthly_period($1::uuid, $2::int, $3::int)`,
+    [householdId, y, m]
+  );
+  const newPeriodId = periodIdRes.rows[0]?.ensure_monthly_period;
+  if (!newPeriodId) return fail('No se pudo determinar el período de la fecha indicada');
+
+  // Resolver paid_by
+  let paid_by: string | null = null;
+  if (paidBy && paidBy !== '' && paidBy !== 'common') {
+    paid_by = paidBy; // UUID
+  } else if (paidBy === 'common' || !paidBy) {
+    paid_by = null; // cuenta común
+  }
+
+  // Reglas: ingresos requieren paid_by no nulo
+  if (tx && tx.type === 'income' && paid_by === null) {
+    return fail('Los ingresos comunes deben tener un miembro asignado');
+  }
+
+  await query(
+    `UPDATE transactions
+     SET amount = $1,
+         description = $2,
+         category_id = $3,
+         occurred_at = $4,
+         performed_at = $5,
+         period_id = $6,
+         paid_by = $7,
+         updated_at = now(),
+         updated_by_profile_id = $8
+     WHERE id = $9 AND household_id = $10 AND flow_type = 'common'`,
+    [amount, description || null, categoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, paid_by, profileId, movementId, householdId]
+  );
+
+  // Revalidaciones necesarias
+  revalidatePath('/sickness/balance');
+  revalidatePath('/api/sickness/balance/period-summary');
+  revalidatePath('/api/sickness/balance/global');
+  return ok();
+}
+
+const DeleteCommonSchema = z.object({
+  movementId: z.string().uuid(),
+  householdId: z.string().uuid(),
+});
+
+// Elimina un movimiento del flujo común (requiere owner)
+export async function deleteCommonMovement(formData: FormData): Promise<Result> {
+  const parsed = DeleteCommonSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
+  }
+  const { movementId, householdId } = parsed.data;
+
+  const profileId = await getCurrentProfileId();
+  if (!profileId) return fail('No autenticado');
+  const owner = await isHouseholdOwner(profileId, householdId);
+  if (!owner) return fail('No autorizado: se requiere ser owner del hogar');
+
+  // Auditoría: marcar quién elimina
+  await query(
+    `UPDATE transactions SET updated_by_profile_id = $1, updated_at = now()
+     WHERE id = $2 AND household_id = $3 AND flow_type = 'common'`,
+    [profileId, movementId, householdId]
+  );
+
+  await query(
+    `DELETE FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'common'`,
+    [movementId, householdId]
+  );
+
+  revalidatePath('/sickness/balance');
+  revalidatePath('/api/sickness/balance/period-summary');
+  revalidatePath('/api/sickness/balance/global');
+  return ok();
+}
+
+// Variante callable desde cliente sin FormData
+export async function deleteCommonById(params: { movementId: string; householdId: string }): Promise<Result> {
+  const { movementId, householdId } = params;
+  if (!movementId || !householdId) return fail('Parámetros inválidos');
+
+  const form = new FormData();
+  form.append('movementId', movementId);
+  form.append('householdId', householdId);
+  return deleteCommonMovement(form);
 }

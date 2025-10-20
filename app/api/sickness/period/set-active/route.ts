@@ -120,7 +120,18 @@ export async function POST(req: NextRequest) {
         }
       : null;
 
-    return NextResponse.json({ period });
+    // Construir respuesta y persistir selección en cookie para SSR (por hogar)
+    const res = NextResponse.json({ period });
+    if (period) {
+      const cookieName = `csik-selected-period-${period.householdId}`;
+      res.cookies.set(cookieName, `${period.year}-${period.month}` as unknown as string, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 180, // 180 días
+      });
+    }
+    return res;
   } catch (error) {
     const err = error as { message?: string; detail?: string; hint?: string } | undefined;
     const parts = [err?.message, err?.detail, err?.hint].filter(Boolean);

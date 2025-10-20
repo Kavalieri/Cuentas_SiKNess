@@ -333,6 +333,9 @@ async function createCommonFlowTransaction(
   revalidatePath('/app/expenses');
   // Revalidar página de balance Sickness
   revalidatePath('/sickness/balance');
+  // Revalidar endpoints de resumen para evitar tarjetas en 0 temporalmente
+  revalidatePath('/api/sickness/balance/period-summary');
+  revalidatePath('/api/sickness/balance/global');
   return ok({ id: transaction.id });
 }
 
@@ -444,12 +447,30 @@ async function createDirectFlowTransaction(
   // 2. Crear el ingreso directo de equilibrio (si se solicita)
   if (data.creates_balance_pair) {
     console.log('[createDirectFlowTransaction] Creating balance pair');
+
+    // Intentar asignar la categoría "Aportación Cuenta Conjunta" para el ingreso compensatorio
+    let compensatoryCategoryId: string | null = null;
+    try {
+      const { data: compCat, error: compCatErr } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('household_id', householdId)
+        .eq('name', 'Aportación Cuenta Conjunta')
+        .eq('type', 'income')
+        .maybeSingle();
+      if (!compCatErr && compCat?.id) {
+        compensatoryCategoryId = compCat.id as string;
+      }
+    } catch (e) {
+      console.warn('[createDirectFlowTransaction] No se pudo resolver categoría compensatoria:', e);
+    }
+
     const { data: _incomeTransaction, error: incomeError } = await supabase
       .from('transactions')
       .insert({
         household_id: householdId,
         profile_id: profileId,
-        category_id: null, // Los ingresos de equilibrio no necesitan categoría específica
+        category_id: compensatoryCategoryId, // Categoría compensatoria por defecto
         type: 'income_direct',
         amount: data.amount,
         currency: data.currency,
@@ -487,6 +508,9 @@ async function createDirectFlowTransaction(
   revalidatePath('/app/contributions');
   // Revalidar página de balance Sickness
   revalidatePath('/sickness/balance');
+  // Revalidar endpoints de resumen para evitar tarjetas en 0 temporalmente
+  revalidatePath('/api/sickness/balance/period-summary');
+  revalidatePath('/api/sickness/balance/global');
 
   return ok({
     id: expenseTransaction.id,

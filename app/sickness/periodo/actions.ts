@@ -91,8 +91,31 @@ export async function lockPeriod(periodId: string): Promise<Result<{ periodId: s
       [householdId, periodId, user.profile_id],
     );
     if (rows[0]?.locked) {
+      // Reconciliar automáticamente balances de contribución (crédito/deuda global)
+      try {
+        const contribs = await query<{ id: string }>(
+          `SELECT c.id
+           FROM contributions c
+           INNER JOIN monthly_periods mp ON mp.household_id = c.household_id
+           WHERE c.household_id = $1
+             AND mp.id = $2
+             AND c.year = mp.year
+             AND c.month = mp.month`,
+          [householdId, periodId],
+        );
+
+        for (const row of contribs.rows) {
+          // No nos importa el retorno; la función actualiza member_balances
+          await query('SELECT reconcile_contribution_balance($1)', [row.id]);
+        }
+      } catch (reconError) {
+        console.error('[lockPeriod] Reconciliation error:', reconError);
+        // No fallamos la operación de lock por errores de reconciliación; se puede reintentar manualmente
+      }
+
       revalidatePath('/sickness');
       revalidatePath('/sickness/periodo');
+      revalidatePath('/sickness/credito-deuda');
       return ok({ periodId });
     }
     return fail('No se pudo bloquear el período');
