@@ -37,9 +37,9 @@ WHERE NOT EXISTS (
   SELECT 1 FROM transactions t WHERE t.period_id = mp.id
 )
 AND NOT EXISTS (
-  SELECT 1 FROM contributions c 
-  WHERE c.household_id = mp.household_id 
-    AND c.year = mp.year 
+  SELECT 1 FROM contributions c
+  WHERE c.household_id = mp.household_id
+    AND c.year = mp.year
     AND c.month = mp.month
 )
 AND (mp.year != EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER OR mp.month != EXTRACT(MONTH FROM CURRENT_DATE)::INTEGER);
@@ -57,7 +57,7 @@ fi
 echo "📋 Detalle de períodos vacíos (excluyendo mes actual):"
 echo "------------------------------------------------------"
 psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev -c "
-SELECT 
+SELECT
   LEFT(id::text, 8) || '...' as id,
   year || '-' || LPAD(month::text, 2, '0') as periodo,
   phase,
@@ -67,9 +67,9 @@ WHERE NOT EXISTS (
   SELECT 1 FROM transactions t WHERE t.period_id = mp.id
 )
 AND NOT EXISTS (
-  SELECT 1 FROM contributions c 
-  WHERE c.household_id = mp.household_id 
-    AND c.year = mp.year 
+  SELECT 1 FROM contributions c
+  WHERE c.household_id = mp.household_id
+    AND c.year = mp.year
     AND c.month = mp.month
 )
 AND (mp.year != EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER OR mp.month != EXTRACT(MONTH FROM CURRENT_DATE)::INTEGER)
@@ -96,9 +96,9 @@ COPY (
     SELECT 1 FROM transactions t WHERE t.period_id = mp.id
   )
   AND NOT EXISTS (
-    SELECT 1 FROM contributions c 
-    WHERE c.household_id = mp.household_id 
-      AND c.year = mp.year 
+    SELECT 1 FROM contributions c
+    WHERE c.household_id = mp.household_id
+      AND c.year = mp.year
       AND c.month = mp.month
   )
   AND (mp.year != EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER OR mp.month != EXTRACT(MONTH FROM CURRENT_DATE)::INTEGER)
@@ -120,9 +120,9 @@ WITH deleted AS (
       SELECT 1 FROM transactions t WHERE t.period_id = mp.id
     )
     AND NOT EXISTS (
-      SELECT 1 FROM contributions c 
-      WHERE c.household_id = mp.household_id 
-        AND c.year = mp.year 
+      SELECT 1 FROM contributions c
+      WHERE c.household_id = mp.household_id
+        AND c.year = mp.year
         AND c.month = mp.month
     )
     AND (mp.year != EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER OR mp.month != EXTRACT(MONTH FROM CURRENT_DATE)::INTEGER)
@@ -140,7 +140,7 @@ echo ""
 echo "📊 Estado final:"
 echo "----------------"
 psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev -c "
-SELECT 
+SELECT
   COUNT(*) as total_periodos,
   COUNT(CASE WHEN phase = 'active' THEN 1 END) as activos,
   COUNT(CASE WHEN phase = 'closed' THEN 1 END) as cerrados,

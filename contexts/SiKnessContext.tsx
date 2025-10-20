@@ -68,7 +68,11 @@ export interface SiKnessContextValue {
 
   // Acciones
   selectHousehold: (id: string) => Promise<void>;
-  selectPeriod: (year: number, month: number) => Promise<void>;
+  selectPeriod: (
+    year: number,
+    month: number,
+    onPeriodNotFound?: (year: number, month: number) => void,
+  ) => Promise<void>;
   togglePrivacyMode: () => void;
   refreshBalance: () => Promise<void>;
   refreshPeriods: () => Promise<void>;
@@ -258,14 +262,24 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
     }
   };
 
-  const selectPeriod = async (year: number, month: number) => {
+  const selectPeriod = async (
+    year: number,
+    month: number,
+    onPeriodNotFound?: (year: number, month: number) => void,
+  ) => {
     // Buscar período en la lista
     const selectedPeriod = periods.find((p) => p.year === year && p.month === month);
 
     if (!selectedPeriod) {
-      // Nota: puede ocurrir brevemente al inicializar si periods aún no está sincronizado.
-      // Bajamos a debug para no ensuciar la consola del navegador.
-      console.debug('[SiKnessContext] Period not found (yet):', year, month);
+      console.debug('[SiKnessContext] Period not found:', year, month);
+
+      // Si hay callback, delegamos la decisión al componente
+      if (onPeriodNotFound) {
+        onPeriodNotFound(year, month);
+        return;
+      }
+
+      // Si no hay callback, no hacemos nada (comportamiento legacy)
       return;
     }
 

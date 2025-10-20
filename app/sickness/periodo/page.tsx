@@ -2,8 +2,8 @@
 
 import { ContributionsOverview, type CombinedMemberContribution } from '@/components/periodo/ContributionsOverview';
 import { PhaseCard } from '@/components/periodo/PhaseCard';
-import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { CalendarCheck2, Lock, Rocket, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -184,7 +184,7 @@ export default function PeriodosYContribucionPage() {
       const res = await fetch('/api/periods/lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           periodId: data.periodId,
           contribution_disabled: ignoreContributions,
         }),

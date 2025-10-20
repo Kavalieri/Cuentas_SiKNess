@@ -167,7 +167,7 @@ Todos los demás están vacíos (phase='preparing', 0 transacciones, 0 contribuc
 4. ✅ Avanza a fase 'validation' (o directamente a 'active')
 5. ✅ Todos aparecen como "Saldado (0€)"
 
-**Campo de BD**: 
+**Campo de BD**:
 - `monthly_periods.contribution_disabled = true` cuando checkbox marcado
 - Este campo se lee al calcular balances para determinar si gastos directos afectan o no
 
@@ -456,10 +456,10 @@ export async function blockPeriodForValidation(
   if (options?.ignore_contributions) {
     // FLUJO B: Ignorar sistema de contribuciones
     // NO se valida checklist, NO se bloquean valores
-    
+
     // 1. Marcar período como contribution_disabled
     await query(
-      `UPDATE monthly_periods 
+      `UPDATE monthly_periods
        SET contribution_disabled = true, phase = 'validation'
        WHERE id = $1`,
       [periodId]
@@ -484,7 +484,7 @@ export async function blockPeriodForValidation(
 
   } else {
     // FLUJO A: Validación NORMAL (lógica existente, sin cambios)
-    
+
     // 1. Validar checklist
     const validation = await validatePeriodRequirements(household_id, year, month);
     if (!validation.ok) {

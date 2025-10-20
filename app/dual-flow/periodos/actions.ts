@@ -1,8 +1,8 @@
 'use server';
 
-import { query } from '@/lib/db';
 import { getUserHouseholdId } from '@/lib/auth';
-import { ok, fail, type Result } from '@/lib/result';
+import { query } from '@/lib/db';
+import { fail, ok, type Result } from '@/lib/result';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -16,11 +16,11 @@ export async function checkPeriodExists(
   try {
     const result = await query(
       `
-      SELECT 
-        id, 
-        year, 
-        month, 
-        phase, 
+      SELECT
+        id,
+        year,
+        month,
+        phase,
         status,
         contribution_disabled,
         created_at
@@ -137,7 +137,7 @@ export async function getHouseholdPeriods(): Promise<
 
     const result = await query(
       `
-      SELECT 
+      SELECT
         mp.id,
         mp.year,
         mp.month,
@@ -148,7 +148,7 @@ export async function getHouseholdPeriods(): Promise<
         COUNT(DISTINCT CASE WHEN t.flow_type = 'direct' THEN t.id END) > 0 as has_direct_expenses,
         COUNT(DISTINCT CASE WHEN t.flow_type = 'common' THEN t.id END) > 0 as has_common_transactions
       FROM monthly_periods mp
-      LEFT JOIN transactions t ON 
+      LEFT JOIN transactions t ON
         t.household_id = mp.household_id
         AND EXTRACT(YEAR FROM t.occurred_at) = mp.year
         AND EXTRACT(MONTH FROM t.occurred_at) = mp.month
