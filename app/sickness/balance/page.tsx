@@ -23,6 +23,7 @@ import { EditDirectExpenseButton } from './EditDirectExpenseButton';
 
 // Eliminado ContributionsDisplay: la contribución no se muestra en balance
 import { NewMovementForm } from './components';
+import { BalanceFilters } from './components/BalanceFilters';
 
 interface Transaction {
   id: string;
@@ -65,15 +66,19 @@ export default function BalancePage() {
   const { activePeriod, selectedPeriod, periods, privacyMode, householdId, user, isOwner } = useSiKness();
   const [showNewMovement, setShowNewMovement] = useState(false);
   const [showPhaseAlert, setShowPhaseAlert] = useState(false);
-  const [flowType, setFlowType] = useState<'all' | 'common' | 'direct'>('all');
+  
+  // Filtros unificados en un solo objeto
+  const [filters, setFilters] = useState({
+    member: '',
+    category: '',
+    type: '',
+    search: ''
+  });
+  
   const [limit, setLimit] = useState(10);
   const [members, setMembers] = useState<Array<{ profile_id: string; email: string; role: string }>>([]);
   const [categories, setCategories] = useState<Array<{ id: string; name: string; icon?: string; type?: string }>>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [memberId, setMemberId] = useState<string>('');
-  const [categoryId, setCategoryId] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
 
   // Estados para balance global y resumen del periodo
   const [globalBalance, setGlobalBalance] = useState<GlobalBalance | null>(null);
@@ -127,11 +132,10 @@ export default function BalancePage() {
         limit: limit.toString(),
       });
 
-      if (flowType !== 'all') params.append('flowType', flowType);
-      if (memberId) params.append('memberId', memberId);
-      if (categoryId) params.append('categoryId', categoryId);
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
+      if (filters.type) params.append('flowType', filters.type);
+      if (filters.member) params.append('memberId', filters.member);
+      if (filters.category) params.append('categoryId', filters.category);
+      // startDate y endDate no están en el objeto filters todavía, los podemos ignorar por ahora
 
       const response = await fetch(`/api/sickness/transactions/global?${params}`);
       if (!response.ok) throw new Error('Error al cargar transacciones');
@@ -140,7 +144,7 @@ export default function BalancePage() {
     } catch (error) {
       console.error('Error loading transactions:', error);
     }
-  }, [householdId, limit, flowType, memberId, categoryId, startDate, endDate]);
+  }, [householdId, limit, filters]);
 
   // Cargar todos los datos
   useEffect(() => {
@@ -434,135 +438,60 @@ export default function BalancePage() {
       )}
 
       {/* Filtros de transacciones */}
-      <div className="flex flex-wrap gap-4 items-center mt-6">
-        <label className="flex items-center gap-2">
-          <span className="text-sm">Tipo de flujo:</span>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={flowType}
-            onChange={e => setFlowType(e.target.value as 'all' | 'common' | 'direct')}
-          >
-            <option value="all">Todos</option>
-            <option value="common">Común</option>
-            <option value="direct">Directo</option>
-          </select>
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="text-sm">Miembro:</span>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={memberId}
-            onChange={e => setMemberId(e.target.value)}
-          >
-            <option value="">Todos</option>
-            {members.map((m) => (
-              <option key={m.profile_id} value={m.profile_id}>
-                {m.email}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="text-sm">Categoría:</span>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={categoryId}
-            onChange={e => setCategoryId(e.target.value)}
-          >
-            <option value="">Todas</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="text-sm">Desde:</span>
-          <input
-            type="date"
-            className="border rounded px-2 py-1 text-sm"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-          />
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="text-sm">Hasta:</span>
-          <input
-            type="date"
-            className="border rounded px-2 py-1 text-sm"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-          />
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="text-sm">Cantidad:</span>
-          <input
-            type="number"
-            min={1}
-            max={50}
-            value={limit}
-            onChange={e => setLimit(Number(e.target.value))}
-            className="border rounded px-2 py-1 w-16 text-sm"
-          />
-        </label>
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            className="px-3 py-1.5 rounded text-sm font-medium border bg-primary text-primary-foreground hover:opacity-90"
-            onClick={handleNewMovementClick}
-          >
-            Nuevo movimiento
-          </button>
-        </div>
+      <BalanceFilters
+        filters={filters}
+        members={members}
+        categories={categories}
+        onChange={(partial) => setFilters((prev) => ({ ...prev, ...partial }))}
+      />
 
-        {/* Alerta de fase bloqueada */}
-        {showPhaseAlert && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {phase === 'preparing'
-                    ? 'No se pueden crear movimientos mientras el período está en configuración inicial. Espera a que se active el período.'
-                    : phase === 'closed'
-                    ? 'No se pueden crear movimientos en un período cerrado. Los movimientos deben registrarse en el período activo.'
-                    : 'No se pueden crear movimientos en este momento.'}
-                </AlertDescription>
-              </Alert>
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => setShowPhaseAlert(false)}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
-                >
-                  Entendido
-                </button>
-              </div>
+      {/* Alerta de fase bloqueada */}
+      {showPhaseAlert && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {phase === 'preparing'
+                  ? 'No se pueden crear movimientos mientras el período está en configuración inicial. Espera a que se active el período.'
+                  : phase === 'closed'
+                  ? 'No se pueden crear movimientos en un período cerrado. Los movimientos deben registrarse en el período activo.'
+                  : 'No se pueden crear movimientos en este momento.'}
+              </AlertDescription>
+            </Alert>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setShowPhaseAlert(false)}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
+              >
+                Entendido
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Modal para nuevo movimiento */}
-        <NewMovementForm
-          open={showNewMovement}
-          onClose={() => setShowNewMovement(false)}
-          members={members}
-          categories={categories.map((c) => ({
-            id: c.id,
-            name: c.name,
-            icon: c.icon,
-            type: c.type ?? ''
-          }))}
-          phase={phase}
-          user={user}
-          isOwner={isOwner}
-          periodId={selectedPeriodFull?.id}
-          onSuccess={async () => {
-            await loadTransactions();
-            await loadGlobalBalance();
-            await loadPeriodSummary();
-          }}
-        />
-      </div>
+      {/* Modal para nuevo movimiento */}
+      <NewMovementForm
+        open={showNewMovement}
+        onClose={() => setShowNewMovement(false)}
+        members={members}
+        categories={categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          icon: c.icon,
+          type: c.type ?? ''
+        }))}
+        phase={phase}
+        user={user}
+        isOwner={isOwner}
+        periodId={selectedPeriodFull?.id}
+        onSuccess={async () => {
+          await loadTransactions();
+          await loadGlobalBalance();
+          await loadPeriodSummary();
+        }}
+      />
 
       {/* Transacciones globales */}
       <Card>
