@@ -195,7 +195,7 @@ export async function getMemberBalanceStatus(
 
         // DEBUG: Log detallado de cálculo de periodo (variables en scope)
         console.log('[getMemberBalanceStatus] DEBUG - Periodo:', {
-          period: { year: period.year, month: period.month, status: period.status },
+          period: { year: period.year, month: period.month, status: period.status, phase: period.phase },
           expected,
           paidCommon,
           paidDirect,
@@ -316,8 +316,8 @@ export async function getHouseholdBalancesOverview(
         );
         const memberStatus = memberBalanceRes.rows[0]?.status || { balance: 0 };
 
-        const periodRes = await query<{ id: string; year: number; month: number }>(
-          `SELECT id, year, month
+        const periodRes = await query<{ id: string; year: number; month: number; phase?: string; status: string }>(
+          `SELECT id, year, month, phase, status
            FROM monthly_periods
            WHERE household_id = $1
              AND year = $2
@@ -370,7 +370,13 @@ export async function getHouseholdBalancesOverview(
             expected = monthlyGoal * sharePercent;
           }
 
-          // Sumar paid de transacciones
+          const startDate = `${period.year}-${String(period.month).padStart(2, '0')}-01`;
+          const endDate =
+            period.month === 12
+              ? `${period.year + 1}-01-01`
+              : `${period.year}-${String(period.month + 1).padStart(2, '0')}-01`;
+
+          // Sumar paid de transacciones comunes
           const txPaidRes = await query<{ sum_paid: string | null }>(
             `SELECT COALESCE(SUM(t.amount), 0) AS sum_paid
              FROM transactions t
@@ -384,17 +390,31 @@ export async function getHouseholdBalancesOverview(
                  OR (t.period_id IS NULL AND t.occurred_at >= $4 AND t.occurred_at < $5)
                )
                AND (t.paid_by = $2 OR (t.paid_by IS NULL AND t.profile_id = $2))`,
-            [
-              householdId,
-              m.profile_id,
-              period.id,
-              `${period.year}-${String(period.month).padStart(2, '0')}-01`,
-              period.month === 12
-                ? `${period.year + 1}-01-01`
-                : `${period.year}-${String(period.month + 1).padStart(2, '0')}-01`,
-            ],
+            [householdId, m.profile_id, period.id, startDate, endDate],
           );
-          const paid = Number(txPaidRes.rows[0]?.sum_paid ?? 0);
+          const paidCommon = Number(txPaidRes.rows[0]?.sum_paid ?? 0);
+
+          // Sumar gastos directos del miembro (aportación implícita)
+          const directExpensesRes = await query<{ sum_direct: string | null }>(
+            `SELECT COALESCE(SUM(amount), 0) AS sum_direct
+             FROM transactions
+             WHERE household_id = $1
+               AND type IN ('expense', 'expense_direct')
+               AND flow_type = 'direct'
+               AND real_payer_id = $2
+               AND (
+                 period_id = $3
+                 OR (period_id IS NULL AND occurred_at >= $4 AND occurred_at < $5)
+               )`,
+            [householdId, m.profile_id, period.id, startDate, endDate],
+          );
+          const paidDirect = Number(directExpensesRes.rows[0]?.sum_direct ?? 0);
+
+          // Determinar si contar gastos directos según fase del periodo
+          const shouldCountDirectAsPaid = ['validation', 'active'].includes(period.phase || period.status);
+          const effectivePaidDirect = shouldCountDirectAsPaid ? paidDirect : 0;
+
+          const paid = paidCommon + effectivePaidDirect;
           const pendingRaw = paid - expected;
           const pendingCents = Math.round(pendingRaw * 100);
           pendingBalance = pendingCents / 100;
