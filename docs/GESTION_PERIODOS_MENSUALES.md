@@ -19,8 +19,8 @@
 ### Períodos Existentes
 
 ```sql
-SELECT COUNT(*), MIN(year || '-' || month), MAX(year || '-' || month) 
-FROM monthly_periods 
+SELECT COUNT(*), MIN(year || '-' || month), MAX(year || '-' || month)
+FROM monthly_periods
 WHERE household_id = 'd0c3fe46-f19e-4d60-bc13-fd8b2f7be228';
 
 -- Resultado: 25 períodos desde 2024-10 hasta 2026-08
@@ -49,237 +49,448 @@ Todos los demás están vacíos (phase='preparing', 0 transacciones, 0 contribuc
 
 ## 🏗️ Propuesta de Arquitectura
 
-### Ciclo de Vida de un Período
+### Ciclo de Vida de un Período (ACTUALIZADO)
 
 ```
 ┌─────────────┐
 │   INEXISTENTE│  ← No existe en BD (default)
 └──────┬──────┘
-       │ Creación bajo demanda (al registrar primera transacción o al avanzar de mes)
+       │ Usuario selecciona mes/año → Diálogo confirmación → Crear
        ▼
 ┌─────────────┐
-│  'preparing'│  ← Configuración inicial (ingresos, método de cálculo)
+│  'preparing'│  ← FASE 1: Configuración inicial
+│             │    - Configurar ingresos de miembros
+│             │    - Seleccionar método de cálculo (proporcional/igual/personalizado)
+│             │    - [OPCIONAL] Anular sistema de contribución → Saldar a 0€
+│             │    - [OPCIONAL] Solo gastos directos sin contribución obligatoria
 └──────┬──────┘
-       │ Owner → "Calcular Contribuciones" (Fase 2)
+       │ Owner → "Calcular Contribuciones" (avanza a Fase 2)
+       │ [Si anulado: Contribuciones = 0€ para todos los miembros]
        ▼
 ┌─────────────┐
-│ 'validation'│  ← Miembros aportan su parte (pagos comunes + gastos directos)
+│ 'validation'│  ← FASE 2: Validación de aportaciones
+│             │    - Miembros realizan aportaciones (pagos comunes)
+│             │    - Gastos directos cuentan como contribución implícita
+│             │    - Owner valida que todos hayan aportado su parte
 └──────┬──────┘
        │ Owner → "Bloquear Período" (no más cambios de configuración)
        ▼
 ┌─────────────┐
-│   'active'  │  ← Período en uso activo (gastos/ingresos del mes)
+│   'active'  │  ← FASE 3: Operativa mensual
+│             │    - Registro de gastos/ingresos comunes
+│             │    - Registro de gastos directos (cuentan automáticamente)
+│             │    - Visualización de balances en tiempo real
 └──────┬──────┘
        │ Owner → "Cerrar Período" (fin de mes, reconciliación)
        ▼
 ┌─────────────┐
-│  'closing'  │  ← Reconciliación en proceso (cálculo de balances finales)
+│  'closing'  │  ← FASE 4: Reconciliación automática
+│             │    - Cálculo de balances finales
+│             │    - Registro en member_balances (histórico)
+│             │    - Generación de créditos/deudas para próximo período
 └──────┬──────┘
        │ Automático tras reconciliación exitosa
        ▼
 ┌─────────────┐
-│   'closed'  │  ← Período cerrado (solo lectura, excepto reopening)
+│   'closed'  │  ← FASE 5: Período cerrado (solo lectura)
+│             │    - Datos inmutables (excepto reopening)
+│             │    - Balance histórico consolidado
 └──────┬──────┘
        │ Owner → "Reabrir para Correcciones" (casos excepcionales)
        ▼
 ┌─────────────┐
-│  'reopened' │  ← Editable temporalmente para ajustes
+│  'reopened' │  ← FASE 6: Editable temporalmente
+│             │    - Ajustes excepcionales
+│             │    - Recalculo automático tras cambios
 └──────┬──────┘
        │ Owner → "Recerrar"
        ▼
     'closed'
 ```
 
-### Fases y Sus Características
+### FASE 1 ('preparing') - Configuración Inicial - DETALLES
 
-| Fase | Crear Transacciones | Editar Configuración | Calcular Contribuciones | Descripción |
-|------|---------------------|----------------------|-------------------------|-------------|
-| `preparing` | ❌ No | ✅ Sí | ❌ No | Solo configuración inicial |
-| `validation` | ⚠️ Solo Owner | ⚠️ Solo ingresos | ✅ Sí | Miembros aportan su parte |
-| `active` | ✅ Sí | ❌ No | ❌ No (ya calculadas) | Operativa mensual |
-| `closing` | ❌ No | ❌ No | ❌ No | Reconciliación automática |
-| `closed` | ❌ No | ❌ No | ❌ No | Solo lectura |
-| `reopened` | ✅ Sí | ⚠️ Limitado | ⚠️ Recalcular | Correcciones excepcionales |
+**Tarjeta UI de Configuración**:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 📋 Configuración del Período: [mes/año]                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│ 👥 Ingresos de Miembros                                     │
+│ ├─ Oscar: 1,500€ [Editar]                                   │
+│ └─ getrecek: 1,150€ [Editar]                                │
+│                                                              │
+│ 🧮 Método de Cálculo de Contribuciones                      │
+│ ○ Proporcional a ingresos (recomendado)                    │
+│ ○ Iguales para todos                                        │
+│ ○ Personalizado                                             │
+│                                                              │
+│ ⚙️ Opciones Avanzadas                                       │
+│ ┌───────────────────────────────────────────────────────┐  │
+│ │ ☑️ Anular sistema de contribución obligatoria         │  │
+│ │                                                        │  │
+│ │ ⚠️ Al activar esta opción:                            │  │
+│ │ • NO se calcularán contribuciones esperadas           │  │
+│ │ • Todos los miembros quedarán SALDADOS a 0€          │  │
+│ │ • Solo se registrarán gastos directos                 │  │
+│ │ • Útil para meses pasados sin cálculo de contribución│  │
+│ │                                                        │  │
+│ │ Caso de uso: Importar gastos de meses previos        │  │
+│ │ sin obligación de contribución retroactiva            │  │
+│ └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│ [Guardar Configuración]  [Calcular Contribuciones →]       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Comportamiento con "Anular contribución"**:
+- ✅ Checkbox activo → `contribution_disabled = true` en `monthly_periods`
+- ✅ Al calcular contribuciones:
+  - Si `contribution_disabled = true` → Crear registros en `contributions` con `expected_amount = 0`
+  - Todos los miembros aparecen como "Saldado (0€)"
+- ✅ Gastos directos se registran normalmente, pero NO afectan balance de contribución
+- ✅ Ideal para meses pasados con gastos pero sin obligación de contribución
+
+**Casos de uso**:
+1. **Importar datos históricos**: Meses pasados con gastos pero sin contribución calculada
+2. **Meses de transición**: Primer mes del hogar, solo registro de gastos sin obligación
+3. **Meses excepcionales**: Vacaciones, mudanzas, etc. donde no aplica contribución normal
+
+### Fases y Sus Características (ACTUALIZADO)
+
+| Fase | Crear Trans. | Editar Config. | Calcular Contrib. | Anular Contrib. | Descripción |
+|------|--------------|----------------|-------------------|-----------------|-------------|
+| `preparing` | ❌ No | ✅ Sí | ❌ No (pendiente) | ✅ Sí | Solo configuración inicial + opción anular |
+| `validation` | ⚠️ Solo Owner | ⚠️ Solo ingresos | ✅ Sí (ya calculadas) | ❌ No | Miembros aportan su parte |
+| `active` | ✅ Sí | ❌ No | ❌ No | ❌ No | Operativa mensual |
+| `closing` | ❌ No | ❌ No | ❌ No | ❌ No | Reconciliación automática |
+| `closed` | ❌ No | ❌ No | ❌ No | ❌ No | Solo lectura |
+| `reopened` | ✅ Sí | ⚠️ Limitado | ⚠️ Recalcular | ⚠️ Limitado | Correcciones excepcionales |
+
+**Notas importantes**:
+- **Anular contribución**: Solo disponible en fase `'preparing'` antes de calcular
+- **Gastos directos sin contribución**: Cuando `contribution_disabled = true`, gastos directos se registran pero NO afectan balance
+- **Meses pasados**: Pueden crearse con contribución anulada para importar datos históricos sin obligación retroactiva
 
 ---
 
-## 🎬 Estrategias de Creación
+## 🎬 Estrategia de Creación (CONFIRMADA)
 
-### Opción A: Creación Lazy (RECOMENDADA)
+### Creación Bajo Demanda con Diálogo de Confirmación
 
-**Cuándo crear**: Solo cuando se necesita
+**Cuándo crear**: Solo cuando el usuario selecciona un mes/año que no existe
 
-**Triggers**:
-1. Usuario registra primera transacción del mes → Crear período si no existe
-2. Owner accede a "Configurar Período" → Crear si no existe
-3. Fin de mes anterior → Sugerir crear próximo período (notificación)
-4. Cron job mensual → Crear período del mes actual si no existe (seguridad)
+**Flujo UX**:
+
+```
+Usuario selecciona mes/año en selector superior
+        ↓
+Sistema busca período correspondiente
+        ↓
+    ¿Existe?
+    ↙     ↘
+  SÍ       NO
+  ↓        ↓
+Cargar   Mostrar diálogo:
+datos    "No existe período para [mes/año]"
+         "¿Deseas crear un nuevo período?"
+         [Crear Período] [Cancelar]
+              ↓              ↓
+         Crear período    Mantener
+         fase 'preparing' mes actual
+         + categorías base
+              ↓
+         Recargar UI
+         con nuevo período
+```
+
+**Características clave**:
+- ✅ **NO creación automática** en ninguna acción (transacciones, configuración, etc.)
+- ✅ **NO botón dedicado** "Crear Período"
+- ✅ **Diálogo de confirmación** obligatorio antes de crear
+- ✅ **Creación retroactiva/futura** permitida (meses pasados o futuros)
+- ✅ **Categorías base** incluidas automáticamente en nuevo período
+- ✅ **Fase inicial**: Siempre `'preparing'` (Configuración Inicial)
 
 **Ventajas**:
 - ✅ Sin períodos fantasma
-- ✅ Crecimiento orgánico
-- ✅ Menos carga en BD
+- ✅ Control total del usuario
+- ✅ Creación explícita y consciente
+- ✅ Flexibilidad para meses pasados/futuros
 
-**Desventajas**:
-- ⚠️ Requiere lógica de creación distribuida
-
-### Opción B: Creación Proactiva
-
-**Cuándo crear**: Mes actual + próximo mes
-
-**Triggers**:
-1. Cron job diario → Verificar que existan períodos de mes actual y siguiente
-2. Al cerrar período N → Crear período N+1 si no existe
-
-**Ventajas**:
-- ✅ Período siempre listo
-- ✅ Lógica centralizada
-
-**Desventajas**:
-- ⚠️ Crea períodos que pueden no usarse
-- ⚠️ Requiere cron job funcionando
+**Implementación en selector**:
+- Evento `onChange` del selector mes/año
+- Verificación async de existencia de período
+- Diálogo modal con confirmación
+- Recarga completa de datos tras confirmación
 
 ---
 
-## 📝 Implementación Propuesta (Opción A + B Híbrida)
+## 📝 Implementación Propuesta
 
-### 1. Función Helper de Creación
+### 1. Modificación de Schema
+
+**Añadir columna `contribution_disabled` a `monthly_periods`:**
+
+```sql
+-- Migración: database/migrations/development/YYYYMMDD_HHMMSS_add_contribution_disabled.sql
+ALTER TABLE monthly_periods
+ADD COLUMN contribution_disabled BOOLEAN DEFAULT FALSE;
+
+COMMENT ON COLUMN monthly_periods.contribution_disabled IS
+'Si TRUE, no se calculan contribuciones obligatorias para este período. Útil para meses pasados sin obligación de aportación.';
+```
+
+### 2. Función de Creación con Confirmación
 
 ```typescript
-// lib/periods.ts
+// app/sickness/periodos/actions.ts
 
-export async function ensureMonthlyPeriod(
+export async function checkPeriodExists(
   householdId: string,
   year: number,
-  month: number,
-  options?: {
-    phase?: 'preparing' | 'validation' | 'active';
-    autoCalculate?: boolean;
-  }
-): Promise<Result<{ period_id: string }>> {
-  // 1. Verificar si ya existe
-  const existing = await query(
-    `SELECT id, phase FROM monthly_periods 
+  month: number
+): Promise<Result<{ exists: boolean; period?: MonthlyPeriod }>> {
+  const result = await query<MonthlyPeriod>(
+    `SELECT * FROM monthly_periods
      WHERE household_id = $1 AND year = $2 AND month = $3`,
     [householdId, year, month]
   );
 
-  if (existing.rows[0]) {
-    return ok({ period_id: existing.rows[0].id });
-  }
+  return ok({
+    exists: result.rows.length > 0,
+    period: result.rows[0]
+  });
+}
 
-  // 2. Determinar fase inicial
-  const now = new Date();
-  const isPast = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
-  const isCurrent = year === now.getFullYear() && month === now.getMonth() + 1;
-  
-  const initialPhase = options?.phase || (
-    isPast ? 'closed' : 
-    isCurrent ? 'active' : 
-    'preparing'
+export async function createPeriodWithCategories(
+  householdId: string,
+  year: number,
+  month: number,
+  options?: {
+    contribution_disabled?: boolean;
+  }
+): Promise<Result<{ period_id: string }>> {
+  // 1. Crear período en fase 'preparing'
+  const periodResult = await query<{ id: string }>(
+    `INSERT INTO monthly_periods (
+      household_id, year, month, 
+      status, phase, 
+      opening_balance, closing_balance,
+      contribution_disabled
+    )
+    VALUES ($1, $2, $3, 'open', 'preparing', 0, 0, $4)
+    RETURNING id`,
+    [householdId, year, month, options?.contribution_disabled || false]
   );
 
-  // 3. Crear período
-  const result = await query(
-    `INSERT INTO monthly_periods (household_id, year, month, status, phase, opening_balance, closing_balance)
-     VALUES ($1, $2, $3, 'open', $4, 0, 0)
-     RETURNING id`,
-    [householdId, year, month, initialPhase]
+  const periodId = periodResult.rows[0].id;
+
+  // 2. Copiar categorías base del hogar (si no existen)
+  await query(
+    `INSERT INTO categories (household_id, name, icon, type, created_by_profile_id)
+     SELECT $1, name, icon, type, created_by_profile_id
+     FROM categories
+     WHERE household_id = $1
+     ON CONFLICT DO NOTHING`,
+    [householdId]
   );
-
-  const periodId = result.rows[0].id;
-
-  // 4. Si es fase 'validation' o 'active', auto-calcular contribuciones
-  if (options?.autoCalculate && ['validation', 'active'].includes(initialPhase)) {
-    await calculateContributions(householdId, year, month);
-  }
 
   return ok({ period_id: periodId });
 }
 ```
 
-### 2. Modificar Server Actions
-
-**En todas las acciones que registran transacciones:**
+### 3. Componente de Selector con Diálogo
 
 ```typescript
-export async function createTransaction(formData: FormData): Promise<Result> {
-  // ... validación ...
+// app/sickness/components/PeriodSelector.tsx
 
-  // ANTES de insertar transacción, asegurar que existe el período
-  const periodResult = await ensureMonthlyPeriod(
-    householdId,
-    year,
-    month,
-    { phase: 'active', autoCalculate: true }
+'use client';
+
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { checkPeriodExists, createPeriodWithCategories } from '../periodos/actions';
+
+export function PeriodSelector({ currentPeriod, onPeriodChange }) {
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<{ year: number; month: number } | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleDateSelect = async (year: number, month: number) => {
+    const result = await checkPeriodExists(householdId, year, month);
+
+    if (!result.ok) {
+      toast.error('Error al verificar período');
+      return;
+    }
+
+    if (result.data.exists) {
+      // Período existe, cargar datos
+      onPeriodChange(result.data.period);
+    } else {
+      // Período NO existe, mostrar diálogo
+      setSelectedDate({ year, month });
+      setShowDialog(true);
+    }
+  };
+
+  const handleCreatePeriod = async () => {
+    if (!selectedDate) return;
+
+    setIsCreating(true);
+    const result = await createPeriodWithCategories(
+      householdId,
+      selectedDate.year,
+      selectedDate.month
+    );
+
+    if (result.ok) {
+      toast.success(`Período ${selectedDate.month}/${selectedDate.year} creado`);
+      setShowDialog(false);
+      // Recargar datos del nuevo período
+      const newPeriod = await checkPeriodExists(householdId, selectedDate.year, selectedDate.month);
+      if (newPeriod.ok && newPeriod.data.period) {
+        onPeriodChange(newPeriod.data.period);
+      }
+    } else {
+      toast.error(result.message);
+    }
+
+    setIsCreating(false);
+  };
+
+  return (
+    <>
+      {/* Selector de mes/año */}
+      <select onChange={(e) => {
+        const [year, month] = e.target.value.split('-').map(Number);
+        handleDateSelect(year, month);
+      }}>
+        {/* Opciones de meses/años */}
+      </select>
+
+      {/* Diálogo de confirmación */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Período</DialogTitle>
+          </DialogHeader>
+          
+          <p>
+            No existe un período para <strong>{selectedDate?.month}/{selectedDate?.year}</strong>.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            ¿Deseas crear un nuevo período? Se creará en fase de configuración inicial
+            con todas las categorías base del hogar.
+          </p>
+
+          <div className="flex gap-2 justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDialog(false);
+                setSelectedDate(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreatePeriod}
+              disabled={isCreating}
+            >
+              {isCreating ? 'Creando...' : 'Crear Período'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+```
+
+### 4. Cálculo de Contribuciones con Anulación
+
+```typescript
+// lib/contributions/calculate.ts
+
+export async function calculateContributions(
+  householdId: string,
+  year: number,
+  month: number
+): Promise<Result> {
+  // 1. Verificar si el período tiene contribución anulada
+  const periodResult = await query<{ contribution_disabled: boolean }>(
+    `SELECT contribution_disabled FROM monthly_periods
+     WHERE household_id = $1 AND year = $2 AND month = $3`,
+    [householdId, year, month]
   );
 
-  if (!periodResult.ok) return periodResult;
+  if (!periodResult.rows[0]) {
+    return fail('Período no encontrado');
+  }
 
-  // Ahora sí, insertar transacción con period_id
-  await query(
-    `INSERT INTO transactions (..., period_id) VALUES (..., $X)`,
-    [..., periodResult.data.period_id]
-  );
+  const contributionDisabled = periodResult.rows[0].contribution_disabled;
+
+  // 2. Obtener configuración del hogar
+  const settings = await getHouseholdSettings(householdId);
+  const members = await getHouseholdMembers(householdId);
+
+  // 3. Calcular contribuciones
+  for (const member of members) {
+    let expectedAmount = 0;
+
+    if (!contributionDisabled) {
+      // Cálculo normal según método configurado
+      if (settings.calculation_type === 'proportional') {
+        const memberIncome = await getMemberIncome(householdId, member.profile_id);
+        const totalIncome = members.reduce((sum, m) => sum + m.income, 0);
+        expectedAmount = (settings.monthly_contribution_goal * memberIncome) / totalIncome;
+      } else if (settings.calculation_type === 'equal') {
+        expectedAmount = settings.monthly_contribution_goal / members.length;
+      }
+      // ... otros métodos
+    }
+    // Si contributionDisabled = true, expectedAmount queda en 0
+
+    // 4. Insertar/actualizar contribución
+    await query(
+      `INSERT INTO contributions (
+        household_id, profile_id, year, month,
+        expected_amount, paid_amount, status
+      )
+      VALUES ($1, $2, $3, $4, $5, 0, 'pending')
+      ON CONFLICT (household_id, profile_id, year, month)
+      DO UPDATE SET expected_amount = $5`,
+      [householdId, member.profile_id, year, month, expectedAmount]
+    );
+  }
 
   return ok();
 }
 ```
 
-### 3. Cron Job de Seguridad
+### 5. Mejora del Selector Superior
+
+**Asegurar recarga completa tras selección:**
 
 ```typescript
-// scripts/cron/ensure-current-period.ts
+// Añadir key para forzar re-render completo
+<div key={`period-${currentPeriod.id}`}>
+  {/* Contenido de la página */}
+</div>
 
-import { query } from '@/lib/db';
-import { ensureMonthlyPeriod } from '@/lib/periods';
+// O usar router.refresh() tras cambio de período
+import { useRouter } from 'next/navigation';
 
-async function main() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const nextMonth = month === 12 ? 1 : month + 1;
-  const nextYear = month === 12 ? year + 1 : year;
+const router = useRouter();
 
-  // Obtener todos los hogares activos
-  const households = await query(
-    `SELECT id FROM households WHERE deleted_at IS NULL`
-  );
-
-  for (const household of households.rows) {
-    // Asegurar período actual
-    await ensureMonthlyPeriod(household.id, year, month, {
-      phase: 'active',
-      autoCalculate: true
-    });
-
-    // Asegurar próximo período en 'preparing'
-    await ensureMonthlyPeriod(household.id, nextYear, nextMonth, {
-      phase: 'preparing'
-    });
-  }
-
-  console.log(`✅ Períodos verificados para ${households.rows.length} hogares`);
-}
-
-main().catch(console.error);
+const handlePeriodChange = (newPeriod) => {
+  setCurrentPeriod(newPeriod);
+  router.refresh(); // Fuerza recarga de Server Components
+};
 ```
-
-**Ejecutar diariamente con cron:**
-
-```bash
-# /etc/cron.d/cuentassik
-0 3 * * * kava cd /home/kava/workspace/proyectos/CuentasSiK/repo && NODE_ENV=production node scripts/cron/ensure-current-period.js >> /home/kava/logs/cron-periods.log 2>&1
-```
-
-### 4. UI para Gestión Manual
-
-**Nueva página `/app/periods/manage/page.tsx`** (solo Owner):
-
-- **Listar períodos** existentes con su estado
-- **Crear período manualmente** para mes específico
-- **Reabrir período cerrado** (con confirmación)
-- **Eliminar período vacío** (solo si 0 transacciones, 0 contribuciones)
 
 ---
 
@@ -289,9 +500,9 @@ main().catch(console.error);
 
 ```sql
 -- 1. Identificar períodos vacíos (excepto mes actual)
-SELECT 
-  id, 
-  household_id, 
+SELECT
+  id,
+  household_id,
   year || '-' || LPAD(month::text, 2, '0') as periodo,
   phase
 FROM monthly_periods mp
@@ -299,9 +510,9 @@ WHERE NOT EXISTS (
   SELECT 1 FROM transactions t WHERE t.period_id = mp.id
 )
 AND NOT EXISTS (
-  SELECT 1 FROM contributions c 
-  WHERE c.household_id = mp.household_id 
-    AND c.year = mp.year 
+  SELECT 1 FROM contributions c
+  WHERE c.household_id = mp.household_id
+    AND c.year = mp.year
     AND c.month = mp.month
 )
 AND (mp.year != EXTRACT(YEAR FROM CURRENT_DATE) OR mp.month != EXTRACT(MONTH FROM CURRENT_DATE))
@@ -316,9 +527,9 @@ WHERE id IN (
     SELECT 1 FROM transactions t WHERE t.period_id = mp.id
   )
   AND NOT EXISTS (
-    SELECT 1 FROM contributions c 
-    WHERE c.household_id = mp.household_id 
-      AND c.year = mp.year 
+    SELECT 1 FROM contributions c
+    WHERE c.household_id = mp.household_id
+      AND c.year = mp.year
       AND c.month = mp.month
   )
   AND (mp.year != EXTRACT(YEAR FROM CURRENT_DATE) OR mp.month != EXTRACT(MONTH FROM CURRENT_DATE))
@@ -327,35 +538,66 @@ WHERE id IN (
 
 ---
 
-## 🎯 Plan de Implementación
+## 🎯 Plan de Implementación (ACTUALIZADO)
 
-### Fase 1: Limpieza y Diagnóstico ✅
-- [x] Identificar períodos vacíos
-- [x] Verificar integridad de datos
-- [ ] Eliminar períodos vacíos (excepto Oct 2025)
-- [ ] Documentar estado actual
+### Fase 1: Schema y Migración ✅
+- [x] ~~Identificar períodos vacíos~~
+- [x] ~~Eliminar períodos vacíos (24 de 25)~~
+- [ ] **Migración**: Añadir columna `contribution_disabled` a `monthly_periods`
+- [ ] **Migración**: Índices para optimizar queries de existencia de período
 
-### Fase 2: Helper de Creación 🚧
-- [ ] Implementar `ensureMonthlyPeriod()` en `lib/periods.ts`
-- [ ] Añadir tests unitarios para la función
-- [ ] Integrar en acciones existentes (`createTransaction`, etc.)
+### Fase 2: Backend - Creación con Confirmación 🚧
+- [ ] Implementar `checkPeriodExists()` en `app/sickness/periodos/actions.ts`
+- [ ] Implementar `createPeriodWithCategories()` con copia de categorías base
+- [ ] Modificar `calculateContributions()` para soportar contribución anulada
+- [ ] Tests unitarios para creación de períodos con/sin contribución
 
-### Fase 3: Cron Job 📅
-- [ ] Crear script `scripts/cron/ensure-current-period.ts`
-- [ ] Configurar cron job en servidor
-- [ ] Añadir logging y monitoreo
+### Fase 3: Frontend - Selector con Diálogo 🎨
+- [ ] Crear componente `PeriodSelector` con diálogo de confirmación
+- [ ] Integrar en `/app/sickness/credito-deuda/page.tsx`
+- [ ] Asegurar recarga completa de UI tras cambio de período (key o router.refresh())
+- [ ] Añadir indicadores visuales de fase del período en selector
 
-### Fase 4: UI de Gestión 🎨
-- [ ] Página `/app/periods/manage`
-- [ ] Listado de períodos con indicadores visuales
-- [ ] Acciones: Crear, Reabrir, Eliminar
-- [ ] Protección de permisos (solo Owner)
+### Fase 4: UI de Configuración - Fase 'preparing' 🔧
+- [ ] Crear página `/app/sickness/periodos/[id]/configurar`
+- [ ] Tarjeta de configuración de ingresos de miembros
+- [ ] Selector de método de cálculo (proporcional/igual/personalizado)
+- [ ] **Checkbox "Anular contribución obligatoria"** con explicación
+- [ ] Botón "Calcular Contribuciones" → Avanza a fase 'validation'
+- [ ] Validación: Solo owner puede acceder y configurar
 
-### Fase 5: Migración y Documentación 📚
-- [ ] Migración para añadir índices necesarios
-- [ ] Actualizar AGENTS.md con nuevas reglas
-- [ ] Actualizar documentación de flujo de períodos
-- [ ] Comunicación a usuarios sobre cambios
+### Fase 5: Testing y Documentación 📚
+- [ ] Tests E2E del flujo completo:
+  - Seleccionar mes sin período → Diálogo → Crear → Recargar
+  - Configurar período con contribución normal
+  - Configurar período con contribución anulada
+  - Verificar balance con contribución anulada = 0€
+- [ ] Actualizar AGENTS.md con nuevas reglas de períodos
+- [ ] Documentación de usuario sobre anulación de contribución
+
+### Fase 6: Casos de Uso Especiales 🔄
+- [ ] Importación de datos históricos (meses pasados con contribución anulada)
+- [ ] Migración de períodos existentes a nuevo sistema
+- [ ] Herramientas de administración para corrección masiva
+
+---
+
+## 📋 Checklist de Validación
+
+**Antes de considerar completa la implementación:**
+
+- [ ] ✅ Período se crea SOLO con confirmación del usuario
+- [ ] ✅ Diálogo muestra información clara del mes/año a crear
+- [ ] ✅ Todos los períodos nuevos se crean en fase `'preparing'`
+- [ ] ✅ Categorías base se copian automáticamente al crear período
+- [ ] ✅ Selector recarga UI completamente tras crear período
+- [ ] ✅ Checkbox de anulación de contribución funcional en fase `'preparing'`
+- [ ] ✅ Contribuciones con `expected_amount = 0` cuando anuladas
+- [ ] ✅ Balance muestra "Saldado (0€)" para todos con contribución anulada
+- [ ] ✅ Gastos directos se registran normalmente incluso con contribución anulada
+- [ ] ✅ NO se pueden anular contribuciones después de fase `'preparing'`
+- [ ] ✅ Meses pasados pueden crearse con contribución anulada
+- [ ] ✅ Tests cubren casos de uso normales + anulación
 
 ---
 
