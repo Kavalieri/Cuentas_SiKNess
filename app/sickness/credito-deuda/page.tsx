@@ -13,9 +13,9 @@ import {
   rejectCreditRefund,
   rejectPersonalLoan,
   repayLoan,
-  requestCreditRefund,
-  requestPersonalLoan,
 } from './actions';
+import { RefundRequestForm } from './components/RefundRequestForm';
+import { LoanRequestForm } from './components/LoanRequestForm';
 
 export default async function CreditDebtPage() {
   const user = await getCurrentUser();
@@ -241,89 +241,6 @@ export default async function CreditDebtPage() {
 // ============================================================
 // COMPONENTES DE FORMULARIO
 // ============================================================
-
-function RefundRequestForm({ credit }: { credit: number }) {
-  async function action(formData: FormData) {
-    'use server';
-    const amount = Number(formData.get('amount'));
-    const notes = String(formData.get('notes') || '');
-    await requestCreditRefund(amount, notes);
-    revalidatePath('/sickness/credito-deuda');
-  }
-
-  return (
-    <form action={action} className="space-y-3">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Importe (€)</label>
-          <input
-            name="amount"
-            type="number"
-            step="0.01"
-            min={0.01}
-            max={credit}
-            defaultValue={credit}
-            className="w-full rounded-md border px-3 py-2 bg-background"
-            required
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Notas (opcional)</label>
-          <input
-            name="notes"
-            type="text"
-            className="w-full rounded-md border px-3 py-2 bg-background"
-            placeholder="Motivo del reembolso"
-          />
-        </div>
-      </div>
-      <button type="submit" className="rounded-md bg-primary px-4 py-2 text-primary-foreground text-sm font-medium hover:bg-primary/90">
-        Solicitar reembolso
-      </button>
-    </form>
-  );
-}
-
-function LoanRequestForm() {
-  async function action(formData: FormData) {
-    'use server';
-    const amount = Number(formData.get('amount'));
-    const notes = String(formData.get('notes') || '');
-    await requestPersonalLoan(amount, notes);
-    revalidatePath('/sickness/credito-deuda');
-  }
-
-  return (
-    <form action={action} className="space-y-3">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Importe (€)</label>
-          <input
-            name="amount"
-            type="number"
-            step="0.01"
-            min="0.01"
-            className="w-full rounded-md border px-3 py-2 bg-background"
-            required
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-muted-foreground mb-1">Motivo</label>
-          <input
-            name="notes"
-            type="text"
-            className="w-full rounded-md border px-3 py-2 bg-background"
-            placeholder="¿Para qué necesitas el préstamo?"
-            required
-          />
-        </div>
-      </div>
-      <button type="submit" className="rounded-md bg-primary px-4 py-2 text-primary-foreground text-sm font-medium hover:bg-primary/90">
-        Solicitar préstamo
-      </button>
-    </form>
-  );
-}
 
 // ============================================================
 // TABLAS

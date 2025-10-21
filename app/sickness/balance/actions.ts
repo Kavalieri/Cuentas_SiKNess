@@ -196,20 +196,25 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
 
   const { movementId, householdId, amount, description, categoryId, occurredAt, paidBy } = parsed.data;
 
-  // Permisos: solo owners pueden editar movimientos comunes
+  // Permisos: members pueden editar sus propios movimientos, owners pueden editar todos
   const profileId = await getCurrentProfileId();
   if (!profileId) return fail('No autenticado');
-  const owner = await isHouseholdOwner(profileId, householdId);
-  if (!owner) return fail('No autorizado: se requiere ser owner del hogar');
 
   // Verificar movimiento y tipo
-  const txRes = await query<{ type: string; flow_type: string }>(
-    `SELECT type, flow_type FROM transactions WHERE id = $1 AND household_id = $2`,
+  const txRes = await query<{ type: string; flow_type: string; profile_id: string | null }>(
+    `SELECT type, flow_type, profile_id FROM transactions WHERE id = $1 AND household_id = $2`,
     [movementId, householdId]
   );
   if (txRes.rows.length === 0) return fail('Movimiento no encontrado');
   const tx = txRes.rows[0];
   if (!tx || tx.flow_type !== 'common') return fail('El movimiento no pertenece al flujo común');
+
+  // Verificar permisos: owner O dueño del movimiento
+  const owner = await isHouseholdOwner(profileId, householdId);
+  const isMembersOwnMovement = tx.profile_id === profileId;
+  if (!owner && !isMembersOwnMovement) {
+    return fail('No autorizado: solo puedes editar tus propios movimientos');
+  }
 
   // Parsear fecha/hora y recalcular periodo
   const { occurred_at_date, performed_at_ts } = parseDateTimeInput(occurredAt);

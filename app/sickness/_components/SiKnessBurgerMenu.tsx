@@ -52,7 +52,7 @@ export function SiKnessBurgerMenu() {
         {
           icon: BarChart3, // O puedes usar BarChart2 si prefieres
           label: 'Estadísticas',
-          href: '/sickness/statistics',
+          href: '/sickness/estadisticas',
         },
       ],
     },

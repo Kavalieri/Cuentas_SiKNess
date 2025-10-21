@@ -26,7 +26,7 @@ interface EditCommonMovementButtonProps {
 export function EditCommonMovementButton({ tx, householdId, onSuccess, categories, members }: EditCommonMovementButtonProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: {
       amount: tx.amount,

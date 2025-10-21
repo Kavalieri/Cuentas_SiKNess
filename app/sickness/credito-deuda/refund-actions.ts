@@ -94,9 +94,9 @@ export async function createActiveRefund(
           occurred_at, performed_at, flow_type, transaction_pair_id,
           profile_id, real_payer_id,
           created_by_profile_id, performed_by_email, created_by_email
-        ) VALUES ($1, $2, 'expense_direct', $3, 'EUR', $4, 
+        ) VALUES ($1, $2, 'expense_direct', $3, 'EUR', $4,
                   NOW()::date, NOW(), 'direct', $5,
-                  $6, $6, 
+                  $6, $6,
                   $6, $7, $8)
         RETURNING id`,
         [
@@ -187,8 +187,8 @@ export async function declareRefund(
     return await transaction(async (client) => {
       // 1. Verificar que el gasto existe y pertenece a este hogar
       const txRes = await client.query(
-        `SELECT id, type, flow_type, amount, profile_id 
-         FROM transactions 
+        `SELECT id, type, flow_type, amount, profile_id
+         FROM transactions
          WHERE id = $1 AND household_id = $2`,
         [expenseTransactionId, householdId],
       );
@@ -294,7 +294,7 @@ export async function getPendingRefundClaims(): Promise<
       reason: string | null;
       claimed_at: string;
     }>(
-      `SELECT 
+      `SELECT
         rc.id, rc.profile_id, p.email, p.display_name,
         rc.refund_amount, t_expense.amount as expense_amount,
         c.name as expense_category, c.icon as category_icon,
@@ -468,12 +468,12 @@ export async function getUnreimbursedDirectExpenses(): Promise<
       amount: string | number;
       occurred_at: string;
     }>(
-      `SELECT 
+      `SELECT
         t.id, c.name as category, c.icon, t.description,
         t.amount, t.occurred_at::text
        FROM transactions t
        LEFT JOIN categories c ON c.id = t.category_id
-       WHERE t.household_id = $1 
+       WHERE t.household_id = $1
          AND t.profile_id = $2
          AND t.type = 'expense_direct'
          AND t.flow_type = 'direct'
