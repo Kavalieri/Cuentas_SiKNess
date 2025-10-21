@@ -14,15 +14,34 @@ interface BalanceFiltersProps {
   };
   categories: Array<{ id: string; name: string }>;
   members: Array<{ profile_id: string; email: string }>;
+  periods?: Array<{ year: number; month: number }>;
   onChange: (filters: Partial<BalanceFiltersProps['filters']>) => void;
   onNewMovement?: () => void;
   canCreateMovement?: boolean;
 }
 
 
-export function BalanceFilters({ filters, categories, members, onChange, onNewMovement, canCreateMovement }: BalanceFiltersProps) {
+export function BalanceFilters({ filters, categories, members, periods = [], onChange, onNewMovement, canCreateMovement }: BalanceFiltersProps) {
   const [open, setOpen] = useState(false);
 
+  // Helper para obtener nombre del mes
+  const getMonthName = (month?: number) => {
+    if (!month || month < 1 || month > 12) return 'Mes inválido';
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return months[month - 1];
+  };
+
+  // Helper para convertir periodo a rango de fechas
+  const getPeriodDateRange = (year?: number, month?: number) => {
+    if (!year || !month || month < 1 || month > 12) {
+      return { startDate: '', endDate: '' };
+    }
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+    return { startDate, endDate };
+  };
 
   return (
     <div className="mb-4">
@@ -37,7 +56,35 @@ export function BalanceFilters({ filters, categories, members, onChange, onNewMo
         )}
       </div>
       {open && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4 p-4 rounded border bg-muted">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-6 gap-4 p-4 rounded border bg-muted">
+          <div>
+            <label className="block text-xs font-medium mb-1">Período</label>
+            <select
+              className="border rounded px-2 py-1 w-full"
+              onChange={(e) => {
+                if (e.target.value) {
+                  const parts = e.target.value.split('-');
+                  if (parts.length === 2) {
+                    const year = parseInt(parts[0]!, 10);
+                    const month = parseInt(parts[1]!, 10);
+                    const { startDate, endDate } = getPeriodDateRange(year, month);
+                    onChange({ startDate, endDate });
+                  }
+                } else {
+                  onChange({ startDate: '', endDate: '' });
+                }
+              }}
+            >
+              <option value="">Todos los períodos</option>
+              {periods
+                .filter((p) => p.year && p.month && p.month >= 1 && p.month <= 12)
+                .map((p) => (
+                  <option key={`${p.year}-${p.month}`} value={`${p.year}-${p.month}`}>
+                    {getMonthName(p.month)} {p.year}
+                  </option>
+                ))}
+            </select>
+          </div>
           <div>
             <label className="block text-xs font-medium mb-1">Miembro</label>
             <select
@@ -87,20 +134,23 @@ export function BalanceFilters({ filters, categories, members, onChange, onNewMo
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1">Fecha inicio</label>
-            <input
-              type="date"
-              className="border rounded px-2 py-1 w-full"
-              value={filters.startDate || ''}
-              onChange={(e) => onChange({ startDate: e.target.value })}
-            />
-            <label className="block text-xs font-medium mb-1 mt-2">Fecha fin</label>
-            <input
-              type="date"
-              className="border rounded px-2 py-1 w-full"
-              value={filters.endDate || ''}
-              onChange={(e) => onChange({ endDate: e.target.value })}
-            />
+            <label className="block text-xs font-medium mb-1">Rango personalizado</label>
+            <div className="space-y-1">
+              <input
+                type="date"
+                className="border rounded px-2 py-1 w-full text-xs"
+                value={filters.startDate || ''}
+                onChange={(e) => onChange({ startDate: e.target.value })}
+                placeholder="Desde"
+              />
+              <input
+                type="date"
+                className="border rounded px-2 py-1 w-full text-xs"
+                value={filters.endDate || ''}
+                onChange={(e) => onChange({ endDate: e.target.value })}
+                placeholder="Hasta"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -109,7 +159,7 @@ export function BalanceFilters({ filters, categories, members, onChange, onNewMo
         {filters.member && <Badge variant="secondary">Miembro</Badge>}
         {filters.category && <Badge variant="secondary">Categoría</Badge>}
         {filters.type && <Badge variant="secondary">Tipo</Badge>}
-        {filters.search && <Badge variant="secondary">Búsqueda</Badge>}
+        {filters.search && <Badge variant="secondary">Búsqueda: {filters.search}</Badge>}
         {filters.startDate && <Badge variant="secondary">Desde: {filters.startDate}</Badge>}
         {filters.endDate && <Badge variant="secondary">Hasta: {filters.endDate}</Badge>}
       </div>

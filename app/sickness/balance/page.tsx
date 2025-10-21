@@ -73,7 +73,9 @@ export default function BalancePage() {
     member: '',
     category: '',
     type: '',
-    search: ''
+    search: '',
+    startDate: '',
+    endDate: ''
   });
 
   const [members, setMembers] = useState<Array<{ profile_id: string; email: string; role: string }>>([]);
@@ -148,12 +150,25 @@ export default function BalancePage() {
       if (filters.type) params.append('flowType', filters.type);
       if (filters.member) params.append('memberId', filters.member);
       if (filters.category) params.append('categoryId', filters.category);
-      // startDate y endDate no están en el objeto filters todavía, los podemos ignorar por ahora
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
 
       const response = await fetch(`/api/sickness/transactions/global?${params}`);
       if (!response.ok) throw new Error('Error al cargar transacciones');
       const data = await response.json();
-      setTransactions(data.transactions || []);
+      
+      // Aplicar filtro de búsqueda localmente
+      let filtered = data.transactions || [];
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filtered = filtered.filter((tx: Transaction) => {
+          const description = (tx.description || '').toLowerCase();
+          const amount = tx.amount.toString();
+          return description.includes(searchLower) || amount.includes(searchLower);
+        });
+      }
+      
+      setTransactions(filtered);
     } catch (error) {
       console.error('Error loading transactions:', error);
     }
@@ -470,6 +485,7 @@ export default function BalancePage() {
         filters={filters}
         members={members}
         categories={categories}
+        periods={periods}
         onChange={(partial) => setFilters((prev) => ({ ...prev, ...partial }))}
       />
 
