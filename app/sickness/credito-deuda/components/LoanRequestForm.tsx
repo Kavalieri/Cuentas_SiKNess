@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { requestPersonalLoan } from '@/app/sickness/credito-deuda/actions';
+import { useState } from 'react';
 
 interface LoanRequestFormProps {
   onSuccess?: () => void;

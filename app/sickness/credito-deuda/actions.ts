@@ -730,23 +730,31 @@ export async function requestCreditRefund(
   if (!amount || amount <= 0) return fail('El importe debe ser mayor que 0');
 
   try {
-    // Verificar crédito disponible
+    // Obtener balance usando la función de BD que también usa la UI (misma fuente de verdad)
     const balRes = await query(
-      `SELECT COALESCE(current_balance, 0) AS current_balance
-       FROM member_balances
-       WHERE household_id = $1 AND profile_id = $2`,
+      `SELECT 
+        (get_member_balance_status($1, $2)->>'credit')::numeric AS credit,
+        (get_member_balance_status($1, $2)->>'status')::text AS status
+       FROM household_members
+       WHERE household_id = $1 AND profile_id = $2
+       LIMIT 1`,
       [householdId, user.profile_id],
     );
 
-    const current = Number(balRes.rows[0]?.current_balance ?? 0);
-    const credit = Math.max(current, 0);
-    if (credit <= 0) return fail('No tienes saldo a favor');
-    if (amount > credit) return fail('El importe excede tu saldo a favor');
+    const balData = balRes.rows[0];
+    const credit = Number(balData?.credit ?? 0);
+
+    if (credit <= 0) {
+      return fail('No tienes saldo a favor disponible para solicitar reembolso');
+    }
+    if (amount > credit) {
+      return fail(`El importe (€${amount.toFixed(2)}) excede tu saldo a favor (€${credit.toFixed(2)})`);
+    }
 
     const result = await query(
       `INSERT INTO credit_refund_requests (
-        household_id, profile_id, amount, notes, requested_by, status
-      ) VALUES ($1, $2, $3, $4, $5, 'pending')
+        household_id, profile_id, amount, notes, requested_by, status, refund_type
+      ) VALUES ($1, $2, $3, $4, $5, 'pending', 'balance')
       RETURNING id`,
       [householdId, user.profile_id, amount, (notes || '').trim() || null, user.profile_id],
     );
@@ -874,55 +882,99 @@ export async function approveCreditRefund(requestId: string): Promise<Result> {
         `SELECT * FROM credit_refund_requests WHERE id = $1 AND household_id = $2 FOR UPDATE`,
         [requestId, householdId],
       );
-      const request = rRes.rows[0];
+      const request = rRes.rows[0] as {
+        id: string;
+        profile_id: string;
+        amount: number;
+        status: string;
+        notes: string | null;
+        refund_type: string;
+        refund_transaction_id?: string;
+      };
       if (!request) throw new Error('Solicitud no encontrada');
       if (request.status !== 'pending') throw new Error('La solicitud ya fue procesada');
 
-      // Verificar crédito actual
+      // Verificar crédito actual usando la función de BD
       const balRes = await client.query(
-        `SELECT COALESCE(current_balance, 0) AS current_balance
-         FROM member_balances WHERE household_id = $1 AND profile_id = $2 FOR UPDATE`,
+        `SELECT 
+          (get_member_balance_status($1, $2)->>'credit')::numeric AS credit
+         FROM household_members
+         WHERE household_id = $1 AND profile_id = $2 FOR UPDATE
+         LIMIT 1`,
         [householdId, request.profile_id],
       );
-      const current = Number(balRes.rows[0]?.current_balance ?? 0);
-      const credit = Math.max(current, 0);
-      if (credit < request.amount) throw new Error('Saldo a favor insuficiente en este momento');
+      const credit = Number(balRes.rows[0]?.credit ?? 0);
+      if (credit < request.amount) {
+        throw new Error(`Saldo a favor insuficiente: solicitó €${request.amount.toFixed(2)} pero solo tiene €${credit.toFixed(2)}`);
+      }
 
-      // Asegurar categoría
-      const refundCategoryId = await ensureRefundCategory(householdId);
+      let txId: string | null = null;
 
-      // Crear transacción de gasto
-      const txRes = await client.query(
-        `INSERT INTO transactions (
-          household_id, category_id, profile_id, type, amount, currency, description,
-          occurred_at, performed_at, flow_type, created_by_profile_id, performed_by_email
-        ) VALUES ($1, $2, $3, 'expense', $4, 'EUR', $5, NOW(), NOW(), 'common', $6, $7)
-        RETURNING id`,
-        [
-          householdId,
-          refundCategoryId,
-          request.profile_id,
-          request.amount,
-          `Reembolso saldo a favor${request.notes ? `: ${request.notes}` : ''}`,
-          user.profile_id,
-          user.email,
-        ],
-      );
-      if (!txRes.rows[0]?.id) throw new Error('No se pudo crear la transacción de reembolso');
-      const txId = txRes.rows[0].id as string;
+      if (request.refund_type === 'balance') {
+        // TIPO 1: Balance - Genera transacción de gasto al aprobar
+        const refundCategoryId = await ensureRefundCategory(householdId);
 
-      // Reducir balance del miembro
-      await client.query(
-        `SELECT update_member_balance($1, $2, $3, $4)`,
-        [householdId, request.profile_id, -Number(request.amount), 'Aprobado reembolso de saldo a favor'],
-      );
+        const txRes = await client.query(
+          `INSERT INTO transactions (
+            household_id, category_id, profile_id, type, amount, currency, description,
+            occurred_at, performed_at, flow_type, created_by_profile_id, performed_by_email
+          ) VALUES ($1, $2, $3, 'expense', $4, 'EUR', $5, NOW(), NOW(), 'common', $6, $7)
+          RETURNING id`,
+          [
+            householdId,
+            refundCategoryId,
+            request.profile_id,
+            request.amount,
+            `Reembolso saldo a favor${request.notes ? `: ${request.notes}` : ''}`,
+            user.profile_id,
+            user.email,
+          ],
+        );
+        if (!txRes.rows[0]?.id) throw new Error('No se pudo crear la transacción de reembolso');
+        txId = txRes.rows[0].id as string;
+
+        // Reducir balance del miembro
+        await client.query(
+          `SELECT update_member_balance($1, $2, $3, $4)`,
+          [householdId, request.profile_id, -Number(request.amount), 'Aprobado reembolso de saldo a favor'],
+        );
+      } else if (request.refund_type === 'transaction') {
+        // TIPO 2: Transaction - Solo vincula y resta saldo (sin cálculos extra)
+        if (!request.refund_transaction_id) {
+          throw new Error('Reembolso tipo transaction debe tener una transacción vinculada');
+        }
+
+        // Verificar que la transacción existe y pertenece al hogar
+        const txRes = await client.query(
+          `SELECT id, amount FROM transactions 
+           WHERE id = $1 AND household_id = $2 AND type IN ('expense', 'expense_direct')
+           LIMIT 1`,
+          [request.refund_transaction_id, householdId],
+        );
+        if (!txRes.rows[0]) {
+          throw new Error('Transacción vinculada no encontrada o no es un gasto');
+        }
+
+        txId = request.refund_transaction_id;
+
+        // Solo resta el saldo, sin crear movimientos adicionales
+        await client.query(
+          `SELECT update_member_balance($1, $2, $3, $4)`,
+          [
+            householdId,
+            request.profile_id,
+            -Number(request.amount),
+            `Reembolso validado de transacción ${txId}`,
+          ],
+        );
+      }
 
       // Marcar solicitud aprobada
       await client.query(
         `UPDATE credit_refund_requests
          SET status = 'approved', approved_by = $1, approved_at = NOW(), refund_transaction_id = $2
          WHERE id = $3`,
-        [user.profile_id, txId, requestId],
+        [user.profile_id, txId || request.refund_transaction_id, requestId],
       );
     });
 
