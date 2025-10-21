@@ -1,7 +1,7 @@
 // ARCHIVO ELIMINADO: Este selector ha sido migrado y ya no se usa.
 'use client';
 
-import { createPeriodWithCategories } from '@/app/dual-flow/periodos/actions';
+import { createPeriodWithCategories } from '@/app/sickness/periods/actions';
 import {
     AlertDialog,
     AlertDialogAction,
