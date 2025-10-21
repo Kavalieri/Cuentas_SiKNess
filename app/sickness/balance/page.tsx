@@ -75,7 +75,6 @@ export default function BalancePage() {
     search: ''
   });
   
-  const [limit, setLimit] = useState(10);
   const [members, setMembers] = useState<Array<{ profile_id: string; email: string; role: string }>>([]);
   const [categories, setCategories] = useState<Array<{ id: string; name: string; icon?: string; type?: string }>>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -129,7 +128,7 @@ export default function BalancePage() {
     try {
       const params = new URLSearchParams({
         householdId,
-        limit: limit.toString(),
+        limit: '10',
       });
 
       if (filters.type) params.append('flowType', filters.type);
@@ -144,7 +143,7 @@ export default function BalancePage() {
     } catch (error) {
       console.error('Error loading transactions:', error);
     }
-  }, [householdId, limit, filters]);
+  }, [householdId, filters]);
 
   // Cargar todos los datos
   useEffect(() => {
@@ -195,7 +194,7 @@ export default function BalancePage() {
   );
 
   // Handler para intentar crear nuevo movimiento
-  const handleNewMovementClick = useCallback(() => {
+  const _handleNewMovementClick = useCallback(() => {
     console.log('🔘 Click en Nuevo movimiento:', { selectedPeriod, selectedPeriodFull, phase, canCreateMovement });
     if (!canCreateMovement) {
       setShowPhaseAlert(true);

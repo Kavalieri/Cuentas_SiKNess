@@ -5,6 +5,16 @@ import { query } from '@/lib/db';
 import { fail, ok, type Result } from '@/lib/result';
 import { revalidatePath } from 'next/cache';
 
+interface MonthlyPeriodData {
+  id: string;
+  year: number;
+  month: number;
+  phase: string;
+  status: string;
+  contribution_disabled: boolean;
+  created_at: string;
+}
+
 /**
  * Verifica si existe un período para el household, año y mes especificados
  */
@@ -12,7 +22,7 @@ export async function checkPeriodExists(
   householdId: string,
   year: number,
   month: number,
-): Promise<Result<{ exists: boolean; period?: any }>> {
+): Promise<Result<{ exists: boolean; period?: MonthlyPeriodData }>> {
   try {
     const result = await query(
       `
@@ -36,7 +46,7 @@ export async function checkPeriodExists(
     if (result.rows.length > 0) {
       return ok({
         exists: true,
-        period: result.rows[0],
+        period: result.rows[0] as MonthlyPeriodData,
       });
     }
 
@@ -111,23 +121,17 @@ export async function createPeriodWithCategories(
   }
 }
 
+interface MonthlyPeriodWithStats extends MonthlyPeriodData {
+  transaction_count: number;
+  has_direct_expenses: boolean;
+  has_common_transactions: boolean;
+}
+
 /**
  * Obtiene todos los períodos de un household con información de transacciones
  */
 export async function getHouseholdPeriods(): Promise<
-  Result<
-    Array<{
-      id: string;
-      year: number;
-      month: number;
-      phase: string;
-      status: string;
-      contribution_disabled: boolean;
-      transaction_count: number;
-      has_direct_expenses: boolean;
-      has_common_transactions: boolean;
-    }>
-  >
+  Result<MonthlyPeriodWithStats[]>
 > {
   try {
     const householdId = await getUserHouseholdId();
@@ -159,7 +163,7 @@ export async function getHouseholdPeriods(): Promise<
       [householdId],
     );
 
-    return ok(result.rows as any);
+    return ok(result.rows as unknown as MonthlyPeriodWithStats[]);
   } catch (error) {
     console.error('Error fetching household periods:', error);
     return fail('Error al obtener períodos');
