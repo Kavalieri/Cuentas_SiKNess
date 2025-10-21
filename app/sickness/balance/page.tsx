@@ -142,7 +142,7 @@ export default function BalancePage() {
     try {
       const params = new URLSearchParams({
         householdId,
-        limit: '10',
+        // NO limitar - traer TODAS para paginar en frontend
       });
 
       if (filters.type) params.append('flowType', filters.type);

@@ -28,7 +28,7 @@ export interface PeriodOption {
 /**
  * Obtiene gastos por categoría para un período específico
  * Si no se proporciona período, devuelve datos globales
- * NOTA: Los gastos directos se incluyen (flow_type = 'direct', type = 'expense')
+ * NOTA: Se incluyen TODOS los gastos (comunes + directos + legacy)
  */
 export async function getExpensesByCategory(
   householdId: string,
@@ -45,7 +45,6 @@ export async function getExpensesByCategory(
       LEFT JOIN categories c ON t.category_id = c.id
       WHERE t.household_id = $1
         AND t.type = 'expense'
-        AND (t.flow_type = 'common' OR (t.flow_type = 'direct' AND t.type = 'expense'))
     `;
 
     const params: (string | number)[] = [householdId];
@@ -78,6 +77,7 @@ export async function getExpensesByCategory(
  * Obtiene ingresos vs gastos por mes
  * Si no se proporciona período, devuelve últimos 6 meses
  * NOTA: Incluye ingresos directos (compensatorios) en los ingresos totales
+ * Incluye TODOS los gastos (comunes + directos + legacy)
  * Los ingresos directos son automáticos y compensan los gastos de bolsillo
  */
 export async function getIncomeVsExpenses(
