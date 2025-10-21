@@ -44,7 +44,7 @@ export async function getExpensesByCategory(
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
       WHERE t.household_id = $1
-        AND t.type = 'expense'
+        AND t.type IN ('expense', 'expense_direct')
     `;
 
     const params: (string | number)[] = [householdId];
@@ -92,7 +92,7 @@ export async function getIncomeVsExpenses(
         EXTRACT(MONTH FROM t.occurred_at)::int as month_num,
         EXTRACT(YEAR FROM t.occurred_at)::int as year_num,
         COALESCE(SUM(CASE WHEN (t.type = 'income' OR t.type = 'income_direct') THEN t.amount ELSE 0 END), 0) as income,
-        COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as expense
+        COALESCE(SUM(CASE WHEN t.type IN ('expense', 'expense_direct') THEN t.amount ELSE 0 END), 0) as expense
       FROM transactions t
       WHERE t.household_id = $1
     `;
