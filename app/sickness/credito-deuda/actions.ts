@@ -189,7 +189,17 @@ export async function getMemberBalanceStatus(
         // Total pagado = ingresos comunes + gastos directos (si aplica según fase)
         const paid = paidCommon + effectivePaidDirect;
 
-        const pendingRaw = paid - expected;
+        // 7) Descontar reembolsos aprobados (ambos modos: activos + declarados)
+        // - Reembolsos activos: ya se reflejan en transacciones (expense_direct + income_direct)
+        //   pero estos se suman en los cálculos anteriores, así que los deducimos
+        // - Reembolsos declarados: se cuentan como aprobados y se deducen del balance
+        const approvedRefundsRes = await query<{ total_refunded: string | null }>(
+          `SELECT COALESCE(get_approved_refunds($1, $2), 0) as total_refunded`,
+          [householdId, user.profile_id],
+        );
+        const approvedRefunds = Number(approvedRefundsRes.rows[0]?.total_refunded ?? 0);
+
+        const pendingRaw = paid - expected - approvedRefunds;
         const pendingCents = Math.round(pendingRaw * 100);
         pendingBalance = pendingCents / 100;
 
@@ -202,6 +212,7 @@ export async function getMemberBalanceStatus(
           effectivePaidDirect,
           shouldCountDirectAsPaid,
           paid,
+          approvedRefunds,
           pendingBalance,
         });
       }
