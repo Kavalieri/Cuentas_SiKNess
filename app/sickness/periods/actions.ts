@@ -87,17 +87,19 @@ export async function createPeriodWithCategories(
     console.log('[createPeriodWithCategories] Period does not exist, creating...');
 
     // Crear el período en estado SETUP
+    // phase: 'preparing' (inicial), status: 'open' (constraint de DB)
     const insertResult = await query(
       `
       INSERT INTO monthly_periods (
         household_id,
         year,
         month,
+        phase,
         status,
         opening_balance,
         closing_balance,
         created_at
-      ) VALUES ($1, $2, $3, 'active', 0, 0, NOW())
+      ) VALUES ($1, $2, $3, 'preparing', 'open', 0, 0, NOW())
       RETURNING id
     `,
       [householdId, year, month],
