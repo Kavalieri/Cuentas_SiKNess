@@ -1,28 +1,82 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart3 } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-/**
- * Gráfico de barras: Ingresos vs Gastos
- * Estado: Estructura sin datos reales
- * TODO: Conectar con datos del servidor
- */
-export function IngresosVsGastos() {
+interface IncomeVsExpense {
+  month: string;
+  income: number;
+  expense: number;
+}
+
+interface IngresosVsGastosProps {
+  title?: string;
+  data: IncomeVsExpense[];
+  isLoading?: boolean;
+}
+
+export function IngresosVsGastos({
+  title = 'Ingresos vs Gastos',
+  data,
+  isLoading = false,
+}: IngresosVsGastosProps) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex items-center justify-center text-muted-foreground">
+            Cargando...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex items-center justify-center text-muted-foreground">
+            Sin datos de ingresos/gastos
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          📈 Ingresos vs Gastos
+          <BarChart3 className="h-4 w-4" />
+          {title}
         </CardTitle>
-        <CardDescription>Comparativa mensual</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-center h-64 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
-          <div className="text-center text-muted-foreground">
-            <p className="text-sm">Gráfico de barras: Ingresos vs Gastos</p>
-            <p className="text-xs mt-1">(Datos reales próximamente)</p>
-          </div>
-        </div>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" fontSize={12} />
+            <YAxis fontSize={12} />
+            <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
+            <Legend />
+            <Bar dataKey="income" fill="#10b981" name="Ingresos" />
+            <Bar dataKey="expense" fill="#ef4444" name="Gastos" />
+          </BarChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

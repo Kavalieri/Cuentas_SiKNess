@@ -1,139 +1,136 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { BarChart3, PieChart } from 'lucide-react';
+import { AlertCircle, BarChart3 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions';
+import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
 import { GastosPorCategoria, IngresosVsGastos } from './components';
 
 export default function EstadisticasPage() {
   const { activePeriod, selectedPeriod, periods, householdId } = useSiKness();
+
+  // Datos globales
+  const [globalExpenses, setGlobalExpenses] = useState<ExpenseByCategory[]>([]);
+  const [globalIncomeVsExpenses, setGlobalIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
+
+  // Datos del período seleccionado
+  const [periodExpenses, setPeriodExpenses] = useState<ExpenseByCategory[]>([]);
+  const [periodIncomeVsExpenses, setPeriodIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
+
   const [loading, setLoading] = useState(true);
 
-  // Determinar período seleccionado completo
+  // Obtener período completo a partir del selectedPeriod
   const selectedPeriodFull = useMemo(() => {
     if (!selectedPeriod) return activePeriod;
-    return periods.find((p) => p.year === selectedPeriod.year && p.month === selectedPeriod.month) || activePeriod;
+    return periods.find((p: PeriodOption) => `${p.year}-${String(p.month).padStart(2, '0')}` === `${selectedPeriod.year}-${String(selectedPeriod.month).padStart(2, '0')}`) || activePeriod;
   }, [selectedPeriod, periods, activePeriod]);
 
-  // Formatear nombre del período para mostrar
+  // Nombre del período en formato legible
   const periodName = useMemo(() => {
     if (!selectedPeriodFull) return 'Período actual';
-    const months = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return `${months[selectedPeriodFull.month - 1]} ${selectedPeriodFull.year}`;
   }, [selectedPeriodFull]);
 
   useEffect(() => {
-    // Simular carga de datos
-    setLoading(false);
-  }, [householdId, selectedPeriodFull]);
+    if (!householdId) return;
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-center py-12 text-muted-foreground">Cargando estadísticas...</div>
-      </div>
-    );
-  }
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        // Cargar datos globales
+        const globalExp = await getExpensesByCategory(householdId);
+        const globalIncome = await getIncomeVsExpenses(householdId);
+
+        setGlobalExpenses(globalExp);
+        setGlobalIncomeVsExpenses(globalIncome);
+
+        // Cargar datos del período seleccionado
+        if (selectedPeriodFull) {
+          const periodExp = await getExpensesByCategory(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
+          const periodIncome = await getIncomeVsExpenses(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
+
+          setPeriodExpenses(periodExp);
+          setPeriodIncomeVsExpenses(periodIncome);
+        }
+      } catch (error) {
+        console.error('Error loading statistics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [householdId, selectedPeriodFull]);
 
   return (
     <div className="container mx-auto p-4 space-y-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-primary" />
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <BarChart3 className="h-8 w-8 text-primary" />
           Estadísticas
         </h1>
-        <p className="text-sm text-muted-foreground">Análisis y visualización de gastos e ingresos</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Visualiza tus gastos e ingresos de forma detallada
+        </p>
       </div>
 
-      {/* BLOQUE 1: Datos Globales (todos los períodos) */}
-      <div className="space-y-4">
-        <div className="border-b pb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <PieChart className="h-5 w-5 text-blue-500" />
-            Datos Globales
+      {/* BLOQUE 1: Datos Globales */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
+            📊 Datos Globales
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Visualización de todos los períodos sin filtro
+            Resumen de todos los períodos sin filtro
           </p>
         </div>
-
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Gráfico 1: Gastos por categoría (global) */}
-          <GastosPorCategoria />
-
-          {/* Gráfico 2: Ingresos vs Gastos (global) */}
-          <IngresosVsGastos />
+          <GastosPorCategoria data={globalExpenses} isLoading={loading} title="Gastos por Categoría" />
+          <IngresosVsGastos data={globalIncomeVsExpenses} isLoading={loading} title="Ingresos vs Gastos" />
         </div>
-      </div>
+      </section>
 
-      {/* BLOQUE 2: Datos del Período Seleccionado */}
-      <div className="space-y-4">
-        <div className="border-b pb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <PieChart className="h-5 w-5 text-green-500" />
-            Período: {periodName}
+      {/* BLOQUE 2: Período Seleccionado */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
+            📅 Período: {periodName}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Estadísticas del período seleccionado en la barra superior
+            Datos filtrados por el período seleccionado en la barra superior
           </p>
         </div>
-
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Gráfico 1: Gastos por categoría (período) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                📊 Gastos por Categoría
-              </CardTitle>
-              <CardDescription>Distribución en {periodName}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-64 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
-                <div className="text-center text-muted-foreground">
-                  <p className="text-sm">Gráfico circular: Gastos por categoría</p>
-                  <p className="text-xs mt-1">(Datos reales próximamente)</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Gráfico 2: Ingresos vs Gastos (período) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                📈 Ingresos vs Gastos
-              </CardTitle>
-              <CardDescription>Comparativa en {periodName}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-64 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
-                <div className="text-center text-muted-foreground">
-                  <p className="text-sm">Gráfico de barras: Ingresos vs Gastos</p>
-                  <p className="text-xs mt-1">(Datos reales próximamente)</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <GastosPorCategoria
+            data={periodExpenses}
+            isLoading={loading}
+            title="Gastos por Categoría"
+          />
+          <IngresosVsGastos
+            data={periodIncomeVsExpenses}
+            isLoading={loading}
+            title="Ingresos vs Gastos"
+          />
         </div>
-      </div>
+      </section>
 
-      {/* Nota informativa */}
-      <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+      {/* Info Card */}
+      <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
         <CardHeader>
-          <CardTitle className="text-sm">ℹ️ Estado actual</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+            <AlertCircle className="h-5 w-5" />
+            Información
+          </CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          <p>Los gráficos están listos para recibir datos. Los placeholders muestran dónde irán:</p>
-          <ul className="list-disc list-inside mt-2 space-y-1">
-            <li><strong>Gráfico circular:</strong> Gastos distribuidos por categoría</li>
-            <li><strong>Gráfico de barras:</strong> Comparativa ingresos vs gastos</li>
-          </ul>
-          <p className="mt-3">Próximos pasos: Conectar con APIs para datos reales</p>
+        <CardContent className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+          <p>✅ <strong>Datos en tiempo real:</strong> Los gráficos se actualizan automáticamente con tus transacciones.</p>
+          <p>📊 <strong>Gastos por Categoría:</strong> Muestra la distribución de gastos en cada categoría.</p>
+          <p>📈 <strong>Ingresos vs Gastos:</strong> Compara ingresos y gastos por mes.</p>
+          <p>🔄 <strong>Selecciona un período:</strong> Usa la barra superior para filtrar datos de un mes específico.</p>
         </CardContent>
       </Card>
     </div>
