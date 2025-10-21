@@ -129,13 +129,7 @@ BEGIN
         'amount', v_active_loans_amount,
         'count', v_active_loans_count
       ),
-      'calculation', format(
-        'histór: %.2f + pendiente: %.2f - directo: %.2f = total: %.2f',
-        v_historical_balance,
-        v_pending_contributions,
-        v_current_direct_expenses,
-        v_total_balance
-      )
+      'calculation', 'histórico: ' || ROUND(v_historical_balance::numeric, 2) || '€ + pendiente: ' || ROUND(v_pending_contributions::numeric, 2) || '€ - directo: ' || ROUND(v_current_direct_expenses::numeric, 2) || '€ = total: ' || ROUND(v_total_balance::numeric, 2) || '€'
     ),
     'summary', CASE
       WHEN v_status = 'credit' THEN 'El hogar te debe ' || ROUND(v_credit::numeric, 2) || '€'
