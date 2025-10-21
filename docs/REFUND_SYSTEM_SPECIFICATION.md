@@ -41,7 +41,7 @@ Se han implementado dos modos de reembolso diferentes según la situación:
 **BD: `refund_type = 'balance'`**
 
 ```sql
-INSERT INTO credit_refund_requests 
+INSERT INTO credit_refund_requests
   (household_id, profile_id, amount, notes, requested_by, status, refund_type)
 VALUES ($1, $2, €0.75, 'Recuperar saldo', profile_id, 'pending', 'balance');
 ```
@@ -81,7 +81,7 @@ VALUES ($1, $2, €0.75, 'Recuperar saldo', profile_id, 'pending', 'balance');
 **BD: `refund_type = 'transaction'`**
 
 ```sql
-INSERT INTO credit_refund_requests 
+INSERT INTO credit_refund_requests
   (household_id, profile_id, amount, notes, requested_by, status, refund_type, refund_transaction_id)
 VALUES ($1, $2, €50, 'Reembolso gasto del 20/10', profile_id, 'pending', 'transaction', transaction_id);
 ```
@@ -105,7 +105,7 @@ if (request.refund_type === 'balance') {
     `INSERT INTO transactions (..., type='expense', ...)`
   );
   txId = txRes.rows[0].id;
-  
+
   // Reducir balance del miembro
   await client.query(
     `SELECT update_member_balance($1, $2, $3, ...)`
@@ -122,7 +122,7 @@ else if (request.refund_type === 'transaction') {
     `SELECT id FROM transactions WHERE id=$1 AND type IN ('expense', 'expense_direct')`
   );
   txId = request.refund_transaction_id;
-  
+
   // Solo reducir balance (sin crear transacción)
   await client.query(
     `SELECT update_member_balance($1, $2, -amount, ...)`
@@ -141,21 +141,21 @@ CREATE TABLE credit_refund_requests (
   profile_id UUID NOT NULL REFERENCES profiles(id),
   amount NUMERIC(10,2) NOT NULL,
   notes TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' 
+  status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'approved', 'rejected')),
   requested_by UUID NOT NULL REFERENCES profiles(id),
-  
+
   -- Validación del owner
   approved_by UUID REFERENCES profiles(id),
   approved_at TIMESTAMPTZ,
-  
+
   -- Vinculación a transacciones
   refund_transaction_id UUID REFERENCES transactions(id),
-  
+
   -- NUEVO: Tipo de reembolso
-  refund_type TEXT DEFAULT 'balance' 
+  refund_type TEXT DEFAULT 'balance'
     CHECK (refund_type IN ('balance', 'transaction')),
-  
+
   requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```

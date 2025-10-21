@@ -40,9 +40,15 @@ export async function getMemberBalanceStatus(
   if (!householdId) return fail('No perteneces a ningún hogar');
 
   try {
-    // Obtener balance reconciliado (de member_balances)
+    // Obtener balance EN VIVO (usando get_member_balance_status_v2)
+    // Esta función calcula:
+    //   = balance histórico (períodos cerrados)
+    //   + contribuciones pendientes (período actual)
+    //   - gastos directos (período actual)
+    //   + préstamos personales aprobados
+    // Permite gestionar crédito SIN esperar a cerrar período
     const statusRes = await query(
-      `SELECT get_member_balance_status($1, $2) as status`,
+      `SELECT get_member_balance_status_v2($1, $2) as status`,
       [householdId, user.profile_id],
     );
 
@@ -730,11 +736,13 @@ export async function requestCreditRefund(
   if (!amount || amount <= 0) return fail('El importe debe ser mayor que 0');
 
   try {
-    // Obtener balance usando la función de BD que también usa la UI (misma fuente de verdad)
+    // Obtener balance EN VIVO usando get_member_balance_status_v2
+    // IMPORTANTE: Esta es la MISMA función que usa la UI para mostrar balance
+    // Permite calcular crédito SIN esperar a cerrar período
     const balRes = await query(
-      `SELECT 
-        (get_member_balance_status($1, $2)->>'credit')::numeric AS credit,
-        (get_member_balance_status($1, $2)->>'status')::text AS status
+      `SELECT
+        (get_member_balance_status_v2($1, $2)->>'credit')::numeric AS credit,
+        (get_member_balance_status_v2($1, $2)->>'status')::text AS status
        FROM household_members
        WHERE household_id = $1 AND profile_id = $2
        LIMIT 1`,
@@ -896,7 +904,7 @@ export async function approveCreditRefund(requestId: string): Promise<Result> {
 
       // Verificar crédito actual usando la función de BD
       const balRes = await client.query(
-        `SELECT 
+        `SELECT
           (get_member_balance_status($1, $2)->>'credit')::numeric AS credit
          FROM household_members
          WHERE household_id = $1 AND profile_id = $2 FOR UPDATE
@@ -946,7 +954,7 @@ export async function approveCreditRefund(requestId: string): Promise<Result> {
 
         // Verificar que la transacción existe y pertenece al hogar
         const txRes = await client.query(
-          `SELECT id, amount FROM transactions 
+          `SELECT id, amount FROM transactions
            WHERE id = $1 AND household_id = $2 AND type IN ('expense', 'expense_direct')
            LIMIT 1`,
           [request.refund_transaction_id, householdId],
