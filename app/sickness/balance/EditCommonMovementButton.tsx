@@ -1,6 +1,10 @@
+'use client';
+
+import { editCommonMovement } from '@/app/sickness/balance/actions';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 interface EditCommonMovementButtonProps {
   tx: {
@@ -11,6 +15,7 @@ interface EditCommonMovementButtonProps {
     category_id?: string;
     occurred_at?: string;
     performed_at?: string | null;
+    paid_by?: string | null; // Para ingresos, el profile_id del miembro
   };
   householdId?: string;
   onSuccess?: () => void;
@@ -20,7 +25,9 @@ interface EditCommonMovementButtonProps {
 
 export function EditCommonMovementButton({ tx, householdId, onSuccess, categories, members }: EditCommonMovementButtonProps) {
   const [open, setOpen] = useState(false);
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: {
       amount: tx.amount,
       description: tx.description || '',
@@ -28,28 +35,39 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, categorie
       occurredAt: tx.performed_at
         ? tx.performed_at.slice(0, 16)
         : (tx.occurred_at ? (tx.occurred_at.length > 10 ? tx.occurred_at.slice(0, 16) : `${tx.occurred_at}T00:00`) : ''),
-      paidBy: 'common',
+      // Para ingresos: usar el profile_id del miembro que lo aportó; para gastos: 'common'
+      paidBy: tx.type === 'income' && tx.paid_by ? tx.paid_by : 'common',
     },
   });
 
   const paidBy = watch('paidBy');
 
   const onSubmit = async (data: { amount: number; description: string; categoryId: string; occurredAt: string; paidBy: string }) => {
-    const formData = new FormData();
-    formData.append('movementId', tx.id);
-    formData.append('householdId', householdId || '');
-    formData.append('amount', String(data.amount));
-    formData.append('description', data.description);
-    formData.append('categoryId', data.categoryId);
-    formData.append('occurredAt', data.occurredAt);
-    formData.append('paidBy', data.paidBy);
-    const res = await fetch('/app/sickness/balance/actions/editCommonMovement', {
-      method: 'POST',
-      body: formData,
-    });
-    if (res.ok) {
-      setOpen(false);
-      onSuccess?.();
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('movementId', tx.id);
+      formData.append('householdId', householdId || '');
+      formData.append('amount', String(data.amount));
+      formData.append('description', data.description);
+      formData.append('categoryId', data.categoryId);
+      formData.append('occurredAt', data.occurredAt);
+      formData.append('paidBy', data.paidBy);
+
+      const result = await editCommonMovement(formData);
+
+      if (result.ok) {
+        toast.success('Movimiento actualizado correctamente');
+        setOpen(false);
+        onSuccess?.();
+      } else {
+        toast.error(result.message || 'Error al actualizar el movimiento');
+      }
+    } catch (error) {
+      console.error('Error editando movimiento común:', error);
+      toast.error('Error inesperado al actualizar el movimiento');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -136,10 +154,10 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, categorie
               </button>
               <button
                 type="submit"
-                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                 disabled={isSubmitting}
               >
-                Guardar
+                {isSubmitting ? 'Guardando...' : 'Guardar'}
               </button>
             </DialogFooter>
           </form>

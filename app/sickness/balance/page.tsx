@@ -37,6 +37,7 @@ interface Transaction {
   profile_id?: string;
   real_payer_id?: string;
   transaction_pair_id?: string;
+  paid_by?: string | null;
   category_name?: string;
   category_icon?: string;
   profile_email?: string;
@@ -194,7 +195,7 @@ export default function BalancePage() {
   );
 
   // Handler para intentar crear nuevo movimiento
-  const _handleNewMovementClick = useCallback(() => {
+  const handleNewMovementClick = useCallback(() => {
     console.log('🔘 Click en Nuevo movimiento:', { selectedPeriod, selectedPeriodFull, phase, canCreateMovement });
     if (!canCreateMovement) {
       setShowPhaseAlert(true);
@@ -245,12 +246,22 @@ export default function BalancePage() {
 
     <div className="container mx-auto p-4 space-y-6">
       {/* Header simplificado: solo título general */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Wallet className="h-6 w-6 text-primary" />
-          Balance y Transacciones
-        </h1>
-        <p className="text-sm text-muted-foreground">Consulta el estado financiero y los movimientos del mes seleccionado.</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Wallet className="h-6 w-6 text-primary" />
+            Balance y Transacciones
+          </h1>
+          <p className="text-sm text-muted-foreground">Consulta el estado financiero y los movimientos del mes seleccionado.</p>
+        </div>
+        {isOwner && canCreateMovement && (
+          <button
+            onClick={handleNewMovementClick}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-medium text-sm whitespace-nowrap"
+          >
+            ✚ Nuevo movimiento
+          </button>
+        )}
       </div>
 
 
