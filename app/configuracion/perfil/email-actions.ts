@@ -72,65 +72,6 @@ export async function getProfileEmails(): Promise<Result<ProfileEmail[]>> {
 
 /**
  * Añade un nuevo email al perfil del usuario actual
- * - Valida que no exista ya en el sistema (profiles.email o profile_emails.email)
- * - Lo añade como email NO primario (is_primary = false)
- * - NO envía email de verificación en esta fase (opcional para el futuro)
- */
-export async function addProfileEmail(formData: FormData): Promise<Result> {
-  const user = await getCurrentUser();
-  if (!user?.profile_id) {
-    return fail('No autenticado');
-  }
-
-  // Validación de input
-  const parsed = AddEmailSchema.safeParse({
-    email: formData.get('email'),
-  });
-
-  if (!parsed.success) {
-    return fail('Email inválido', parsed.error.flatten().fieldErrors);
-  }
-
-  const { email } = parsed.data;
-
-  try {
-    // 1. Validar que el email NO exista ya en profiles.email (excluir perfiles eliminados)
-    const existingProfile = await query(
-      `SELECT id FROM profiles WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL`,
-      [email],
-    );
-
-    if (existingProfile.rows.length > 0) {
-      return fail('Este email ya está registrado en el sistema');
-    }
-
-    // 2. Validar que el email NO exista ya en profile_emails
-    const existingEmailEntry = await query(
-      `SELECT id FROM profile_emails WHERE LOWER(email) = LOWER($1)`,
-      [email],
-    );
-
-    if (existingEmailEntry.rows.length > 0) {
-      return fail('Este email ya está asociado a otro perfil');
-    }
-
-    // 3. Insertar nuevo email como NO primario
-    await query(
-      `
-      INSERT INTO profile_emails (profile_id, email, is_primary, verified, added_at, added_by)
-      VALUES ($1, $2, false, false, NOW(), $1)
-      `,
-      [user.profile_id, email.toLowerCase()],
-    );
-
-    revalidatePath('/configuracion/perfil');
-    return ok();
-  } catch (error) {
-    console.error('Error al añadir email:', error);
-    return fail('Error al añadir email');
-  }
-}
-
 /**
  * Establece un email como primario
  * Solo puede haber UN email primario por perfil
