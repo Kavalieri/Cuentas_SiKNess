@@ -20,6 +20,6 @@ export async function checkDualFlowAccess(_userEmail?: string): Promise<DualFlow
 /**
  * Helper para debugging - mostrar estado de acceso
  */
-export function debugDualFlowAccess(userEmail: string, access: DualFlowAccess): void {
+export function debugDualFlowAccess(_userEmail: string, _access: DualFlowAccess): void {
   // Debug logging removed for production
 }

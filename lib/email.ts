@@ -176,7 +176,7 @@ CuentasSiK
   };
 
   try {
-    const result = await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
   } catch (error) {
     console.error('❌ Error sending email:', error);
     throw error;

@@ -350,7 +350,7 @@ export function AdvancedQueries({ householdId, periods, selectedPeriod }: Advanc
             <div className="text-center text-muted-foreground">
               <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium">No hay resultados</p>
-              <p className="text-sm">Selecciona una consulta y haz clic en "Ejecutar Consulta"</p>
+              <p className="text-sm">Selecciona una consulta y haz clic en &quot;Ejecutar Consulta&quot;</p>
             </div>
           </CardContent>
         </Card>

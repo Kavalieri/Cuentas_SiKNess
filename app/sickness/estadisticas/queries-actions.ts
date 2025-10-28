@@ -1,6 +1,7 @@
 'use server';
 
 import { getPool } from '@/lib/db';
+import type { Pool } from 'pg';
 
 /**
  * MÓDULO DE CONSULTAS DINÁMICAS PARA ANÁLISIS PROFESIONAL
@@ -11,7 +12,7 @@ import { getPool } from '@/lib/db';
 
 export interface QueryResult {
   columns: string[];
-  rows: any[];
+  rows: Record<string, unknown>[];
   summary?: {
     total?: number;
     average?: number;
@@ -269,7 +270,7 @@ export async function executeQuery(
 // IMPLEMENTACIONES DE CONSULTAS
 // ============================================================================
 
-async function queryGastosPorCategoria(pool: any, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryGastosPorCategoria(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       c.name AS categoria,
@@ -295,7 +296,7 @@ async function queryGastosPorCategoria(pool: any, householdId: string, year: num
     ORDER BY total DESC
   `, [householdId, year, month]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.total), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.total as string), 0);
 
   return {
     columns: ['Categoría', 'Icono', 'Transacciones', 'Total', '% del Total'],
@@ -307,7 +308,7 @@ async function queryGastosPorCategoria(pool: any, householdId: string, year: num
   };
 }
 
-async function queryGastosPorCategoriaGlobal(pool: any, householdId: string): Promise<QueryResult> {
+async function queryGastosPorCategoriaGlobal(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       c.name AS categoria,
@@ -325,7 +326,7 @@ async function queryGastosPorCategoriaGlobal(pool: any, householdId: string): Pr
     ORDER BY total DESC
   `, [householdId]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.total), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.total as string), 0);
   const average = total / (result.rows.length || 1);
 
   return {
@@ -339,7 +340,7 @@ async function queryGastosPorCategoriaGlobal(pool: any, householdId: string): Pr
   };
 }
 
-async function queryTopGastos(pool: any, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryTopGastos(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       t.description AS concepto,
@@ -359,7 +360,7 @@ async function queryTopGastos(pool: any, householdId: string, year: number, mont
     LIMIT 10
   `, [householdId, year, month]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.importe), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
   const average = total / (result.rows.length || 1);
 
   return {
@@ -375,7 +376,7 @@ async function queryTopGastos(pool: any, householdId: string, year: number, mont
   };
 }
 
-async function queryGastosDiarios(pool: any, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryGastosDiarios(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
@@ -391,7 +392,7 @@ async function queryGastosDiarios(pool: any, householdId: string, year: number, 
     ORDER BY t.occurred_at::date
   `, [householdId, year, month]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.total), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.total as string), 0);
   const average = total / (result.rows.length || 1);
 
   return {
@@ -405,7 +406,7 @@ async function queryGastosDiarios(pool: any, householdId: string, year: number, 
   };
 }
 
-async function queryGastosPorCategoriaDetallado(pool: any, householdId: string, year: number, month: number, categoryId: string): Promise<QueryResult> {
+async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string, year: number, month: number, categoryId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       t.description AS concepto,
@@ -423,7 +424,7 @@ async function queryGastosPorCategoriaDetallado(pool: any, householdId: string, 
     ORDER BY t.occurred_at DESC
   `, [householdId, categoryId, year, month]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.importe), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
   const average = total / (result.rows.length || 1);
 
   return {
@@ -437,7 +438,7 @@ async function queryGastosPorCategoriaDetallado(pool: any, householdId: string, 
   };
 }
 
-async function queryIngresosPorMes(pool: any, householdId: string): Promise<QueryResult> {
+async function queryIngresosPorMes(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       EXTRACT(YEAR FROM t.occurred_at) AS año,
@@ -453,7 +454,7 @@ async function queryIngresosPorMes(pool: any, householdId: string): Promise<Quer
     LIMIT 12
   `, [householdId]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.total), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.total as string), 0);
   const average = total / (result.rows.length || 1);
 
   return {
@@ -467,7 +468,7 @@ async function queryIngresosPorMes(pool: any, householdId: string): Promise<Quer
   };
 }
 
-async function queryIngresosVsObjetivo(pool: any, householdId: string): Promise<QueryResult> {
+async function queryIngresosVsObjetivo(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       mp.year AS año,
@@ -497,7 +498,7 @@ async function queryIngresosVsObjetivo(pool: any, householdId: string): Promise<
   };
 }
 
-async function queryDetalleIngresosPeriodo(pool: any, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       t.description AS concepto,
@@ -516,7 +517,7 @@ async function queryDetalleIngresosPeriodo(pool: any, householdId: string, year:
     ORDER BY t.occurred_at DESC
   `, [householdId, year, month]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.importe), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
 
   return {
     columns: ['Concepto', 'Importe', 'Fecha', 'Categoría', 'Icono', 'Realizado Por'],
@@ -528,7 +529,7 @@ async function queryDetalleIngresosPeriodo(pool: any, householdId: string, year:
   };
 }
 
-async function queryEvolucionBalance(pool: any, householdId: string): Promise<QueryResult> {
+async function queryEvolucionBalance(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       mp.year AS año,
@@ -554,7 +555,7 @@ async function queryEvolucionBalance(pool: any, householdId: string): Promise<Qu
   };
 }
 
-async function queryProyeccionBalance(pool: any, householdId: string): Promise<QueryResult> {
+async function queryProyeccionBalance(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     WITH ultimos_meses AS (
       SELECT
@@ -588,7 +589,7 @@ async function queryProyeccionBalance(pool: any, householdId: string): Promise<Q
   };
 }
 
-async function queryTasaAhorro(pool: any, householdId: string): Promise<QueryResult> {
+async function queryTasaAhorro(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       mp.year AS año,
@@ -608,7 +609,7 @@ async function queryTasaAhorro(pool: any, householdId: string): Promise<QueryRes
     LIMIT 12
   `, [householdId]);
 
-  const avgTasaAhorro = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.tasa_ahorro_porcentaje || 0), 0) / (result.rows.length || 1);
+  const avgTasaAhorro = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat((row.tasa_ahorro_porcentaje as string) || '0'), 0) / (result.rows.length || 1);
 
   return {
     columns: ['Año', 'Mes', 'Período', 'Ingresos', 'Gastos', 'Ahorro', 'Tasa Ahorro %'],
@@ -620,7 +621,7 @@ async function queryTasaAhorro(pool: any, householdId: string): Promise<QueryRes
   };
 }
 
-async function queryComparativaMensual(pool: any, householdId: string): Promise<QueryResult> {
+async function queryComparativaMensual(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       mp.year AS año,
@@ -651,7 +652,7 @@ async function queryComparativaMensual(pool: any, householdId: string): Promise<
   };
 }
 
-async function queryComparativaCategorias(pool: any, householdId: string): Promise<QueryResult> {
+async function queryComparativaCategorias(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     WITH gastos_por_periodo AS (
       SELECT
@@ -691,7 +692,7 @@ async function queryComparativaCategorias(pool: any, householdId: string): Promi
   };
 }
 
-async function queryVariacionMensual(pool: any, householdId: string): Promise<QueryResult> {
+async function queryVariacionMensual(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     WITH variaciones AS (
       SELECT
@@ -735,7 +736,7 @@ async function queryVariacionMensual(pool: any, householdId: string): Promise<Qu
   };
 }
 
-async function queryTendenciaGastos(pool: any, householdId: string): Promise<QueryResult> {
+async function queryTendenciaGastos(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     WITH tendencia AS (
       SELECT
@@ -773,7 +774,7 @@ async function queryTendenciaGastos(pool: any, householdId: string): Promise<Que
   };
 }
 
-async function queryEstacionalidad(pool: any, householdId: string): Promise<QueryResult> {
+async function queryEstacionalidad(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       EXTRACT(MONTH FROM t.occurred_at) AS mes,
@@ -799,7 +800,7 @@ async function queryEstacionalidad(pool: any, householdId: string): Promise<Quer
   };
 }
 
-async function queryMediaMovil(pool: any, householdId: string): Promise<QueryResult> {
+async function queryMediaMovil(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       mp.year AS año,
@@ -824,7 +825,7 @@ async function queryMediaMovil(pool: any, householdId: string): Promise<QueryRes
   };
 }
 
-async function queryGastosPorMiembro(pool: any, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryGastosPorMiembro(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       p.email AS miembro,
@@ -843,7 +844,7 @@ async function queryGastosPorMiembro(pool: any, householdId: string, year: numbe
     ORDER BY total_gastado DESC
   `, [householdId, year, month]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.total_gastado), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.total_gastado as string), 0);
 
   return {
     columns: ['Miembro', 'Nombre', 'Transacciones', 'Gastos Directos', 'Gastos Comunes', 'Total Gastado'],
@@ -855,7 +856,7 @@ async function queryGastosPorMiembro(pool: any, householdId: string, year: numbe
   };
 }
 
-async function queryContribucionesPorMiembro(pool: any, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryContribucionesPorMiembro(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       p.email AS miembro,
@@ -885,7 +886,7 @@ async function queryContribucionesPorMiembro(pool: any, householdId: string, yea
   };
 }
 
-async function queryDetalleMiembro(pool: any, householdId: string, year: number, month: number, memberId: string): Promise<QueryResult> {
+async function queryDetalleMiembro(pool: Pool, householdId: string, year: number, month: number, memberId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY HH24:MI') AS fecha_hora,
@@ -908,7 +909,7 @@ async function queryDetalleMiembro(pool: any, householdId: string, year: number,
     ORDER BY t.occurred_at DESC
   `, [householdId, memberId, year, month]);
 
-  const total = result.rows.reduce((sum: number, row: any) => sum + parseFloat(row.impacto_balance), 0);
+  const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.impacto_balance as string), 0);
 
   return {
     columns: ['Fecha/Hora', 'Tipo', 'Flujo', 'Concepto', 'Categoría', 'Icono', 'Importe', 'Impacto Balance'],
