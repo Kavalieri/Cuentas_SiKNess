@@ -356,11 +356,14 @@ const InviteEmailSchema = z.object({
 });
 
 /**
- * Genera una invitación para compartir perfil con otro email
+ * Genera una invitación para añadir un email secundario a este perfil
  * El email invitado podrá aceptar y se añadirá como alias secundario del perfil invitador
+ * @param formData - Debe incluir: email (string), origin (string)
+ * @param origin - Origen del request (ej: "https://cuentasdev.sikwow.com" o "http://localhost:3001")
  */
 export async function generateEmailInvitation(
   formData: FormData,
+  origin?: string,
 ): Promise<Result<{ invitationUrl: string; expiresAt: string }>> {
   const user = await getCurrentUser();
   if (!user?.profile_id) {
@@ -369,6 +372,8 @@ export async function generateEmailInvitation(
 
   // Validar input
   const emailRaw = formData.get('email');
+  const originRaw = origin || formData.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+  
   const parsed = InviteEmailSchema.safeParse({ email: emailRaw });
   if (!parsed.success) {
     return fail('Email inválido', parsed.error.flatten().fieldErrors);
@@ -435,9 +440,8 @@ export async function generateEmailInvitation(
       return fail('Error al crear la invitación');
     }
 
-    // 6. Generar URL de invitación
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const invitationUrl = `${baseUrl}/api/auth/accept-email-invitation/${token}`;
+    // 6. Generar URL de invitación usando el origin proporcionado
+    const invitationUrl = `${originRaw}/api/auth/accept-email-invitation/${token}`;
 
     return ok({
       invitationUrl,
