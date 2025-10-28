@@ -2,7 +2,6 @@
 
 import { getPool } from '@/lib/db';
 import type { Pool } from 'pg';
-import { QUERY_CATALOG } from './query-catalog';
 
 /**
  * MÓDULO DE CONSULTAS DINÁMICAS PARA ANÁLISIS PROFESIONAL
@@ -23,9 +22,8 @@ export interface QueryResult {
   };
 }
 
-// Re-export types and catalog from query-catalog
+// Types are imported from query-catalog in client components
 export type { QueryOption } from './query-catalog';
-export { QUERY_CATALOG };
 
 /**
  * Ejecuta una consulta específica con los parámetros proporcionados
