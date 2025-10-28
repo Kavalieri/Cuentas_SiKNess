@@ -19,7 +19,8 @@ interface User {
   id: string; // UUID de autenticación (para compatibilidad con código existente)
   profile_id: string; // Primary key profiles.id (UUID) - usado en FKs
   auth_user_id: string; // Alias de id (para compatibilidad)
-  email: string;
+  email: string; // Email primario del perfil (profiles.email)
+  loginEmail: string; // Email usado para iniciar sesión (puede ser secundario)
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -107,18 +108,20 @@ async function verifySessionToken(token: string): Promise<SessionPayload | null>
 
 /**
  * Envía un magic link al email especificado
+ * Soporta multi-email: busca en profiles.email Y profile_emails.email
  */
 export async function sendMagicLink(
   email: string,
   redirectUrl?: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Verificar que el email existe en profiles
+    // Verificar que el email existe en profiles O profile_emails
     const result = await query(
       `
-      SELECT id, auth_user_id, display_name, email
-      FROM profiles
-      WHERE email = $1
+      SELECT p.id, p.auth_user_id, p.display_name, p.email
+      FROM profiles p
+      LEFT JOIN profile_emails pe ON pe.profile_id = p.id
+      WHERE p.email = $1 OR pe.email = $1
       LIMIT 1
     `,
       [email],
@@ -150,6 +153,7 @@ export async function sendMagicLink(
 
 /**
  * Verifica un magic link y crea una sesión
+ * Soporta multi-email: busca en profiles.email Y profile_emails.email
  */
 export async function verifyMagicLink(
   token: string,
@@ -162,12 +166,13 @@ export async function verifyMagicLink(
       return { success: false, error: 'Token inválido o expirado' };
     }
 
-    // Buscar usuario por email en profiles
+    // Buscar usuario por email en profiles O profile_emails
     const result = await query(
       `
-      SELECT id, auth_user_id, display_name, email
-      FROM profiles
-      WHERE email = $1
+      SELECT p.id, p.auth_user_id, p.display_name, p.email
+      FROM profiles p
+      LEFT JOIN profile_emails pe ON pe.profile_id = p.id
+      WHERE p.email = $1 OR pe.email = $1
       LIMIT 1
     `,
       [payload.email],
@@ -183,8 +188,8 @@ export async function verifyMagicLink(
       return { success: false, error: 'Error al obtener usuario' };
     }
 
-    // Crear sesión
-    const sessionToken = await generateSessionToken(user.auth_user_id, user.email);
+    // Crear sesión con el email usado para login (puede ser secundario)
+    const sessionToken = await generateSessionToken(user.auth_user_id, payload.email);
 
     // Guardar en cookie
     const cookieStore = await cookies();
@@ -205,6 +210,7 @@ export async function verifyMagicLink(
 
 /**
  * Obtiene el usuario autenticado actual
+ * Soporta multi-email: busca en profiles.email Y profile_emails.email
  */
 export async function getCurrentUser(): Promise<User | null> {
   try {
@@ -224,15 +230,33 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    // Buscar usuario en base de datos
-    const profiles = await sql.select<ProfileRow>('profiles', { auth_user_id: payload.userId });
+    // Buscar usuario por email en profiles (email primario) O profile_emails (email secundario)
+    const result = await query<ProfileRow & { login_email: string }>(
+      `
+      SELECT 
+        p.id,
+        p.auth_user_id,
+        p.email,
+        p.display_name,
+        p.avatar_url,
+        p.bio,
+        p.created_at,
+        p.updated_at,
+        COALESCE(pe.email, p.email) as login_email
+      FROM profiles p
+      LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.email = $1
+      WHERE p.email = $1 OR pe.email = $1
+      LIMIT 1
+    `,
+      [payload.email],
+    );
 
-    if (profiles.length === 0) {
+    if (result.rows.length === 0) {
       cookieStore.delete(SESSION_COOKIE_NAME);
       return null;
     }
 
-    const profile = profiles[0];
+    const profile = result.rows[0];
 
     if (!profile) {
       cookieStore.delete(SESSION_COOKIE_NAME);
@@ -244,7 +268,8 @@ export async function getCurrentUser(): Promise<User | null> {
       id: profile.auth_user_id, // id = auth UUID (para código existente)
       profile_id: profile.id, // profile_id = profiles.id (PK)
       auth_user_id: profile.auth_user_id,
-      email: profile.email,
+      email: profile.email, // Email primario del perfil
+      loginEmail: profile.login_email, // Email usado para login (puede ser secundario)
       display_name: profile.display_name,
       avatar_url: profile.avatar_url,
       bio: profile.bio,

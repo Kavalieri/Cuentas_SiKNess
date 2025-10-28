@@ -310,16 +310,16 @@ export async function checkEmailExists(email: string): Promise<Result<{ exists: 
 
 /**
  * Elimina completamente la cuenta del usuario actual.
- * 
+ *
  * Validaciones:
  * - No puede ser el único owner de un hogar activo
- * 
+ *
  * Eliminación:
  * - Soft delete: profiles (deleted_at)
- * - Hard delete: profile_emails, household_members, user_settings, 
+ * - Hard delete: profile_emails, household_members, user_settings,
  *                contributions, member_incomes, member_credits, invitations
  * - Preserva: journals, logs (auditoría)
- * 
+ *
  * @returns Result con mensaje de éxito o error
  */
 export async function deleteAccount(): Promise<Result> {
@@ -335,13 +335,13 @@ export async function deleteAccount(): Promise<Result> {
       SELECT h.id as household_id, h.name as household_name
       FROM household_members hm
       JOIN households h ON h.id = hm.household_id
-      WHERE hm.profile_id = $1 
+      WHERE hm.profile_id = $1
         AND hm.role = 'owner'
         AND h.deleted_at IS NULL
         AND (
-          SELECT COUNT(*) 
-          FROM household_members 
-          WHERE household_id = hm.household_id 
+          SELECT COUNT(*)
+          FROM household_members
+          WHERE household_id = hm.household_id
             AND role = 'owner'
         ) = 1
       `,
@@ -358,8 +358,8 @@ export async function deleteAccount(): Promise<Result> {
     // 2. Soft delete en profiles
     await query(
       `
-      UPDATE profiles 
-      SET deleted_at = NOW(), 
+      UPDATE profiles
+      SET deleted_at = NOW(),
           updated_at = NOW()
       WHERE id = $1
       `,
@@ -372,12 +372,12 @@ export async function deleteAccount(): Promise<Result> {
     // - household_members
     // - user_settings
     // - user_active_household
-    
+
     // Para las que no tienen cascade, eliminamos manualmente:
     await query('DELETE FROM contributions WHERE profile_id = $1', [user.profile_id]);
     await query('DELETE FROM member_incomes WHERE profile_id = $1', [user.profile_id]);
     await query('DELETE FROM member_credits WHERE profile_id = $1', [user.profile_id]);
-    
+
     // Invitaciones donde es el invitador (cambiar a NULL para mantener historial)
     await query(
       'UPDATE invitations SET invited_by_profile_id = NULL WHERE invited_by_profile_id = $1',
@@ -392,5 +392,185 @@ export async function deleteAccount(): Promise<Result> {
   } catch (error) {
     console.error('Error al eliminar cuenta:', error);
     return fail('Error al eliminar la cuenta. Por favor, contacta con soporte.');
+  }
+}
+
+// ============================================
+// INVITACIONES DE EMAIL COMPARTIDO
+// ============================================
+
+export type EmailInvitation = {
+  id: string;
+  profile_id: string;
+  invited_email: string;
+  token: string;
+  created_at: string;
+  expires_at: string;
+  accepted_at: string | null;
+  status: 'pending' | 'accepted' | 'expired' | 'cancelled';
+};
+
+const InviteEmailSchema = z.object({
+  email: z.string().email('Email inválido').toLowerCase().trim(),
+});
+
+/**
+ * Genera una invitación para compartir perfil con otro email
+ * El email invitado podrá aceptar y se añadirá como alias secundario del perfil invitador
+ */
+export async function generateEmailInvitation(
+  formData: FormData,
+): Promise<Result<{ invitationUrl: string; expiresAt: string }>> {
+  const user = await getCurrentUser();
+  if (!user?.profile_id) {
+    return fail('No autenticado');
+  }
+
+  // Validar input
+  const emailRaw = formData.get('email');
+  const parsed = InviteEmailSchema.safeParse({ email: emailRaw });
+  if (!parsed.success) {
+    return fail('Email inválido', parsed.error.flatten().fieldErrors);
+  }
+
+  const { email: invitedEmail } = parsed.data;
+
+  try {
+    // 1. Verificar que el email no existe ya en el sistema
+    const emailCheck = await checkEmailExists(invitedEmail);
+    if (emailCheck.ok && emailCheck.data?.exists) {
+      return fail(
+        'Este email ya está registrado en el sistema. No se puede invitar un email que ya pertenece a otro perfil.',
+      );
+    }
+
+    // 2. Verificar que el email no es el propio email primario del usuario
+    const userPrimaryEmail = await query<{ email: string }>(
+      'SELECT email FROM profiles WHERE id = $1',
+      [user.profile_id],
+    );
+    if (userPrimaryEmail.rows[0]?.email === invitedEmail) {
+      return fail('No puedes invitar tu propio email primario');
+    }
+
+    // 3. Cancelar invitaciones pendientes anteriores para este email
+    await query(
+      `
+      UPDATE email_invitations
+      SET status = 'cancelled',
+          metadata = jsonb_set(
+            COALESCE(metadata, '{}'::jsonb),
+            '{cancelled_reason}',
+            '"Reemplazada por nueva invitación"'
+          )
+      WHERE profile_id = $1
+        AND invited_email = $2
+        AND status = 'pending'
+      `,
+      [user.profile_id, invitedEmail],
+    );
+
+    // 4. Generar token único y fecha de expiración (7 días)
+    const token = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // 5. Crear invitación
+    const invitationResult = await query<EmailInvitation>(
+      `
+      INSERT INTO email_invitations (
+        profile_id,
+        invited_email,
+        token,
+        expires_at,
+        status
+      ) VALUES ($1, $2, $3, $4, 'pending')
+      RETURNING *
+      `,
+      [user.profile_id, invitedEmail, token, expiresAt.toISOString()],
+    );
+
+    if (invitationResult.rows.length === 0) {
+      return fail('Error al crear la invitación');
+    }
+
+    // 6. Generar URL de invitación
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const invitationUrl = `${baseUrl}/api/auth/accept-email-invitation/${token}`;
+
+    return ok({
+      invitationUrl,
+      expiresAt: expiresAt.toISOString(),
+    });
+  } catch (error) {
+    console.error('Error al generar invitación de email:', error);
+    return fail('Error al generar la invitación');
+  }
+}
+
+/**
+ * Obtiene las invitaciones pendientes del usuario actual
+ */
+export async function getPendingEmailInvitations(): Promise<Result<EmailInvitation[]>> {
+  const user = await getCurrentUser();
+  if (!user?.profile_id) {
+    return fail('No autenticado');
+  }
+
+  try {
+    const result = await query<EmailInvitation>(
+      `
+      SELECT *
+      FROM email_invitations
+      WHERE profile_id = $1
+        AND status = 'pending'
+        AND expires_at > NOW()
+      ORDER BY created_at DESC
+      `,
+      [user.profile_id],
+    );
+
+    return ok(result.rows);
+  } catch (error) {
+    console.error('Error al obtener invitaciones:', error);
+    return fail('Error al obtener invitaciones');
+  }
+}
+
+/**
+ * Cancela una invitación pendiente
+ */
+export async function cancelEmailInvitation(invitationId: string): Promise<Result> {
+  const user = await getCurrentUser();
+  if (!user?.profile_id) {
+    return fail('No autenticado');
+  }
+
+  try {
+    const result = await query(
+      `
+      UPDATE email_invitations
+      SET status = 'cancelled',
+          metadata = jsonb_set(
+            COALESCE(metadata, '{}'::jsonb),
+            '{cancelled_at}',
+            to_jsonb(NOW())
+          )
+      WHERE id = $1
+        AND profile_id = $2
+        AND status = 'pending'
+      `,
+      [invitationId, user.profile_id],
+    );
+
+    if (result.rowCount === 0) {
+      return fail('Invitación no encontrada o ya procesada');
+    }
+
+    revalidatePath('/configuracion/perfil');
+    return ok({ message: 'Invitación cancelada' });
+  } catch (error) {
+    console.error('Error al cancelar invitación:', error);
+    return fail('Error al cancelar la invitación');
   }
 }

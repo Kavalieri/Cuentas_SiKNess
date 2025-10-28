@@ -1,14 +1,14 @@
 'use client';
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,9 +20,9 @@ import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { deleteAccount } from '../../../configuracion/perfil/email-actions';
 import type { MemberIncome, UserProfile } from './actions';
 import { getMemberIncome, getUserProfile, updateDisplayName, updateMemberIncome } from './actions';
-import { deleteAccount } from '../../../configuracion/perfil/email-actions';
 import { EmailManagementCard } from './EmailManagementCard';
 
 export default function PerfilPage() {
