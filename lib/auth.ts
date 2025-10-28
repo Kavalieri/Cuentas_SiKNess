@@ -242,10 +242,10 @@ export async function getCurrentUser(): Promise<User | null> {
         p.bio,
         p.created_at,
         p.updated_at,
-        COALESCE(pe.email, p.email) as login_email
+        $1 as login_email
       FROM profiles p
       LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.email = $1
-      WHERE p.email = $1 OR pe.email = $1
+      WHERE (p.email = $1 OR pe.email = $1) AND p.deleted_at IS NULL
       LIMIT 1
     `,
       [payload.email],
@@ -311,21 +311,27 @@ export async function getUserHouseholdId(): Promise<string | null> {
   }
 
   // Buscar household activo en user_settings
-  const settings = await sql.select<{ active_household_id: string | null }>('user_settings', {
-    profile_id: user.profile_id,
-  });
+  const settingsResult = await query<{ active_household_id: string | null }>(
+    `SELECT active_household_id FROM user_settings WHERE profile_id = $1`,
+    [user.profile_id],
+  );
 
-  if (settings.length > 0 && settings[0] && settings[0].active_household_id) {
-    return settings[0].active_household_id;
+  if (settingsResult.rows.length > 0 && settingsResult.rows[0]?.active_household_id) {
+    return settingsResult.rows[0].active_household_id;
   }
 
   // Si no tiene household activo, buscar el primero disponible
-  const memberships = await sql.select<{ household_id: string }>('household_members', {
-    profile_id: user.profile_id,
-  });
+  const membershipsResult = await query<{ household_id: string }>(
+    `SELECT hm.household_id
+     FROM household_members hm
+     INNER JOIN households h ON h.id = hm.household_id
+     WHERE hm.profile_id = $1 AND h.deleted_at IS NULL
+     LIMIT 1`,
+    [user.profile_id],
+  );
 
-  if (memberships.length > 0 && memberships[0]) {
-    const householdId = memberships[0].household_id;
+  if (membershipsResult.rows.length > 0 && membershipsResult.rows[0]) {
+    const householdId = membershipsResult.rows[0].household_id;
 
     // Guardar como household activo
     await query(

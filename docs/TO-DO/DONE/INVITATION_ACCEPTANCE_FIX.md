@@ -1,7 +1,7 @@
 # Fix Completo: Invitations Acceptance Flow
 
-**Fecha**: 14 Enero 2025  
-**Commits**: c203b58, ad006e3  
+**Fecha**: 14 Enero 2025
+**Commits**: c203b58, ad006e3
 **Estado**: ✅ COMPLETADO - Listo para testing end-to-end
 
 ---
@@ -176,26 +176,26 @@ const userResult = await query<ProfileRow>(
 
 ```sql
 -- 1. Eliminar perfil temporal sin household
-DELETE FROM profiles 
+DELETE FROM profiles
 WHERE email = 'fumetas.sik@gmail.com'
   AND id NOT IN (SELECT profile_id FROM household_members);
 
 -- 2. Resetear invitación a pending (si no está ya)
-UPDATE email_invitations 
+UPDATE email_invitations
 SET status = 'pending',
     accepted_at = NULL,
     accepted_by_profile_id = NULL
 WHERE invited_email = 'fumetas.sik@gmail.com';
 
 -- 3. Eliminar email de profile_emails (si existe)
-DELETE FROM profile_emails 
+DELETE FROM profile_emails
 WHERE email = 'fumetas.sik@gmail.com';
 
 -- 4. Verificar estado final
 SELECT * FROM profiles WHERE email = 'fumetas.sik@gmail.com';
 SELECT * FROM profile_emails WHERE email = 'fumetas.sik@gmail.com';
-SELECT id, token, status, invited_email, expires_at 
-FROM email_invitations 
+SELECT id, token, status, invited_email, expires_at
+FROM email_invitations
 WHERE invited_email = 'fumetas.sik@gmail.com';
 ```
 
@@ -209,25 +209,25 @@ WHERE invited_email = 'fumetas.sik@gmail.com';
 
 ## ✅ Edge Cases Manejados
 
-1. **Perfil temporal sin household**  
+1. **Perfil temporal sin household**
    → Eliminado después de aceptar + invalidación de sesión
 
-2. **Perfiles eliminados (soft delete)**  
+2. **Perfiles eliminados (soft delete)**
    → Excluidos de validación "belongs to another user"
 
-3. **Login con email secundario**  
+3. **Login con email secundario**
    → Validación usa `loginEmail` en vez de `email`
 
-4. **Inviter comparte su propio email**  
+4. **Inviter comparte su propio email**
    → Error explícito `cannot_share_own_primary_email`
 
-5. **Email ya compartido**  
+5. **Email ya compartido**
    → Verificado primero en profile_emails
 
-6. **Confusión profile_id vs id**  
+6. **Confusión profile_id vs id**
    → Todas las queries usan `profile_id` correctamente
 
-7. **Cookie de sesión**  
+7. **Cookie de sesión**
    → Usa constante `SESSION_COOKIE_NAME`
 
 ---
@@ -265,7 +265,7 @@ WHERE invited_email = 'fumetas.sik@gmail.com';
 ### Verificación DB
 ```sql
 -- Debe mostrar fumetas.sik vinculado a Sara
-SELECT pe.*, p.display_name 
+SELECT pe.*, p.display_name
 FROM profile_emails pe
 JOIN profiles p ON p.id = pe.profile_id
 WHERE pe.email = 'fumetas.sik@gmail.com';
