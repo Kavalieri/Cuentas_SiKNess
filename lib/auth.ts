@@ -443,7 +443,6 @@ export function getGoogleAuthUrl(origin: string, state?: string): string {
     params.set('state', state);
   }
 
-  console.log('[OAuth] Generating auth URL with redirect_uri:', redirectUri);
   return `${baseUrl}?${params.toString()}`;
 }
 
@@ -456,8 +455,6 @@ async function exchangeCodeForTokens(code: string, redirectUri: string): Promise
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
     throw new Error('Google OAuth no configurado');
   }
-
-  console.log('[OAuth] Exchanging code with redirect_uri:', redirectUri);
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',

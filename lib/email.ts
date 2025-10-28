@@ -34,8 +34,6 @@ function getTransporter(): Transporter {
         pass,
       },
     });
-
-    console.log(`✅ SMTP configured: ${user}@${host}:${port} (secure: ${secure})`);
   }
 
   return transporter;
@@ -48,14 +46,8 @@ export async function sendMagicLinkEmail(
   to: string,
   magicLinkUrl: string
 ): Promise<void> {
-  console.log('📧 Starting sendMagicLinkEmail...');
-  console.log('📧 Recipient:', to);
-  console.log('📧 Magic link URL:', magicLinkUrl.substring(0, 80) + '...');
-
   const transporter = getTransporter();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-
-  console.log('📧 From address:', from);
 
   const mailOptions = {
     from: from,
@@ -183,12 +175,8 @@ CuentasSiK
     `,
   };
 
-  console.log('📧 Sending email via SMTP...');
   try {
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully!');
-    console.log('📧 Message ID:', result.messageId);
-    console.log(`✉️ Magic link sent to ${to}`);
   } catch (error) {
     console.error('❌ Error sending email:', error);
     throw error;
@@ -328,7 +316,6 @@ export async function sendHouseholdInvitationEmail(
   };
 
   await transporter.sendMail(mailOptions);
-  console.log(`✉️ Invitation email sent to ${to}`);
 }
 
 /**
@@ -338,7 +325,6 @@ export async function verifySmtpConfig(): Promise<boolean> {
   try {
     const transporter = getTransporter();
     await transporter.verify();
-    console.log('✅ SMTP configuration is valid');
     return true;
   } catch (error) {
     console.error('❌ SMTP configuration error:', error);

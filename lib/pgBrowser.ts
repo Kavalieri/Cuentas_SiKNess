@@ -28,8 +28,6 @@ type QueryBuilder = {
 };
 
 export const pgBrowser = () => {
-  console.warn('pgBrowser() llamado - toda la auth es server-side ahora con PostgreSQL directo');
-
   return {
     auth: {
       signOut: async () => {
@@ -38,7 +36,6 @@ export const pgBrowser = () => {
         return { error: null };
       },
       getUser: async () => {
-        console.warn('getUser() desde browser no soportado - usar server components');
         return {
           data: { user: null },
           error: { message: 'Use server components for auth' },

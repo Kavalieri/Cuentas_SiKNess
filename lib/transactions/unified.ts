@@ -124,8 +124,6 @@ const UnifiedTransactionSchema = z.discriminatedUnion('flow_type', [
 export async function createUnifiedTransaction(
   data: UnifiedTransactionData,
 ): Promise<Result<{ id: string; pair_id?: string }>> {
-  console.log('[createUnifiedTransaction] Starting with data:', JSON.stringify(data, null, 2));
-
   const parsed = UnifiedTransactionSchema.safeParse(data);
   if (!parsed.success) {
     console.error('[createUnifiedTransaction] Validation failed:', parsed.error);
@@ -133,13 +131,11 @@ export async function createUnifiedTransaction(
   }
 
   const user = await getCurrentUser();
-  console.log('[createUnifiedTransaction] Current user:', user?.id);
   if (!user) {
     return fail('No autenticado');
   }
 
   const householdId = await getUserHouseholdId();
-  console.log('[createUnifiedTransaction] Household ID:', householdId);
   if (!householdId) {
     return fail('No tienes un hogar configurado');
   }
@@ -153,7 +149,6 @@ export async function createUnifiedTransaction(
     .eq('auth_user_id', user.id)
     .single();
 
-  console.log('[createUnifiedTransaction] Profile:', profile);
   if (!profile) {
     return fail('Usuario no encontrado');
   }
@@ -164,7 +159,6 @@ export async function createUnifiedTransaction(
   const userEmail = userEmailOrNull(user);
 
   if (parsed.data.flow_type === 'common') {
-    console.log('[createUnifiedTransaction] Calling common flow');
     return await createCommonFlowTransaction(
       parsed.data,
       householdId,
@@ -173,7 +167,6 @@ export async function createUnifiedTransaction(
       supabase,
     );
   } else {
-    console.log('[createUnifiedTransaction] Calling direct flow');
     return await createDirectFlowTransaction(
       parsed.data,
       householdId,
@@ -350,12 +343,6 @@ async function createDirectFlowTransaction(
   userEmail: string | null,
   supabase: Awaited<ReturnType<typeof pgServer>>,
 ): Promise<Result<{ id: string; pair_id?: string }>> {
-  console.log('[createDirectFlowTransaction] Starting with:', {
-    householdId,
-    profileId,
-    data,
-  });
-
   // Solo permitir expense_direct (el sistema crea automáticamente el income_direct)
   if (data.type !== 'expense_direct') {
     return fail(
@@ -377,8 +364,6 @@ async function createDirectFlowTransaction(
     return fail(`Error al crear período mensual: ${periodError.message}`);
   }
   const periodId = calculatedPeriodId as string;
-
-  console.log('[createDirectFlowTransaction] Period ID:', periodId);
 
   // Reglas de fase para gastos directos
   const periodInfo = await getNormalizedPeriodPhase(supabase, periodId);
@@ -409,7 +394,6 @@ async function createDirectFlowTransaction(
 
   // Generar UUID para emparejar las transacciones
   const pairId = crypto.randomUUID();
-  console.log('[createDirectFlowTransaction] Pair ID:', pairId);
 
   // 1. Crear el gasto directo (real)
   const insertData = {
@@ -432,18 +416,11 @@ async function createDirectFlowTransaction(
     performed_by_email: realPayerEmail, // ✅ CORREGIDO: Email del pagador real
   };
 
-  console.log('[createDirectFlowTransaction] Insert data:', insertData);
-
   const { data: expenseTransaction, error: expenseError } = await supabase
     .from('transactions')
     .insert(insertData)
     .select('id')
     .single();
-
-  console.log('[createDirectFlowTransaction] Expense result:', {
-    transaction: expenseTransaction,
-    error: expenseError,
-  });
 
   if (expenseError) {
     return fail('Error al crear gasto directo: ' + expenseError.message);
@@ -455,8 +432,6 @@ async function createDirectFlowTransaction(
 
   // 2. Crear el ingreso directo de equilibrio (si se solicita)
   if (data.creates_balance_pair) {
-    console.log('[createDirectFlowTransaction] Creating balance pair');
-
     // Intentar asignar la categoría "Aportación Cuenta Conjunta" para el ingreso compensatorio
     let compensatoryCategoryId: string | null = null;
     try {
@@ -471,7 +446,7 @@ async function createDirectFlowTransaction(
         compensatoryCategoryId = compCat.id as string;
       }
     } catch (e) {
-      console.warn('[createDirectFlowTransaction] No se pudo resolver categoría compensatoria:', e);
+      console.error('[createDirectFlowTransaction] No se pudo resolver categoría compensatoria:', e);
     }
 
     const { data: _incomeTransaction, error: incomeError } = await supabase
@@ -499,11 +474,6 @@ async function createDirectFlowTransaction(
       .select('id')
       .single();
 
-    console.log('[createDirectFlowTransaction] Income result:', {
-      transaction: _incomeTransaction,
-      error: incomeError,
-    });
-
     if (incomeError) {
       // Rollback: eliminar el gasto creado
       await supabase.from('transactions').delete().eq('id', expenseTransaction.id);
@@ -511,7 +481,6 @@ async function createDirectFlowTransaction(
     }
   }
 
-  console.log('[createDirectFlowTransaction] Success, revalidating paths');
   revalidatePath('/app');
   revalidatePath('/app/expenses');
   revalidatePath('/app/contributions');

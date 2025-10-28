@@ -218,17 +218,7 @@ export const pgServer = async () => {
 
             // DEBUG: Advertir sobre sintaxis problemática pero no bloquear
             if (this._columns.includes(':') || this._columns.includes('!')) {
-              console.warn(
-                '⚠️ SINTAXIS LEGACY DETECTADA (retornará vacío):',
-                this._table,
-                this._columns.substring(0, 100),
-              );
               return { rows: [], rowCount: 0 }; // Retornar vacío en lugar de lanzar error
-            }
-
-            // Log SQL para debug
-            if (process.env.NODE_ENV !== 'production') {
-              console.log(`[SQL] ${sql.substring(0, 150)}`);
             }
 
             if (this._where.length > 0) {
@@ -488,30 +478,20 @@ export const pgServer = async () => {
 export const getCurrentUser = authGetCurrentUser;
 export const getUserHouseholdId = authGetUserHouseholdId;
 
-export const getUserRoleInActiveHousehold = async (): Promise<string | null> => {
+export const getUserRoleInActiveHousehold = async (householdId?: string): Promise<string | null> => {
   const user = await authGetCurrentUser();
   if (!user) {
-    console.log('[getUserRoleInActiveHousehold] ❌ No user');
     return null;
   }
 
-  const householdId = await authGetUserHouseholdId();
   if (!householdId) {
-    console.log('[getUserRoleInActiveHousehold] ❌ No householdId');
     return null;
   }
-
-  console.log('[getUserRoleInActiveHousehold] 🔍 Query params:', {
-    profile_id: user.profile_id,
-    household_id: householdId,
-  });
 
   const result = await query(
     'SELECT role FROM household_members WHERE profile_id = $1 AND household_id = $2',
     [user.profile_id, householdId],
   );
-
-  console.log('[getUserRoleInActiveHousehold] 📊 Result:', result.rows[0]);
 
   return result.rows[0]?.role || null;
 };

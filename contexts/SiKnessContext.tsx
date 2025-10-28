@@ -188,8 +188,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
           setSelectedPeriod(null);
         }
         setBalance(data.balance || null);
-
-        console.log('[SiKnessContext] Initial data loaded successfully');
       } catch (error) {
         console.error('[SiKnessContext] Failed to load initial data:', error);
       } finally {
@@ -200,6 +198,45 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
     initializeData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo al montar
+
+  // Sincronizar selectedPeriod desde localStorage cuando cambie el householdId o los períodos
+  useEffect(() => {
+    if (!householdId || periods.length === 0) return;
+
+    const key = `csik-selected-period-${householdId}`;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+
+    if (saved) {
+      const [yStr, mStr] = saved.split('-');
+      const y = Number(yStr);
+      const m = Number(mStr);
+      const isValid = Number.isInteger(y) && Number.isInteger(m) && y > 2000 && m >= 1 && m <= 12;
+      const exists = periods.some((p) => p.year === y && p.month === m);
+
+      if (isValid && exists) {
+        // Solo actualizar si difiere del actual
+        if (!selectedPeriod || selectedPeriod.year !== y || selectedPeriod.month !== m) {
+          setSelectedPeriod({ year: y, month: m });
+        }
+        return;
+      }
+    }
+
+    // Si no hay período guardado válido, seleccionar el mes actual si existe
+    if (!selectedPeriod) {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      const currentPeriod = periods.find((p) => p.year === currentYear && p.month === currentMonth);
+      if (currentPeriod) {
+        setSelectedPeriod({ year: currentYear, month: currentMonth });
+      } else if (activePeriod) {
+        // Fallback: usar el activePeriod del servidor
+        setSelectedPeriod({ year: activePeriod.year, month: activePeriod.month });
+      }
+    }
+  }, [householdId, periods, activePeriod, selectedPeriod]);
 
   // Persistir modo privacidad en localStorage
   useEffect(() => {
@@ -255,8 +292,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
       // Limpiar balance (se recargará al cambiar periodo)
       setBalance(null);
-
-      console.log('[SiKnessContext] Household changed to:', id);
     } catch (error) {
       console.error('[SiKnessContext] Failed to change household:', error);
     }
@@ -271,9 +306,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
     const selectedPeriod = periods.find((p) => p.year === year && p.month === month);
 
     if (!selectedPeriod) {
-      console.debug('[SiKnessContext] Period not found:', year, month);
-      console.debug('[SiKnessContext] onPeriodNotFound callback:', onPeriodNotFound ? 'EXISTS' : 'MISSING');
-
       // Limpiar estado inconsistente si el período seleccionado ya no existe
       setSelectedPeriod(null);
       setActivePeriod(null);
@@ -281,7 +313,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
       // Si hay callback, delegamos la decisión al componente
       if (onPeriodNotFound) {
-        console.debug('[SiKnessContext] Calling onPeriodNotFound callback...');
         onPeriodNotFound(year, month);
         return;
       }
@@ -294,7 +325,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
         })[0];
 
         if (latestPeriod) {
-          console.log('[SiKnessContext] Auto-selecting latest period after failed selection:', latestPeriod.year, latestPeriod.month);
           await selectPeriod(latestPeriod.year, latestPeriod.month);
         }
       }
@@ -310,7 +340,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
       if (!response.ok) {
         // Si falla la API, puede ser que el período ya no exista en BD
-        console.warn('[SiKnessContext] Period API failed, refreshing periods...');
         await refreshPeriods();
         throw new Error('Failed to change period');
       }
@@ -326,8 +355,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
       // Recargar balance del nuevo periodo
       await refreshBalance();
-
-      console.log('[SiKnessContext] Period changed to:', year, month);
     } catch (error) {
       console.error('[SiKnessContext] Failed to change period:', error);
       // Limpiar estados inconsistentes en caso de error
@@ -344,7 +371,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
   const refreshBalance = async () => {
     if (!householdId || !activePeriod) {
-      console.warn('[SiKnessContext] Cannot refresh balance: missing household or period');
       setBalance(null); // Limpiar balance inconsistente
       return;
     }
@@ -362,7 +388,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
       if (!response.ok) {
         // Si el período no existe, limpiar estado
         if (response.status === 404) {
-          console.warn('[SiKnessContext] Period not found in backend, clearing state');
           setActivePeriod(null);
           setSelectedPeriod(null);
           setBalance(null);
@@ -375,8 +400,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
       const data = await response.json();
       setBalance(data.balance || null);
-
-      console.log('[SiKnessContext] Balance refreshed successfully');
     } catch (error) {
       console.error('[SiKnessContext] Failed to refresh balance:', error);
       // No limpiar balance en errores de red, solo en errores de consistencia
@@ -385,7 +408,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
   const refreshPeriods = async () => {
     if (!householdId) {
-      console.warn('[SiKnessContext] Cannot refresh periods: missing household');
       return;
     }
 
@@ -401,8 +423,6 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
 
       const data = await response.json();
       setPeriods(data.periods || []);
-
-      console.log('[SiKnessContext] Periods refreshed successfully');
     } catch (error) {
       console.error('[SiKnessContext] Failed to refresh periods:', error);
     }

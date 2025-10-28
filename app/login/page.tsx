@@ -40,21 +40,15 @@ function LoginForm() {
   }, [searchParams]);
 
   const handleGoogleLogin = () => {
-    console.log('[Login] handleGoogleLogin called');
-    alert('Botón clickeado - Ver consola para más info');
-
     try {
       // Capturar token de invitación si existe
       const invitationToken = searchParams.get('invitation');
-      console.log('[Login] Invitation token:', invitationToken);
 
       // Construir URL de OAuth
       let oauthUrl = '/auth/google';
       if (invitationToken) {
         oauthUrl += `?invitation=${encodeURIComponent(invitationToken)}`;
       }
-
-      console.log('[Login] Google OAuth redirect:', oauthUrl);
 
       // Redireccionar a Google OAuth
       window.location.href = oauthUrl;

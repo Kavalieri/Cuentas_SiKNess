@@ -21,10 +21,5 @@ export async function checkDualFlowAccess(_userEmail?: string): Promise<DualFlow
  * Helper para debugging - mostrar estado de acceso
  */
 export function debugDualFlowAccess(userEmail: string, access: DualFlowAccess): void {
-  console.log('[DualFlow] Access check:', {
-    userEmail,
-    hasAccess: access.hasAccess,
-    accessMethod: access.accessMethod,
-    timestamp: new Date().toISOString(),
-  });
+  // Debug logging removed for production
 }

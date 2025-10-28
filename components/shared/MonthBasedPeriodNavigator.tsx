@@ -70,7 +70,6 @@ const getPeriodStatusInfo = (status: string | null) => {
 };
 
 export function MonthBasedPeriodNavigator() {
-  console.log('🟢 [MonthBasedPeriodNavigator] COMPONENT RENDERED');
   const { periods, selectedPeriod, selectPeriod, householdId, refreshPeriods } = useSiKness();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [pendingPeriod, setPendingPeriod] = useState<{ year: number; month: number } | null>(null);
@@ -89,16 +88,13 @@ export function MonthBasedPeriodNavigator() {
   const statusInfo = getPeriodStatusInfo(currentPeriod?.status || null);
 
   const handleMonthChange = (year: number, month: number) => {
-    console.log('🔵 [MonthBasedPeriodNavigator] handleMonthChange called:', year, month);
     // Usar callback para detectar si el período no existe
     void selectPeriod(year, month, (y, m) => {
-      console.log('🔔 Period not found callback triggered:', y, m);
       // Si el período no existe, ofrecemos crearlo
       // Usamos setTimeout para asegurar que el setState se ejecuta después del batch de React
       setTimeout(() => {
         setPendingPeriod({ year: y, month: m });
         setShowCreateDialog(true);
-        console.log('✅ Dialog should be open now');
       }, 0);
     });
   };
