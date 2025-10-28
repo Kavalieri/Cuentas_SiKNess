@@ -181,7 +181,21 @@ export async function calculateContributionsWithDirectExpenses(
 ): Promise<Result<MemberContributionCalculation[]>> {
   const supabase = await pgServer();
 
-  // 1. Obtener configuración del hogar (meta mensual y método de cálculo)
+  // 1. Obtener período para verificar si tiene snapshot
+  const { data: period, error: periodError } = await supabase
+    .from('monthly_periods')
+    .select('id, snapshot_contribution_goal')
+    .eq('household_id', householdId)
+    .eq('year', year)
+    .eq('month', month)
+    .single();
+
+  if (periodError && (periodError as { code?: string }).code !== 'PGRST116') {
+    // Si error diferente a "no encontrado", fallar
+    return fail('Error al obtener período');
+  }
+
+  // 2. Obtener configuración del hogar (meta mensual y método de cálculo)
   const { data: settingsRow, error: settingsError } = await supabase
     .from('household_settings')
     .select('monthly_contribution_goal, calculation_type')
@@ -192,14 +206,18 @@ export async function calculateContributionsWithDirectExpenses(
     return fail('Error al obtener configuración del hogar');
   }
 
-  const targetAmount = Number(settingsRow?.monthly_contribution_goal) || 0;
+  // Usar snapshot si existe (período bloqueado), sino usar valor actual
+  const targetAmount = period?.snapshot_contribution_goal
+    ? Number(period.snapshot_contribution_goal)
+    : Number(settingsRow?.monthly_contribution_goal) || 0;
+
   const calculationMethod = settingsRow?.calculation_type || 'proportional';
 
   if (targetAmount <= 0) {
     return fail('Configura primero la meta de contribución mensual');
   }
 
-  // 2. Obtener miembros e ingresos
+  // 3. Obtener miembros e ingresos
   // La columna is_active NO existe en member_incomes. Solo filtrar por household_id.
   const { data: memberIncomes, error: incomesError } = await supabase
     .from('member_incomes')

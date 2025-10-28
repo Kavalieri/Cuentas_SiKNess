@@ -27,7 +27,7 @@ export function BalanceFilters({ filters, categories, members, periods = [], onC
   // Helper para obtener nombre del mes
   const getMonthName = (month?: number) => {
     if (!month || month < 1 || month > 12) return 'Mes inválido';
-    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return months[month - 1];
   };

@@ -47,7 +47,10 @@ export async function deleteDirectExpenseWithCompensatory(formData: FormData): P
   }
   const { movementId, householdId } = parsed.data;
 
-  await deleteDirectExpenseInternal(movementId, householdId);
+  const result = await deleteDirectExpenseInternal(movementId, householdId);
+  if (!result.ok) {
+    return result;
+  }
 
   // Revalidar la ruta de balance/transacciones
   // Al eliminar un gasto directo, el movimiento compensatorio debe ser un ingreso (positivo)
@@ -65,7 +68,12 @@ export async function deleteDirectExpenseWithCompensatory(formData: FormData): P
 export async function deleteDirectExpenseById(params: { movementId: string; householdId: string }): Promise<Result> {
   const { movementId, householdId } = params;
   if (!movementId || !householdId) return fail('Parámetros inválidos');
-  await deleteDirectExpenseInternal(movementId, householdId);
+
+  const result = await deleteDirectExpenseInternal(movementId, householdId);
+  if (!result.ok) {
+    return result;
+  }
+
   revalidatePath('/sickness/balance');
   revalidatePath('/api/sickness/balance/period-summary');
   revalidatePath('/api/sickness/balance/global');
@@ -73,18 +81,38 @@ export async function deleteDirectExpenseById(params: { movementId: string; hous
 }
 
 // Implementación compartida
-async function deleteDirectExpenseInternal(movementId: string, householdId: string) {
+async function deleteDirectExpenseInternal(movementId: string, householdId: string): Promise<Result> {
   const profileId = await getCurrentProfileId();
-  // Asegurar auditoría: marcar quién elimina antes del borrado
-  if (profileId) {
-    await query(
-      `UPDATE transactions
-       SET updated_by_profile_id = $1, updated_at = now()
-       WHERE (id = $2 OR (transaction_pair_id = (SELECT transaction_pair_id FROM transactions WHERE id = $2) AND flow_type = 'direct'))
-         AND household_id = $3`,
-      [profileId, movementId, householdId]
-    );
+  if (!profileId) return fail('No autenticado');
+
+  // Verificar permisos antes de eliminar
+  const txRes = await query<{ real_payer_id: string | null; profile_id: string | null }>(
+    `SELECT real_payer_id, profile_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
+    [movementId, householdId]
+  );
+
+  if (txRes.rows.length === 0) return fail('Movimiento directo no encontrado');
+
+  const tx = txRes.rows[0]!;
+
+  // Verificar permisos: owner O propietario del gasto directo
+  const isOwner = await isHouseholdOwner(profileId, householdId);
+  const isRealPayer = tx.real_payer_id === profileId;
+  const isProfileOwner = tx.profile_id === profileId;
+
+  if (!isOwner && !isRealPayer && !isProfileOwner) {
+    return fail('No autorizado: solo puedes eliminar tus propios gastos directos');
   }
+
+  // Asegurar auditoría: marcar quién elimina antes del borrado
+  await query(
+    `UPDATE transactions
+     SET updated_by_profile_id = $1, updated_at = now()
+     WHERE (id = $2 OR (transaction_pair_id = (SELECT transaction_pair_id FROM transactions WHERE id = $2) AND flow_type = 'direct'))
+       AND household_id = $3`,
+    [profileId, movementId, householdId]
+  );
+
   // Buscar el par compensatorio
   const pairRes = await query(
     `SELECT transaction_pair_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
@@ -97,6 +125,8 @@ async function deleteDirectExpenseInternal(movementId: string, householdId: stri
     `DELETE FROM transactions WHERE (id = $1 OR (transaction_pair_id = $2 AND flow_type = 'direct')) AND household_id = $3`,
     [movementId, pairId, householdId]
   );
+
+  return ok();
 }
 
 
@@ -122,14 +152,34 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
 
   const { occurred_at_date, performed_at_ts } = parseDateTimeInput(occurredAt);
 
+  // Verificar permisos: obtener información del movimiento
+  const profileId = await getCurrentProfileId();
+  if (!profileId) return fail('No autenticado');
+
+  const txRes = await query<{ real_payer_id: string | null; profile_id: string | null }>(
+    `SELECT real_payer_id, profile_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
+    [movementId, householdId]
+  );
+
+  if (txRes.rows.length === 0) return fail('Movimiento directo no encontrado');
+
+  const tx = txRes.rows[0]!;
+
+  // Verificar permisos: owner O propietario del gasto directo
+  const isOwner = await isHouseholdOwner(profileId, householdId);
+  const isRealPayer = tx.real_payer_id === profileId;
+  const isProfileOwner = tx.profile_id === profileId;
+
+  if (!isOwner && !isRealPayer && !isProfileOwner) {
+    return fail('No autorizado: solo puedes editar tus propios gastos directos');
+  }
+
   // Buscar el par compensatorio
   const pairRes = await query(
     `SELECT transaction_pair_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
     [movementId, householdId]
   );
   const pairId = pairRes.rows[0]?.transaction_pair_id;
-
-  const profileId = await getCurrentProfileId();
 
   // Actualizar gasto directo (con auditoría)
   await query(

@@ -64,18 +64,27 @@ export async function GET(req: NextRequest) {
 
     const period = periodRes.rows[0];
 
-    const settingsRes = await query<{
-      monthly_contribution_goal: string | null;
+    // Obtener objetivo: usar snapshot del período si existe, sino valor actual de settings
+    const goalRes = await query<{
+      monthly_goal: string | null;
       calculation_type: string | null;
     }>(
-      `SELECT monthly_contribution_goal, calculation_type
-       FROM household_settings
-       WHERE household_id = $1`,
-      [householdId],
+      period?.id
+        ? `SELECT
+             COALESCE(mp.snapshot_contribution_goal, hs.monthly_contribution_goal) as monthly_goal,
+             hs.calculation_type
+           FROM monthly_periods mp
+           LEFT JOIN household_settings hs ON hs.household_id = mp.household_id
+           WHERE mp.id = $1`
+        : `SELECT monthly_contribution_goal as monthly_goal, calculation_type
+           FROM household_settings
+           WHERE household_id = $1`,
+      period?.id ? [period.id] : [householdId],
     );
-    const monthlyContributionGoal = settingsRes.rows[0]?.monthly_contribution_goal ? Number(settingsRes.rows[0]?.monthly_contribution_goal) : null;
+
+    const monthlyContributionGoal = goalRes.rows[0]?.monthly_goal ? Number(goalRes.rows[0]?.monthly_goal) : null;
     const hasHouseholdGoal = Boolean(monthlyContributionGoal);
-    const calculationType = settingsRes.rows[0]?.calculation_type ?? 'equal';
+    const calculationType = goalRes.rows[0]?.calculation_type ?? 'equal';
 
     const membersRes = await query<{ total: number }>(
       `SELECT COUNT(*)::int as total

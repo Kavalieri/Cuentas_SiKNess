@@ -112,15 +112,18 @@ export async function getMemberBalanceStatus(
   // 3) Si no hay fila, calcular expected en base a settings + método del hogar
   let expected = Number(contribRes.rows[0]?.expected_amount ?? 0);
         if (!contribRes.rows[0]) {
-          // Meta y método del hogar
-          const settingsRes = await query<{ monthly_contribution_goal: string | null; calculation_type: string | null }>(
-            `SELECT monthly_contribution_goal, calculation_type
-             FROM household_settings
-             WHERE household_id = $1`,
-            [householdId],
+          // Obtener objetivo: usar snapshot del período si existe, sino valor actual
+          const goalRes = await query<{ monthly_goal: string | null; calculation_type: string | null }>(
+            `SELECT
+               COALESCE(mp.snapshot_contribution_goal, hs.monthly_contribution_goal) as monthly_goal,
+               hs.calculation_type
+             FROM monthly_periods mp
+             LEFT JOIN household_settings hs ON hs.household_id = mp.household_id
+             WHERE mp.id = $1`,
+            [period.id],
           );
-          const monthlyGoal = Number(settingsRes.rows[0]?.monthly_contribution_goal ?? 0) || 0;
-          const calculationType = settingsRes.rows[0]?.calculation_type || 'equal';
+          const monthlyGoal = Number(goalRes.rows[0]?.monthly_goal ?? 0) || 0;
+          const calculationType = goalRes.rows[0]?.calculation_type || 'equal';
 
           // Miembros del hogar y sus ingresos vigentes
           const membersRes = await query<{ profile_id: string }>(
@@ -347,13 +350,18 @@ export async function getHouseholdBalancesOverview(
         let pendingBalance = 0;
         const period = periodRes.rows[0];
         if (period) {
-          // Obtener expected y paid igual que en getMemberBalanceStatus()
-          const settingsRes = await query<{ monthly_contribution_goal: number; calculation_type: string }>(
-            `SELECT monthly_contribution_goal, calculation_type FROM household_settings WHERE household_id = $1`,
-            [householdId],
+          // Obtener objetivo: usar snapshot del período si existe, sino valor actual
+          const goalRes = await query<{ monthly_goal: number; calculation_type: string }>(
+            `SELECT
+               COALESCE(mp.snapshot_contribution_goal, hs.monthly_contribution_goal) as monthly_goal,
+               hs.calculation_type
+             FROM monthly_periods mp
+             LEFT JOIN household_settings hs ON hs.household_id = mp.household_id
+             WHERE mp.id = $1`,
+            [period.id],
           );
-          const monthlyGoal = Number(settingsRes.rows[0]?.monthly_contribution_goal ?? 0);
-          const calculationType = settingsRes.rows[0]?.calculation_type || 'equal';
+          const monthlyGoal = Number(goalRes.rows[0]?.monthly_goal ?? 0);
+          const calculationType = goalRes.rows[0]?.calculation_type || 'equal';
 
           let expected = 0;
           if (monthlyGoal > 0) {

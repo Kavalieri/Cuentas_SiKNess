@@ -245,7 +245,6 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
               value={occurredAt}
               onChange={e => setOccurredAt(e.target.value)}
               required
-              max={formatDateTimeLocal(new Date())}
             />
           </div>
           <div>

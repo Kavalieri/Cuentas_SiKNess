@@ -94,6 +94,7 @@ export async function lockPeriod(
         `UPDATE monthly_periods
          SET contribution_disabled = TRUE,
              phase = 'validation',
+             snapshot_contribution_goal = NULL,
              updated_at = NOW()
          WHERE id = $1 AND household_id = $2`,
         [periodId, householdId],
@@ -124,6 +125,25 @@ export async function lockPeriod(
     }
 
     // Flujo normal: validación completa de contribuciones
+    // Primero obtener el objetivo actual para guardarlo como snapshot
+    const settingsRes = await query<{ monthly_contribution_goal: string | null }>(
+      `SELECT monthly_contribution_goal FROM household_settings WHERE household_id = $1`,
+      [householdId],
+    );
+
+    const snapshotGoal = Number(settingsRes.rows[0]?.monthly_contribution_goal ?? 0);
+    if (snapshotGoal <= 0) {
+      return fail('Configura primero el objetivo mensual en Configuración > Hogar');
+    }
+
+    // Guardar snapshot ANTES de bloquear el período
+    await query(
+      `UPDATE monthly_periods
+       SET snapshot_contribution_goal = $1, updated_at = NOW()
+       WHERE id = $2 AND household_id = $3`,
+      [snapshotGoal, periodId, householdId],
+    );
+
     // Llamar función SQL con los 3 parámetros requeridos
     const { rows } = await query(
       `SELECT lock_contributions_period($1, $2, $3) AS locked`,
@@ -253,9 +273,138 @@ export async function reopenPeriod(periodId: string, reason?: string): Promise<R
   }
 }
 
-// =========================
-// Wrappers para formularios
-// =========================
+/**
+ * Elimina un período mensual completo del sistema
+ *
+ * ADVERTENCIA: Esta operación elimina:
+ * - El registro del período (monthly_periods)
+ * - Todas las contribuciones asociadas (contributions)
+ * - Todas las transacciones del período (transactions)
+ * - Ajustes de contribución (contribution_adjustments, si existen)
+ *
+ * NO elimina:
+ * - Logs de auditoría
+ * - Historial de journals (si aplica)
+ * - Registros de debug/control
+ *
+ * Requiere confirmación explícita del usuario.
+ */
+export async function deletePeriod(
+  periodId: string,
+  confirmationText: string,
+): Promise<Result<{ deletedPeriodInfo: string }>> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return fail('No autenticado');
+    }
+
+    const householdId = await getUserHouseholdId();
+    if (!householdId) {
+      return fail('No tienes un hogar activo');
+    }
+
+    // 1. Obtener información del período ANTES de eliminarlo
+    const periodRes = await query<{
+      id: string;
+      year: number;
+      month: number;
+      phase: string;
+      household_id: string;
+    }>(
+      `SELECT id, year, month, phase::text, household_id
+       FROM monthly_periods
+       WHERE id = $1 AND household_id = $2
+       LIMIT 1`,
+      [periodId, householdId],
+    );
+
+    const period = periodRes.rows[0];
+    if (!period) {
+      return fail('Período no encontrado en tu hogar');
+    }    // 2. Validar confirmación: formato "YYYY-MM" (ej: "2025-09")
+    const expectedConfirmation = `${period.year}-${String(period.month).padStart(2, '0')}`;
+    if (confirmationText !== expectedConfirmation) {
+      return fail(
+        `Confirmación incorrecta. Debes escribir exactamente: ${expectedConfirmation}`,
+      );
+    }
+
+    // 3. Verificar si es el período activo (no se puede eliminar)
+    // Consideramos "activo" si está en fase 'active'
+    if (period.phase === 'active') {
+      return fail(
+        'No puedes eliminar el período activo. Cierra el período primero o crea uno nuevo.',
+      );
+    }
+
+    // 4. Eliminar en orden inverso de dependencias
+
+    // 4.1. Ajustes de contribución (si existen)
+    await query(
+      `DELETE FROM contribution_adjustments ca
+       WHERE ca.contribution_id IN (
+         SELECT c.id FROM contributions c 
+         WHERE c.household_id = $1 
+           AND c.year = $2 
+           AND c.month = $3
+       )`,
+      [householdId, period.year, period.month],
+    );
+
+    // 4.2. Transacciones del período
+    const txDeleteResult = await query(
+      `DELETE FROM transactions
+       WHERE household_id = $1
+         AND period_id = $2
+       RETURNING id`,
+      [householdId, periodId],
+    );
+    const deletedTxCount = txDeleteResult.rows.length;
+
+    // 4.3. Contribuciones
+    const contribDeleteResult = await query(
+      `DELETE FROM contributions
+       WHERE household_id = $1
+         AND year = $2
+         AND month = $3
+       RETURNING id`,
+      [householdId, period.year, period.month],
+    );
+    const deletedContribCount = contribDeleteResult.rows.length;
+
+    // 4.4. Período en sí
+    await query(
+      `DELETE FROM monthly_periods
+       WHERE id = $1 AND household_id = $2`,
+      [periodId, householdId],
+    );
+
+    // 5. Log de auditoría (informativo)
+    console.log(
+      `[deletePeriod] Usuario ${user.profile_id} eliminó período ${period.year}-${period.month} ` +
+        `(${deletedTxCount} transacciones, ${deletedContribCount} contribuciones)`,
+    );
+
+    // 6. Revalidar rutas afectadas
+    revalidatePath('/sickness');
+    revalidatePath('/sickness/periodo');
+    revalidatePath('/sickness/transacciones');
+    revalidatePath('/sickness/balance');
+    revalidatePath('/sickness/credito-deuda');
+
+    return ok({
+      deletedPeriodInfo: `${period.year}-${String(period.month).padStart(2, '0')} (${deletedTxCount} transacciones, ${deletedContribCount} contribuciones)`,
+    });
+  } catch (error) {
+    console.error('[deletePeriod] Error:', error);
+    return fail(formatPgError(error));
+  }
+}
+
+// =====================================================
+// FORM ACTIONS (validación Zod + llamada a función)
+// =====================================================
 
 const PeriodIdSchema = z.object({ periodId: z.string().uuid() });
 

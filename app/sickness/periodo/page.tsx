@@ -178,6 +178,27 @@ export default function PeriodosYContribucionPage() {
     fetchChecklist(params).then(setData).catch(() => setData(null));
   }
 
+  // Función unificada para recarga completa tras cambios de fase
+  const refreshAllData = async () => {
+    try {
+      // 1. Refrescar contexto global de períodos
+      await refreshPeriods();
+
+      // 2. Re-seleccionar período actual para obtener datos actualizados
+      if (selectedPeriod) {
+        await selectPeriod(selectedPeriod.year, selectedPeriod.month);
+      }
+
+      // 3. Refrescar datos locales y forzar re-renderizado
+      refresh();
+
+      // 4. Forzar recarga completa del router para sincronizar todo
+      router.refresh();
+    } catch (error) {
+      console.error('Error al refrescar datos:', error);
+    }
+  };
+
   const onLock = () => {
     if (!data?.periodId) return;
     startTransition(async () => {
@@ -192,14 +213,8 @@ export default function PeriodosYContribucionPage() {
       const json = await res.json();
       if (json.ok) {
         toast.success('Período bloqueado para validación');
-        // Refrescar contexto global (periodos y periodo seleccionado) para propagar fase
-        await refreshPeriods().catch(() => {});
-        if (selectedPeriod) {
-          await selectPeriod(selectedPeriod.year, selectedPeriod.month).catch(() => {});
-        }
-        // Refresco local de checklist y una invalidación ligera del árbol
-        refresh();
-        router.refresh();
+        // Recarga completa para ver recálculos en tiempo real
+        await refreshAllData();
       } else {
         toast.error(json.message ?? 'Error al bloquear período');
       }
@@ -266,12 +281,7 @@ export default function PeriodosYContribucionPage() {
   // noop
       if (json.ok) {
         toast.success('Período cerrado');
-        await refreshPeriods().catch(() => {});
-        if (selectedPeriod) {
-          await selectPeriod(selectedPeriod.year, selectedPeriod.month).catch(() => {});
-        }
-        refresh();
-        router.refresh();
+        await refreshAllData();
       } else {
         toast.error(json.message ?? 'Error al cerrar período');
       }
@@ -288,15 +298,10 @@ export default function PeriodosYContribucionPage() {
       });
       const json = await res.json();
       if (json.ok) {
-        toast.success('Fase revertida');
-        await refreshPeriods().catch(() => {});
-        if (selectedPeriod) {
-          await selectPeriod(selectedPeriod.year, selectedPeriod.month).catch(() => {});
-        }
-        refresh();
-        router.refresh();
+        toast.success('Período abierto');
+        await refreshAllData();
       } else {
-        toast.error(json.message ?? 'Error al revertir fase');
+        toast.error(json.message ?? 'Error al abrir período');
       }
     });
   };

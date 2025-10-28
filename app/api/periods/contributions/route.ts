@@ -56,17 +56,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: true, contributions: [] });
     }
 
-    // Cargar configuración del hogar (meta y método)
-    const settingsRes = await query<{ monthly_contribution_goal: string | null; calculation_type: string | null }>(
+    // Cargar objetivo de contribución: usar snapshot del período si existe, sino valor actual
+    const goalRes = await query<{ monthly_goal: string | null; calculation_type: string | null }>(
       `
-        SELECT monthly_contribution_goal, calculation_type
-        FROM household_settings
-        WHERE household_id = $1
+        SELECT
+          COALESCE(mp.snapshot_contribution_goal, hs.monthly_contribution_goal) as monthly_goal,
+          hs.calculation_type
+        FROM monthly_periods mp
+        LEFT JOIN household_settings hs ON hs.household_id = mp.household_id
+        WHERE mp.id = $1
       `,
-      [householdId],
+      [period.id],
     );
-    const monthlyGoal = Number(settingsRes.rows[0]?.monthly_contribution_goal ?? 0) || 0;
-    const calculationType = settingsRes.rows[0]?.calculation_type || 'equal';
+    const monthlyGoal = Number(goalRes.rows[0]?.monthly_goal ?? 0) || 0;
+    const calculationType = goalRes.rows[0]?.calculation_type || 'equal';
 
     // Obtener miembros del hogar (con email)
     const membersRes = await query<{ profile_id: string; email: string }>(

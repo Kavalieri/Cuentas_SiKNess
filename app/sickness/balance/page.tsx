@@ -7,12 +7,12 @@ import { useSiKness } from '@/contexts/SiKnessContext';
 import type { MonthlyPeriodPhase } from '@/lib/periods';
 import { normalizePeriodPhase } from '@/lib/periods';
 import {
-    AlertCircle,
-    ArrowDownCircle,
-    ArrowUpCircle,
-    TrendingDown,
-    TrendingUp,
-    Wallet
+  AlertCircle,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  TrendingDown,
+  TrendingUp,
+  Wallet
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 // Importar componentes de esta carpeta
@@ -156,7 +156,7 @@ export default function BalancePage() {
       const response = await fetch(`/api/sickness/transactions/global?${params}`);
       if (!response.ok) throw new Error('Error al cargar transacciones');
       const data = await response.json();
-      
+
       // Aplicar filtro de búsqueda localmente
       let filtered = data.transactions || [];
       if (filters.search) {
@@ -167,7 +167,7 @@ export default function BalancePage() {
           return description.includes(searchLower) || amount.includes(searchLower);
         });
       }
-      
+
       setTransactions(filtered);
     } catch (error) {
       console.error('Error loading transactions:', error);
