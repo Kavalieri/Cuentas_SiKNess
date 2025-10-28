@@ -1,5 +1,6 @@
 'use client';
 
+import { deleteAccount } from '@/app/configuracion/perfil/email-actions';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -19,7 +20,6 @@ import { useSiKness } from '@/contexts/SiKnessContext';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { deleteAccount } from '@/app/configuracion/perfil/email-actions';
 import type { MemberIncome, UserAuthInfo, UserProfile } from './actions';
 import { getMemberIncome, getUserAuthInfo, getUserProfile, updateDisplayName, updateMemberIncome } from './actions';
 import { EmailManagementCard } from './EmailManagementCard';

@@ -1,5 +1,15 @@
 'use client';
 
+import {
+    cancelEmailInvitation,
+    generateEmailInvitation,
+    getPendingEmailInvitations,
+    getProfileEmails,
+    removeProfileEmail,
+    setPrimaryEmail,
+    type EmailInvitation,
+    type ProfileEmail
+} from '@/app/configuracion/perfil/email-actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,16 +40,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import {
-    cancelEmailInvitation,
-    generateEmailInvitation,
-    getPendingEmailInvitations,
-    getProfileEmails,
-    removeProfileEmail,
-    setPrimaryEmail,
-    type EmailInvitation,
-    type ProfileEmail
-} from '@/app/configuracion/perfil/email-actions';
 import type { UserAuthInfo } from './actions';
 
 interface EmailManagementCardProps {
