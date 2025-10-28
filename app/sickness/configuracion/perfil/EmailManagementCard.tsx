@@ -119,10 +119,10 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
     setGeneratingInvite(true);
 
     const formData = new FormData(e.currentTarget);
-    
+
     // Añadir el origin actual al formData para que el servidor genere la URL correcta
     formData.append('origin', window.location.origin);
-    
+
     const result = await generateEmailInvitation(formData);
 
     if (result.ok && result.data) {

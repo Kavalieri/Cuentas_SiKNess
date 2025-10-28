@@ -373,7 +373,7 @@ export async function generateEmailInvitation(
   // Validar input
   const emailRaw = formData.get('email');
   const originRaw = origin || formData.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
-  
+
   const parsed = InviteEmailSchema.safeParse({ email: emailRaw });
   if (!parsed.success) {
     return fail('Email inválido', parsed.error.flatten().fieldErrors);

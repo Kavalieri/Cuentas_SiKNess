@@ -2,18 +2,45 @@ import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/pgServer';
 import { NextRequest, NextResponse } from 'next/server';
 
+/**
+ * Detecta el origen correcto del request
+ */
+function detectOrigin(request: NextRequest): string {
+  // Prioridad 1: Headers del proxy (Apache)
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+
+  if (forwardedHost && forwardedProto) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  // Prioridad 2: Headers directos
+  const host = request.headers.get('host');
+  if (host) {
+    const proto = host.includes('localhost') ? 'http' : 'https';
+    return `${proto}://${host}`;
+  }
+
+  // Prioridad 3: URL del request
+  return request.nextUrl.origin;
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const token = params.token;
+    // Next.js 15: params debe ser awaited
+    const { token } = await params;
+
+    // Detectar origen correcto del request
+    const origin = detectOrigin(request);
 
     // Verificar que el usuario esté autenticado
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       // Redirigir al login con el token como parámetro para procesarlo después
-      const loginUrl = new URL('/login', request.url);
+      const loginUrl = new URL('/login', origin);
       loginUrl.searchParams.set('invitation', token);
       return NextResponse.redirect(loginUrl);
     }
@@ -36,7 +63,7 @@ export async function GET(
 
     if (invitationResult.rows.length === 0) {
       return NextResponse.redirect(
-        new URL('/configuracion/perfil?error=invitation_not_found', request.url)
+        new URL('/configuracion/perfil?error=invitation_not_found', origin)
       );
     }
 
@@ -45,7 +72,7 @@ export async function GET(
     // TypeScript: verificar que invitation existe
     if (!invitation) {
       return NextResponse.redirect(
-        new URL('/configuracion/perfil?error=invitation_not_found', request.url)
+        new URL('/configuracion/perfil?error=invitation_not_found', origin)
       );
     }
 
@@ -54,7 +81,7 @@ export async function GET(
       return NextResponse.redirect(
         new URL(
           `/configuracion/perfil?error=invitation_already_used`,
-          request.url
+          origin
         )
       );
     }
@@ -77,7 +104,7 @@ export async function GET(
       );
 
       return NextResponse.redirect(
-        new URL('/configuracion/perfil?error=invitation_expired', request.url)
+        new URL('/configuracion/perfil?error=invitation_expired', origin)
       );
     }
 
@@ -86,7 +113,7 @@ export async function GET(
       return NextResponse.redirect(
         new URL(
           `/configuracion/perfil?error=email_mismatch&expected=${encodeURIComponent(invitation.invited_email)}`,
-          request.url
+          origin
         )
       );
     }
@@ -105,7 +132,7 @@ export async function GET(
       return NextResponse.redirect(
         new URL(
           '/configuracion/perfil?error=email_already_exists',
-          request.url
+          origin
         )
       );
     }
@@ -169,13 +196,17 @@ export async function GET(
     return NextResponse.redirect(
       new URL(
         '/configuracion/perfil?success=invitation_accepted',
-        request.url
+        origin
       )
     );
   } catch (error) {
     console.error('Error accepting invitation:', error);
+    
+    // Detectar origen para redirect de error
+    const origin = detectOrigin(request);
+    
     return NextResponse.redirect(
-      new URL('/configuracion/perfil?error=unexpected_error', request.url)
+      new URL('/configuracion/perfil?error=unexpected_error', origin)
     );
   }
 }
