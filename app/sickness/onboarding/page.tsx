@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { deleteAccount } from '../../configuracion/perfil/email-actions';
+import { deleteAccount } from '@/app/configuracion/perfil/email-actions';
 import { acceptInvitationByCode, createHousehold } from './actions';
 
 export default function OnboardingPage() {

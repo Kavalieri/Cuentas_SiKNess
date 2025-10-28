@@ -1,7 +1,7 @@
 # Sistema Multi-Email de CuentasSiK
 
-**Fecha**: 28 Octubre 2025  
-**Estado**: ✅ PRODUCCIÓN  
+**Fecha**: 28 Octubre 2025
+**Estado**: ✅ PRODUCCIÓN
 **Versión**: 1.1.0
 
 ---
@@ -93,7 +93,7 @@ export async function getCurrentUser(): Promise<User | null> {
   if (!payload?.email) return null;
 
   const result = await query<ProfileRow>(
-    `SELECT 
+    `SELECT
       p.id, p.auth_user_id, p.display_name, p.email, p.avatar_url,
       p.bio, p.created_at, p.updated_at,
       $1 as login_email
@@ -270,7 +270,7 @@ interface User {
 }
 ```
 
-**Importante**: 
+**Importante**:
 - `email` siempre es el email primario del perfil (`profiles.email`)
 - `loginEmail` es el email específico usado para autenticarse
 - Para verificar permisos de gestión de emails: `user.loginEmail === user.email` (es el owner)
@@ -282,19 +282,19 @@ interface User {
 ### Script de Limpieza (Testing)
 ```sql
 -- Eliminar perfil temporal sin household
-DELETE FROM profiles 
+DELETE FROM profiles
 WHERE email = 'fumetas.sik@gmail.com'
   AND id NOT IN (SELECT profile_id FROM household_members);
 
 -- Resetear invitación a pending
-UPDATE email_invitations 
+UPDATE email_invitations
 SET status = 'pending',
     accepted_at = NULL,
     accepted_by_profile_id = NULL
 WHERE invited_email = 'fumetas.sik@gmail.com';
 
 -- Eliminar email de profile_emails
-DELETE FROM profile_emails 
+DELETE FROM profile_emails
 WHERE email = 'fumetas.sik@gmail.com';
 
 -- Verificar estado
@@ -306,14 +306,14 @@ SELECT * FROM email_invitations WHERE invited_email = 'fumetas.sik@gmail.com';
 ### Queries de Verificación
 ```sql
 -- Ver todos los emails de un perfil
-SELECT pe.*, p.display_name 
+SELECT pe.*, p.display_name
 FROM profile_emails pe
 JOIN profiles p ON p.id = pe.profile_id
 WHERE p.email = 'getrecek@gmail.com';
 
 -- Ver invitaciones pendientes
-SELECT * FROM email_invitations 
-WHERE status = 'pending' 
+SELECT * FROM email_invitations
+WHERE status = 'pending'
   AND expires_at > NOW();
 
 -- Ver perfiles sin household (temporales)

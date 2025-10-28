@@ -24,10 +24,6 @@ export type ProfileEmail = {
 // SCHEMAS DE VALIDACIÓN
 // ============================================
 
-const AddEmailSchema = z.object({
-  email: z.string().email('Email inválido').toLowerCase().trim(),
-});
-
 const SetPrimaryEmailSchema = z.object({
   emailId: z.string().uuid('ID de email inválido'),
 });

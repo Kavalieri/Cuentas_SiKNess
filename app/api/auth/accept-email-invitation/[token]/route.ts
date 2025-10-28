@@ -1,6 +1,7 @@
 import { getCurrentUser, SESSION_COOKIE_NAME } from '@/lib/auth';
 import { query } from '@/lib/pgServer';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * Detecta el origen correcto del request

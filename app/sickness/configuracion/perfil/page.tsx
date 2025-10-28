@@ -17,17 +17,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import { AlertTriangle, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { deleteAccount } from '../../../configuracion/perfil/email-actions';
+import { deleteAccount } from '@/app/configuracion/perfil/email-actions';
 import type { MemberIncome, UserAuthInfo, UserProfile } from './actions';
 import { getMemberIncome, getUserAuthInfo, getUserProfile, updateDisplayName, updateMemberIncome } from './actions';
 import { EmailManagementCard } from './EmailManagementCard';
 
 export default function PerfilPage() {
   const { householdId } = useSiKness();
-  const router = useRouter();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [authInfo, setAuthInfo] = useState<UserAuthInfo | null>(null);

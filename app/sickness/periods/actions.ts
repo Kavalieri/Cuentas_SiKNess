@@ -65,7 +65,7 @@ export async function createPeriodWithCategories(
   householdId: string,
   year: number,
   month: number,
-  options?: {
+  _options?: {
     contribution_disabled?: boolean;
   },
 ): Promise<Result<{ periodId: string }>> {

@@ -39,7 +39,7 @@ import {
     setPrimaryEmail,
     type EmailInvitation,
     type ProfileEmail
-} from '../../../configuracion/perfil/email-actions';
+} from '@/app/configuracion/perfil/email-actions';
 import type { UserAuthInfo } from './actions';
 
 interface EmailManagementCardProps {
