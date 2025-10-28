@@ -201,10 +201,10 @@ export async function GET(
     );
   } catch (error) {
     console.error('Error accepting invitation:', error);
-    
+
     // Detectar origen para redirect de error
     const origin = detectOrigin(request);
-    
+
     return NextResponse.redirect(
       new URL('/configuracion/perfil?error=unexpected_error', origin)
     );

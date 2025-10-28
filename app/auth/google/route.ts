@@ -31,8 +31,16 @@ export async function GET(request: NextRequest) {
 
     console.log('[OAuth] Detected origin:', origin);
 
+    // Capturar token de invitación si existe (para pasarlo como state)
+    const invitationToken = request.nextUrl.searchParams.get('invitation');
+    const state = invitationToken ? `invitation:${invitationToken}` : undefined;
+
+    if (state) {
+      console.log('[OAuth] Invitation detected, will pass as state:', invitationToken);
+    }
+
     // Generar URL de autorización de Google con redirect_uri correcto
-    const authUrl = getGoogleAuthUrl(origin);
+    const authUrl = getGoogleAuthUrl(origin, state);
 
     // Redireccionar a Google
     return NextResponse.redirect(authUrl);

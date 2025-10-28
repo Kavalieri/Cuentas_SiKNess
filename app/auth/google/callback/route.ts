@@ -70,8 +70,17 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Authentication successful, creating response with cookie');
 
-    // Redirigir SIEMPRE a la nueva interfaz /sickness
-    const redirectUrl = new URL('/sickness', origin);
+    // Verificar si hay un token de invitación en el state
+    let redirectUrl: URL;
+    if (state && state.startsWith('invitation:')) {
+      const invitationToken = state.replace('invitation:', '');
+      console.log('🎫 Invitation detected in state, redirecting to accept endpoint');
+      redirectUrl = new URL(`/api/auth/accept-email-invitation/${invitationToken}`, origin);
+    } else {
+      // Redirigir SIEMPRE a la nueva interfaz /sickness
+      redirectUrl = new URL('/sickness', origin);
+    }
+    
     console.log('🔗 Redirecting to:', redirectUrl.toString());
 
     // Crear respuesta de redirect

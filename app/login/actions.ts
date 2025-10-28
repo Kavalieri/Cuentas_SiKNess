@@ -21,8 +21,17 @@ export async function sendMagicLink_Action(formData: FormData): Promise<Result> 
   }
 
   const { email } = parsed.data;
+  
+  // Capturar token de invitación si existe
+  const invitationToken = formData.get('invitation');
+  let redirectUrl: string | undefined;
+  
+  if (invitationToken && typeof invitationToken === 'string') {
+    // Si hay invitación, redirigir al endpoint de aceptación después de verificar
+    redirectUrl = `/api/auth/accept-email-invitation/${invitationToken}`;
+  }
 
-  const result = await sendMagicLink(email);
+  const result = await sendMagicLink(email, redirectUrl);
 
   if (!result.success) {
     return fail(result.error || 'Error al enviar el correo');

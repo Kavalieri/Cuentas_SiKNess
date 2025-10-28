@@ -21,7 +21,8 @@ function LoginForm() {
   // Detectar si viene con token de invitación
   useEffect(() => {
     const returnUrl = searchParams.get('returnUrl');
-    if (returnUrl?.includes('/app/invite')) {
+    const invitationToken = searchParams.get('invitation');
+    if (returnUrl?.includes('/app/invite') || invitationToken) {
       setHasInvitation(true);
     }
   }, [searchParams]);
@@ -39,8 +40,17 @@ function LoginForm() {
   }, [searchParams]);
 
   const handleGoogleLogin = () => {
+    // Capturar token de invitación si existe
+    const invitationToken = searchParams.get('invitation');
+    
+    // Construir URL de OAuth
+    let oauthUrl = '/auth/google';
+    if (invitationToken) {
+      oauthUrl += `?invitation=${encodeURIComponent(invitationToken)}`;
+    }
+    
     // Redireccionar a Google OAuth
-    window.location.href = '/auth/google';
+    window.location.href = oauthUrl;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -50,6 +60,12 @@ function LoginForm() {
     try {
       const formData = new FormData();
       formData.append('email', email);
+      
+      // Capturar token de invitación si existe
+      const invitationToken = searchParams.get('invitation');
+      if (invitationToken) {
+        formData.append('invitation', invitationToken);
+      }
 
       const result = await sendMagicLink_Action(formData);
 

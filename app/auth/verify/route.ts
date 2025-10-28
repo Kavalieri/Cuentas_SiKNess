@@ -9,8 +9,8 @@ import { NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const token = searchParams.get('token');
-  // Redirigir SIEMPRE a la nueva interfaz /sickness
-  const redirect = '/sickness';
+  // Usar redirect dinámico o default a /sickness
+  const redirect = searchParams.get('redirect') || '/sickness';
 
   console.log('🔍 Verify endpoint called');
   console.log('Token received:', token?.substring(0, 20) + '...');
