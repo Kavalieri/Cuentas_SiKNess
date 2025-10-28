@@ -28,56 +28,75 @@ interface NavSection {
 
 export function SiKnessBurgerMenu() {
   const [open, setOpen] = useState(false);
-  const { user, isOwner } = useSiKness();
+  const { user, isOwner, householdId } = useSiKness();
 
-  const navSections: NavSection[] = [
-    {
-      title: 'Operación',
-      items: [
+  // Detectar si el usuario NO tiene hogar
+  const hasNoHousehold = !householdId;
+
+  // Secciones de navegación dinámicas según tenga o no hogar
+  const navSections: NavSection[] = hasNoHousehold
+    ? [
+        // Usuario SIN hogar: solo perfil
         {
-          icon: BarChart3,
-          label: 'Balance y Transacciones',
-          href: '/sickness/balance',
+          title: 'Mi Cuenta',
+          items: [
+            {
+              icon: User,
+              label: 'Mi Perfil',
+              href: '/sickness/configuracion/perfil',
+            },
+          ],
+        },
+      ]
+    : [
+        // Usuario CON hogar: menú completo
+        {
+          title: 'Operación',
+          items: [
+            {
+              icon: BarChart3,
+              label: 'Balance y Transacciones',
+              href: '/sickness/balance',
+            },
+            {
+              icon: Wallet,
+              label: 'Crédito y Deuda',
+              href: '/sickness/credito-deuda',
+            },
+            {
+              icon: Calendar,
+              label: 'Contribución y Periodos',
+              href: '/sickness/periodo',
+            },
+            {
+              icon: BarChart3,
+              label: 'Estadísticas',
+              href: '/sickness/estadisticas',
+            },
+          ],
         },
         {
-          icon: Wallet,
-          label: 'Crédito y Deuda',
-          href: '/sickness/credito-deuda',
+          title: 'Configuración',
+          items: [
+            {
+              icon: User,
+              label: 'Mi Perfil',
+              href: '/sickness/configuracion/perfil',
+            },
+            {
+              icon: Users,
+              label: 'Gestión del Hogar',
+              href: '/sickness/configuracion/hogar',
+              badge: isOwner ? 'Owner' : undefined,
+            },
+            {
+              icon: Tag,
+              label: 'Categorías',
+              href: '/sickness/configuracion/categorias',
+            },
+          ],
         },
-        {
-          icon: Calendar,
-          label: 'Contribución y Periodos',
-          href: '/sickness/periodo',
-        },
-        {
-          icon: BarChart3, // O puedes usar BarChart2 si prefieres
-          label: 'Estadísticas',
-          href: '/sickness/estadisticas',
-        },
-      ],
-    },
-    {
-      title: 'Configuración',
-      items: [
-        {
-          icon: User,
-          label: 'Mi Perfil',
-          href: '/sickness/configuracion/perfil',
-        },
-        {
-          icon: Users,
-          label: 'Gestión del Hogar',
-          href: '/sickness/configuracion/hogar',
-          badge: isOwner ? 'Owner' : undefined,
-        },
-        {
-          icon: Tag,
-          label: 'Categorías',
-          href: '/sickness/configuracion/categorias',
-        },
-      ],
-    },
-  ];
+      ];
 
   const handleLinkClick = () => {
     setOpen(false);
@@ -100,6 +119,11 @@ export function SiKnessBurgerMenu() {
               <span className="ml-2 inline-flex items-center gap-1 text-xs text-primary">
                 <Shield className="h-3 w-3" />
                 Admin
+              </span>
+            )}
+            {hasNoHousehold && (
+              <span className="ml-2 inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                Sin hogar
               </span>
             )}
           </SheetDescription>

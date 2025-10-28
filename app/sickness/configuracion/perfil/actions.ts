@@ -233,3 +233,41 @@ export async function updateMemberIncome(formData: FormData): Promise<Result> {
     return fail('Error al actualizar el ingreso mensual');
   }
 }
+
+// ============================================================================
+// USER AUTH INFO
+// ============================================================================
+
+export interface UserAuthInfo {
+  profileId: string;
+  email: string; // Email primario (profiles.email)
+  loginEmail: string; // Email usado para login (puede ser secundario)
+  displayName: string | null;
+  isSecondaryLogin: boolean; // true si loginEmail !== email
+}
+
+/**
+ * Obtener información de autenticación del usuario actual
+ * Incluye email primario y loginEmail para detectar accesos secundarios
+ */
+export async function getUserAuthInfo(): Promise<Result<UserAuthInfo>> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return fail('Usuario no autenticado');
+    }
+
+    const authInfo: UserAuthInfo = {
+      profileId: user.profile_id,
+      email: user.email, // Email primario
+      loginEmail: user.loginEmail, // Email usado para login
+      displayName: user.display_name, // Usar display_name (snake_case)
+      isSecondaryLogin: user.loginEmail !== user.email, // Detectar login secundario
+    };
+
+    return ok(authInfo);
+  } catch (error) {
+    console.error('[getUserAuthInfo] Error:', error);
+    return fail('Error al obtener información de autenticación');
+  }
+}

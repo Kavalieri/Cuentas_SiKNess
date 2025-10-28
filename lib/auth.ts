@@ -233,7 +233,7 @@ export async function getCurrentUser(): Promise<User | null> {
     // Buscar usuario por email en profiles (email primario) O profile_emails (email secundario)
     const result = await query<ProfileRow & { login_email: string }>(
       `
-      SELECT 
+      SELECT
         p.id,
         p.auth_user_id,
         p.email,

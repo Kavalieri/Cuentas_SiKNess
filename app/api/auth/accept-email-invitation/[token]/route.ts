@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/pgServer';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +41,7 @@ export async function GET(
     }
 
     const invitation = invitationResult.rows[0];
-    
+
     // TypeScript: verificar que invitation existe
     if (!invitation) {
       return NextResponse.redirect(

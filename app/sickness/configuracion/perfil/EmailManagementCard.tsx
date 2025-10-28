@@ -44,8 +44,13 @@ import {
     type EmailInvitation,
     type ProfileEmail,
 } from '../../../configuracion/perfil/email-actions';
+import type { UserAuthInfo } from './actions';
 
-export function EmailManagementCard() {
+interface EmailManagementCardProps {
+  authInfo: UserAuthInfo | null;
+}
+
+export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
   const [emails, setEmails] = useState<ProfileEmail[]>([]);
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -239,6 +244,9 @@ export function EmailManagementCard() {
   const primaryEmail = emails.find(e => e.is_primary);
   const secondaryEmails = emails.filter(e => !e.is_primary);
 
+  // Detectar si es un login secundario (no puede gestionar emails)
+  const isSecondaryLogin = authInfo?.isSecondaryLogin ?? false;
+
   return (
     <Card>
       <CardHeader>
@@ -249,12 +257,23 @@ export function EmailManagementCard() {
               Emails de la cuenta
             </CardTitle>
             <CardDescription>
-              Gestiona los emails asociados a tu perfil
+              {isSecondaryLogin ? (
+                <>
+                  Accediendo como: <strong>{authInfo?.loginEmail}</strong>
+                  <br />
+                  <span className="text-muted-foreground text-xs">
+                    La gestión de emails solo está disponible desde el email primario
+                  </span>
+                </>
+              ) : (
+                'Gestiona los emails asociados a tu perfil'
+              )}
             </CardDescription>
           </div>
 
-          {/* Botones de acciones */}
-          <div className="flex gap-2">
+          {/* Botones de acciones - solo visible para email primario */}
+          {!isSecondaryLogin && (
+            <div className="flex gap-2">
             {/* Botón invitar email compartido */}
             <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
               <DialogTrigger asChild>
@@ -423,6 +442,7 @@ export function EmailManagementCard() {
             </DialogContent>
           </Dialog>
           </div>
+          )}
         </div>
       </CardHeader>
 
@@ -485,17 +505,19 @@ export function EmailManagementCard() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSetPrimary(email.id)}
-                        disabled={changingPrimary}
-                      >
-                        Establecer como primario
-                      </Button>
+                    {/* Botones de acción - solo visibles para email primario */}
+                    {!isSecondaryLogin && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSetPrimary(email.id)}
+                          disabled={changingPrimary}
+                        >
+                          Establecer como primario
+                        </Button>
 
-                      <Dialog
+                        <Dialog
                         open={removeDialogOpen && selectedEmailId === email.id}
                         onOpenChange={(open) => {
                           setRemoveDialogOpen(open);
@@ -540,7 +562,8 @@ export function EmailManagementCard() {
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -548,8 +571,8 @@ export function EmailManagementCard() {
           </div>
         )}
 
-        {/* Invitaciones pendientes */}
-        {invitations.length > 0 && (
+        {/* Invitaciones pendientes - solo visible para email primario */}
+        {!isSecondaryLogin && invitations.length > 0 && (
           <div className="mt-6 space-y-3">
             <div className="flex items-center gap-2">
               <Send className="h-4 w-4 text-muted-foreground" />

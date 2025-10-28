@@ -21,8 +21,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { deleteAccount } from '../../../configuracion/perfil/email-actions';
-import type { MemberIncome, UserProfile } from './actions';
-import { getMemberIncome, getUserProfile, updateDisplayName, updateMemberIncome } from './actions';
+import type { MemberIncome, UserAuthInfo, UserProfile } from './actions';
+import { getMemberIncome, getUserAuthInfo, getUserProfile, updateDisplayName, updateMemberIncome } from './actions';
 import { EmailManagementCard } from './EmailManagementCard';
 
 export default function PerfilPage() {
@@ -30,6 +30,7 @@ export default function PerfilPage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [authInfo, setAuthInfo] = useState<UserAuthInfo | null>(null);
   const [income, setIncome] = useState<MemberIncome | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingName, setSavingName] = useState(false);
@@ -48,6 +49,14 @@ export default function PerfilPage() {
   useEffect(() => {
     async function loadProfile() {
       setLoading(true);
+
+      // Cargar info de autenticación
+      const authResult = await getUserAuthInfo();
+      if (authResult.ok && authResult.data) {
+        setAuthInfo(authResult.data);
+      } else {
+        toast.error('Error al cargar información de sesión');
+      }
 
       // Cargar perfil
       const profileResult = await getUserProfile();
@@ -225,7 +234,7 @@ export default function PerfilPage() {
       </Card>
 
       {/* Gestión de Emails */}
-      <EmailManagementCard />
+      <EmailManagementCard authInfo={authInfo} />
 
       {/* Ingresos Mensuales */}
       {householdId && (
