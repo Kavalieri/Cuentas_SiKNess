@@ -18,31 +18,19 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Check,
-    ChevronDown,
     Copy,
     Mail,
-    Plus,
     Send,
     Trash2,
-    UserPlus,
     X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
-    addProfileEmail,
     cancelEmailInvitation,
     checkEmailExists,
     generateEmailInvitation,
@@ -62,7 +50,6 @@ interface EmailManagementCardProps {
 export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
   const [emails, setEmails] = useState<ProfileEmail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
 
@@ -74,12 +61,9 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
   const [copiedInvite, setCopiedInvite] = useState(false);
 
-  // Form states
-  const [newEmail, setNewEmail] = useState('');
-  const [addingEmail, setAddingEmail] = useState(false);
+  // Form states para eliminar email
   const [removingEmail, setRemovingEmail] = useState(false);
   const [changingPrimary, setChangingPrimary] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
 
   // Cargar emails e invitaciones
   useEffect(() => {
@@ -105,52 +89,6 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
     if (result.ok && result.data) {
       setInvitations(result.data);
     }
-  }
-
-  // Validar email en tiempo real
-  async function validateNewEmail(email: string) {
-    setEmailError(null);
-
-    if (!email) return;
-
-    // Validación básica de formato
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setEmailError('Formato de email inválido');
-      return;
-    }
-
-    // Verificar si ya existe
-    const result = await checkEmailExists(email);
-    if (result.ok && result.data?.exists === true) {
-      setEmailError('Este email ya está registrado en el sistema');
-    }
-  }
-
-  // Añadir nuevo email
-  async function handleAddEmail(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (emailError) {
-      toast.error(emailError);
-      return;
-    }
-
-    setAddingEmail(true);
-
-    const formData = new FormData(e.currentTarget);
-    const result = await addProfileEmail(formData);
-
-    if (result.ok) {
-      toast.success('Email añadido correctamente');
-      setNewEmail('');
-      setAddDialogOpen(false);
-      await loadEmails();
-    } else {
-      toast.error(result.message);
-    }
-
-    setAddingEmail(false);
   }
 
   // Establecer como primario
@@ -280,49 +218,12 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
             </CardDescription>
           </div>
 
-          {/* Botón unificado de gestión de emails - solo visible para email primario */}
+          {/* Botón directo para compartir perfil - solo visible para email primario */}
           {!isSecondaryLogin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Gestionar emails
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Opciones de email</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                  onClick={() => setAddDialogOpen(true)}
-                  className="cursor-pointer"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  <div className="flex flex-col gap-1">
-                    <span className="font-medium">Añadir email propio</span>
-                    <span className="text-xs text-muted-foreground">
-                      Vincula otro email tuyo para acceder con cualquiera de ellos
-                    </span>
-                  </div>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                  onClick={() => setInviteDialogOpen(true)}
-                  className="cursor-pointer"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  <div className="flex flex-col gap-1">
-                    <span className="font-medium">Compartir perfil con otra persona</span>
-                    <span className="text-xs text-muted-foreground">
-                      Genera un enlace para que alguien de confianza acceda a tu perfil
-                    </span>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" size="sm" onClick={() => setInviteDialogOpen(true)}>
+              <Send className="h-4 w-4 mr-2" />
+              Compartir perfil
+            </Button>
           )}
         </div>
       </CardHeader>
@@ -582,59 +483,6 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
               </DialogFooter>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog para añadir email */}
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Añadir nuevo email</DialogTitle>
-            <DialogDescription>
-              Añade un email secundario que YA controlas. Podrás acceder con cualquiera de tus emails.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleAddEmail} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-email">Email</Label>
-              <Input
-                id="new-email"
-                name="email"
-                type="email"
-                value={newEmail}
-                onChange={(e) => {
-                  setNewEmail(e.target.value);
-                  validateNewEmail(e.target.value);
-                }}
-                placeholder="tu-otro-email@example.com"
-                required
-              />
-              {emailError && (
-                <p className="text-sm text-destructive">{emailError}</p>
-              )}
-              <p className="text-sm text-muted-foreground">
-                Este debe ser un email que YA controlas
-              </p>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setAddDialogOpen(false);
-                  setNewEmail('');
-                  setEmailError(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={addingEmail || !!emailError}>
-                {addingEmail ? 'Añadiendo...' : 'Añadir email'}
-              </Button>
-            </DialogFooter>
-          </form>
         </DialogContent>
       </Dialog>
     </Card>
