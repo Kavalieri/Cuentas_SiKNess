@@ -18,16 +18,25 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Check,
+    ChevronDown,
     Copy,
-    ExternalLink,
     Mail,
     Plus,
     Send,
     Trash2,
+    UserPlus,
     X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -271,253 +280,94 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
             </CardDescription>
           </div>
 
-          {/* Botones de acciones - solo visible para email primario */}
+          {/* Botón unificado de gestión de emails - solo visible para email primario */}
           {!isSecondaryLogin && (
-            <div className="flex gap-2">
-            {/* Botón invitar email compartido */}
-            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-              <DialogTrigger asChild>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Send className="h-4 w-4 mr-2" />
-                  Invitar email compartido
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Gestionar emails
+                  <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Invitar email para compartir perfil</DialogTitle>
-                  <DialogDescription>
-                    Genera un enlace de invitación para que otra persona pueda acceder a tu perfil
-                    usando su propio email. Útil para compartir cuenta con pareja, familia, etc.
-                  </DialogDescription>
-                </DialogHeader>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Opciones de email</DropdownMenuLabel>
+                <DropdownMenuSeparator />
 
-                {!generatedInviteUrl ? (
-                  <form onSubmit={handleGenerateInvitation} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="invite-email">Email a invitar</Label>
-                      <Input
-                        id="invite-email"
-                        name="email"
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="email-compartido@example.com"
-                        required
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Este email recibirá un enlace para vincularse a tu perfil
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
-                      <p className="text-sm text-amber-900 dark:text-amber-100">
-                        <strong>⚠️ Importante:</strong> El email invitado tendrá acceso completo a
-                        tu perfil y todos los hogares asociados. Solo invita a personas de confianza.
-                      </p>
-                    </div>
-
-                    <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={closeInviteDialog}
-                        disabled={generatingInvite}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button type="submit" disabled={generatingInvite}>
-                        {generatingInvite ? 'Generando...' : 'Generar invitación'}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Enlace de invitación generado</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          readOnly
-                          value={generatedInviteUrl}
-                          className="font-mono text-sm"
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          onClick={() => copyInvitationUrl(generatedInviteUrl)}
-                        >
-                          {copiedInvite ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Comparte este enlace con la persona que quieres invitar. El enlace expira en
-                        7 días.
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border bg-muted p-4 space-y-2">
-                      <h4 className="font-semibold text-sm">¿Cómo funciona?</h4>
-                      <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                        <li>
-                          La persona invitada debe hacer login con el email invitado (usando Google
-                          OAuth o Magic Link)
-                        </li>
-                        <li>
-                          Al hacer login, accederá automáticamente a tu perfil como si fuera tú
-                        </li>
-                        <li>
-                          El email invitado se añadirá como alias secundario de tu perfil
-                        </li>
-                        <li>Ambos emails podrán acceder al mismo perfil y hogares</li>
-                      </ol>
-                    </div>
-
-                    <DialogFooter>
-                      <Button type="button" onClick={closeInviteDialog}>
-                        Cerrar
-                      </Button>
-                    </DialogFooter>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
-
-            {/* Botón añadir email */}
-            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <DropdownMenuItem
+                  onClick={() => setAddDialogOpen(true)}
+                  className="cursor-pointer"
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Añadir email
-                </Button>
-              </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Añadir nuevo email</DialogTitle>
-                <DialogDescription>
-                  Añade un email secundario a tu cuenta. Podrás establecerlo como primario más tarde.
-                </DialogDescription>
-              </DialogHeader>
+                  <div className="flex flex-col gap-1">
+                    <span className="font-medium">Añadir email propio</span>
+                    <span className="text-xs text-muted-foreground">
+                      Vincula otro email tuyo para acceder con cualquiera de ellos
+                    </span>
+                  </div>
+                </DropdownMenuItem>
 
-              <form onSubmit={handleAddEmail} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => {
-                      setNewEmail(e.target.value);
-                      validateNewEmail(e.target.value);
-                    }}
-                    placeholder="nuevo@email.com"
-                    required
-                  />
-                  {emailError && (
-                    <p className="text-sm text-destructive">{emailError}</p>
-                  )}
-                </div>
+                <DropdownMenuSeparator />
 
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setAddDialogOpen(false);
-                      setNewEmail('');
-                      setEmailError(null);
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={addingEmail || !!emailError}>
-                    {addingEmail ? 'Añadiendo...' : 'Añadir email'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-          </div>
+                <DropdownMenuItem
+                  onClick={() => setInviteDialogOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  <div className="flex flex-col gap-1">
+                    <span className="font-medium">Compartir perfil con otra persona</span>
+                    <span className="text-xs text-muted-foreground">
+                      Genera un enlace para que alguien de confianza acceda a tu perfil
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </CardHeader>
 
       <CardContent>
         {loading ? (
-          <p className="text-sm text-muted-foreground">Cargando emails...</p>
-        ) : emails.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay emails registrados</p>
+          <p className="text-muted-foreground">Cargando emails...</p>
         ) : (
           <div className="space-y-4">
-            {/* Email primario */}
-            {primaryEmail && (
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-primary/5">
-                <div className="flex-1 space-y-1">
+            {/* Lista de emails */}
+            <div className="space-y-2">
+              {primaryEmail && (
+                <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">{primaryEmail.email}</p>
-                    <Badge variant="default" className="text-xs">
-                      Primario
-                    </Badge>
-                    {primaryEmail.verified && (
-                      <Badge variant="outline" className="text-xs">
-                        <Check className="h-3 w-3 mr-1" />
-                        Verificado
-                      </Badge>
-                    )}
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{primaryEmail.email}</span>
+                    <Badge variant="default">Primario</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Añadido el {new Date(primaryEmail.added_at).toLocaleDateString()}
-                  </p>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Email principal
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Emails secundarios */}
-            {secondaryEmails.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Emails secundarios ({secondaryEmails.length})
-                </h4>
-                {secondaryEmails.map((email) => (
-                  <div
-                    key={email.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{email.email}</p>
-                        {email.verified && (
-                          <Badge variant="outline" className="text-xs">
-                            <Check className="h-3 w-3 mr-1" />
-                            Verificado
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Añadido el {new Date(email.added_at).toLocaleDateString()}
-                      </p>
-                    </div>
+              {secondaryEmails.map((email) => (
+                <div
+                  key={email.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span>{email.email}</span>
+                    <Badge variant="secondary">Secundario</Badge>
+                  </div>
 
-                    {/* Botones de acción - solo visibles para email primario */}
-                    {!isSecondaryLogin && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSetPrimary(email.id)}
-                          disabled={changingPrimary}
-                        >
-                          Establecer como primario
-                        </Button>
+                  {/* Botones de acción para emails secundarios - solo visible para email primario */}
+                  {!isSecondaryLogin && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSetPrimary(email.id)}
+                        disabled={changingPrimary}
+                      >
+                        Establecer como primario
+                      </Button>
 
-                        <Dialog
+                      <Dialog
                         open={removeDialogOpen && selectedEmailId === email.id}
                         onOpenChange={(open) => {
                           setRemoveDialogOpen(open);
@@ -527,7 +377,7 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
                         <DialogTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => setSelectedEmailId(email.id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -535,13 +385,16 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>¿Eliminar email?</DialogTitle>
+                            <DialogTitle>Eliminar email</DialogTitle>
                             <DialogDescription>
-                              ¿Estás seguro de que quieres eliminar{' '}
-                              <span className="font-semibold">{email.email}</span>?
-                              Esta acción no se puede deshacer.
+                              ¿Estás seguro de que quieres eliminar este email de tu cuenta?
                             </DialogDescription>
                           </DialogHeader>
+                          <div className="py-4">
+                            <p className="text-sm text-muted-foreground">
+                              Email: <strong>{email.email}</strong>
+                            </p>
+                          </div>
                           <DialogFooter>
                             <Button
                               variant="outline"
@@ -562,88 +415,228 @@ export function EmailManagementCard({ authInfo }: EmailManagementCardProps) {
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Invitaciones pendientes - solo visible para email primario */}
+            {!isSecondaryLogin && invitations.length > 0 && (
+              <div className="space-y-2 pt-4 border-t">
+                <h4 className="font-semibold text-sm">Invitaciones pendientes</h4>
+                {invitations.map((invitation) => (
+                  <div
+                    key={invitation.id}
+                    className="flex items-center justify-between p-3 border rounded-lg bg-amber-500/5 border-amber-500/20"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm font-medium">{invitation.invited_email}</span>
+                        <Badge variant="outline" className="text-amber-500 border-amber-500">
+                          Pendiente
+                        </Badge>
                       </div>
-                    )}
+                      <p className="text-xs text-muted-foreground">
+                        Expira:{' '}
+                        {new Date(invitation.expires_at).toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const baseUrl =
+                            process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+                          const inviteUrl = `${baseUrl}/api/auth/accept-email-invitation/${invitation.token}`;
+                          copyInvitationUrl(inviteUrl);
+                        }}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copiar enlace
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCancelInvitation(invitation.id)}
+                      >
+                        <X className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
         )}
-
-        {/* Invitaciones pendientes - solo visible para email primario */}
-        {!isSecondaryLogin && invitations.length > 0 && (
-          <div className="mt-6 space-y-3">
-            <div className="flex items-center gap-2">
-              <Send className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-semibold text-sm">Invitaciones pendientes</h3>
-              <Badge variant="secondary" className="text-xs">
-                {invitations.length}
-              </Badge>
-            </div>
-
-            <div className="space-y-2">
-              {invitations.map((invitation) => (
-                <div
-                  key={invitation.id}
-                  className="flex items-center justify-between p-3 border rounded-lg bg-card"
-                >
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{invitation.invited_email}</p>
-                      <Badge variant="outline" className="text-xs">
-                        Pendiente
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Expira el {new Date(invitation.expires_at).toLocaleDateString('es-ES', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-                        const inviteUrl = `${baseUrl}/api/auth/accept-email-invitation/${invitation.token}`;
-                        copyInvitationUrl(inviteUrl);
-                      }}
-                      title="Copiar enlace"
-                    >
-                      {copiedInvite ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <ExternalLink className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCancelInvitation(invitation.id)}
-                      title="Cancelar invitación"
-                    >
-                      <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-          <p className="text-sm text-muted-foreground">
-            💡 <strong>Nota:</strong> El email primario es el que se usa para iniciar sesión y recibir notificaciones.
-            Puedes cambiar cuál es el primario en cualquier momento.
-          </p>
-        </div>
       </CardContent>
+
+      {/* Dialog para invitar email compartido */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Compartir perfil con otra persona</DialogTitle>
+            <DialogDescription>
+              Genera un enlace de invitación para que otra persona pueda acceder a tu perfil
+              usando su propio email. Útil para compartir cuenta con pareja, familia, etc.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!generatedInviteUrl ? (
+            <form onSubmit={handleGenerateInvitation} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="invite-email">Email de la persona a invitar</Label>
+                <Input
+                  id="invite-email"
+                  name="email"
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="email-compartido@example.com"
+                  required
+                />
+                <p className="text-sm text-muted-foreground">
+                  Esta persona recibirá acceso completo a tu perfil y hogares
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
+                <p className="text-sm text-amber-900 dark:text-amber-100">
+                  <strong>⚠️ Importante:</strong> El email invitado tendrá acceso completo a
+                  tu perfil y todos los hogares asociados. Solo invita a personas de confianza.
+                </p>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeInviteDialog}
+                  disabled={generatingInvite}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={generatingInvite}>
+                  {generatingInvite ? 'Generando...' : 'Generar invitación'}
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Enlace de invitación generado</Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={generatedInviteUrl}
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    onClick={() => copyInvitationUrl(generatedInviteUrl)}
+                  >
+                    {copiedInvite ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Comparte este enlace con la persona que quieres invitar. El enlace expira en
+                  7 días.
+                </p>
+              </div>
+
+              <div className="rounded-lg border bg-muted p-4 space-y-2">
+                <h4 className="font-semibold text-sm">¿Cómo funciona?</h4>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>
+                    La persona invitada debe hacer login con el email invitado (usando Google
+                    OAuth o Magic Link)
+                  </li>
+                  <li>
+                    Al hacer login, accederá automáticamente a tu perfil como si fuera tú
+                  </li>
+                  <li>
+                    El email invitado se añadirá como alias secundario de tu perfil
+                  </li>
+                  <li>Ambos emails podrán acceder al mismo perfil y hogares</li>
+                </ol>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" onClick={closeInviteDialog}>
+                  Cerrar
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para añadir email */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Añadir nuevo email</DialogTitle>
+            <DialogDescription>
+              Añade un email secundario que YA controlas. Podrás acceder con cualquiera de tus emails.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAddEmail} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-email">Email</Label>
+              <Input
+                id="new-email"
+                name="email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => {
+                  setNewEmail(e.target.value);
+                  validateNewEmail(e.target.value);
+                }}
+                placeholder="tu-otro-email@example.com"
+                required
+              />
+              {emailError && (
+                <p className="text-sm text-destructive">{emailError}</p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Este debe ser un email que YA controlas
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAddDialogOpen(false);
+                  setNewEmail('');
+                  setEmailError(null);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={addingEmail || !!emailError}>
+                {addingEmail ? 'Añadiendo...' : 'Añadir email'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

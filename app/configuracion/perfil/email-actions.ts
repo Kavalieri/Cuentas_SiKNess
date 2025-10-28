@@ -94,9 +94,9 @@ export async function addProfileEmail(formData: FormData): Promise<Result> {
   const { email } = parsed.data;
 
   try {
-    // 1. Validar que el email NO exista ya en profiles.email
+    // 1. Validar que el email NO exista ya en profiles.email (excluir perfiles eliminados)
     const existingProfile = await query(
-      `SELECT id FROM profiles WHERE LOWER(email) = LOWER($1)`,
+      `SELECT id FROM profiles WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL`,
       [email],
     );
 
@@ -285,11 +285,11 @@ export async function checkEmailExists(email: string): Promise<Result<{ exists: 
   const normalizedEmail = email.toLowerCase().trim();
 
   try {
-    // Verificar en ambas tablas
+    // Verificar en ambas tablas (excluir perfiles eliminados en profiles)
     const result = await query<{ exists: boolean }>(
       `
       SELECT EXISTS(
-        SELECT 1 FROM profiles WHERE LOWER(email) = $1
+        SELECT 1 FROM profiles WHERE LOWER(email) = $1 AND deleted_at IS NULL
         UNION
         SELECT 1 FROM profile_emails WHERE LOWER(email) = $1
       ) as exists

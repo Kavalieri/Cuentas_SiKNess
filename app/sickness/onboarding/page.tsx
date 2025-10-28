@@ -1,25 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { acceptInvitationByCode, createHousehold } from './actions';
 import { deleteAccount } from '../../configuracion/perfil/email-actions';
+import { acceptInvitationByCode, createHousehold } from './actions';
 
 export default function OnboardingPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
