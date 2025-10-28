@@ -51,6 +51,7 @@ export function GlobalPeriodSelector() {
   const [selectedYear, setSelectedYear] = useState(initialYear);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [pendingPeriod, setPendingPeriod] = useState<{ year: number; month: number } | null>(null);
   const [periodToDelete, setPeriodToDelete] = useState<{ id: string; year: number; month: number } | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -59,16 +60,23 @@ export function GlobalPeriodSelector() {
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
-  const handlePeriodSelect = (month: number) => {
+  const handlePeriodSelect = async (month: number) => {
     console.log('🟠 [GlobalPeriodSelector] handlePeriodSelect called:', selectedYear, month);
-    selectPeriod(selectedYear, month, (y, m) => {
-      // Si el período no existe, mostramos el diálogo de creación
-      setTimeout(() => {
-        setPendingPeriod({ year: y, month: m });
-        setShowCreateDialog(true);
-        console.log('✅ [GlobalPeriodSelector] Dialog should be open now');
-      }, 0);
-    });
+    try {
+      await selectPeriod(selectedYear, month, (y, m) => {
+        // Si el período no existe, mostramos el diálogo de creación
+        setTimeout(() => {
+          setPendingPeriod({ year: y, month: m });
+          setShowCreateDialog(true);
+          console.log('✅ [GlobalPeriodSelector] Dialog should be open now');
+        }, 0);
+      });
+      // Si la selección fue exitosa, cerrar dropdown
+      setDropdownOpen(false);
+    } catch (error) {
+      console.error('🔴 [GlobalPeriodSelector] Error selecting period:', error);
+      toast.error('Error al seleccionar período');
+    }
   };
 
   const handleConfirmCreate = async () => {
@@ -88,7 +96,9 @@ export function GlobalPeriodSelector() {
       toast.success(`Período creado: ${MONTHS[pendingPeriod.month - 1]} ${pendingPeriod.year}`);
       await refreshPeriods();
       // Seleccionar el período recién creado
-      void selectPeriod(pendingPeriod.year, pendingPeriod.month);
+      await selectPeriod(pendingPeriod.year, pendingPeriod.month);
+      // Cerrar dropdown después de crear
+      setDropdownOpen(false);
     } catch (error) {
       console.error('🔴 [GlobalPeriodSelector] Exception:', error);
       toast.error('Error inesperado al crear período');
@@ -130,25 +140,48 @@ export function GlobalPeriodSelector() {
     }
 
     setIsDeleting(true);
+    const wasDeletingSelected = selectedPeriod?.year === periodToDelete.year && selectedPeriod?.month === periodToDelete.month;
+    
     try {
       const result = await deletePeriod(periodToDelete.id, deleteConfirmation);
       if (!result.ok) {
         toast.error(result.message ?? 'Error al eliminar período');
         return;
       }
+      
+      // Feedback inmediato
       toast.success(`Período eliminado: ${result.data?.deletedPeriodInfo}`);
+      
+      // Refrescar la lista de períodos
       await refreshPeriods();
-      // Si el período eliminado era el seleccionado, limpiar selección
-      if (selectedPeriod?.year === periodToDelete.year && selectedPeriod?.month === periodToDelete.month) {
-        // Seleccionar el período más reciente disponible después de refresh
-        // Esperar un tick para que refreshPeriods actualice el estado
-        setTimeout(() => {
-          if (periods.length > 0 && periods[0]) {
-            const latestPeriod = periods[0];
-            void selectPeriod(latestPeriod.year, latestPeriod.month);
+      
+      // Si eliminamos el período seleccionado, seleccionar automáticamente el más reciente
+      if (wasDeletingSelected) {
+        // Pequeña espera para que refreshPeriods termine de actualizar el estado
+        setTimeout(async () => {
+          // Obtener periodos actualizados directamente del contexto
+          const updatedPeriods = periods.filter(p => 
+            !(p.year === periodToDelete.year && p.month === periodToDelete.month)
+          );
+          
+          if (updatedPeriods.length > 0) {
+            // Seleccionar el período más reciente disponible
+            const latestPeriod = updatedPeriods.sort((a, b) => {
+              if (a.year !== b.year) return b.year - a.year;
+              return b.month - a.month;
+            })[0];
+            
+            if (latestPeriod) {
+              console.log('🔄 [GlobalPeriodSelector] Auto-selecting latest period:', latestPeriod.year, latestPeriod.month);
+              await selectPeriod(latestPeriod.year, latestPeriod.month);
+            }
+          } else {
+            console.log('🔄 [GlobalPeriodSelector] No periods available after deletion');
+            // Nota: No podemos limpiar selectedPeriod desde aquí, el contexto lo manejará
           }
-        }, 100);
+        }, 200);
       }
+      
     } catch (error) {
       console.error('🔴 [GlobalPeriodSelector] Delete exception:', error);
       toast.error('Error inesperado al eliminar período');
@@ -157,6 +190,8 @@ export function GlobalPeriodSelector() {
       setShowDeleteDialog(false);
       setPeriodToDelete(null);
       setDeleteConfirmation('');
+      // Cerrar dropdown después de eliminar
+      setDropdownOpen(false);
     }
   };
 
@@ -168,7 +203,7 @@ export function GlobalPeriodSelector() {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-2">
             <Calendar className="h-4 w-4" />

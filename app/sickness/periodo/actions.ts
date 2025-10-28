@@ -344,9 +344,9 @@ export async function deletePeriod(
     await query(
       `DELETE FROM contribution_adjustments ca
        WHERE ca.contribution_id IN (
-         SELECT c.id FROM contributions c 
-         WHERE c.household_id = $1 
-           AND c.year = $2 
+         SELECT c.id FROM contributions c
+         WHERE c.household_id = $1
+           AND c.year = $2
            AND c.month = $3
        )`,
       [householdId, period.year, period.month],
