@@ -71,10 +71,10 @@ export async function GET(req: NextRequest) {
     const monthlyGoal = Number(goalRes.rows[0]?.monthly_goal ?? 0) || 0;
     const calculationType = goalRes.rows[0]?.calculation_type || 'equal';
 
-    // Obtener miembros del hogar (con email)
-    const membersRes = await query<{ profile_id: string; email: string }>(
+    // Obtener miembros del hogar (con email y display_name)
+    const membersRes = await query<{ profile_id: string; email: string; display_name: string | null }>(
       `
-        SELECT hm.profile_id, p.email
+        SELECT hm.profile_id, p.email, p.display_name
         FROM household_members hm
         JOIN profiles p ON p.id = hm.profile_id
         WHERE hm.household_id = $1
@@ -225,6 +225,7 @@ export async function GET(req: NextRequest) {
       return {
         profile_id: m.profile_id,
         email: m.email,
+        display_name: m.display_name,
         income,
         share_percent: sharePercent,
         base_expected: baseExpected,

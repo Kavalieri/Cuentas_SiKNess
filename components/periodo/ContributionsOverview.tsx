@@ -7,6 +7,7 @@ import { CheckCircle, XCircle } from 'lucide-react';
 export type CombinedMemberContribution = {
   profile_id: string;
   email: string;
+  display_name?: string | null;
   income?: number;
   share_percent?: number; // 0..1
   base_expected?: number;
@@ -110,7 +111,9 @@ export function ContributionsOverview({
             return (
               <div key={contrib.profile_id} className="p-3 rounded-lg border bg-card">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium truncate" title={contrib.email}>{contrib.email}</p>
+                  <p className="font-medium truncate" title={contrib.email}>
+                    {contrib.display_name || contrib.email}
+                  </p>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
                       {formatCurrency(paid, privacyMode)} / {formatCurrency(expected, privacyMode)}
