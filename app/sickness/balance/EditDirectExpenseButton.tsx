@@ -1,6 +1,8 @@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { editDirectExpenseWithCompensatory } from './actions';
+import { toast } from 'sonner';
 
 interface EditDirectExpenseButtonProps {
   tx: {
@@ -31,20 +33,27 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, categories
   });
 
   const onSubmit = async (data: { amount: number; description: string; categoryId: string; occurredAt: string }) => {
-    const formData = new FormData();
-    formData.append('movementId', tx.id);
-    formData.append('householdId', householdId || '');
-    formData.append('amount', String(data.amount));
-    formData.append('description', data.description);
-    formData.append('categoryId', data.categoryId);
-    formData.append('occurredAt', data.occurredAt);
-    const res = await fetch('/app/sickness/balance/actions/editDirectExpenseWithCompensatory', {
-      method: 'POST',
-      body: formData,
-    });
-    if (res.ok) {
-      setOpen(false);
-      onSuccess?.();
+    try {
+      const formData = new FormData();
+      formData.append('movementId', tx.id);
+      formData.append('householdId', householdId || '');
+      formData.append('amount', String(data.amount));
+      formData.append('description', data.description);
+      formData.append('categoryId', data.categoryId);
+      formData.append('occurredAt', data.occurredAt);
+      
+      const result = await editDirectExpenseWithCompensatory(formData);
+      
+      if (result.ok) {
+        toast.success('Gasto directo actualizado correctamente');
+        setOpen(false);
+        onSuccess?.();
+      } else {
+        toast.error(result.message || 'Error al actualizar el gasto directo');
+      }
+    } catch (error) {
+      console.error('Error en onSubmit:', error);
+      toast.error('Error inesperado al actualizar el gasto');
     }
   };
 

@@ -144,16 +144,22 @@ const EditMovementSchema = z.object({
 
 // Edita movimiento directo y su compensatorio si existe
 export async function editDirectExpenseWithCompensatory(formData: FormData): Promise<Result> {
+  console.log('[editDirectExpenseWithCompensatory] Starting with formData entries:', Array.from(formData.entries()));
+  
   const parsed = EditMovementSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
+    console.error('[editDirectExpenseWithCompensatory] Validation failed:', parsed.error);
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
   const { movementId, householdId, amount, description, categoryId, occurredAt } = parsed.data;
+  
+  console.log('[editDirectExpenseWithCompensatory] Parsed data:', { movementId, householdId, amount, description, categoryId, occurredAt });
 
   const { occurred_at_date, performed_at_ts } = parseDateTimeInput(occurredAt);
 
   // Verificar permisos: obtener información del movimiento
   const profileId = await getCurrentProfileId();
+  console.log('[editDirectExpenseWithCompensatory] Current profile ID:', profileId);
   if (!profileId) return fail('No autenticado');
 
   const txRes = await query<{ real_payer_id: string | null; profile_id: string | null }>(
@@ -161,6 +167,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     [movementId, householdId]
   );
 
+  console.log('[editDirectExpenseWithCompensatory] Transaction query result:', txRes.rows);
   if (txRes.rows.length === 0) return fail('Movimiento directo no encontrado');
 
   const tx = txRes.rows[0]!;
@@ -170,7 +177,10 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   const isRealPayer = tx.real_payer_id === profileId;
   const isProfileOwner = tx.profile_id === profileId;
 
+  console.log('[editDirectExpenseWithCompensatory] Permissions check:', { isOwner, isRealPayer, isProfileOwner, real_payer_id: tx.real_payer_id, profile_id: tx.profile_id });
+
   if (!isOwner && !isRealPayer && !isProfileOwner) {
+    console.log('[editDirectExpenseWithCompensatory] Permission denied');
     return fail('No autorizado: solo puedes editar tus propios gastos directos');
   }
 
@@ -180,9 +190,10 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     [movementId, householdId]
   );
   const pairId = pairRes.rows[0]?.transaction_pair_id;
+  console.log('[editDirectExpenseWithCompensatory] Pair ID found:', pairId);
 
   // Actualizar gasto directo (con auditoría)
-  await query(
+  const updateResult = await query(
     `UPDATE transactions
      SET amount = $1,
          description = $2,
@@ -194,9 +205,11 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
      WHERE id = $7 AND household_id = $8 AND flow_type = 'direct'`,
     [amount, description || null, categoryId ?? null, occurred_at_date, performed_at_ts, profileId ?? null, movementId, householdId]
   );
+  console.log('[editDirectExpenseWithCompensatory] Update result:', { rowCount: updateResult.rowCount });
 
   // Actualizar ingreso compensatorio si existe
   if (pairId) {
+    console.log('[editDirectExpenseWithCompensatory] Updating compensatory income');
     await query(
       `UPDATE transactions
        SET amount = $1,
@@ -214,9 +227,12 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   }
 
   // Nota: la ruta real es /sickness/balance (App Router)
+  console.log('[editDirectExpenseWithCompensatory] Revalidating paths');
   revalidatePath('/sickness/balance');
   revalidatePath('/api/sickness/balance/period-summary');
   revalidatePath('/api/sickness/balance/global');
+  
+  console.log('[editDirectExpenseWithCompensatory] Success - returning ok()');
   return ok();
 }
 

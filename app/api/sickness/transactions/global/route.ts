@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const search = searchParams.get('search'); // Para filtros de búsqueda por descripción
-    
+
     // Solo aplicar limit reducido si NO hay filtros de búsqueda activos
     const hasSearchFilters = search || categoryId || flowType !== 'all';
     const limit = hasSearchFilters ? 1000 : (limitParam ? Math.min(parseInt(limitParam, 10), 500) : 100);
