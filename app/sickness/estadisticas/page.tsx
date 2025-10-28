@@ -47,7 +47,7 @@ export default function EstadisticasPage() {
   // Obtener período completo a partir del selectedPeriod
   const selectedPeriodFull = useMemo(() => {
     if (!selectedPeriod) return activePeriod;
-    return periods.find((p: PeriodOption) => `${p.year}-${String(p.month).padStart(2, '0')}` === `${selectedPeriod.year}-${String(selectedPeriod.month).padStart(2, '0')}`) || activePeriod;
+    return (periods || []).find((p: PeriodOption) => `${p.year}-${String(p.month).padStart(2, '0')}` === `${selectedPeriod.year}-${String(selectedPeriod.month).padStart(2, '0')}`) || activePeriod;
   }, [selectedPeriod, periods, activePeriod]);
 
   // Nombre del período en formato legible
