@@ -2,12 +2,19 @@
 
 import { getPool } from '@/lib/db';
 import type { Pool } from 'pg';
+import { getHouseholdCurrency, formatCurrency } from './currency-utils';
 
 /**
  * MÓDULO DE CONSULTAS DINÁMICAS PARA ANÁLISIS PROFESIONAL
  *
  * Este módulo proporciona un conjunto completo de consultas predefinidas
  * para análisis financiero avanzado sin modificar código existente.
+ * 
+ * FUENTES DE DATOS:
+ * - transactions: Fuente de verdad principal para todos los movimientos
+ * - monthly_periods: Solo para metadatos de períodos (fase, locked_at)
+ * - profiles: Para nombres de usuarios (display_name, NO email)
+ * - household_settings: Para configuración de moneda
  */
 
 export interface QueryResult {
@@ -187,6 +194,8 @@ async function queryGastosPorCategoriaGlobal(pool: Pool, householdId: string): P
 }
 
 async function queryTopGastos(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+  
   const result = await pool.query(`
     SELECT
       t.description AS concepto,
@@ -194,7 +203,7 @@ async function queryTopGastos(pool: Pool, householdId: string, year: number, mon
       c.icon,
       t.amount AS importe,
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
-      p.email AS realizado_por
+      COALESCE(p.display_name, p.email) AS realizado_por
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
     LEFT JOIN profiles p ON t.profile_id = p.id
@@ -209,9 +218,15 @@ async function queryTopGastos(pool: Pool, householdId: string, year: number, mon
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
   const average = total / (result.rows.length || 1);
 
+  // Format currency values
+  const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    importe: formatCurrency(parseFloat(row.importe as string), currency),
+  }));
+
   return {
     columns: ['Concepto', 'Categoría', 'Icono', 'Importe', 'Fecha', 'Realizado Por'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
       total,
       average,
@@ -253,13 +268,15 @@ async function queryGastosDiarios(pool: Pool, householdId: string, year: number,
 }
 
 async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string, year: number, month: number, categoryId: string): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+  
   const result = await pool.query(`
     SELECT
       t.description AS concepto,
       t.amount AS importe,
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
       t.flow_type AS tipo_flujo,
-      p.email AS realizado_por
+      COALESCE(p.display_name, p.email) AS realizado_por
     FROM transactions t
     LEFT JOIN profiles p ON t.profile_id = p.id
     WHERE t.household_id = $1
@@ -273,9 +290,15 @@ async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string,
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
   const average = total / (result.rows.length || 1);
 
+  // Format currency values
+  const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    importe: formatCurrency(parseFloat(row.importe as string), currency),
+  }));
+
   return {
     columns: ['Concepto', 'Importe', 'Fecha', 'Tipo Flujo', 'Realizado Por'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
       total,
       average,
@@ -345,6 +368,8 @@ async function queryIngresosVsObjetivo(pool: Pool, householdId: string): Promise
 }
 
 async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+  
   const result = await pool.query(`
     SELECT
       t.description AS concepto,
@@ -352,7 +377,7 @@ async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
       c.name AS categoria,
       c.icon,
-      p.email AS realizado_por
+      COALESCE(p.display_name, p.email) AS realizado_por
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
     LEFT JOIN profiles p ON t.profile_id = p.id
@@ -364,10 +389,16 @@ async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year
   `, [householdId, year, month]);
 
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
+  
+  // Format currency values
+  const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    importe: formatCurrency(parseFloat(row.importe as string), currency),
+  }));
 
   return {
     columns: ['Concepto', 'Importe', 'Fecha', 'Categoría', 'Icono', 'Realizado Por'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
       total,
       count: result.rows.length,
@@ -583,17 +614,44 @@ async function queryVariacionMensual(pool: Pool, householdId: string): Promise<Q
 }
 
 async function queryTendenciaGastos(pool: Pool, householdId: string): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+  
   const result = await pool.query(`
-    WITH tendencia AS (
+    WITH meses_con_datos AS (
+      SELECT DISTINCT
+        EXTRACT(YEAR FROM occurred_at)::INTEGER AS year,
+        EXTRACT(MONTH FROM occurred_at)::INTEGER AS month
+      FROM transactions
+      WHERE household_id = $1
+        AND type IN ('expense', 'expense_direct')
+    ),
+    gastos_mensuales AS (
       SELECT
-        mp.year AS año,
-        mp.month AS mes,
-        TO_CHAR(DATE(mp.year || '-' || mp.month || '-01'), 'Month YYYY') AS periodo,
-        COALESCE(mp.total_expenses, 0) AS gastos,
-        AVG(mp.total_expenses) OVER (ORDER BY mp.year, mp.month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS media_movil_3m,
-        mp.year * 12 + mp.month AS periodo_num
-      FROM monthly_periods mp
-      WHERE mp.household_id = $1
+        m.year AS año,
+        m.month AS mes,
+        TO_CHAR(DATE(m.year || '-' || m.month || '-01'), 'TMMonth YYYY') AS periodo,
+        COALESCE(SUM(t.amount), 0) AS gastos,
+        m.year * 12 + m.month AS periodo_num
+      FROM meses_con_datos m
+      LEFT JOIN transactions t ON 
+        t.household_id = $1
+        AND t.type IN ('expense', 'expense_direct')
+        AND EXTRACT(YEAR FROM t.occurred_at) = m.year
+        AND EXTRACT(MONTH FROM t.occurred_at) = m.month
+      GROUP BY m.year, m.month
+    ),
+    con_media_movil AS (
+      SELECT
+        año,
+        mes,
+        periodo,
+        gastos,
+        AVG(gastos) OVER (
+          ORDER BY año, mes 
+          ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) AS media_movil_3m,
+        periodo_num
+      FROM gastos_mensuales
     )
     SELECT
       año,
@@ -606,14 +664,20 @@ async function queryTendenciaGastos(pool: Pool, householdId: string): Promise<Qu
           ROUND(((gastos - media_movil_3m) * 100.0 / media_movil_3m), 2)
         ELSE 0
       END AS desviacion_media_porcentaje
-    FROM tendencia
-    ORDER BY año DESC, mes DESC
-    LIMIT 6
+    FROM con_media_movil
+    ORDER BY año ASC, mes ASC
   `, [householdId]);
+
+  // Format currency values
+  const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    gastos: formatCurrency(parseFloat(row.gastos as string), currency),
+    media_movil_3_meses: formatCurrency(parseFloat(row.media_movil_3_meses as string), currency),
+  }));
 
   return {
     columns: ['Año', 'Mes', 'Período', 'Gastos', 'Media Móvil 3 Meses', 'Desviación %'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
       count: result.rows.length,
     },
