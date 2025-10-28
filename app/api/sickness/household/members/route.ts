@@ -20,11 +20,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Sin permiso para este hogar' }, { status: 403 });
 
     const res = await query(
-      `SELECT 
-         hm.profile_id, 
-         p.email, 
+      `SELECT
+         hm.profile_id,
+         p.email,
          p.display_name,
-         hm.role, 
+         hm.role,
          hm.joined_at,
          COALESCE(
            (SELECT get_member_income($1, hm.profile_id)),
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
        FROM household_members hm
        INNER JOIN profiles p ON p.id = hm.profile_id
        WHERE hm.household_id = $1
-       ORDER BY 
+       ORDER BY
          CASE WHEN hm.role = 'owner' THEN 0 ELSE 1 END,
          hm.joined_at ASC`,
       [householdId],

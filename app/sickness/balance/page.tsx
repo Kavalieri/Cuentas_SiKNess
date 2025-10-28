@@ -7,12 +7,12 @@ import { useSiKness } from '@/contexts/SiKnessContext';
 import type { MonthlyPeriodPhase } from '@/lib/periods';
 import { normalizePeriodPhase } from '@/lib/periods';
 import {
-  AlertCircle,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  TrendingDown,
-  TrendingUp,
-  Wallet
+    AlertCircle,
+    ArrowDownCircle,
+    ArrowUpCircle,
+    TrendingDown,
+    TrendingUp,
+    Wallet
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 // Importar componentes de esta carpeta
@@ -711,11 +711,11 @@ export default function BalancePage() {
                               await loadPeriodSummary();
                             }}
                             categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-                            members={members.map((m) => ({ 
-                              profile_id: m.profile_id, 
-                              email: m.email, 
-                              display_name: m.display_name, 
-                              role: m.role 
+                            members={members.map((m) => ({
+                              profile_id: m.profile_id,
+                              email: m.email,
+                              display_name: m.display_name,
+                              role: m.role
                             }))}
                           />
                           {isOwner && (

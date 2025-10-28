@@ -4,6 +4,7 @@
 'use server';
 import { getCurrentProfileId, isHouseholdOwner } from '@/lib/adminCheck';
 import { query } from '@/lib/db';
+import { normalizePeriodPhase } from '@/lib/periods';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
 import { revalidatePath } from 'next/cache';
@@ -162,6 +163,45 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   console.log('[editDirectExpenseWithCompensatory] Current profile ID:', profileId);
   if (!profileId) return fail('No autenticado');
 
+  // Obtener el period_id de la transacción para validar la fase
+  const periodRes = await query<{ period_id: string | null }>(
+    `SELECT period_id FROM transactions WHERE id = $1 AND household_id = $2`,
+    [movementId, householdId]
+  );
+
+  const periodId = periodRes.rows[0]?.period_id;
+  console.log('[editDirectExpenseWithCompensatory] Period ID:', periodId);
+
+  if (!periodId) {
+    return fail('No se pudo determinar el período de la transacción');
+  }
+
+  // Validar fase del período
+  const periodResult = await query<{ phase: string; household_id: string }>(
+    'SELECT phase, household_id FROM monthly_periods WHERE id = $1',
+    [periodId]
+  );
+
+  if (periodResult.rows.length === 0) {
+    return fail('Período no encontrado');
+  }
+
+  const periodInfo = periodResult.rows[0];
+  const normalizedPhase = normalizePeriodPhase(periodInfo.phase);
+
+  if (periodInfo.household_id !== householdId) {
+    return fail('Período no pertenece al hogar');
+  }
+
+  // Bloqueos por fase para edición
+  if (normalizedPhase === 'preparing') {
+    return fail('El período está en configuración inicial; no se permiten modificaciones de movimientos.');
+  }
+
+  if (normalizedPhase === 'closed') {
+    return fail('El período está cerrado; no se permiten modificaciones.');
+  }
+
   const txRes = await query<{ real_payer_id: string | null; profile_id: string | null }>(
     `SELECT real_payer_id, profile_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
     [movementId, householdId]
@@ -222,7 +262,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
          AND flow_type = 'direct'
          AND type IN ('income','income_direct')
          AND household_id = $7`,
-      [amount, `Ingreso automático por gasto directo: ${description || ''}`, occurred_at_date, performed_at_ts, profileId ?? null, pairId, householdId]
+      [amount, `Equilibrio: ${description || 'Gasto directo'}`, occurred_at_date, performed_at_ts, profileId ?? null, pairId, householdId]
     );
   }
 
