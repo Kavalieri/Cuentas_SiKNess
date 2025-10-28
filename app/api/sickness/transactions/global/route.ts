@@ -11,12 +11,17 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const householdId = searchParams.get('householdId');
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const limitParam = searchParams.get('limit');
     const flowType = searchParams.get('flowType'); // 'all' | 'common' | 'direct'
     const memberId = searchParams.get('memberId');
     const categoryId = searchParams.get('categoryId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const search = searchParams.get('search'); // Para filtros de búsqueda por descripción
+    
+    // Solo aplicar limit reducido si NO hay filtros de búsqueda activos
+    const hasSearchFilters = search || categoryId || flowType !== 'all';
+    const limit = hasSearchFilters ? 1000 : (limitParam ? Math.min(parseInt(limitParam, 10), 500) : 100);
 
     if (!householdId) {
       return NextResponse.json({ error: 'householdId requerido' }, { status: 400 });

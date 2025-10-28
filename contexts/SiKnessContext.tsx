@@ -292,7 +292,7 @@ export function SiKnessProvider({ children, initialData }: SiKnessProviderProps)
           if (a.year !== b.year) return b.year - a.year;
           return b.month - a.month;
         })[0];
-        
+
         if (latestPeriod) {
           console.log('[SiKnessContext] Auto-selecting latest period after failed selection:', latestPeriod.year, latestPeriod.month);
           await selectPeriod(latestPeriod.year, latestPeriod.month);

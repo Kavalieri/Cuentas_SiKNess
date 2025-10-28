@@ -141,36 +141,36 @@ export function GlobalPeriodSelector() {
 
     setIsDeleting(true);
     const wasDeletingSelected = selectedPeriod?.year === periodToDelete.year && selectedPeriod?.month === periodToDelete.month;
-    
+
     try {
       const result = await deletePeriod(periodToDelete.id, deleteConfirmation);
       if (!result.ok) {
         toast.error(result.message ?? 'Error al eliminar período');
         return;
       }
-      
+
       // Feedback inmediato
       toast.success(`Período eliminado: ${result.data?.deletedPeriodInfo}`);
-      
+
       // Refrescar la lista de períodos
       await refreshPeriods();
-      
+
       // Si eliminamos el período seleccionado, seleccionar automáticamente el más reciente
       if (wasDeletingSelected) {
         // Pequeña espera para que refreshPeriods termine de actualizar el estado
         setTimeout(async () => {
           // Obtener periodos actualizados directamente del contexto
-          const updatedPeriods = periods.filter(p => 
+          const updatedPeriods = periods.filter(p =>
             !(p.year === periodToDelete.year && p.month === periodToDelete.month)
           );
-          
+
           if (updatedPeriods.length > 0) {
             // Seleccionar el período más reciente disponible
             const latestPeriod = updatedPeriods.sort((a, b) => {
               if (a.year !== b.year) return b.year - a.year;
               return b.month - a.month;
             })[0];
-            
+
             if (latestPeriod) {
               console.log('🔄 [GlobalPeriodSelector] Auto-selecting latest period:', latestPeriod.year, latestPeriod.month);
               await selectPeriod(latestPeriod.year, latestPeriod.month);
@@ -181,7 +181,7 @@ export function GlobalPeriodSelector() {
           }
         }, 200);
       }
-      
+
     } catch (error) {
       console.error('🔴 [GlobalPeriodSelector] Delete exception:', error);
       toast.error('Error inesperado al eliminar período');

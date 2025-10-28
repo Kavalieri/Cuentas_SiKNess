@@ -398,6 +398,15 @@ async function createDirectFlowTransaction(
 
   // Permitir direct en validation, active y closing
 
+  // Obtener email del real_payer_id para auditoría correcta
+  const { data: realPayerProfile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', data.real_payer_id)
+    .single();
+
+  const realPayerEmail = realPayerProfile?.email || userEmail;
+
   // Generar UUID para emparejar las transacciones
   const pairId = crypto.randomUUID();
   console.log('[createDirectFlowTransaction] Pair ID:', pairId);
@@ -420,7 +429,7 @@ async function createDirectFlowTransaction(
     real_payer_id: data.real_payer_id, // Quien pagó realmente
     created_by_profile_id: profileId,
     updated_by_profile_id: profileId,
-    performed_by_email: userEmail,
+    performed_by_email: realPayerEmail, // ✅ CORREGIDO: Email del pagador real
   };
 
   console.log('[createDirectFlowTransaction] Insert data:', insertData);
@@ -485,7 +494,7 @@ async function createDirectFlowTransaction(
         paid_by: data.real_payer_id, // El ingreso se atribuye al que pagó
         created_by_profile_id: profileId,
         updated_by_profile_id: profileId,
-        performed_by_email: userEmail,
+        performed_by_email: realPayerEmail, // ✅ CORREGIDO: Email del pagador real
       })
       .select('id')
       .single();
