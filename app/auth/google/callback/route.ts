@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       // Redirigir SIEMPRE a la nueva interfaz /sickness
       redirectUrl = new URL('/sickness', origin);
     }
-    
+
     console.log('🔗 Redirecting to:', redirectUrl.toString());
 
     // Crear respuesta de redirect

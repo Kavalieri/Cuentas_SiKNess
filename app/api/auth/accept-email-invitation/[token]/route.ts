@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, SESSION_COOKIE_NAME } from '@/lib/auth';
 import { query } from '@/lib/pgServer';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -109,7 +109,8 @@ export async function GET(
     }
 
     // Verificar que el email del usuario actual coincida con el email invitado
-    if (currentUser.email !== invitation.invited_email) {
+    // IMPORTANTE: Esto valida que quien acepta es el dueño del email
+    if (currentUser.loginEmail !== invitation.invited_email) {
       return NextResponse.redirect(
         new URL(
           `/configuracion/perfil?error=email_mismatch&expected=${encodeURIComponent(invitation.invited_email)}`,
@@ -118,23 +119,46 @@ export async function GET(
       );
     }
 
-    // Verificar si el email ya existe en profile_emails o profiles
-    const emailExistsResult = await query(
-      `
-      SELECT 1 FROM profile_emails WHERE email = $1
-      UNION
-      SELECT 1 FROM profiles WHERE email = $1
-    `,
+    // Verificar si el email ya está compartido en profile_emails
+    const emailInProfileEmailsResult = await query<{ profile_id: string }>(
+      `SELECT profile_id FROM profile_emails WHERE email = $1`,
       [invitation.invited_email]
     );
 
-    if (emailExistsResult.rows.length > 0) {
+    if (emailInProfileEmailsResult.rows.length > 0) {
+      // El email ya está compartido con otro perfil
       return NextResponse.redirect(
-        new URL(
-          '/configuracion/perfil?error=email_already_exists',
-          origin
-        )
+        new URL('/configuracion/perfil?error=email_already_shared', origin)
       );
+    }
+
+    // Verificar si el email pertenece a otro perfil activo (que NO sea el usuario actual)
+    // Esto previene que Sara comparta el email de otro usuario activo
+    const emailInProfilesResult = await query<{ id: string }>(
+      `SELECT id FROM profiles WHERE email = $1 AND id != $2 AND deleted_at IS NULL`,
+      [invitation.invited_email, currentUser.profile_id]
+    );
+
+    if (emailInProfilesResult.rows.length > 0) {
+      // El email pertenece a otro usuario diferente que está ACTIVO
+      return NextResponse.redirect(
+        new URL('/configuracion/perfil?error=email_belongs_to_another_user', origin)
+      );
+    }
+
+    // Verificar que el invitador no esté intentando compartir su propio email primario
+    const inviterProfileResult = await query<{ email: string }>(
+      `SELECT email FROM profiles WHERE id = $1`,
+      [invitation.profile_id]
+    );
+
+    if (inviterProfileResult.rows.length > 0 && inviterProfileResult.rows[0]) {
+      const inviterEmail = inviterProfileResult.rows[0].email;
+      if (inviterEmail === invitation.invited_email) {
+        return NextResponse.redirect(
+          new URL('/configuracion/perfil?error=cannot_share_own_primary_email', origin)
+        );
+      }
     }
 
     // Añadir el email como secundario al perfil del invitador
@@ -161,7 +185,7 @@ export async function GET(
       WHERE id = $3
     `,
       [
-        currentUser.id,
+        currentUser.profile_id,
         request.headers.get('x-forwarded-for') || 'unknown',
         invitation.id,
       ]
@@ -175,7 +199,7 @@ export async function GET(
       WHERE profile_id = $1
       LIMIT 1
     `,
-      [currentUser.id]
+      [currentUser.profile_id]
     );
 
     // Si el usuario actual no tiene household, eliminar su perfil temporal
@@ -188,10 +212,24 @@ export async function GET(
         SET deleted_at = NOW()
         WHERE id = $1
       `,
-        [currentUser.id]
+        [currentUser.profile_id]
       );
+
+      // Invalidar la sesión actual (eliminar cookie)
+      const response = NextResponse.redirect(
+        new URL(
+          '/login?invitation_accepted=true&email=' + encodeURIComponent(invitation.invited_email),
+          origin
+        )
+      );
+
+      // Eliminar cookie de autenticación
+      response.cookies.delete(SESSION_COOKIE_NAME);
+
+      return response;
     }
 
+    // Si el usuario SÍ tiene household (caso donde email ya estaba compartido y ahora se acepta formalmente)
     // Redirigir a la página de éxito
     return NextResponse.redirect(
       new URL(

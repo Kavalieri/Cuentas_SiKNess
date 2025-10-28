@@ -543,12 +543,21 @@ export async function authenticateWithGoogle(
       return { success: false, error: 'Email no verificado en Google' };
     }
 
-    // Buscar usuario por email directamente en profiles
-    const userResult = await query(
+    // Buscar usuario por email en profiles (email primario) O profile_emails (email secundario)
+    const userResult = await query<ProfileRow>(
       `
-      SELECT id, auth_user_id, display_name, email
-      FROM profiles
-      WHERE email = $1
+      SELECT
+        p.id,
+        p.auth_user_id,
+        p.display_name,
+        p.email,
+        p.avatar_url,
+        p.bio,
+        p.created_at,
+        p.updated_at
+      FROM profiles p
+      LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.email = $1
+      WHERE (p.email = $1 OR pe.email = $1) AND p.deleted_at IS NULL
       LIMIT 1
     `,
       [userInfo.email],

@@ -40,27 +40,36 @@ function LoginForm() {
   }, [searchParams]);
 
   const handleGoogleLogin = () => {
-    // Capturar token de invitación si existe
-    const invitationToken = searchParams.get('invitation');
-    
-    // Construir URL de OAuth
-    let oauthUrl = '/auth/google';
-    if (invitationToken) {
-      oauthUrl += `?invitation=${encodeURIComponent(invitationToken)}`;
-    }
-    
-    // Redireccionar a Google OAuth
-    window.location.href = oauthUrl;
-  };
+    console.log('[Login] handleGoogleLogin called');
+    alert('Botón clickeado - Ver consola para más info');
 
-  const handleLogin = async (e: React.FormEvent) => {
+    try {
+      // Capturar token de invitación si existe
+      const invitationToken = searchParams.get('invitation');
+      console.log('[Login] Invitation token:', invitationToken);
+
+      // Construir URL de OAuth
+      let oauthUrl = '/auth/google';
+      if (invitationToken) {
+        oauthUrl += `?invitation=${encodeURIComponent(invitationToken)}`;
+      }
+
+      console.log('[Login] Google OAuth redirect:', oauthUrl);
+
+      // Redireccionar a Google OAuth
+      window.location.href = oauthUrl;
+    } catch (error) {
+      console.error('[Login] Error en handleGoogleLogin:', error);
+      toast.error('Error al iniciar sesión con Google');
+    }
+  };  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
       const formData = new FormData();
       formData.append('email', email);
-      
+
       // Capturar token de invitación si existe
       const invitationToken = searchParams.get('invitation');
       if (invitationToken) {
