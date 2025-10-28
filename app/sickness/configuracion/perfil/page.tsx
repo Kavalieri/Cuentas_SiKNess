@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { MemberIncome, UserProfile } from './actions';
 import { getMemberIncome, getUserProfile, updateDisplayName, updateMemberIncome } from './actions';
+import { EmailManagementCard } from './EmailManagementCard';
 
 export default function PerfilPage() {
   const { householdId } = useSiKness();
@@ -145,9 +146,9 @@ export default function PerfilPage() {
           <CardDescription>Tu nombre visible y datos de contacto</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Email (read-only) */}
+          {/* Email primario (read-only - info) */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email primario</Label>
             <Input
               id="email"
               type="email"
@@ -155,7 +156,9 @@ export default function PerfilPage() {
               disabled
               className="bg-muted"
             />
-            <p className="text-sm text-muted-foreground">Tu email no puede ser modificado</p>
+            <p className="text-sm text-muted-foreground">
+              Gestiona todos tus emails en la sección de abajo
+            </p>
           </div>
 
           {/* Nombre visible (editable) */}
@@ -183,6 +186,9 @@ export default function PerfilPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Gestión de Emails */}
+      <EmailManagementCard />
 
       {/* Ingresos Mensuales */}
       {householdId && (
