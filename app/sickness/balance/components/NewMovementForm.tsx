@@ -15,6 +15,7 @@ import { toast } from "sonner";
 interface Member {
   profile_id: string;
   email: string;
+  display_name: string;
   role: string;
 }
 interface Category {
@@ -261,12 +262,16 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
                 <SelectContent>
                   {isOwner
                     ? members?.map((m) => (
-                        <SelectItem key={m.profile_id} value={m.profile_id}>{m.email}</SelectItem>
+                        <SelectItem key={m.profile_id} value={m.profile_id}>
+                          {m.display_name || m.email}
+                        </SelectItem>
                       ))
                     : members
                         .filter((m) => user && m.profile_id === user.id)
                         .map((m) => (
-                          <SelectItem key={m.profile_id} value={m.profile_id}>{m.email}</SelectItem>
+                          <SelectItem key={m.profile_id} value={m.profile_id}>
+                            {m.display_name || m.email}
+                          </SelectItem>
                         ))}
                 </SelectContent>
               </Select>

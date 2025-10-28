@@ -82,7 +82,9 @@ export async function GET(req: NextRequest) {
         c.name as category_name,
         c.icon as category_icon,
         p.email as profile_email,
-        rp.email as real_payer_email
+        p.display_name as profile_display_name,
+        rp.email as real_payer_email,
+        rp.display_name as real_payer_display_name
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
       LEFT JOIN profiles p ON t.profile_id = p.id

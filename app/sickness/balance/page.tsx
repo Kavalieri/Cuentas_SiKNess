@@ -41,7 +41,9 @@ interface Transaction {
   category_name?: string;
   category_icon?: string;
   profile_email?: string;
+  profile_display_name?: string;
   real_payer_email?: string;
+  real_payer_display_name?: string;
 }
 
 interface GlobalBalance {
@@ -78,7 +80,7 @@ export default function BalancePage() {
     endDate: ''
   });
 
-  const [members, setMembers] = useState<Array<{ profile_id: string; email: string; role: string }>>([]);
+  const [members, setMembers] = useState<Array<{ profile_id: string; email: string; display_name: string; role: string }>>([]);
   const [categories, setCategories] = useState<Array<{ id: string; name: string; icon?: string; type?: string }>>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -621,12 +623,38 @@ export default function BalancePage() {
                             </span>
                           </>
                         )}
-                        {tx.profile_email && (
-                          <>
-                            <span>•</span>
-                            <span>{tx.profile_email}</span>
-                          </>
-                        )}
+                        {/* Mostrar el miembro correcto según el tipo de transacción */}
+                        {(() => {
+                          // Para transacciones directas, mostrar el pagador real
+                          if (tx.flow_type === 'direct' && tx.real_payer_display_name) {
+                            return (
+                              <>
+                                <span>•</span>
+                                <span>{tx.real_payer_display_name}</span>
+                              </>
+                            );
+                          }
+                          // Para transacciones comunes, mostrar quien la registró
+                          if (tx.flow_type === 'common' && tx.profile_display_name) {
+                            return (
+                              <>
+                                <span>•</span>
+                                <span>{tx.profile_display_name}</span>
+                              </>
+                            );
+                          }
+                          // Fallback a emails si no hay nombres para mostrar
+                          const emailToShow = tx.flow_type === 'direct' ? tx.real_payer_email : tx.profile_email;
+                          if (emailToShow) {
+                            return (
+                              <>
+                                <span>•</span>
+                                <span>{emailToShow}</span>
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                     <div className="flex-shrink-0 ml-4 flex items-center gap-2">
@@ -683,7 +711,12 @@ export default function BalancePage() {
                               await loadPeriodSummary();
                             }}
                             categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-                            members={members.map((m) => ({ profile_id: m.profile_id, email: m.email }))}
+                            members={members.map((m) => ({ 
+                              profile_id: m.profile_id, 
+                              email: m.email, 
+                              display_name: m.display_name, 
+                              role: m.role 
+                            }))}
                           />
                           {isOwner && (
                             <DeleteCommonButton

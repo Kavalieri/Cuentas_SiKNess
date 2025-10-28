@@ -145,14 +145,14 @@ const EditMovementSchema = z.object({
 // Edita movimiento directo y su compensatorio si existe
 export async function editDirectExpenseWithCompensatory(formData: FormData): Promise<Result> {
   console.log('[editDirectExpenseWithCompensatory] Starting with formData entries:', Array.from(formData.entries()));
-  
+
   const parsed = EditMovementSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     console.error('[editDirectExpenseWithCompensatory] Validation failed:', parsed.error);
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
   const { movementId, householdId, amount, description, categoryId, occurredAt } = parsed.data;
-  
+
   console.log('[editDirectExpenseWithCompensatory] Parsed data:', { movementId, householdId, amount, description, categoryId, occurredAt });
 
   const { occurred_at_date, performed_at_ts } = parseDateTimeInput(occurredAt);
@@ -231,7 +231,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   revalidatePath('/sickness/balance');
   revalidatePath('/api/sickness/balance/period-summary');
   revalidatePath('/api/sickness/balance/global');
-  
+
   console.log('[editDirectExpenseWithCompensatory] Success - returning ok()');
   return ok();
 }

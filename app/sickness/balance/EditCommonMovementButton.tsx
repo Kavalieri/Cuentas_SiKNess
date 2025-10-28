@@ -20,7 +20,7 @@ interface EditCommonMovementButtonProps {
   householdId?: string;
   onSuccess?: () => void;
   categories: Array<{ id: string; name: string }>;
-  members: Array<{ profile_id: string; email: string }>;
+  members: Array<{ profile_id: string; email: string; display_name?: string; role?: string }>;
 }
 
 export function EditCommonMovementButton({ tx, householdId, onSuccess, categories, members }: EditCommonMovementButtonProps) {
@@ -135,7 +135,9 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, categorie
               >
                 <option value="common">Cuenta común</option>
                 {members.map((m) => (
-                  <option key={m.profile_id} value={m.profile_id}>{m.email}</option>
+                  <option key={m.profile_id} value={m.profile_id}>
+                    {m.display_name || m.email}
+                  </option>
                 ))}
               </select>
               {requiresMember && paidBy === 'common' && (

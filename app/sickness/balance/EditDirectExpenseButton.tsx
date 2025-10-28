@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { editDirectExpenseWithCompensatory } from './actions';
 import { toast } from 'sonner';
+import { editDirectExpenseWithCompensatory } from './actions';
 
 interface EditDirectExpenseButtonProps {
   tx: {
@@ -41,9 +41,9 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, categories
       formData.append('description', data.description);
       formData.append('categoryId', data.categoryId);
       formData.append('occurredAt', data.occurredAt);
-      
+
       const result = await editDirectExpenseWithCompensatory(formData);
-      
+
       if (result.ok) {
         toast.success('Gasto directo actualizado correctamente');
         setOpen(false);

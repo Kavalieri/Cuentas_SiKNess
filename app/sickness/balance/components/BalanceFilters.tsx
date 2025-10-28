@@ -13,7 +13,7 @@ interface BalanceFiltersProps {
     endDate?: string;
   };
   categories: Array<{ id: string; name: string }>;
-  members: Array<{ profile_id: string; email: string }>;
+  members: Array<{ profile_id: string; email: string; display_name?: string; role?: string }>;
   periods?: Array<{ year: number; month: number }>;
   onChange: (filters: Partial<BalanceFiltersProps['filters']>) => void;
   onNewMovement?: () => void;
@@ -94,7 +94,9 @@ export function BalanceFilters({ filters, categories, members, periods = [], onC
             >
               <option value="">Todos</option>
               {members.map((m) => (
-                <option key={m.profile_id} value={m.profile_id}>{m.email}</option>
+                <option key={m.profile_id} value={m.profile_id}>
+                  {m.display_name || m.email}
+                </option>
               ))}
             </select>
           </div>
