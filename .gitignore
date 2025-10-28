@@ -21,6 +21,7 @@ docker/
 .DS_Store
 Thumbs.db
 .vscode/settings.json
+*.code-workspace
 
 # Datos privados / temporales
 /private/
