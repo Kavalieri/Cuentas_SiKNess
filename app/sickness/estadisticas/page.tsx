@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { AlertCircle, BarChart3, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { AlertCircle, BarChart3, TrendingDown, Wallet } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions';
 import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
@@ -56,36 +56,34 @@ export default function EstadisticasPage() {
     return `${months[selectedPeriodFull.month - 1]} ${selectedPeriodFull.year}`;
   }, [selectedPeriodFull]);
 
-  // Calcular métricas de gasto diario
+    // Calcular métricas de presupuesto diario (solo si tenemos un periodo válido)
   const dailyMetrics = useMemo(() => {
     if (!selectedPeriodFull || !periodSummary) return null;
 
+    const { year, month, phase } = selectedPeriodFull;
+    const { closing_balance: closing, total_expenses } = periodSummary;
+
     const now = new Date();
-    const periodStart = new Date(selectedPeriodFull.year, selectedPeriodFull.month - 1, 1);
-    const periodEnd = new Date(selectedPeriodFull.year, selectedPeriodFull.month, 0);
-    
-    // Días transcurridos (al menos 1 para evitar división por 0)
+    const periodStart = new Date(year, month - 1, 1);
+    const periodEnd = new Date(year, month, 0);
     const daysElapsed = Math.max(1, Math.ceil((now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)));
-    
-    // Días restantes (si es período actual, sino no aplica)
     const daysRemaining = Math.max(0, Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-    
-    // Gasto medio por día hasta ahora
-    const averageSpentPerDay = periodSummary.total_expenses / daysElapsed;
-    
-    // Presupuesto diario disponible (solo si quedan días)
-    const dailyBudget = daysRemaining > 0 
-      ? (globalBalance?.balance.closing || 0) / daysRemaining 
-      : 0;
+
+    const averageSpentPerDay = total_expenses / daysElapsed;
+    const dailyBudget = daysRemaining > 0 ? closing / daysRemaining : 0;
+    const isCurrentPeriod = now.getMonth() + 1 === month && now.getFullYear() === year;
+    const isFuturePeriod = periodStart > now;
 
     return {
       averageSpentPerDay,
       dailyBudget,
       daysElapsed,
       daysRemaining,
-      isCurrentPeriod: now.getMonth() + 1 === selectedPeriodFull.month && now.getFullYear() === selectedPeriodFull.year
+      isCurrentPeriod,
+      isFuturePeriod,
+      periodPhase: phase,
     };
-  }, [selectedPeriodFull, periodSummary, globalBalance]);
+  }, [selectedPeriodFull, periodSummary]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-ES', {
@@ -173,8 +171,18 @@ export default function EstadisticasPage() {
               </div>
             </div>
 
-            {/* Presupuesto diario disponible */}
-            {dailyMetrics && dailyMetrics.isCurrentPeriod && dailyMetrics.daysRemaining > 0 ? (
+            {/* Presupuesto diario o estado del periodo */}
+            {dailyMetrics && dailyMetrics.isFuturePeriod ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Estado del período</p>
+                <div className="text-2xl font-medium text-blue-600">
+                  {dailyMetrics.periodPhase === 'preparation' && 'En preparación'}
+                  {dailyMetrics.periodPhase === 'pending_validation' && 'Pendiente de validar'}
+                  {dailyMetrics.periodPhase === 'open' && 'Abierto (futuro)'}
+                  {dailyMetrics.periodPhase === 'closed' && 'Cerrado (futuro)'}
+                </div>
+              </div>
+            ) : dailyMetrics && dailyMetrics.isCurrentPeriod && dailyMetrics.daysRemaining > 0 ? (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Puedes gastar por día</p>
                 <div className="text-3xl font-bold text-green-600">
@@ -234,7 +242,7 @@ export default function EstadisticasPage() {
                     </div>
                     <span className="text-lg font-bold text-orange-600">
                       {formatCurrency(
-                        globalIncomeVsExpenses.reduce((sum, item) => sum + item.expense, 0) / 
+                        globalIncomeVsExpenses.reduce((sum, item) => sum + item.expense, 0) /
                         Math.max(1, globalIncomeVsExpenses.length * 30)
                       )}/día
                     </span>

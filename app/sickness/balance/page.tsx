@@ -8,8 +8,6 @@ import type { MonthlyPeriodPhase } from '@/lib/periods';
 import { normalizePeriodPhase } from '@/lib/periods';
 import {
     AlertCircle,
-    ArrowDownCircle,
-    ArrowUpCircle,
     TrendingDown,
     TrendingUp,
     Wallet
@@ -216,9 +214,6 @@ export default function BalancePage() {
     });
   }, [selectedPeriod, selectedPeriodFull, rawPhase, phase]);
 
-  // Calcular diferencia de balance (para el periodo actual)
-  const balanceDifference = (periodSummary?.closing_balance || 0) - (periodSummary?.opening_balance || 0);
-  const isPositive = balanceDifference >= 0;
   const canCreateMovement = useMemo(
     () => phase === 'active' || phase === 'validation' || phase === 'closing',
     [phase],
@@ -309,25 +304,10 @@ export default function BalancePage() {
               <Wallet className="h-6 w-6 text-primary" />
               Balance Actual
             </CardTitle>
-            <CardDescription>Saldo disponible en cuenta común</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="text-5xl font-bold tracking-tight">
-                {formatCurrency(globalBalance?.balance.closing || 0)}
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                {isPositive ? (
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                ) : (
-                  <TrendingDown className="h-4 w-4 text-red-500" />
-                )}
-                <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
-                  {isPositive ? '+' : ''}
-                  {formatCurrency(balanceDifference)}
-                </span>
-                <span className="text-muted-foreground">desde apertura</span>
-              </div>
+            <div className="text-5xl font-bold tracking-tight">
+              {formatCurrency(globalBalance?.balance.closing || 0)}
             </div>
           </CardContent>
         </Card>
@@ -339,16 +319,10 @@ export default function BalancePage() {
               <TrendingUp className="h-5 w-5 text-green-500" />
               Ingresos del Período
             </CardTitle>
-            <CardDescription>Total de entradas de dinero</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="text-4xl font-bold text-green-600">
-                {formatCurrency(periodSummary?.total_income || 0)}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Aportaciones realizadas
-              </div>
+            <div className="text-4xl font-bold text-green-600">
+              {formatCurrency(periodSummary?.total_income || 0)}
             </div>
           </CardContent>
         </Card>
@@ -360,16 +334,10 @@ export default function BalancePage() {
               <TrendingDown className="h-5 w-5 text-red-500" />
               Gastos del Período
             </CardTitle>
-            <CardDescription>Total de salidas de dinero</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="text-4xl font-bold text-red-600">
-                {formatCurrency(periodSummary?.total_expenses || 0)}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Gastos comunes
-              </div>
+            <div className="text-4xl font-bold text-red-600">
+              {formatCurrency(periodSummary?.total_expenses || 0)}
             </div>
           </CardContent>
         </Card>
