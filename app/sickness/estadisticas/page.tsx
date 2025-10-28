@@ -6,6 +6,7 @@ import { AlertCircle, BarChart3, TrendingDown, Wallet } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions';
 import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
+import { AdvancedQueries } from './AdvancedQueries';
 import { GastosPorCategoria, IngresosVsGastos } from './components';
 
 interface GlobalBalance {
@@ -294,6 +295,25 @@ export default function EstadisticasPage() {
             )}
           </div>
         </div>
+      </section>
+
+      {/* BLOQUE 3: Análisis y Consultas Avanzadas */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            Análisis y Consultas Avanzadas
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Ejecuta consultas personalizadas y exporta resultados en múltiples formatos
+          </p>
+        </div>
+
+        <AdvancedQueries
+          householdId={householdId}
+          periods={periods}
+          selectedPeriod={selectedPeriod}
+        />
       </section>
 
       {/* Info Card */}
