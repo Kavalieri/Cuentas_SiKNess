@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { getHouseholdMembers, getPendingInvitations } from './actions';
 import HogarMembersClient from './HogarMembersClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HogarPage() {
   const householdId = await getUserHouseholdId();
   if (!householdId) {

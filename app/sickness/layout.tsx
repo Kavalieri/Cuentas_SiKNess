@@ -1,6 +1,8 @@
 import { SiKnessProvider } from '@/contexts/SiKnessContext';
 import { SiKnessTopbar } from './_components/SiKnessTopbar';
 
+export const dynamic = 'force-dynamic';
+
 export default function SiKnessLayout({ children }: { children: React.ReactNode }) {
   return (
     <SiKnessProvider>

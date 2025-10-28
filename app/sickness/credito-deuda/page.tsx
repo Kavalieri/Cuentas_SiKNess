@@ -17,6 +17,8 @@ import {
 import { LoanRequestForm } from './components/LoanRequestForm';
 import { RefundRequestForm } from './components/RefundRequestForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CreditDebtPage() {
   const user = await getCurrentUser();
   const householdId = await getUserHouseholdId();

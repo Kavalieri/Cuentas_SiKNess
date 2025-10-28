@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { BarChart3, CalendarDays, Copy, Download, FileJson, Loader2, PieChart, Play, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { executeQuery, QUERY_CATALOG, type QueryResult } from './queries-actions';
+import { QUERY_CATALOG } from './query-catalog';
+import { executeQuery, type QueryResult } from './queries-actions';
 
 interface AdvancedQueriesProps {
   householdId: string | null;

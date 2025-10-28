@@ -3,6 +3,8 @@ import { pgServer } from '@/lib/pgServer';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   // Verificar si hay sesión activa
   const supabase = await pgServer();
