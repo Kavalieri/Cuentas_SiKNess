@@ -186,7 +186,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     return fail('Período no encontrado');
   }
 
-  const periodInfo = periodResult.rows[0];
+  const periodInfo = periodResult.rows[0]!;
   const normalizedPhase = normalizePeriodPhase(periodInfo.phase);
 
   if (periodInfo.household_id !== householdId) {
@@ -232,7 +232,23 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   const pairId = pairRes.rows[0]?.transaction_pair_id;
   console.log('[editDirectExpenseWithCompensatory] Pair ID found:', pairId);
 
-  // Actualizar gasto directo (con auditoría)
+  // Recalcular period_id basándose en la nueva fecha
+  if (!occurred_at_date) {
+    return fail('Fecha de ocurrencia no válida');
+  }
+  
+  const y = Number(occurred_at_date.slice(0, 4));
+  const m = Number(occurred_at_date.slice(5, 7));
+  const newPeriodIdRes = await query<{ ensure_monthly_period: string }>(
+    `SELECT ensure_monthly_period($1::uuid, $2::int, $3::int)`,
+    [householdId, y, m]
+  );
+  const newPeriodId = newPeriodIdRes.rows[0]?.ensure_monthly_period;
+  if (!newPeriodId) {
+    return fail('No se pudo determinar el período de la nueva fecha');
+  }
+
+  // Actualizar gasto directo (con auditoría y nuevo period_id)
   const updateResult = await query(
     `UPDATE transactions
      SET amount = $1,
@@ -240,10 +256,11 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
          category_id = $3,
          occurred_at = $4,
          performed_at = $5,
+         period_id = $6,
          updated_at = now(),
-         updated_by_profile_id = $6
-     WHERE id = $7 AND household_id = $8 AND flow_type = 'direct'`,
-    [amount, description || null, categoryId ?? null, occurred_at_date, performed_at_ts, profileId ?? null, movementId, householdId]
+         updated_by_profile_id = $7
+     WHERE id = $8 AND household_id = $9 AND flow_type = 'direct'`,
+    [amount, description || null, categoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, movementId, householdId]
   );
   console.log('[editDirectExpenseWithCompensatory] Update result:', { rowCount: updateResult.rowCount });
 
@@ -256,13 +273,14 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
            description = $2,
            occurred_at = $3,
            performed_at = $4,
+           period_id = $5,
            updated_at = now(),
-           updated_by_profile_id = $5
-       WHERE transaction_pair_id = $6
+           updated_by_profile_id = $6
+       WHERE transaction_pair_id = $7
          AND flow_type = 'direct'
          AND type IN ('income','income_direct')
-         AND household_id = $7`,
-      [amount, `Equilibrio: ${description || 'Gasto directo'}`, occurred_at_date, performed_at_ts, profileId ?? null, pairId, householdId]
+         AND household_id = $8`,
+      [amount, `Equilibrio: ${description || 'Gasto directo'}`, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, pairId, householdId]
     );
   }
 
