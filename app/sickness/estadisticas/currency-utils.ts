@@ -26,17 +26,17 @@ export function formatCurrency(value: number, currency: string = 'EUR'): string 
     GBP: '£',
     JPY: '¥',
   };
-  
+
   const symbol = symbols[currency] || currency;
   const formatted = value.toLocaleString('es-ES', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  
+
   // EUR goes after the amount in Spanish locale
   if (currency === 'EUR') {
     return `${formatted} ${symbol}`;
   }
-  
+
   return `${symbol}${formatted}`;
 }
