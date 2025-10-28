@@ -4,7 +4,7 @@
 
 Sistema profesional de gestión de gastos compartidos para parejas
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)](https://github.com/Kavalieri/CuentasSiK/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue?style=flat-square)](https://github.com/Kavalieri/CuentasSiK/releases)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript&style=flat-square)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15+-black?logo=next.js&style=flat-square)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue?logo=postgresql&style=flat-square)](https://postgresql.org/)
@@ -22,12 +22,16 @@ Aplicación web moderna para gestionar finanzas compartidas en pareja de forma t
 
 ### Características clave
 
-- Contribuciones proporcionales (ingresos, partes iguales o personalizado)
-- Gestión de gastos/ingresos con categorías y filtros
-- Créditos automáticos por sobrepagos y decisiones mensuales
-- Fondo de ahorro compartido con historial y gráficos
-- Múltiples hogares por usuario e invitaciones seguras
-- Dashboard con balance y reportes básicos
+- **Autenticación multi-email**: Comparte tu cuenta con múltiples direcciones de email (OAuth Google + Magic Link)
+- **Contribuciones proporcionales**: Cálculo automático según ingresos, partes iguales o personalizado
+- **Gestión de gastos/ingresos**: Categorías predefinidas, filtros avanzados y búsqueda
+- **Créditos automáticos**: Sistema de sobrepagos con decisiones mensuales (aplicar, transferir a ahorro, mantener activo)
+- **Fondo de ahorro compartido**: Historial completo, gráficos evolutivos y gestión de metas
+- **Multi-hogar**: Un usuario puede pertenecer a múltiples hogares con cambio rápido
+- **Invitaciones seguras**: URLs de invitación con tokens únicos y validación de ownership
+- **Dashboard inteligente**: Balance en tiempo real, reportes y estadísticas visuales
+- **Modo privacidad**: Oculta todas las cantidades con un toggle
+- **Exportación**: Genera PDFs y CSVs de transacciones y reportes
 
 ---
 
@@ -170,15 +174,32 @@ Environment=JWT_SECRET=...
 
 ## Documentación
 
-- Visión general: `./docs/README.md`
-- Base de datos y migraciones: `./database/README.md`
-- Instrucciones completas para agentes/IA: `.github/copilot-instructions.md`
+### Guías Principales
+- **Visión general**: `./docs/README.md`
+- **Base de datos y migraciones**: `./database/README.md`
+- **Sistema multi-email**: `./docs/MULTI_EMAIL_SYSTEM.md` ⭐ NUEVO
+- **Instrucciones para agentes/IA**: `.github/copilot-instructions.md`
 
-[🛠 Troubleshooting](./docs/TROUBLESHOOTING.md)
-[🔐 JWT](./docs/JWT.md)
+### Documentación Técnica
+- [🛠 Troubleshooting](./docs/TROUBLESHOOTING.md)
+- [🔐 JWT y Autenticación](./docs/JWT.md)
+- [📦 Sistema PM2](./docs/TO-DO/DONE/PM2_SISTEMA_COMPLETO.md)
+- [🗄️ PostgreSQL Setup](./docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md)
+
+---
+
+## Contribuir
 
 Las contribuciones son bienvenidas. Revisa [CONTRIBUTING.md](./CONTRIBUTING.md) y abre un issue/PR siguiendo Conventional Commits.
 
+---
+
+## Licencia
+
 MIT © 2025 CuentasSiK Contributors. Ver [LICENSE](./LICENSE).
+
+---
+
+## Contacto
 
 soporte@cuentassik.com · [Issues](https://github.com/Kavalieri/CuentasSiK/issues)
