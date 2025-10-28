@@ -1,36 +1,36 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Check, Mail, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
-  addProfileEmail,
-  checkEmailExists,
-  getProfileEmails,
-  removeProfileEmail,
-  setPrimaryEmail,
-  type ProfileEmail,
+    addProfileEmail,
+    checkEmailExists,
+    getProfileEmails,
+    removeProfileEmail,
+    setPrimaryEmail,
+    type ProfileEmail,
 } from '../../../configuracion/perfil/email-actions';
-import { Badge } from '@/components/ui/badge';
-import { Mail, Plus, Trash2, Check } from 'lucide-react';
 
 export function EmailManagementCard() {
   const [emails, setEmails] = useState<ProfileEmail[]>([]);
@@ -38,7 +38,7 @@ export function EmailManagementCard() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
-  
+
   // Form states
   const [newEmail, setNewEmail] = useState('');
   const [addingEmail, setAddingEmail] = useState(false);
@@ -54,29 +54,29 @@ export function EmailManagementCard() {
   async function loadEmails() {
     setLoading(true);
     const result = await getProfileEmails();
-    
+
     if (result.ok && result.data) {
       setEmails(result.data);
     } else {
       toast.error(result.ok ? 'Error al cargar emails' : result.message);
     }
-    
+
     setLoading(false);
   }
 
   // Validar email en tiempo real
   async function validateNewEmail(email: string) {
     setEmailError(null);
-    
+
     if (!email) return;
-    
+
     // Validación básica de formato
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setEmailError('Formato de email inválido');
       return;
     }
-    
+
     // Verificar si ya existe
     const result = await checkEmailExists(email);
     if (result.ok && result.data?.exists === true) {
@@ -87,17 +87,17 @@ export function EmailManagementCard() {
   // Añadir nuevo email
   async function handleAddEmail(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    
+
     if (emailError) {
       toast.error(emailError);
       return;
     }
-    
+
     setAddingEmail(true);
-    
+
     const formData = new FormData(e.currentTarget);
     const result = await addProfileEmail(formData);
-    
+
     if (result.ok) {
       toast.success('Email añadido correctamente');
       setNewEmail('');
@@ -106,40 +106,40 @@ export function EmailManagementCard() {
     } else {
       toast.error(result.message);
     }
-    
+
     setAddingEmail(false);
   }
 
   // Establecer como primario
   async function handleSetPrimary(emailId: string) {
     setChangingPrimary(true);
-    
+
     const formData = new FormData();
     formData.append('emailId', emailId);
-    
+
     const result = await setPrimaryEmail(formData);
-    
+
     if (result.ok) {
       toast.success('Email primario actualizado');
       await loadEmails();
     } else {
       toast.error(result.message);
     }
-    
+
     setChangingPrimary(false);
   }
 
   // Eliminar email
   async function handleRemoveEmail() {
     if (!selectedEmailId) return;
-    
+
     setRemovingEmail(true);
-    
+
     const formData = new FormData();
     formData.append('emailId', selectedEmailId);
-    
+
     const result = await removeProfileEmail(formData);
-    
+
     if (result.ok) {
       toast.success('Email eliminado correctamente');
       setRemoveDialogOpen(false);
@@ -148,7 +148,7 @@ export function EmailManagementCard() {
     } else {
       toast.error(result.message);
     }
-    
+
     setRemovingEmail(false);
   }
 
@@ -168,7 +168,7 @@ export function EmailManagementCard() {
               Gestiona los emails asociados a tu perfil
             </CardDescription>
           </div>
-          
+
           {/* Botón añadir email */}
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
@@ -184,7 +184,7 @@ export function EmailManagementCard() {
                   Añade un email secundario a tu cuenta. Podrás establecerlo como primario más tarde.
                 </DialogDescription>
               </DialogHeader>
-              
+
               <form onSubmit={handleAddEmail} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -204,7 +204,7 @@ export function EmailManagementCard() {
                     <p className="text-sm text-destructive">{emailError}</p>
                   )}
                 </div>
-                
+
                 <DialogFooter>
                   <Button
                     type="button"
@@ -226,7 +226,7 @@ export function EmailManagementCard() {
           </Dialog>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         {loading ? (
           <p className="text-sm text-muted-foreground">Cargando emails...</p>
@@ -259,7 +259,7 @@ export function EmailManagementCard() {
                 </div>
               </div>
             )}
-            
+
             {/* Emails secundarios */}
             {secondaryEmails.length > 0 && (
               <div className="space-y-2">
@@ -285,7 +285,7 @@ export function EmailManagementCard() {
                         Añadido el {new Date(email.added_at).toLocaleDateString()}
                       </p>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -295,7 +295,7 @@ export function EmailManagementCard() {
                       >
                         Establecer como primario
                       </Button>
-                      
+
                       <Dialog
                         open={removeDialogOpen && selectedEmailId === email.id}
                         onOpenChange={(open) => {
@@ -348,7 +348,7 @@ export function EmailManagementCard() {
             )}
           </div>
         )}
-        
+
         <div className="mt-4 p-3 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground">
             💡 <strong>Nota:</strong> El email primario es el que se usa para iniciar sesión y recibir notificaciones.

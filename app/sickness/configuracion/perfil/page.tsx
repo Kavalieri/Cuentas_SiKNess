@@ -1,24 +1,44 @@
 'use client';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSiKness } from '@/contexts/SiKnessContext';
+import { AlertTriangle, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { MemberIncome, UserProfile } from './actions';
 import { getMemberIncome, getUserProfile, updateDisplayName, updateMemberIncome } from './actions';
+import { deleteAccount } from '../../../configuracion/perfil/email-actions';
 import { EmailManagementCard } from './EmailManagementCard';
 
 export default function PerfilPage() {
   const { householdId } = useSiKness();
+  const router = useRouter();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [income, setIncome] = useState<MemberIncome | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingName, setSavingName] = useState(false);
   const [savingIncome, setSavingIncome] = useState(false);
+
+  // Estados para eliminación de cuenta
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Form states
   const [displayName, setDisplayName] = useState('');
@@ -76,35 +96,52 @@ export default function PerfilPage() {
     setSavingName(false);
   }
 
-  // Actualizar ingreso mensual
+    // Actualizar ingreso mensual
   async function handleUpdateIncome(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    if (!householdId) {
-      toast.error('Debes tener un hogar activo para configurar tus ingresos');
-      return;
-    }
+    if (!householdId) return;
 
     setSavingIncome(true);
-
     const formData = new FormData(e.currentTarget);
-    formData.append('householdId', householdId);
-
     const result = await updateMemberIncome(formData);
+    setSavingIncome(false);
 
     if (result.ok) {
-      toast.success('Ingreso mensual actualizado correctamente');
-      // Recargar ingreso
+      toast.success('Ingreso mensual actualizado');
+      // Recargar ingreso actualizado
       const incomeResult = await getMemberIncome(householdId);
       if (incomeResult.ok && incomeResult.data) {
         setIncome(incomeResult.data);
         setMonthlyIncome(incomeResult.data.monthlyIncome.toString());
       }
     } else {
-      toast.error(result.message);
+      toast.error(result.message || 'Error al actualizar el ingreso');
+    }
+  }
+
+  // Eliminar cuenta
+  async function handleDeleteAccount() {
+    if (!deleteConfirmed) {
+      toast.error('Debes confirmar que entiendes que esta acción es irreversible');
+      return;
     }
 
-    setSavingIncome(false);
+    setDeleting(true);
+    const result = await deleteAccount();
+    setDeleting(false);
+
+    if (result.ok) {
+      toast.success('Cuenta eliminada exitosamente. Redirigiendo...');
+      // Esperar un momento para que el usuario vea el mensaje
+      setTimeout(() => {
+        // Logout forzado (eliminar sesión y redirigir a login)
+        window.location.href = '/api/auth/signout';
+      }, 2000);
+    } else {
+      toast.error(result.message || 'Error al eliminar la cuenta');
+      setDeleteDialogOpen(false);
+      setDeleteConfirmed(false);
+    }
   }
 
   if (loading) {
@@ -199,6 +236,7 @@ export default function PerfilPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleUpdateIncome} className="space-y-4">
+              <input type="hidden" name="householdId" value={householdId} />
               <div className="space-y-2">
                 <Label htmlFor="monthlyIncome">Ingreso mensual (€)</Label>
                 <Input
@@ -264,6 +302,90 @@ export default function PerfilPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Zona de Peligro - Eliminar Cuenta */}
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Zona de Peligro
+          </CardTitle>
+          <CardDescription>
+            Acciones irreversibles que afectarán permanentemente tu cuenta
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+              <h3 className="font-semibold text-destructive mb-2">Eliminar mi cuenta</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Esta acción eliminará permanentemente tu cuenta y todos tus datos personales. Esta
+                operación no se puede deshacer.
+              </p>
+              <p className="text-sm text-muted-foreground mb-4">
+                <strong>Nota:</strong> No podrás eliminar tu cuenta si eres el único propietario
+                (owner) de algún hogar. Primero debes transferir la propiedad o eliminar el hogar.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar mi cuenta
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* AlertDialog para confirmar eliminación */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              ¿Estás seguro de que quieres eliminar tu cuenta?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>Esta acción es permanente e irreversible. Se eliminarán:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Tu perfil y toda tu información personal</li>
+                <li>Tus contribuciones e ingresos registrados</li>
+                <li>Tus créditos y ajustes</li>
+                <li>Tu membresía en todos los hogares</li>
+              </ul>
+              <p className="text-sm font-medium">
+                Los registros de auditoría (journals y logs) se conservarán para fines de depuración
+                y cumplimiento normativo.
+              </p>
+              <div className="flex items-center space-x-2 pt-4">
+                <Checkbox
+                  id="confirm-delete"
+                  checked={deleteConfirmed}
+                  onCheckedChange={(checked) => setDeleteConfirmed(checked === true)}
+                />
+                <label
+                  htmlFor="confirm-delete"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Entiendo que esta acción es irreversible y quiero eliminar mi cuenta
+                </label>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={!deleteConfirmed || deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Eliminando...' : 'Eliminar mi cuenta permanentemente'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

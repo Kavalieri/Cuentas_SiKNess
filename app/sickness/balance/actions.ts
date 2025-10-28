@@ -236,7 +236,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   if (!occurred_at_date) {
     return fail('Fecha de ocurrencia no válida');
   }
-  
+
   const y = Number(occurred_at_date.slice(0, 4));
   const m = Number(occurred_at_date.slice(5, 7));
   const newPeriodIdRes = await query<{ ensure_monthly_period: string }>(

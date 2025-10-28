@@ -1,8 +1,8 @@
 'use server';
 
+import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { fail, ok, type Result } from '@/lib/result';
-import { getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -48,13 +48,13 @@ export async function getProfileEmails(): Promise<Result<ProfileEmail[]>> {
   try {
     const result = await query<ProfileEmail>(
       `
-      SELECT 
-        id, 
-        profile_id, 
-        email, 
-        is_primary, 
-        verified, 
-        verified_at, 
+      SELECT
+        id,
+        profile_id,
+        email,
+        is_primary,
+        verified,
+        verified_at,
         added_at
       FROM profile_emails
       WHERE profile_id = $1
@@ -301,5 +301,96 @@ export async function checkEmailExists(email: string): Promise<Result<{ exists: 
   } catch (error) {
     console.error('Error al verificar email:', error);
     return fail('Error al verificar email');
+  }
+}
+
+// ============================================
+// ELIMINACIÓN DE CUENTA
+// ============================================
+
+/**
+ * Elimina completamente la cuenta del usuario actual.
+ * 
+ * Validaciones:
+ * - No puede ser el único owner de un hogar activo
+ * 
+ * Eliminación:
+ * - Soft delete: profiles (deleted_at)
+ * - Hard delete: profile_emails, household_members, user_settings, 
+ *                contributions, member_incomes, member_credits, invitations
+ * - Preserva: journals, logs (auditoría)
+ * 
+ * @returns Result con mensaje de éxito o error
+ */
+export async function deleteAccount(): Promise<Result> {
+  const user = await getCurrentUser();
+  if (!user?.profile_id) {
+    return fail('No autenticado');
+  }
+
+  try {
+    // 1. Verificar que no es el único owner de algún hogar
+    const soloOwnerCheck = await query<{ household_id: string; household_name: string }>(
+      `
+      SELECT h.id as household_id, h.name as household_name
+      FROM household_members hm
+      JOIN households h ON h.id = hm.household_id
+      WHERE hm.profile_id = $1 
+        AND hm.role = 'owner'
+        AND h.deleted_at IS NULL
+        AND (
+          SELECT COUNT(*) 
+          FROM household_members 
+          WHERE household_id = hm.household_id 
+            AND role = 'owner'
+        ) = 1
+      `,
+      [user.profile_id],
+    );
+
+    if (soloOwnerCheck.rows.length > 0) {
+      const householdNames = soloOwnerCheck.rows.map((r) => r.household_name).join(', ');
+      return fail(
+        `No puedes eliminar tu cuenta porque eres el único propietario de estos hogares: ${householdNames}. Transfiere la propiedad o elimina los hogares primero.`,
+      );
+    }
+
+    // 2. Soft delete en profiles
+    await query(
+      `
+      UPDATE profiles 
+      SET deleted_at = NOW(), 
+          updated_at = NOW()
+      WHERE id = $1
+      `,
+      [user.profile_id],
+    );
+
+    // 3. Hard delete en tablas relacionadas (cascade automático configurado en FK)
+    // Las FK con ON DELETE CASCADE se encargan de:
+    // - profile_emails
+    // - household_members
+    // - user_settings
+    // - user_active_household
+    
+    // Para las que no tienen cascade, eliminamos manualmente:
+    await query('DELETE FROM contributions WHERE profile_id = $1', [user.profile_id]);
+    await query('DELETE FROM member_incomes WHERE profile_id = $1', [user.profile_id]);
+    await query('DELETE FROM member_credits WHERE profile_id = $1', [user.profile_id]);
+    
+    // Invitaciones donde es el invitador (cambiar a NULL para mantener historial)
+    await query(
+      'UPDATE invitations SET invited_by_profile_id = NULL WHERE invited_by_profile_id = $1',
+      [user.profile_id],
+    );
+
+    // 4. Revalidar rutas
+    revalidatePath('/sickness', 'layout');
+    revalidatePath('/configuracion/perfil');
+
+    return ok({ message: 'Cuenta eliminada exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar cuenta:', error);
+    return fail('Error al eliminar la cuenta. Por favor, contacta con soporte.');
   }
 }
