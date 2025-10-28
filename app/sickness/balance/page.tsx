@@ -300,23 +300,20 @@ export default function BalancePage() {
       </div>
 
 
-      {/* Mostrar contribuciones calculadas siempre (se calculan en tiempo real) */}
-    {/* Eliminado: la contribución no se muestra en balance */}
-
-      {/* Grid de tarjetas principales */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-  {/* Balance actual - PROMINENTE */}
-        <Card className="md:col-span-2 lg:col-span-2 border-2 border-primary/20 bg-primary/5">
+      {/* Grid de tarjetas principales - 3 columnas en desktop, apiladas en móvil */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+        {/* Balance Actual - DESTACADA */}
+        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Wallet className="h-5 w-5 text-primary" />
-              Balance actual
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Wallet className="h-6 w-6 text-primary" />
+              Balance Actual
             </CardTitle>
             <CardDescription>Saldo disponible en cuenta común</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="text-4xl font-bold tracking-tight">
+            <div className="space-y-3">
+              <div className="text-5xl font-bold tracking-tight">
                 {formatCurrency(globalBalance?.balance.closing || 0)}
               </div>
               <div className="flex items-center gap-2 text-sm">
@@ -335,40 +332,9 @@ export default function BalancePage() {
           </CardContent>
         </Card>
 
-  {/* Balance inicial */}
+        {/* Ingresos del Período */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowUpCircle className="h-4 w-4 text-blue-500" />
-              Balance inicial
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(periodSummary?.opening_balance || 0)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Apertura del período</p>
-          </CardContent>
-        </Card>
-
-  {/* Balance final */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowDownCircle className="h-4 w-4 text-purple-500" />
-              Balance final
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(periodSummary?.closing_balance || 0)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Cierre proyectado</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Segunda fila: Ingresos y Gastos */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Ingresos */}
-        <Card>
-          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <TrendingUp className="h-5 w-5 text-green-500" />
               Ingresos del Período
@@ -376,21 +342,20 @@ export default function BalancePage() {
             <CardDescription>Total de entradas de dinero</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">
-              {formatCurrency(periodSummary?.total_income || 0)}
-            </div>
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Aportaciones</span>
-                <span className="font-medium">{formatCurrency(periodSummary?.total_income || 0)}</span>
+            <div className="space-y-3">
+              <div className="text-4xl font-bold text-green-600">
+                {formatCurrency(periodSummary?.total_income || 0)}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Aportaciones realizadas
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Gastos */}
+        {/* Gastos del Período */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <TrendingDown className="h-5 w-5 text-red-500" />
               Gastos del Período
@@ -398,13 +363,12 @@ export default function BalancePage() {
             <CardDescription>Total de salidas de dinero</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-600">
-              {formatCurrency(periodSummary?.total_expenses || 0)}
-            </div>
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Gastos comunes</span>
-                <span className="font-medium">{formatCurrency(periodSummary?.total_expenses || 0)}</span>
+            <div className="space-y-3">
+              <div className="text-4xl font-bold text-red-600">
+                {formatCurrency(periodSummary?.total_expenses || 0)}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Gastos comunes
               </div>
             </div>
           </CardContent>
