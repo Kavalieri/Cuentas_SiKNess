@@ -33,6 +33,15 @@ Thumbs.db
 *.local.*
 *.secret.*
 
+# Documentación sensible/privada
+docs/PRODUCCION_CHECKLIST.md
+docs/TO-DO/
+README.OLD.md
+
+# Backups de base de datos
+database/backups/*.sql
+!database/backups/.gitkeep
+
 # Build artifacts
 .vercel/
 dist/
