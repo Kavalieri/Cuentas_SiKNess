@@ -233,18 +233,23 @@ export default function EstadisticasPage() {
             Datos filtrados por el período seleccionado en la barra superior
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Columna 1: Gastos por Categoría */}
           <GastosPorCategoria
             data={periodExpenses}
             isLoading={loading}
             title="Gastos por Categoría"
           />
+          
+          {/* Columna 2: Ingresos vs Gastos */}
+          <IngresosVsGastos
+            data={periodIncomeVsExpenses}
+            isLoading={loading}
+            title="Ingresos vs Gastos"
+          />
+
+          {/* Columna 3: Métricas del período */}
           <div className="space-y-4">
-            <IngresosVsGastos
-              data={periodIncomeVsExpenses}
-              isLoading={loading}
-              title="Ingresos vs Gastos"
-            />
             {/* Gasto medio diario del período */}
             {dailyMetrics && periodSummary && (
               <Card className="bg-muted/30">
@@ -267,11 +272,11 @@ export default function EstadisticasPage() {
               </Card>
             )}
 
-            {/* Presupuesto diario (solo en períodos activos en preparación/validación) */}
-            {dailyMetrics?.shouldShowDailyBudget && (
+            {/* Presupuesto diario (solo en períodos activos) */}
+            {dailyMetrics?.shouldShowDailyBudget && periodSummary && (
               <Card className="border-2 border-green-600/30 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
                 <CardContent className="pt-4">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Wallet className="h-4 w-4 text-green-600" />
@@ -281,12 +286,18 @@ export default function EstadisticasPage() {
                         {formatCurrency(dailyMetrics.dailyBudget)}/día
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground text-right">
-                      {dailyMetrics.daysRemaining} día{dailyMetrics.daysRemaining !== 1 ? 's' : ''} restante{dailyMetrics.daysRemaining !== 1 ? 's' : ''}
-                    </p>
-                    <p className="text-xs text-green-700 dark:text-green-400 text-right italic">
-                      Basado en el balance efectivo del período
-                    </p>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Días restantes:</span>
+                      <span className="font-medium">
+                        {dailyMetrics.daysRemaining} día{dailyMetrics.daysRemaining !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-green-200 dark:border-green-800">
+                      <span className="text-muted-foreground">Balance efectivo:</span>
+                      <span className="font-bold text-green-700 dark:text-green-400">
+                        {formatCurrency(periodSummary.effective_balance)}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
