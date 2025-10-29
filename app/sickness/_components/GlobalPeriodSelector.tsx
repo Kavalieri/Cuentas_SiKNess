@@ -263,7 +263,7 @@ export function GlobalPeriodSelector() {
               let bgClass = '';
               let textClass = '';
               let phaseLabel = '';
-              
+
               if (hasPeriod && periodPhase) {
                 switch (periodPhase) {
                   case 'preparing':
@@ -313,15 +313,22 @@ export function GlobalPeriodSelector() {
                   title={hasPeriod ? `Fase: ${phaseLabel}` : 'Crear nuevo período'}
                 >
                   <div className="flex flex-col items-center gap-0.5 w-full">
-                    <span className="text-xs font-semibold">{month.slice(0, 3)}</span>
-                    {isCurrent && <span className="text-[9px] font-medium opacity-70">Actual</span>}
+                    {/* Nombre del mes - usar color del botón activo si está seleccionado */}
+                    <span className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : ''}`}>
+                      {month.slice(0, 3)}
+                    </span>
+                    {isCurrent && (
+                      <span className={`text-[9px] font-medium ${isActive ? 'text-primary-foreground/80' : 'opacity-70'}`}>
+                        Actual
+                      </span>
+                    )}
                     {hasPeriod && (
-                      <span className={`text-[10px] font-medium ${textClass} mt-0.5`}>
+                      <span className={`text-[10px] font-medium mt-0.5 ${isActive ? 'text-primary-foreground' : textClass}`}>
                         {phaseLabel}
                       </span>
                     )}
                     {!hasPeriod && (
-                      <span className="text-[10px] font-medium text-muted-foreground/60 mt-0.5">
+                      <span className={`text-[10px] font-medium mt-0.5 ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground/60'}`}>
                         + Crear
                       </span>
                     )}
