@@ -143,8 +143,8 @@ async function queryGastosPorCategoria(
   const result = await pool.query(
     `
     SELECT
-      c.name AS categoria,
-      c.icon,
+      COALESCE(c.name, 'Sin categoría') AS categoria,
+      COALESCE(c.icon, '❓') AS icon,
       COUNT(t.id) AS transacciones,
       COALESCE(SUM(t.amount), 0) AS total,
       ROUND(
@@ -187,8 +187,8 @@ async function queryGastosPorCategoria(
 async function queryGastosPorCategoriaGlobal(pool: Pool, householdId: string): Promise<QueryResult> {
   const result = await pool.query(`
     SELECT
-      c.name AS categoria,
-      c.icon,
+      COALESCE(c.name, 'Sin categoría') AS categoria,
+      COALESCE(c.icon, '❓') AS icon,
       COUNT(t.id) AS transacciones,
       COALESCE(SUM(t.amount), 0) AS total,
       ROUND(AVG(t.amount), 2) AS promedio,
@@ -234,14 +234,14 @@ async function queryTopGastos(
     `
     SELECT
       t.description AS concepto,
-      c.name AS categoria,
-      c.icon,
+      COALESCE(c.name, 'Sin categoría') AS categoria,
+      COALESCE(c.icon, '❓') AS icon,
       t.amount AS importe,
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
-      COALESCE(p.display_name, p.email) AS realizado_por
+      COALESCE(p.display_name, t.performed_by_email, 'No especificado') AS realizado_por
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
-    LEFT JOIN profiles p ON t.profile_id = p.id
+    LEFT JOIN profiles p ON p.email = t.performed_by_email
     WHERE t.household_id = $1
       AND t.type IN ('expense', 'expense_direct')
       ${periodFilter}
@@ -344,9 +344,9 @@ async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string,
       t.amount AS importe,
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
       t.flow_type AS tipo_flujo,
-      COALESCE(p.display_name, p.email) AS realizado_por
+      COALESCE(p.display_name, t.performed_by_email, 'No especificado') AS realizado_por
     FROM transactions t
-    LEFT JOIN profiles p ON t.profile_id = p.id
+    LEFT JOIN profiles p ON p.email = t.performed_by_email
     WHERE t.household_id = $1
       AND t.category_id = $2
       AND t.type IN ('expense', 'expense_direct')
@@ -482,12 +482,12 @@ async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year
       t.description AS concepto,
       t.amount AS importe,
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
-      c.name AS categoria,
-      c.icon,
-      COALESCE(p.display_name, p.email) AS realizado_por
+      COALESCE(c.name, 'Sin categoría') AS categoria,
+      COALESCE(c.icon, '❓') AS icon,
+      COALESCE(p.display_name, t.performed_by_email, 'No especificado') AS realizado_por
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
-    LEFT JOIN profiles p ON t.profile_id = p.id
+    LEFT JOIN profiles p ON p.email = t.performed_by_email
     WHERE t.household_id = $1
       AND t.type IN ('income', 'income_direct')
       ${periodFilter}
