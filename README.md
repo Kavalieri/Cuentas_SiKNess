@@ -119,66 +119,119 @@ Ver guía completa en `database/README.md`.
 
 ---
 
-## Despliegue (PROD)
+## 🚀 Despliegue en Producción
 
-1. Build de producción
+### Guía Completa de Setup
+
+Para instalación completa desde cero (PostgreSQL, roles, base de datos, PM2, etc.):
+
+📚 **Ver [docs/SETUP_COMPLETO.md](docs/SETUP_COMPLETO.md)**
+
+### Quick Deploy (si ya tienes el entorno configurado)
+
+#### 1. Build con versiones bloqueadas
 
 ```bash
+# ⚠️ IMPORTANTE: Usar npm ci (no npm install) para respetar package-lock.json
+npm ci
+
+# Build de producción
 npm run build
 ```
 
-2. Configurar variables de entorno mínimas
+**¿Por qué `npm ci`?** Instala dependencias EXACTAS desde package-lock.json, ignorando package.json. Esto evita actualizaciones no deseadas de versiones.
 
-Puedes definirlas en el entorno del sistema o en el servicio (systemd/PM2). Variables clave:
+#### 2. Sincronizar base de datos DEV → PROD
+
+```bash
+# Script automatizado que:
+# - Hace backup de PROD actual
+# - Elimina completamente cuentassik_prod
+# - Copia estructura y datos exactos desde cuentassik_dev
+# - Mantiene permisos correctos (cuentassik_prod_owner, cuentassik_user)
+./scripts/sync_dev_to_prod.sh
+```
+
+#### 3. Variables de entorno (.env.production.local)
 
 ```env
-# Base de datos
-DATABASE_URL="postgresql://cuentassik_user:PASSWORD@HOST:5432/cuentassik_prod"
+# Base de datos PROD
+DATABASE_URL="postgresql://cuentassik_user:PASSWORD@localhost:5432/cuentassik_prod"
 
-# Seguridad
-JWT_SECRET="cambia-esto-en-produccion"  # openssl rand -base64 32
+# Next.js
+NEXT_PUBLIC_APP_URL="https://tu-dominio.com"
+NODE_ENV="production"
 
-# SMTP (opcional, para emails)
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="user@example.com"
-SMTP_PASS="app-password"
-SMTP_FROM="noreply@cuentassik.com"
-# 💰 Cuentas SiK
-# App
-NEXT_PUBLIC_SITE_URL="https://tu-dominio.com"
+# OAuth Google
+GOOGLE_CLIENT_ID="tu_client_id_prod"
+GOOGLE_CLIENT_SECRET="tu_client_secret_prod"
+
+# Email (Nodemailer)
+EMAIL_HOST="smtp.gmail.com"
+EMAIL_PORT="587"
+EMAIL_USER="tu_email@gmail.com"
+EMAIL_PASS="tu_app_password"
 NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL="admin@tu-dominio.com"
 ```
 
-3. Arrancar la app
+#### 4. Iniciar aplicación
 
-Arranque estándar de Next.js en producción:
+**Con PM2 (Recomendado para producción):**
 
 ```bash
-[🛠 Troubleshooting](./docs/TROUBLESHOOTING.md) · [🔐 JWT](./docs/JWT.md)
-npm start  # equivale a: next start
+# Iniciar proceso PROD en PM2
+./scripts/pm2-prod-start.sh
+
+# Ver estado
+pm2 status
+
+# Ver logs en tiempo real
+pm2 logs cuentassik-prod
+
+# Reiniciar si es necesario
+./scripts/pm2-prod-stop.sh && ./scripts/pm2-prod-start.sh
 ```
 
-- Opción A: systemd (servicio del SO)
-- Opción B: PM2 (opcional, ver `docs/PM2.md`)
+**Con Node.js directo (alternativa):**
 
-Ejemplo mínimo con systemd (opcional):
+```bash
+npm start  # equivale a: next start (puerto 3000)
+```
 
-Type=simple
-Environment=NODE_ENV=production
-Environment=DATABASE_URL=postgresql://...
-Environment=JWT_SECRET=...
+### Tareas VS Code Disponibles
+
+El proyecto incluye tareas automatizadas en `.vscode/tasks.json`:
+
+**Gestión PM2:**
+- 🟢 DEV/PROD: Iniciar (con archivado de logs)
+- 🔴 DEV/PROD: Detener
+- 🔄 DEV/PROD: Reiniciar (Stop + Start con logs limpios)
+- 📊 Estado PM2 General
+- 📋 Ver Logs (últimas 50 líneas o tiempo real)
+
+**Base de datos:**
+- 🔄 Aplicar Migraciones a DEV
+- ⬆️ Promover Migración (dev → tested)
+- 📊 Ver Estado Migraciones
+
+**Build:**
+- 🏗️ Build Solo (sin deploy)
+- 🏗️ PROD: Build + Deploy + Reiniciar
+
+**Acceso**: `Ctrl+Shift+P` → `Tasks: Run Task`
 
 ---
 
-## Documentación
+## 📚 Documentación
 
 ### Guías Principales
-- **Visión general**: `./docs/README.md`
-- **Base de datos y migraciones**: `./database/README.md`
-- **Sistema multi-email**: `./docs/MULTI_EMAIL_SYSTEM.md` ⭐ NUEVO
-- **Instrucciones para agentes/IA**: `.github/copilot-instructions.md`
+- **Setup completo desde cero**: [`docs/SETUP_COMPLETO.md`](docs/SETUP_COMPLETO.md) ⭐ NUEVO
+- **Visión general**: [`docs/README.md`](./docs/README.md)
+- **Base de datos y migraciones**: [`database/README.md`](./database/README.md)
+- **Sistema multi-email**: [`docs/MULTI_EMAIL_SYSTEM.md`](./docs/MULTI_EMAIL_SYSTEM.md)
+- **PM2**: [`docs/TO-DO/DONE/PM2_SISTEMA_COMPLETO.md`](docs/TO-DO/DONE/PM2_SISTEMA_COMPLETO.md)
+- **PostgreSQL**: [`docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md`](docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md)
+- **Instrucciones para agentes/IA**: [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
 
 ### Documentación Técnica
 - [🛠 Troubleshooting](./docs/TROUBLESHOOTING.md)

@@ -264,6 +264,42 @@
       "label": "📊 Ver Estado Migraciones",
       "type": "shell",
       "command": "echo '📊 DEVELOPMENT:' && ls -1 ${workspaceFolder}/database/migrations/development/*.sql 2>/dev/null | wc -l && echo '✅ TESTED:' && ls -1 ${workspaceFolder}/database/migrations/tested/*.sql 2>/dev/null | wc -l && echo '📦 APPLIED:' && ls -1 ${workspaceFolder}/database/migrations/applied/*.sql 2>/dev/null | wc -l && echo '🗄️ ARCHIVE:' && ls -1 ${workspaceFolder}/database/migrations/applied/archive/*.sql 2>/dev/null | wc -l"
+    },
+    // ========================================
+    // 🗄️ DATABASE - SINCRONIZACIÓN
+    // ========================================
+    {
+      "label": "🔄 Sincronizar DEV → PROD (Database)",
+      "type": "shell",
+      "command": "./scripts/sync_dev_to_prod.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 Verificar Estado Bases de Datos",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '🔵 DEV Database:' && psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev -c 'SELECT COUNT(*) as total_transactions FROM transactions; SELECT COUNT(*) as total_profiles FROM profiles; SELECT COUNT(*) as total_households FROM households;' && echo '' && echo '🔴 PROD Database:' && psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_prod -c 'SELECT COUNT(*) as total_transactions FROM transactions; SELECT COUNT(*) as total_profiles FROM profiles; SELECT COUNT(*) as total_households FROM households;'"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
     }
   ]
 }
