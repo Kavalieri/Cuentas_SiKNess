@@ -43,8 +43,13 @@ export async function middleware(request: NextRequest) {
     try {
       await jwtVerify(sessionToken, JWT_SECRET);
 
-      // Redirigir SIEMPRE a la nueva interfaz /sickness
-      return NextResponse.redirect(new URL('/sickness', request.url));
+      // Redirigir SOLO si está en /app raíz (legacy) a /sickness
+      if (pathname === '/app' || pathname === '/app/') {
+        return NextResponse.redirect(new URL('/sickness', request.url));
+      }
+
+      // Para rutas /sickness/* y /dual-flow/*, dejar pasar
+      return response;
     } catch {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('error', 'session_expired');
