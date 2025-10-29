@@ -90,7 +90,7 @@ export default function EstadisticasPage() {
     const averageSpentPerDay = total_expenses / daysToConsider;
 
     // Presupuesto diario solo tiene sentido en periodo actual con días restantes
-    const daysRemaining = isCurrentPeriod 
+    const daysRemaining = isCurrentPeriod
       ? Math.max(0, totalDaysInPeriod - now.getDate())
       : 0;
     const dailyBudget = daysRemaining > 0 ? effective_balance / daysRemaining : 0;
@@ -273,7 +273,7 @@ export default function EstadisticasPage() {
               </Card>
             )}
           </div>
-          
+
           {/* Columna 2: Ingresos vs Gastos + Gasto medio diario */}
           <div className="space-y-4">
             <IngresosVsGastos
