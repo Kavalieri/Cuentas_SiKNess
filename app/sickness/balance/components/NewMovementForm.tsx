@@ -209,7 +209,7 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
         <DialogHeader>
           <DialogTitle>Nuevo movimiento</DialogTitle>
         </DialogHeader>
-        
+
         {/* Banner de feedback tras guardar */}
         {justSaved && (
           <div className="bg-green-50 dark:bg-green-950 border-l-4 border-green-500 dark:border-green-600 p-3 rounded-r animate-in slide-in-from-top duration-200">
@@ -218,7 +218,7 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
             </p>
           </div>
         )}
-        
+
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <Label>Tipo</Label>
