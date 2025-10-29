@@ -1,16 +1,16 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { BarChart3, CalendarDays, Copy, Download, FileJson, Loader2, PieChart, Play, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { QUERY_CATALOG } from './query-catalog';
 import { executeQuery, type QueryResult } from './queries-actions';
+import { QUERY_CATALOG } from './query-catalog';
 
 interface AdvancedQueriesProps {
   householdId: string | null;

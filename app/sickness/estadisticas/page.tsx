@@ -23,6 +23,7 @@ interface GlobalBalance {
 interface PeriodSummary {
   opening_balance: number;
   closing_balance: number;
+  effective_balance: number; // Balance real calculado dinámicamente
   total_income: number;
   total_expenses: number;
 }
@@ -62,7 +63,7 @@ export default function EstadisticasPage() {
     if (!selectedPeriodFull || !periodSummary) return null;
 
     const { year, month, phase } = selectedPeriodFull;
-    const { closing_balance: closing, total_expenses } = periodSummary;
+    const { effective_balance, total_expenses } = periodSummary;
 
     const now = new Date();
     const periodStart = new Date(year, month - 1, 1);
@@ -71,7 +72,7 @@ export default function EstadisticasPage() {
     const daysRemaining = Math.max(0, Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
     const averageSpentPerDay = total_expenses / daysElapsed;
-    const dailyBudget = daysRemaining > 0 ? closing / daysRemaining : 0;
+    const dailyBudget = daysRemaining > 0 ? effective_balance / daysRemaining : 0;
     const isCurrentPeriod = now.getMonth() + 1 === month && now.getFullYear() === year;
     const isFuturePeriod = periodStart > now;
 

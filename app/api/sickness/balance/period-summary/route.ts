@@ -78,12 +78,19 @@ export async function GET(req: NextRequest) {
       [householdId, pYear, pMonth],
     );
 
+    // Calcular balance efectivo dinámicamente (opening + ingresos - gastos)
+    const openingBalance = toNumber(period?.opening_balance ?? 0);
+    const totalIncome = toNumber(incomeResult.rows[0]?.total ?? 0);
+    const totalExpenses = toNumber(expenseResult.rows[0]?.total ?? 0);
+    const effectiveBalance = openingBalance + totalIncome - totalExpenses;
+
     return NextResponse.json({
       // Estructura alineada con la UI (page.tsx)
-      opening_balance: toNumber(period?.opening_balance ?? 0),
-      closing_balance: toNumber(period?.closing_balance ?? 0),
-      total_income: toNumber(incomeResult.rows[0]?.total ?? 0),
-      total_expenses: toNumber(expenseResult.rows[0]?.total ?? 0),
+      opening_balance: openingBalance,
+      closing_balance: toNumber(period?.closing_balance ?? 0), // Balance estático (snapshot)
+      effective_balance: effectiveBalance, // Balance real calculado dinámicamente
+      total_income: totalIncome,
+      total_expenses: totalExpenses,
     });
   } catch (error) {
     console.error('[API] Error fetching period summary:', error);
