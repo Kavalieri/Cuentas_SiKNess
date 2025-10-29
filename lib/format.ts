@@ -44,6 +44,44 @@ export const toNumber = (value: string | number | null | undefined): number => {
 };
 
 /**
+ * Parsea una fecha/datetime en zona horaria local para evitar shifts de UTC
+ * 
+ * Problema: new Date('2025-06-01') interpreta como UTC medianoche,
+ * que al convertir a local (UTC+2) se convierte en 2025-05-31 22:00.
+ * 
+ * Esta función parsea los componentes y construye la fecha en local.
+ * 
+ * @param dateString - Fecha en formato 'YYYY-MM-DD' o 'YYYY-MM-DDTHH:MM:SS'
+ * @returns Date - Fecha parseada en zona horaria local
+ */
+export const parseLocalDate = (dateString: string): Date => {
+  // Extraer componentes
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  
+  if (!match) {
+    // Fallback al comportamiento por defecto
+    return new Date(dateString);
+  }
+
+  const year = match[1]!;
+  const month = match[2]!;
+  const day = match[3]!;
+  const hour = match[4] || '0';
+  const minute = match[5] || '0';
+  const second = match[6] || '0';
+  
+  // Crear fecha en zona horaria local (NO UTC)
+  return new Date(
+    parseInt(year, 10),
+    parseInt(month, 10) - 1, // Meses son 0-indexed
+    parseInt(day, 10),
+    parseInt(hour, 10),
+    parseInt(minute, 10),
+    parseInt(second, 10),
+  );
+};
+
+/**
  * Formatea una fecha en formato español
  */
 export const formatDate = (date: Date, locale = 'es-ES'): string => {

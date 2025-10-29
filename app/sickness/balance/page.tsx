@@ -4,6 +4,7 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
+import { parseLocalDate } from '@/lib/format';
 import type { MonthlyPeriodPhase } from '@/lib/periods';
 import { normalizePeriodPhase } from '@/lib/periods';
 import {
@@ -22,6 +23,7 @@ import { EditDirectExpenseButton } from './EditDirectExpenseButton';
 // Eliminado ContributionsDisplay: la contribución no se muestra en balance
 import { NewMovementForm } from './components';
 import { BalanceFilters } from './components/BalanceFilters';
+
 
 interface Transaction {
   id: string;
@@ -521,7 +523,7 @@ export default function BalancePage() {
                         <span>
                           {(() => {
                             const src = tx.performed_at || tx.occurred_at;
-                            const d = new Date(src as string);
+                            const d = parseLocalDate(src as string);
                             return (
                               <>
                                 {d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
