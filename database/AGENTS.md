@@ -785,7 +785,7 @@ sudo -u postgres psql -d cuentassik_prod -c "\d contributions"
 pm2 logs cuentassik-prod
 
 # Probar en navegador
-curl https://cuentassik.sikwow.com/app
+curl https://tu-dominio.com/app
 ```
 
 ---

@@ -1,12 +1,11 @@
 # 🚀 Cuentas SiK vX.Y.Z
 
-> **🎉 RELEASE ESTABLE** - Sistema completo de gestión de gastos compartidos para parejas migrado a infraestructura propia
+> **🎉 RELEASE ESTABLE** - Sistema completo de gestión de gastos compartidos para parejas
 
 ---
 
 ## 🌐 Enlaces Importantes
 
-- **🎯 Aplicación en Producción**: https://cuentas.sikwow.com
 - **📚 Documentación**: [README.md](https://github.com/Kavalieri/CuentasSiK#readme)
 - **🛠 Troubleshooting**: [docs/TROUBLESHOOTING.md](https://github.com/Kavalieri/CuentasSiK/blob/main/docs/TROUBLESHOOTING.md)
 - **🔐 JWT**: [docs/JWT.md](https://github.com/Kavalieri/CuentasSiK/blob/main/docs/JWT.md)
@@ -41,7 +40,7 @@ git push origin v1.0.0
 - ✅ **Sistema de Ajustes**: Workflow completo para registrar y aprobar ajustes de contribuciones
 - ✅ **Panel de Administración**: Gestión completa del hogar, miembros e invitaciones
 - ✅ **Autenticación Segura**: Magic links por email sin contraseñas
-- ✅ **Infraestructura Propia**: Migrado de Supabase/Vercel a servidor propio con PM2 y PostgreSQL nativo
+- ✅ **PostgreSQL Nativo**: Base de datos profesional con sistema de migraciones
 
 ---
 
@@ -49,7 +48,7 @@ git push origin v1.0.0
 
 ### Para Usuarios
 
-1. **Accede a la aplicación**: https://cuentas.sikwow.com
+1. **Despliega tu propia instancia** siguiendo las instrucciones en el README
 2. **Inicia sesión** con tu email (recibirás un magic link)
 3. **Crea tu hogar** o acepta una invitación
 4. **Configura contribuciones** (ingresos mensuales y meta del hogar)
@@ -137,14 +136,14 @@ Esta es la **primera versión estable** (1.0.0), marcando varios hitos important
 
 ### 🔥 Migración de Infraestructura Completada
 
-**De Supabase + Vercel → PostgreSQL nativo + PM2:**
+**Infraestructura Independiente:**
 
 - ✅ Base de datos migrada a PostgreSQL 15 nativo
 - ✅ Sistema de autenticación integrado con JWT
-- ✅ Deploy con PM2 en servidor propio
+- ✅ Compatible con gestores de procesos estándar (systemd, Docker, etc.)
 - ✅ Scripts de backup y sincronización
 - ✅ Sistema de migraciones bidireccional (dev ↔ prod)
-- ✅ Eliminadas todas las dependencias de Supabase/Vercel
+- ✅ Sin dependencias de plataformas cloud específicas
 - ✅ Configuración de desarrollo mejorada con Docker opcional
 
 **¿Encontraste un bug?** Por favor [abre un issue](https://github.com/Kavalieri/CuentasSiK/issues/new) con detalles.
@@ -155,9 +154,9 @@ Esta es la **primera versión estable** (1.0.0), marcando varios hitos important
 
 ### 🎯 NUEVAS CARACTERÍSTICAS PRINCIPALES
 
-- **Migración completa a infraestructura propia** - PostgreSQL nativo + PM2
-- **Sistema de migraciones robusto** con desarrollo y producción separados
-- **22 VSCode tasks** para automatizar desarrollo y deploy
+- **PostgreSQL nativo con sistema de migraciones robusto**
+- **Desarrollo y producción separados**
+- **Herramientas de automatización para desarrollo y deploy**
 - **MCPs (Model Context Protocol)** configurados para desarrollo eficiente
 - **Sistema de créditos mensual** con decisiones automáticas
 - **Sistema de ahorro conjunto** con transferencias entre cuentas

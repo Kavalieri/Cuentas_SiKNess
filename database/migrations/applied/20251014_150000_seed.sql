@@ -2539,14 +2539,18 @@ INSERT INTO public.monthly_periods (id, household_id, year, month, status, openi
 -- Data for Name: profiles; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO public.profiles (id, auth_user_id, display_name, email, avatar_url, bio, created_at, updated_at, is_system_admin) VALUES ('5a27b943-84fb-453d-83fb-bf850883e767', '71e8125e-6600-453d-ba6c-cfa7287f1415', 'Oscar Caballero Pomés', 'caballeropomes@gmail.com', 'https://lh3.googleusercontent.com/a/ACg8ocKMkoJDszO7sx8BBmAPym5fUqtD07AiNpmanqV5v6mgrezU1wJE=s96-c', NULL, '2025-10-04 00:11:47.333653+02', '2025-10-14 14:39:48.177+02', true);
+-- NOTE: Replace with your actual admin user data
+-- INSERT INTO public.profiles (id, auth_user_id, display_name, email, avatar_url, bio, created_at, updated_at, is_system_admin) 
+-- VALUES ('your-uuid', 'your-auth-uuid', 'Your Name', 'your-email@example.com', NULL, NULL, NOW(), NOW(), true);
 
 
 --
 -- Data for Name: system_admins; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO public.system_admins (user_id, granted_by, created_at, notes, profile_id) VALUES ('71e8125e-6600-453d-ba6c-cfa7287f1415', NULL, '2025-10-03 00:54:32.500987+02', 'Administrador permanente del sistema - Re-inserción manual', '5a27b943-84fb-453d-83fb-bf850883e767');
+-- NOTE: Replace with your actual admin user ID
+-- INSERT INTO public.system_admins (user_id, granted_by, created_at, notes, profile_id) 
+-- VALUES ('your-auth-uuid', NULL, NOW(), 'System administrator', 'your-uuid');
 
 
 --

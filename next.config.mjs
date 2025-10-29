@@ -23,15 +23,19 @@ const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
-        'cuentasdev.sikwow.com',
-        'cuentas.sikwow.com',
+        // Configurar según tu dominio de producción
+        process.env.NEXT_PUBLIC_PROD_DOMAIN || 'localhost',
+        process.env.NEXT_PUBLIC_DEV_DOMAIN || 'localhost',
         'localhost:3001',
         'localhost:3000',
-      ],
+      ].filter(Boolean),
     },
   },
   // Permitir cross-origin requests de dominios de producción hacia dev server
-  allowedDevOrigins: ['cuentasdev.sikwow.com', 'cuentas.sikwow.com'],
+  allowedDevOrigins: [
+    process.env.NEXT_PUBLIC_PROD_DOMAIN,
+    process.env.NEXT_PUBLIC_DEV_DOMAIN,
+  ].filter(Boolean),
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

@@ -10,7 +10,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue?logo=postgresql&style=flat-square)](https://postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 
-[📖 Documentación](./docs) · [🐛 Issues](https://github.com/Kavalieri/CuentasSiK/issues) · [🌐 Demo](https://cuentas.sikwow.com)
+[📖 Documentación](./docs) · [🐛 Issues](https://github.com/Kavalieri/CuentasSiK/issues)
 
 </div>
 
@@ -20,7 +20,6 @@
 
 - [¿Qué es CuentasSiK?](#qué-es-cuentassik)
 - [Características](#características)
-- [Demo en Vivo](#demo-en-vivo)
 - [Stack Tecnológico](#stack-tecnológico)
 - [Instalación](#instalación)
 - [Configuración](#configuración)
@@ -77,14 +76,6 @@ CuentasSiK es una aplicación web moderna diseñada para gestionar finanzas comp
 
 ---
 
-## 🌐 Demo en Vivo
-
-**URL**: [https://cuentas.sikwow.com](https://cuentas.sikwow.com)
-
-> 💡 **Nota**: Esta es una instancia de demostración pública. Para uso en producción, se recomienda desplegar tu propia instancia.
-
----
-
 ## 🛠 Stack Tecnológico
 
 ### Frontend
@@ -107,7 +98,7 @@ CuentasSiK es una aplicación web moderna diseñada para gestionar finanzas comp
 - **Linting**: ESLint + TypeScript ESLint
 - **Git**: Conventional Commits
 - **CI/CD**: GitHub Actions (opcional)
-- **Gestión de procesos**: Compatible con PM2, systemd, Docker, etc.
+- **Gestión de procesos**: Compatible con gestores de procesos estándar (systemd, Docker, etc.)
 
 ---
 
@@ -366,20 +357,15 @@ database/migrations/
 npm start
 ```
 
-#### Opción 2: PM2 (Recomendado)
+#### Opción 2: Gestor de procesos
+
+Puedes usar cualquier gestor de procesos para producción (PM2, systemd, Docker, etc.). Ejemplo con configuración personalizada:
 
 ```bash
-# Instalar PM2 globalmente
-npm install -g pm2
-
-# Iniciar aplicación
-pm2 start ecosystem.config.js --env production
-
-# Guardar configuración
-pm2 save
-
-# Configurar inicio automático
-pm2 startup
+# Ejemplo genérico - adapta según tu entorno
+# La aplicación debe iniciarse con: npm start
+# Puerto por defecto: 3000
+# Variables de entorno: Cargar desde .env.production.local
 ```
 
 #### Opción 3: Docker
@@ -460,15 +446,11 @@ server {
 **Solución**:
 
 1. Verifica que `.env.production.local` existe y contiene `JWT_SECRET`
-2. Si usas PM2, asegúrate de que el script de inicio carga las variables:
+2. Asegúrate de que tu gestor de procesos carga las variables de entorno correctamente
+3. Verifica que las variables están disponibles en el entorno:
    ```bash
-   # Reinicia con el script que carga variables explícitamente
-   ./scripts/pm2-prod-stop.sh
-   ./scripts/pm2-prod-start.sh
-   ```
-3. Verifica que las variables están cargadas:
-   ```bash
-   pm2 env <process_id> | grep JWT_SECRET
+   # Método depende de tu gestor de procesos
+   # Ejemplo genérico: echo $JWT_SECRET
    ```
 
 ### Problemas con Google OAuth
@@ -492,7 +474,7 @@ server {
 
 ### Build Falla en Producción
 
-**Síntoma**: PM2 no inicia con error "Could not find a production build".
+**Síntoma**: Error "Could not find a production build" al iniciar.
 
 **Solución**:
 ```bash
