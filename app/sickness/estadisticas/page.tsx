@@ -234,44 +234,13 @@ export default function EstadisticasPage() {
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Columna 1: Gastos por Categoría (gráfico más grande) */}
-          <div className="md:row-span-2">
+          {/* Columna 1: Gastos por Categoría + Presupuesto diario */}
+          <div className="space-y-4">
             <GastosPorCategoria
               data={periodExpenses}
               isLoading={loading}
               title="Gastos por Categoría"
             />
-          </div>
-          
-          {/* Columna 2: Ingresos vs Gastos + Métricas */}
-          <div className="space-y-4">
-            <IngresosVsGastos
-              data={periodIncomeVsExpenses}
-              isLoading={loading}
-              title="Ingresos vs Gastos"
-            />
-
-            {/* Gasto medio diario del período */}
-            {dailyMetrics && periodSummary && (
-              <Card className="bg-muted/30">
-                <CardContent className="pt-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <TrendingDown className="h-4 w-4 text-orange-500" />
-                        <span className="text-sm font-medium">Gasto medio diario (período):</span>
-                      </div>
-                      <span className="text-lg font-bold text-orange-600">
-                        {formatCurrency(dailyMetrics.averageSpentPerDay)}/día
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground text-right">
-                      {dailyMetrics.daysToConsider} día{dailyMetrics.daysToConsider !== 1 ? 's' : ''} considerado{dailyMetrics.daysToConsider !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Presupuesto diario (solo en períodos activos) */}
             {dailyMetrics?.shouldShowDailyBudget && periodSummary && (
@@ -299,6 +268,37 @@ export default function EstadisticasPage() {
                         {formatCurrency(periodSummary.effective_balance)}
                       </span>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          
+          {/* Columna 2: Ingresos vs Gastos + Gasto medio diario */}
+          <div className="space-y-4">
+            <IngresosVsGastos
+              data={periodIncomeVsExpenses}
+              isLoading={loading}
+              title="Ingresos vs Gastos"
+            />
+
+            {/* Gasto medio diario del período */}
+            {dailyMetrics && periodSummary && (
+              <Card className="bg-muted/30">
+                <CardContent className="pt-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-orange-500" />
+                        <span className="text-sm font-medium">Gasto medio diario (período):</span>
+                      </div>
+                      <span className="text-lg font-bold text-orange-600">
+                        {formatCurrency(dailyMetrics.averageSpentPerDay)}/día
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-right">
+                      {dailyMetrics.daysToConsider} día{dailyMetrics.daysToConsider !== 1 ? 's' : ''} considerado{dailyMetrics.daysToConsider !== 1 ? 's' : ''}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
