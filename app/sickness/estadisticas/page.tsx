@@ -40,7 +40,7 @@ export default function EstadisticasPage() {
   const [periodIncomeVsExpenses, setPeriodIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
 
   // Balance actual
-  const [globalBalance, setGlobalBalance] = useState<GlobalBalance | null>(null);
+  const [_globalBalance, setGlobalBalance] = useState<GlobalBalance | null>(null);
   const [periodSummary, setPeriodSummary] = useState<PeriodSummary | null>(null);
 
   const [loading, setLoading] = useState(true);
