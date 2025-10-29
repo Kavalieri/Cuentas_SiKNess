@@ -86,11 +86,12 @@ export function AdvancedQueries({ householdId, periods, selectedPeriod }: Advanc
     setLoading(true);
     try {
       const params: Record<string, unknown> = {};
-      if (selectedQuery?.requiresPeriod && selectedPeriodId) {
+      if (selectedQuery?.requiresPeriod && selectedPeriodId && selectedPeriodId !== 'all') {
         const [year, month] = selectedPeriodId.split('-').map(Number);
         params.year = year;
         params.month = month;
       }
+      // Si selectedPeriodId === 'all', no pasamos year/month (quedará undefined)
       const queryResult = await executeQuery(selectedQueryId, householdId, params);
       setResult(queryResult);
       toast.success('Consulta ejecutada correctamente');
@@ -222,6 +223,9 @@ export function AdvancedQueries({ householdId, periods, selectedPeriod }: Advanc
                         <SelectValue placeholder="Selecciona período..." />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="all">
+                          <span className="font-medium">📊 Todos los períodos</span>
+                        </SelectItem>
                         {periods.map((period) => (
                           <SelectItem key={period.id} value={`${period.year}-${period.month}`}>
                             {new Date(period.year, period.month - 1).toLocaleDateString('es-ES', {

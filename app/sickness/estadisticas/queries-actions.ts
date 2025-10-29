@@ -21,11 +21,13 @@ export interface QueryResult {
   columns: string[];
   rows: Record<string, unknown>[];
   summary?: {
-    total?: number;
-    average?: number;
+    total?: number | string;
+    average?: number | string;
     count?: number;
-    max?: number;
-    min?: number;
+    max?: number | string;
+    min?: number | string;
+    periodo?: string;
+    [key: string]: number | string | undefined;
   };
 }
 
@@ -63,7 +65,7 @@ export async function executeQuery(
         return await queryGastosDiarios(pool, householdId, params.year!, params.month!);
 
       case 'gastos_por_categoria_detallado':
-        return await queryGastosPorCategoriaDetallado(pool, householdId, params.year!, params.month!, params.categoryId!);
+        return await queryGastosPorCategoriaDetallado(pool, householdId, params.categoryId!, params.year, params.month);
 
       case 'ingresos_por_mes':
         return await queryIngresosPorMes(pool, householdId);
@@ -108,7 +110,7 @@ export async function executeQuery(
         return await queryContribucionesPorMiembro(pool, householdId, params.year!, params.month!);
 
       case 'detalle_miembro':
-        return await queryDetalleMiembro(pool, householdId, params.year!, params.month!, params.memberId!);
+        return await queryDetalleMiembro(pool, householdId, params.memberId!, params.year, params.month);
 
       default:
         throw new Error(`Consulta no encontrada: ${queryId}`);
@@ -123,8 +125,23 @@ export async function executeQuery(
 // IMPLEMENTACIONES DE CONSULTAS
 // ============================================================================
 
-async function queryGastosPorCategoria(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
-  const result = await pool.query(`
+async function queryGastosPorCategoria(
+  pool: Pool,
+  householdId: string,
+  year?: number,
+  month?: number,
+): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+
+  // Si no hay año/mes, usar todos los períodos
+  const periodFilter = year && month
+    ? `AND EXTRACT(YEAR FROM occurred_at) = $2 AND EXTRACT(MONTH FROM occurred_at) = $3`
+    : '';
+
+  const params = year && month ? [householdId, year, month] : [householdId];
+
+  const result = await pool.query(
+    `
     SELECT
       c.name AS categoria,
       c.icon,
@@ -135,28 +152,34 @@ async function queryGastosPorCategoria(pool: Pool, householdId: string, year: nu
         NULLIF((SELECT SUM(amount) FROM transactions
                 WHERE household_id = $1
                 AND type IN ('expense', 'expense_direct')
-                AND EXTRACT(YEAR FROM occurred_at) = $2
-                AND EXTRACT(MONTH FROM occurred_at) = $3), 0),
+                ${periodFilter}), 0),
         2
       ) AS porcentaje
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
     WHERE t.household_id = $1
       AND t.type IN ('expense', 'expense_direct')
-      AND EXTRACT(YEAR FROM t.occurred_at) = $2
-      AND EXTRACT(MONTH FROM t.occurred_at) = $3
+      ${periodFilter}
     GROUP BY c.name, c.icon
     ORDER BY total DESC
-  `, [householdId, year, month]);
+  `,
+    params,
+  );
 
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.total as string), 0);
 
+  const formattedRows = result.rows.map((row) => ({
+    ...row,
+    total: formatCurrency(parseFloat(row.total as string), currency),
+  }));
+
   return {
     columns: ['Categoría', 'Icono', 'Transacciones', 'Total', '% del Total'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
-      total,
+      total: formatCurrency(total, currency),
       count: result.rows.length,
+      periodo: year && month ? `${year}-${month}` : 'Todos los períodos',
     },
   };
 }
@@ -193,10 +216,22 @@ async function queryGastosPorCategoriaGlobal(pool: Pool, householdId: string): P
   };
 }
 
-async function queryTopGastos(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryTopGastos(
+  pool: Pool,
+  householdId: string,
+  year?: number,
+  month?: number,
+): Promise<QueryResult> {
   const currency = await getHouseholdCurrency(householdId);
 
-  const result = await pool.query(`
+  const periodFilter = year && month
+    ? `AND EXTRACT(YEAR FROM t.occurred_at) = $2 AND EXTRACT(MONTH FROM t.occurred_at) = $3`
+    : '';
+
+  const params = year && month ? [householdId, year, month] : [householdId];
+
+  const result = await pool.query(
+    `
     SELECT
       t.description AS concepto,
       c.name AS categoria,
@@ -209,11 +244,12 @@ async function queryTopGastos(pool: Pool, householdId: string, year: number, mon
     LEFT JOIN profiles p ON t.profile_id = p.id
     WHERE t.household_id = $1
       AND t.type IN ('expense', 'expense_direct')
-      AND EXTRACT(YEAR FROM t.occurred_at) = $2
-      AND EXTRACT(MONTH FROM t.occurred_at) = $3
+      ${periodFilter}
     ORDER BY t.amount DESC
     LIMIT 10
-  `, [householdId, year, month]);
+  `,
+    params,
+  );
 
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
   const average = total / (result.rows.length || 1);
@@ -228,17 +264,32 @@ async function queryTopGastos(pool: Pool, householdId: string, year: number, mon
     columns: ['Concepto', 'Categoría', 'Icono', 'Importe', 'Fecha', 'Realizado Por'],
     rows: formattedRows,
     summary: {
-      total,
-      average,
+      total: formatCurrency(total, currency),
+      average: formatCurrency(average, currency),
       count: result.rows.length,
-      max: result.rows[0]?.importe || 0,
-      min: result.rows[result.rows.length - 1]?.importe || 0,
+      max: result.rows[0]?.importe || formatCurrency(0, currency),
+      min: result.rows[result.rows.length - 1]?.importe || formatCurrency(0, currency),
+      periodo: year && month ? `${year}-${month}` : 'Todos los períodos',
     },
   };
 }
 
-async function queryGastosDiarios(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
-  const result = await pool.query(`
+async function queryGastosDiarios(
+  pool: Pool,
+  householdId: string,
+  year?: number,
+  month?: number,
+): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+
+  const periodFilter = year && month
+    ? `AND EXTRACT(YEAR FROM t.occurred_at) = $2 AND EXTRACT(MONTH FROM t.occurred_at) = $3`
+    : '';
+
+  const params = year && month ? [householdId, year, month] : [householdId];
+
+  const result = await pool.query(
+    `
     SELECT
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
       EXTRACT(DAY FROM t.occurred_at) AS dia,
@@ -247,28 +298,45 @@ async function queryGastosDiarios(pool: Pool, householdId: string, year: number,
     FROM transactions t
     WHERE t.household_id = $1
       AND t.type IN ('expense', 'expense_direct')
-      AND EXTRACT(YEAR FROM t.occurred_at) = $2
-      AND EXTRACT(MONTH FROM t.occurred_at) = $3
+      ${periodFilter}
     GROUP BY t.occurred_at::date, EXTRACT(DAY FROM t.occurred_at)
     ORDER BY t.occurred_at::date
-  `, [householdId, year, month]);
+  `,
+    params,
+  );
 
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.total as string), 0);
   const average = total / (result.rows.length || 1);
 
+  const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    total: formatCurrency(parseFloat(row.total as string), currency),
+  }));
+
   return {
     columns: ['Fecha', 'Día', 'Transacciones', 'Total'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
-      total,
-      average,
+      total: formatCurrency(total, currency),
+      average: formatCurrency(average, currency),
       count: result.rows.length,
+      periodo: year && month ? `${year}-${month}` : 'Todos los períodos',
     },
   };
 }
 
-async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string, year: number, month: number, categoryId: string): Promise<QueryResult> {
+async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string, categoryId: string, year?: number, month?: number): Promise<QueryResult> {
   const currency = await getHouseholdCurrency(householdId);
+
+  // Conditional period filter
+  const periodFilter = year && month
+    ? `AND EXTRACT(YEAR FROM t.occurred_at) = $3 AND EXTRACT(MONTH FROM t.occurred_at) = $4`
+    : '';
+
+  // Dynamic params array
+  const params = year && month
+    ? [householdId, categoryId, year, month]
+    : [householdId, categoryId];
 
   const result = await pool.query(`
     SELECT
@@ -282,10 +350,9 @@ async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string,
     WHERE t.household_id = $1
       AND t.category_id = $2
       AND t.type IN ('expense', 'expense_direct')
-      AND EXTRACT(YEAR FROM t.occurred_at) = $3
-      AND EXTRACT(MONTH FROM t.occurred_at) = $4
+      ${periodFilter}
     ORDER BY t.occurred_at DESC
-  `, [householdId, categoryId, year, month]);
+  `, params);
 
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
   const average = total / (result.rows.length || 1);
@@ -300,9 +367,10 @@ async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string,
     columns: ['Concepto', 'Importe', 'Fecha', 'Tipo Flujo', 'Realizado Por'],
     rows: formattedRows,
     summary: {
-      total,
-      average,
+      total: formatCurrency(total, currency),
+      average: formatCurrency(average, currency),
       count: result.rows.length,
+      periodo: year && month ? `${year}-${month}` : 'Todos los períodos',
     },
   };
 }
@@ -398,8 +466,16 @@ async function queryIngresosVsObjetivo(pool: Pool, householdId: string): Promise
   };
 }
 
-async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year?: number, month?: number): Promise<QueryResult> {
   const currency = await getHouseholdCurrency(householdId);
+
+  // Conditional period filter
+  const periodFilter = year && month
+    ? `AND EXTRACT(YEAR FROM t.occurred_at) = $2 AND EXTRACT(MONTH FROM t.occurred_at) = $3`
+    : '';
+
+  // Dynamic params array
+  const params = year && month ? [householdId, year, month] : [householdId];
 
   const result = await pool.query(`
     SELECT
@@ -414,10 +490,9 @@ async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year
     LEFT JOIN profiles p ON t.profile_id = p.id
     WHERE t.household_id = $1
       AND t.type IN ('income', 'income_direct')
-      AND EXTRACT(YEAR FROM t.occurred_at) = $2
-      AND EXTRACT(MONTH FROM t.occurred_at) = $3
+      ${periodFilter}
     ORDER BY t.occurred_at DESC
-  `, [householdId, year, month]);
+  `, params);
 
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.importe as string), 0);
 
@@ -431,8 +506,9 @@ async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year
     columns: ['Concepto', 'Importe', 'Fecha', 'Categoría', 'Icono', 'Realizado Por'],
     rows: formattedRows,
     summary: {
-      total,
+      total: formatCurrency(total, currency),
       count: result.rows.length,
+      periodo: year && month ? `${year}-${month}` : 'Todos los períodos',
     },
   };
 }
@@ -972,7 +1048,17 @@ async function queryMediaMovil(pool: Pool, householdId: string): Promise<QueryRe
   };
 }
 
-async function queryGastosPorMiembro(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryGastosPorMiembro(pool: Pool, householdId: string, year?: number, month?: number): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+
+  // Conditional period filter
+  const periodFilter = year && month
+    ? `AND EXTRACT(YEAR FROM t.occurred_at) = $2 AND EXTRACT(MONTH FROM t.occurred_at) = $3`
+    : '';
+
+  // Dynamic params array
+  const params = year && month ? [householdId, year, month] : [householdId];
+
   const result = await pool.query(`
     SELECT
       p.email AS miembro,
@@ -985,25 +1071,43 @@ async function queryGastosPorMiembro(pool: Pool, householdId: string, year: numb
     INNER JOIN profiles p ON t.real_payer_id = p.id OR t.profile_id = p.id
     WHERE t.household_id = $1
       AND t.type IN ('expense', 'expense_direct')
-      AND EXTRACT(YEAR FROM t.occurred_at) = $2
-      AND EXTRACT(MONTH FROM t.occurred_at) = $3
+      ${periodFilter}
     GROUP BY p.email, p.display_name
     ORDER BY total_gastado DESC
-  `, [householdId, year, month]);
+  `, params);
 
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.total_gastado as string), 0);
 
+  // Format currency values
+  const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    gastos_directos: formatCurrency(parseFloat(row.gastos_directos as string), currency),
+    gastos_comunes: formatCurrency(parseFloat(row.gastos_comunes as string), currency),
+    total_gastado: formatCurrency(parseFloat(row.total_gastado as string), currency),
+  }));
+
   return {
     columns: ['Miembro', 'Nombre', 'Transacciones', 'Gastos Directos', 'Gastos Comunes', 'Total Gastado'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
-      total,
+      total: formatCurrency(total, currency),
       count: result.rows.length,
+      periodo: year && month ? `${year}-${month}` : 'Todos los períodos',
     },
   };
 }
 
-async function queryContribucionesPorMiembro(pool: Pool, householdId: string, year: number, month: number): Promise<QueryResult> {
+async function queryContribucionesPorMiembro(pool: Pool, householdId: string, year?: number, month?: number): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+
+  // Conditional period filter
+  const periodFilter = year && month
+    ? `AND c.year = $2 AND c.month = $3`
+    : '';
+
+  // Dynamic params array
+  const params = year && month ? [householdId, year, month] : [householdId];
+
   const result = await pool.query(`
     SELECT
       p.email AS miembro,
@@ -1019,21 +1123,41 @@ async function queryContribucionesPorMiembro(pool: Pool, householdId: string, ye
     FROM contributions c
     INNER JOIN profiles p ON c.profile_id = p.id
     WHERE c.household_id = $1
-      AND c.year = $2
-      AND c.month = $3
+      ${periodFilter}
     ORDER BY porcentaje_cumplimiento DESC
-  `, [householdId, year, month]);
+  `, params);
+
+  // Format currency values
+  const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    contribucion_esperada: formatCurrency(parseFloat(row.contribucion_esperada as string), currency),
+    contribucion_pagada: formatCurrency(parseFloat(row.contribucion_pagada as string), currency),
+    pendiente: formatCurrency(parseFloat(row.pendiente as string), currency),
+  }));
 
   return {
     columns: ['Miembro', 'Nombre', 'Contribución Esperada', 'Contribución Pagada', 'Pendiente', '% Cumplimiento'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
       count: result.rows.length,
+      periodo: year && month ? `${year}-${month}` : 'Todos los períodos',
     },
   };
 }
 
-async function queryDetalleMiembro(pool: Pool, householdId: string, year: number, month: number, memberId: string): Promise<QueryResult> {
+async function queryDetalleMiembro(pool: Pool, householdId: string, memberId: string, year?: number, month?: number): Promise<QueryResult> {
+  const currency = await getHouseholdCurrency(householdId);
+
+  // Conditional period filter
+  const periodFilter = year && month
+    ? `AND EXTRACT(YEAR FROM t.occurred_at) = $3 AND EXTRACT(MONTH FROM t.occurred_at) = $4`
+    : '';
+
+  // Dynamic params array
+  const params = year && month
+    ? [householdId, memberId, year, month]
+    : [householdId, memberId];
+
   const result = await pool.query(`
     SELECT
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY HH24:MI') AS fecha_hora,
@@ -1051,19 +1175,26 @@ async function queryDetalleMiembro(pool: Pool, householdId: string, year: number
     LEFT JOIN categories c ON t.category_id = c.id
     WHERE t.household_id = $1
       AND (t.profile_id = $2 OR t.real_payer_id = $2)
-      AND EXTRACT(YEAR FROM t.occurred_at) = $3
-      AND EXTRACT(MONTH FROM t.occurred_at) = $4
+      ${periodFilter}
     ORDER BY t.occurred_at DESC
-  `, [householdId, memberId, year, month]);
+  `, params);
 
   const total = result.rows.reduce((sum: number, row: Record<string, unknown>) => sum + parseFloat(row.impacto_balance as string), 0);
 
+  // Format currency values
+  const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    importe: formatCurrency(parseFloat(row.importe as string), currency),
+    impacto_balance: formatCurrency(parseFloat(row.impacto_balance as string), currency),
+  }));
+
   return {
     columns: ['Fecha/Hora', 'Tipo', 'Flujo', 'Concepto', 'Categoría', 'Icono', 'Importe', 'Impacto Balance'],
-    rows: result.rows,
+    rows: formattedRows,
     summary: {
-      total,
+      total: formatCurrency(total, currency),
       count: result.rows.length,
+      periodo: year && month ? `${year}-${month}` : 'Todos los períodos',
     },
   };
 }
