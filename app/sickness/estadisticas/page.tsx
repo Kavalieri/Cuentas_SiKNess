@@ -97,11 +97,11 @@ export default function EstadisticasPage() {
 
     // Determinar si mostrar presupuesto diario
     // Se muestra en períodos actuales con días restantes durante fases activas:
-    // - preparation: Configurando el período
-    // - pending_validation: Listo para abrir, esperando validación
-    // - open: Período activo aceptando transacciones (FASE 3 - LA MÁS IMPORTANTE)
+    // - preparing: Configurando el período (status='SETUP')
+    // - validation: Listo para abrir, esperando validación (status='LOCKED')
+    // - active: Período activo aceptando transacciones (status='open') ← LA MÁS IMPORTANTE
     const shouldShowDailyBudget =
-      (phase === 'preparation' || phase === 'pending_validation' || phase === 'open') &&
+      (phase === 'preparing' || phase === 'validation' || phase === 'active') &&
       isCurrentPeriod &&
       daysRemaining > 0;
 
@@ -328,7 +328,7 @@ export default function EstadisticasPage() {
           <p>📈 <strong>Ingresos vs Gastos:</strong> Comparativa mensual de ingresos y gastos.</p>
           <p>📉 <strong>Gasto medio diario (global):</strong> Promedio histórico considerando todos tus datos.</p>
           <p>📉 <strong>Gasto medio diario (período):</strong> Promedio de gasto basado en los días del período seleccionado (completos si es pasado, transcurridos si es actual).</p>
-          <p>💰 <strong>Presupuesto diario:</strong> Visible en períodos actuales durante preparación, validación o cuando está abierto (fase 3). Calcula cuánto puedes gastar por día hasta fin de mes basándose en el balance efectivo disponible.</p>
+          <p>💰 <strong>Presupuesto diario:</strong> Visible en períodos actuales durante preparación (SETUP), validación (LOCKED) o cuando está activo (OPEN - fase 3). Calcula cuánto puedes gastar por día hasta fin de mes basándose en el balance efectivo disponible.</p>
           <p>🔄 <strong>Selección de período:</strong> Usa el selector superior para filtrar datos de un mes específico.</p>
           <p>🔍 <strong>Consultas avanzadas:</strong> Exporta datos filtrados en CSV, JSON o Excel para análisis externos.</p>
         </CardContent>
