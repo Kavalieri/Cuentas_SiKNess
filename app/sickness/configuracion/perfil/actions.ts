@@ -54,12 +54,17 @@ export interface MemberIncome {
  * Obtener el perfil del usuario actual
  */
 export async function getUserProfile(): Promise<Result<UserProfile>> {
+  console.log('[getUserProfile] 🔍 Iniciando...');
   try {
     const user = await getCurrentUser();
+    console.log('[getUserProfile] Usuario obtenido:', user ? `ID: ${user.id}, Email: ${user.email}` : 'NULL');
+    
     if (!user) {
+      console.log('[getUserProfile] ❌ Usuario no autenticado');
       return fail('Usuario no autenticado');
     }
 
+    console.log('[getUserProfile] 🔍 Consultando perfil con profile_id:', user.profile_id);
     const result = await query<UserProfile>(
       `SELECT
         id,
@@ -74,13 +79,17 @@ export async function getUserProfile(): Promise<Result<UserProfile>> {
       [user.profile_id], // Usar profile_id en lugar de id
     );
 
+    console.log('[getUserProfile] Resultado query:', result.rows.length, 'filas');
     if (result.rows.length === 0) {
+      console.log('[getUserProfile] ❌ Perfil no encontrado para profile_id:', user.profile_id);
       return fail('Perfil no encontrado');
     }
 
-    return ok(result.rows[0]);
+    const profile = result.rows[0];
+    console.log('[getUserProfile] ✅ Perfil encontrado:', profile?.displayName);
+    return ok(profile);
   } catch (error) {
-    console.error('[getUserProfile] Error:', error);
+    console.error('[getUserProfile] ❌ Error:', error);
     return fail('Error al obtener el perfil');
   }
 }

@@ -46,35 +46,46 @@ export default function PerfilPage() {
   // Cargar datos del perfil e ingreso
   useEffect(() => {
     async function loadProfile() {
+      console.log('[PerfilPage] 🔍 Cargando perfil del usuario...');
       setLoading(true);
 
       // Cargar info de autenticación
+      console.log('[PerfilPage] Llamando getUserAuthInfo...');
       const authResult = await getUserAuthInfo();
+      console.log('[PerfilPage] getUserAuthInfo resultado:', authResult.ok ? 'OK' : 'FAIL');
       if (authResult.ok && authResult.data) {
         setAuthInfo(authResult.data);
       } else {
+        console.error('[PerfilPage] Error getUserAuthInfo:', !authResult.ok ? authResult.message : 'Sin data');
         toast.error('Error al cargar información de sesión');
       }
 
       // Cargar perfil
+      console.log('[PerfilPage] Llamando getUserProfile...');
       const profileResult = await getUserProfile();
+      console.log('[PerfilPage] getUserProfile resultado:', profileResult.ok ? 'OK' : 'FAIL');
       if (profileResult.ok && profileResult.data) {
+        console.log('[PerfilPage] ✅ Perfil cargado:', profileResult.data.displayName);
         setProfile(profileResult.data);
         setDisplayName(profileResult.data.displayName || '');
       } else {
+        console.error('[PerfilPage] Error getUserProfile:', !profileResult.ok ? profileResult.message : 'Sin data');
         toast.error(profileResult.ok ? 'Perfil no disponible' : profileResult.message);
         setProfile(null);
       }
 
       // Cargar ingreso si hay hogar activo
       if (householdId) {
+        console.log('[PerfilPage] Llamando getMemberIncome con householdId:', householdId);
         const incomeResult = await getMemberIncome(householdId);
+        console.log('[PerfilPage] getMemberIncome resultado:', incomeResult.ok ? 'OK' : 'FAIL');
         if (incomeResult.ok && incomeResult.data) {
           setIncome(incomeResult.data);
           setMonthlyIncome(incomeResult.data.monthlyIncome.toString());
         }
       }
 
+      console.log('[PerfilPage] ✅ Carga completada');
       setLoading(false);
     }
 

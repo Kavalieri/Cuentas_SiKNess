@@ -214,23 +214,28 @@ export async function verifyMagicLink(
  * Soporta multi-email: busca en profiles.email Y profile_emails.email
  */
 export async function getCurrentUser(): Promise<User | null> {
+  console.log('[getCurrentUser] 🔍 Iniciando...');
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
     if (!sessionToken) {
+      console.log('[getCurrentUser] ❌ No hay token de sesión');
       return null;
     }
 
+    console.log('[getCurrentUser] 🔑 Token encontrado, verificando...');
     // Verificar token de sesión
     const payload = await verifySessionToken(sessionToken);
 
     if (!payload) {
+      console.log('[getCurrentUser] ❌ Token inválido, limpiando cookie');
       // Token inválido, limpiar cookie
       cookieStore.delete(SESSION_COOKIE_NAME);
       return null;
     }
 
+    console.log('[getCurrentUser] ✅ Token válido, email:', payload.email);
     // Buscar usuario por email en profiles (email primario) O profile_emails (email secundario)
     const result = await query<ProfileRow & { login_email: string }>(
       `
@@ -252,7 +257,9 @@ export async function getCurrentUser(): Promise<User | null> {
       [payload.email],
     );
 
+    console.log('[getCurrentUser] Query ejecutada, filas:', result.rows.length);
     if (result.rows.length === 0) {
+      console.log('[getCurrentUser] ❌ Perfil no encontrado para email:', payload.email);
       cookieStore.delete(SESSION_COOKIE_NAME);
       return null;
     }
@@ -260,10 +267,12 @@ export async function getCurrentUser(): Promise<User | null> {
     const profile = result.rows[0];
 
     if (!profile) {
+      console.log('[getCurrentUser] ❌ Profile es null/undefined');
       cookieStore.delete(SESSION_COOKIE_NAME);
       return null;
     }
 
+    console.log('[getCurrentUser] ✅ Usuario encontrado:', profile.display_name, 'profile_id:', profile.id);
     // Mapear a interfaz User (compatibilidad con código existente)
     const user: User = {
       id: profile.auth_user_id, // id = auth UUID (para código existente)
@@ -278,9 +287,10 @@ export async function getCurrentUser(): Promise<User | null> {
       updated_at: profile.updated_at,
     };
 
+    console.log('[getCurrentUser] ✅ Retornando usuario completo');
     return user;
   } catch (error) {
-    console.error('Error getting current user:', error);
+    console.error('[getCurrentUser] ❌ Error:', error);
     return null;
   }
 }
