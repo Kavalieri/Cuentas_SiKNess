@@ -3,22 +3,22 @@
 import { deletePeriod } from '@/app/sickness/periodo/actions';
 import { createPeriodWithCategories } from '@/app/sickness/periods/actions';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -300,7 +300,30 @@ export function GlobalPeriodSelector() {
 
               // Clases base del botón
               const baseClasses = 'h-20 relative border-2 transition-all';
-              const periodClasses = hasPeriod ? `${borderClass} ${bgClass}` : 'border-dashed border-muted-foreground/30';
+
+              // Cuando está activo, usar colores más intensos pero legibles
+              let activeClasses = '';
+              if (isActive && hasPeriod && periodPhase) {
+                switch (periodPhase) {
+                  case 'preparing':
+                    activeClasses = 'bg-yellow-100 dark:bg-yellow-900/40 border-yellow-600 dark:border-yellow-500';
+                    break;
+                  case 'validation':
+                    activeClasses = 'bg-orange-100 dark:bg-orange-900/40 border-orange-600 dark:border-orange-500';
+                    break;
+                  case 'active':
+                    activeClasses = 'bg-green-100 dark:bg-green-900/40 border-green-700 dark:border-green-500';
+                    break;
+                  case 'closed':
+                    activeClasses = 'bg-gray-200 dark:bg-gray-800/40 border-gray-500 dark:border-gray-600';
+                    break;
+                }
+              } else if (isActive && !hasPeriod) {
+                activeClasses = 'bg-primary/10 dark:bg-primary/20 border-primary';
+              }
+
+              const periodClasses = hasPeriod && !isActive ? `${borderClass} ${bgClass}` : '';
+              const finalClasses = isActive ? activeClasses : (hasPeriod ? periodClasses : 'border-dashed border-muted-foreground/30');
               const currentClasses = isCurrent ? 'ring-2 ring-primary ring-offset-2' : '';
 
               return (
@@ -309,28 +332,26 @@ export function GlobalPeriodSelector() {
                   variant="outline"
                   size="sm"
                   onClick={() => handlePeriodSelect(monthNumber)}
-                  className={`${baseClasses} ${periodClasses} ${currentClasses} ${
-                    isActive ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''
-                  }`}
+                  className={`${baseClasses} ${finalClasses} ${currentClasses}`}
                   title={hasPeriod ? `Fase: ${phaseLabel}` : 'Crear nuevo período'}
                 >
                   <div className="flex flex-col items-center gap-0.5 w-full">
-                    {/* Nombre del mes - siempre legible */}
-                    <span className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : ''}`}>
+                    {/* Nombre del mes - color oscuro legible */}
+                    <span className={`text-xs font-semibold ${isActive ? 'text-gray-900 dark:text-gray-100' : ''}`}>
                       {month.slice(0, 3)}
                     </span>
                     {isCurrent && (
-                      <span className={`text-[9px] font-medium ${isActive ? 'text-primary-foreground/80' : 'opacity-70'}`}>
+                      <span className={`text-[9px] font-medium ${isActive ? 'text-gray-700 dark:text-gray-300' : 'opacity-70'}`}>
                         Actual
                       </span>
                     )}
                     {hasPeriod && (
-                      <span className={`text-[10px] font-medium mt-0.5 ${isActive ? 'text-primary-foreground' : textClass}`}>
+                      <span className={`text-[10px] font-medium mt-0.5 ${isActive ? 'text-gray-800 dark:text-gray-200' : textClass}`}>
                         {phaseLabel}
                       </span>
                     )}
                     {!hasPeriod && (
-                      <span className={`text-[10px] font-medium mt-0.5 ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground/60'}`}>
+                      <span className={`text-[10px] font-medium mt-0.5 ${isActive ? 'text-gray-700 dark:text-gray-300' : 'text-muted-foreground/60'}`}>
                         + Crear
                       </span>
                     )}
