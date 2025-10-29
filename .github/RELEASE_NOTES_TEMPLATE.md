@@ -4,19 +4,43 @@
 
 ---
 
-## 🌐 Enlaces Importantes
+## 🌐 Prueba la Aplicación
 
-- **📚 Documentación**: [README.md](https://github.com/Kavalieri/CuentasSiK#readme)
-- **🛠 Troubleshooting**: [docs/TROUBLESHOOTING.md](https://github.com/Kavalieri/CuentasSiK/blob/main/docs/TROUBLESHOOTING.md)
-- **🔐 JWT**: [docs/JWT.md](https://github.com/Kavalieri/CuentasSiK/blob/main/docs/JWT.md)
+**¿Quieres usar CuentasSiK inmediatamente sin instalar nada?**
+
+### 🚀 [**Accede a cuentas.sikwow.com**](https://cuentas.sikwow.com)
+
+Tenemos una instancia de producción completamente funcional y abierta al público:
+
+✨ **Características:**
+- ✅ Completamente gratuito y funcional
+- ✅ Sin instalación local requerida
+- ✅ Registro simple con email (magic links)
+- ✅ Todas las funcionalidades de la release disponibles
+- ✅ Entorno de producción seguro y estable
+
+**Perfecto para:**
+- 👥 Usuarios finales que solo quieren gestionar sus gastos
+- 🔍 Desarrolladores que quieren evaluar la aplicación antes de clonar
+- 🎓 Probar todas las características en un entorno real
+
+> 💡 **Para desarrolladores**: Si prefieres control total de tus datos o personalizar el código, consulta la sección [Instalación para Desarrolladores](#para-desarrolladores) más abajo.
+
+---
+
+## 📚 Enlaces de Documentación
+
+- **📖 README**: [Documentación Principal](https://github.com/Kavalieri/CuentasSiK#readme)
+- **🛠 Troubleshooting**: [Guía de Solución de Problemas](https://github.com/Kavalieri/CuentasSiK/blob/main/docs/TROUBLESHOOTING.md)
+- **🔐 JWT**: [Configuración de Autenticación](https://github.com/Kavalieri/CuentasSiK/blob/main/docs/JWT.md)
 - **🐛 Reportar Issues**: [GitHub Issues](https://github.com/Kavalieri/CuentasSiK/issues)
 - **💬 Discusiones**: [GitHub Discussions](https://github.com/Kavalieri/CuentasSiK/discussions)
-- **📖 Guía de Contribución**: [CONTRIBUTING.md](https://github.com/Kavalieri/CuentasSiK/blob/main/CONTRIBUTING.md)
+- **📖 Contribuir**: [Guía de Contribución](https://github.com/Kavalieri/CuentasSiK/blob/main/CONTRIBUTING.md)
 - **📜 Licencia**: [MIT License](https://github.com/Kavalieri/CuentasSiK/blob/main/LICENSE)
 
 ---
 
-## �️ Git Tags
+## 🏷️ Git Tags
 
 ```bash
 git tag v1.0.0
@@ -46,15 +70,19 @@ git push origin v1.0.0
 
 ## 🚀 Cómo Empezar
 
-### Para Usuarios
+### Para Usuarios Finales
 
-1. **Despliega tu propia instancia** siguiendo las instrucciones en el README
-2. **Inicia sesión** con tu email (recibirás un magic link)
-3. **Crea tu hogar** o acepta una invitación
+**¡Empieza a usar CuentasSiK ahora mismo!**
+
+1. **Accede a**: [https://cuentas.sikwow.com](https://cuentas.sikwow.com)
+2. **Regístrate** con tu email (recibirás un magic link)
+3. **Crea tu hogar** o acepta una invitación de tu pareja/compañero
 4. **Configura contribuciones** (ingresos mensuales y meta del hogar)
-5. **Empieza a registrar gastos** y visualiza el balance
+5. **Empieza a registrar gastos** y visualiza el balance en tiempo real
 
-### Para Desarrolladores
+### Para Desarrolladores (Auto-Hosting)
+
+Si prefieres desplegar tu propia instancia:
 
 ```bash
 # 1. Clonar el repositorio

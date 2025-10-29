@@ -10,14 +10,40 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue?logo=postgresql&style=flat-square)](https://postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 
-[📖 Documentación](./docs) · [🐛 Issues](https://github.com/Kavalieri/CuentasSiK/issues)
+[🌐 Probar Aplicación](https://cuentas.sikwow.com) · [📖 Documentación](./docs) · [🐛 Issues](https://github.com/Kavalieri/CuentasSiK/issues)
 
 </div>
 
 ---
 
+## 🚀 Prueba la Aplicación en Producción
+
+**¿Quieres usar CuentasSiK sin instalar nada?**
+
+Tenemos una instancia de producción completamente funcional y abierta al público:
+
+### 🌐 [**cuentas.sikwow.com**](https://cuentas.sikwow.com)
+
+✨ **Características del entorno de producción:**
+- ✅ Totalmente gratuito y funcional
+- ✅ Sin necesidad de instalación local
+- ✅ Registro simple con email (magic links)
+- ✅ Todas las funcionalidades disponibles
+- ✅ Entorno seguro y estable
+- ✅ Ideal para probar la aplicación antes de desplegar tu propia instancia
+
+**Perfecto para:**
+- 👥 Usuarios que solo quieren usar la aplicación
+- 🔍 Desarrolladores que quieren probar antes de clonar el proyecto
+- 🎓 Evaluación de características y funcionalidad
+
+> 💡 **Nota para desarrolladores**: Si prefieres tener control total sobre tus datos o personalizar la aplicación, consulta la sección de [Instalación](#instalación) para desplegar tu propia instancia.
+
+---
+
 ## 📋 Índice
 
+- [Prueba la Aplicación en Producción](#-prueba-la-aplicación-en-producción)
 - [¿Qué es CuentasSiK?](#qué-es-cuentassik)
 - [Características](#características)
 - [Stack Tecnológico](#stack-tecnológico)

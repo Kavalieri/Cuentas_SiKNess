@@ -2540,7 +2540,7 @@ INSERT INTO public.monthly_periods (id, household_id, year, month, status, openi
 --
 
 -- NOTE: Replace with your actual admin user data
--- INSERT INTO public.profiles (id, auth_user_id, display_name, email, avatar_url, bio, created_at, updated_at, is_system_admin) 
+-- INSERT INTO public.profiles (id, auth_user_id, display_name, email, avatar_url, bio, created_at, updated_at, is_system_admin)
 -- VALUES ('your-uuid', 'your-auth-uuid', 'Your Name', 'your-email@example.com', NULL, NULL, NOW(), NOW(), true);
 
 
@@ -2549,7 +2549,7 @@ INSERT INTO public.monthly_periods (id, household_id, year, month, status, openi
 --
 
 -- NOTE: Replace with your actual admin user ID
--- INSERT INTO public.system_admins (user_id, granted_by, created_at, notes, profile_id) 
+-- INSERT INTO public.system_admins (user_id, granted_by, created_at, notes, profile_id)
 -- VALUES ('your-auth-uuid', NULL, NOW(), 'System administrator', 'your-uuid');
 
 
