@@ -42,11 +42,14 @@ function normalizeDateInputs(
   const mm = m[5] ? Number(m[5]) : 0;
   const ss = m[6] ? Number(m[6]) : 0;
 
-  // Construir Date local con componentes (evita sesgos de parsing ISO ambiguo)
-  // Importante: tratamos la fecha/hora introducida por el usuario como "naive" (sin TZ)
-  // y la fijamos en UTC para preservar exactamente la hora tecleada (12:30 -> 12:30Z),
-  // evitando desplazamientos por la zona horaria del servidor.
-  const d = new Date(Date.UTC(y, mo - 1, da, hh, mm, ss));
+  // Construir Date en zona horaria LOCAL (no UTC)
+  // El usuario introduce fechas/horas en su zona horaria local (España),
+  // y queremos preservar exactamente esos valores.
+  // Ejemplo: Usuario introduce "2025-06-01 23:30" en España (UTC+2)
+  //   - new Date(2025, 5, 1, 23, 30) crea "2025-06-01T23:30 local"
+  //   - toISOString() lo convierte a UTC: "2025-06-01T21:30:00.000Z"
+  //   - PostgreSQL lo guarda con TZ: "2025-06-01 23:30:00+02"
+  const d = new Date(y, mo - 1, da, hh, mm, ss);
   const occurred_at_date = `${String(y).padStart(4, '0')}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}`;
   const performed_at_ts = d.toISOString();
   return { occurredDate: d, occurred_at_date, performed_at_ts };
