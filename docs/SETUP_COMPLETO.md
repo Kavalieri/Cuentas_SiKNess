@@ -101,7 +101,7 @@ CREATE ROLE cuentassik_user LOGIN PASSWORD 'tu_password_aplicacion_seguro';
 
 ### Configurar ~/.pgpass para Acceso sin Contraseña (Opcional)
 
-Como usuario `kava` (o tu usuario del sistema):
+Como usuario `sysuser` (o tu usuario del sistema):
 
 ```bash
 # Crear archivo .pgpass

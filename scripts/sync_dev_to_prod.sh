@@ -97,7 +97,7 @@ if sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw "${PROD_DB}"; then
         log_warning "No se pudo hacer backup (la DB puede estar vacía o corrupta)"
         rm -f "${BACKUP_FILE}"
     }
-    
+
     if [ -f "${BACKUP_FILE}" ]; then
         BACKUP_SIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
         log_success "Backup guardado en ${BACKUP_FILE} (${BACKUP_SIZE})"
