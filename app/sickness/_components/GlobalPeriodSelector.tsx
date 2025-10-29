@@ -94,18 +94,18 @@ export function GlobalPeriodSelector() {
       }
       console.log('✅ [GlobalPeriodSelector] Period created successfully');
       toast.success(`Período creado: ${MONTHS[pendingPeriod.month - 1]} ${pendingPeriod.year}`);
-      
+
       // Guardar el periodo recién creado antes de refrescar
       const createdYear = pendingPeriod.year;
       const createdMonth = pendingPeriod.month;
-      
+
       // Refrescar la lista de períodos
       await refreshPeriods();
-      
+
       // IMPORTANTE: Seleccionar explícitamente el período recién creado
       // Esto evita que el contexto auto-seleccione otro periodo (último disponible)
       await selectPeriod(createdYear, createdMonth);
-      
+
       // Cerrar dropdown después de crear
       setDropdownOpen(false);
     } catch (error) {
@@ -252,38 +252,56 @@ export function GlobalPeriodSelector() {
               const isActive = selectedPeriod?.year === selectedYear && selectedPeriod?.month === monthNumber;
               const isCurrent =
                 currentYear === selectedYear && new Date().getMonth() + 1 === monthNumber;
-              
+
               // Buscar si existe periodo para este mes/año
               const periodForMonth = periods.find(p => p.year === selectedYear && p.month === monthNumber);
               const hasPeriod = !!periodForMonth;
               const periodPhase = periodForMonth?.phase;
-              
-              // Determinar color de indicador según fase
-              let phaseColor = '';
+
+              // Determinar estilos según fase (borde + fondo + texto)
+              let borderClass = '';
+              let bgClass = '';
+              let textClass = '';
               let phaseLabel = '';
+              
               if (hasPeriod && periodPhase) {
                 switch (periodPhase) {
                   case 'preparing':
-                    phaseColor = 'bg-yellow-500';
-                    phaseLabel = 'Configurando';
+                    borderClass = 'border-yellow-500 dark:border-yellow-600';
+                    bgClass = 'bg-yellow-50 dark:bg-yellow-950/20';
+                    textClass = 'text-yellow-700 dark:text-yellow-400';
+                    phaseLabel = 'Preparando';
                     break;
                   case 'validation':
-                    phaseColor = 'bg-orange-500';
+                    borderClass = 'border-orange-500 dark:border-orange-600';
+                    bgClass = 'bg-orange-50 dark:bg-orange-950/20';
+                    textClass = 'text-orange-700 dark:text-orange-400';
                     phaseLabel = 'Validación';
                     break;
                   case 'active':
-                    phaseColor = 'bg-green-500';
+                    borderClass = 'border-green-600 dark:border-green-500';
+                    bgClass = 'bg-green-50 dark:bg-green-950/20';
+                    textClass = 'text-green-700 dark:text-green-400';
                     phaseLabel = 'Activo';
                     break;
                   case 'closed':
-                    phaseColor = 'bg-gray-500';
+                    borderClass = 'border-gray-400 dark:border-gray-600';
+                    bgClass = 'bg-gray-50 dark:bg-gray-900/20';
+                    textClass = 'text-gray-600 dark:text-gray-400';
                     phaseLabel = 'Cerrado';
                     break;
                   default:
-                    phaseColor = 'bg-blue-500';
+                    borderClass = 'border-blue-500';
+                    bgClass = 'bg-blue-50 dark:bg-blue-950/20';
+                    textClass = 'text-blue-700 dark:text-blue-400';
                     phaseLabel = 'Otro';
                 }
               }
+
+              // Clases base del botón
+              const baseClasses = 'h-20 relative border-2 transition-all';
+              const periodClasses = hasPeriod ? `${borderClass} ${bgClass}` : 'border-dashed border-muted-foreground/30';
+              const currentClasses = isCurrent ? 'ring-2 ring-primary ring-offset-2' : '';
 
               return (
                 <Button
@@ -291,20 +309,21 @@ export function GlobalPeriodSelector() {
                   variant={isActive ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handlePeriodSelect(monthNumber)}
-                  className={`h-16 relative ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-                  title={hasPeriod ? phaseLabel : 'Sin periodo (clic para crear)'}
+                  className={`${baseClasses} ${periodClasses} ${currentClasses}`}
+                  title={hasPeriod ? `Fase: ${phaseLabel}` : 'Crear nuevo período'}
                 >
-                  <div className="flex flex-col items-center gap-1 w-full">
-                    <span className="text-xs font-medium">{month.slice(0, 3)}</span>
-                    {isCurrent && <span className="text-[10px] text-muted-foreground">Actual</span>}
+                  <div className="flex flex-col items-center gap-0.5 w-full">
+                    <span className="text-xs font-semibold">{month.slice(0, 3)}</span>
+                    {isCurrent && <span className="text-[9px] font-medium opacity-70">Actual</span>}
                     {hasPeriod && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <div className={`h-1.5 w-1.5 rounded-full ${phaseColor}`} />
-                        <span className="text-[9px] text-muted-foreground">{phaseLabel.slice(0, 4)}</span>
-                      </div>
+                      <span className={`text-[10px] font-medium ${textClass} mt-0.5`}>
+                        {phaseLabel}
+                      </span>
                     )}
                     {!hasPeriod && (
-                      <span className="text-[9px] text-muted-foreground/60">+ Crear</span>
+                      <span className="text-[10px] font-medium text-muted-foreground/60 mt-0.5">
+                        + Crear
+                      </span>
                     )}
                   </div>
                 </Button>

@@ -2,28 +2,28 @@
 
 import { createHouseholdFromSelector } from '@/app/sickness/onboarding/actions';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { ChevronDown, Home, PlusCircle, Users } from 'lucide-react';
+import { ChevronDown, Home, PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -45,19 +45,19 @@ export function GlobalHouseholdSelector() {
     setIsCreating(true);
     try {
       const result = await createHouseholdFromSelector(householdName.trim());
-      
+
       if (!result.ok) {
         toast.error(result.message);
         return;
       }
 
       toast.success(`Hogar "${householdName}" creado exitosamente`);
-      
+
       // Cerrar diálogo y limpiar
       setShowCreateDialog(false);
       setHouseholdName('');
       setDropdownOpen(false);
-      
+
       // Recargar página para actualizar contexto
       // TODO: Idealmente deberíamos tener refreshHouseholds() en el contexto
       window.location.reload();
