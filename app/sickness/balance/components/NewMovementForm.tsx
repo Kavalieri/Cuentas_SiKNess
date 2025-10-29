@@ -176,23 +176,23 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
       }
 
       toast.success('Movimiento creado correctamente');
-      
+
       // Refrescar la vista para ver el nuevo movimiento
       if (onSuccess) {
         try { await onSuccess(); } catch {}
       } else {
         router.refresh();
       }
-      
+
       // ✨ NUEVO: Mantener formulario abierto, limpiar solo amount y description
       setAmount("");
       setDescription("");
       setOccurredAt(formatDateTimeLocal(new Date())); // Actualizar timestamp
       setJustSaved(true); // Activar feedback visual
-      
+
       // Ocultar feedback después de 3 segundos
       setTimeout(() => setJustSaved(false), 3000);
-      
+
       // NO cerrar el modal: onClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al crear movimiento';
@@ -207,15 +207,18 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Nuevo movimiento
-            {justSaved && (
-              <span className="text-sm font-normal text-green-600 dark:text-green-400 animate-in fade-in">
-                ✓ ¿Otro movimiento?
-              </span>
-            )}
-          </DialogTitle>
+          <DialogTitle>Nuevo movimiento</DialogTitle>
         </DialogHeader>
+        
+        {/* Banner de feedback tras guardar */}
+        {justSaved && (
+          <div className="bg-green-50 dark:bg-green-950 border-l-4 border-green-500 dark:border-green-600 p-3 rounded-r animate-in slide-in-from-top duration-200">
+            <p className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
+              ✅ Movimiento guardado. ¿Nuevo movimiento?
+            </p>
+          </div>
+        )}
+        
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <Label>Tipo</Label>

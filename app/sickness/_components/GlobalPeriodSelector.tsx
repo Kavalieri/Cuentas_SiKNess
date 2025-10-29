@@ -306,14 +306,16 @@ export function GlobalPeriodSelector() {
               return (
                 <Button
                   key={month}
-                  variant={isActive ? 'default' : 'outline'}
+                  variant="outline"
                   size="sm"
                   onClick={() => handlePeriodSelect(monthNumber)}
-                  className={`${baseClasses} ${periodClasses} ${currentClasses}`}
+                  className={`${baseClasses} ${periodClasses} ${currentClasses} ${
+                    isActive ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''
+                  }`}
                   title={hasPeriod ? `Fase: ${phaseLabel}` : 'Crear nuevo período'}
                 >
                   <div className="flex flex-col items-center gap-0.5 w-full">
-                    {/* Nombre del mes - usar color del botón activo si está seleccionado */}
+                    {/* Nombre del mes - siempre legible */}
                     <span className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : ''}`}>
                       {month.slice(0, 3)}
                     </span>
