@@ -77,7 +77,8 @@ export async function GET(request: NextRequest) {
     }
 
     // ADMIN REDIRECTION: Redirigir admin directamente a la interfaz dual-flow
-    if (session.user.email === 'caballeropomes@gmail.com') {
+    const systemAdminEmail = process.env.NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL;
+    if (systemAdminEmail && session.user.email === systemAdminEmail) {
       return NextResponse.redirect(new URL('/dual-flow/inicio', request.url));
     }
 
@@ -128,7 +129,8 @@ export async function GET(request: NextRequest) {
     }
 
     // ADMIN REDIRECTION: Redirigir admin directamente a la interfaz dual-flow (OTP flow)
-    if (session.user.email === 'caballeropomes@gmail.com') {
+    const systemAdminEmail = process.env.NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL;
+    if (systemAdminEmail && session.user.email === systemAdminEmail) {
       return NextResponse.redirect(new URL('/dual-flow/inicio', request.url));
     }
 
