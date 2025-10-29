@@ -160,3 +160,50 @@ export async function createHousehold(formData: FormData): Promise<void> {
   revalidatePath('/sickness/balance', 'page');
   redirect('/sickness?onboarded=1');
 }
+
+/**
+ * Versión no-redirect de createHousehold para usar desde componentes client
+ * Retorna Result con el householdId creado
+ */
+export async function createHouseholdFromSelector(name: string): Promise<{ ok: true; householdId: string } | { ok: false; message: string }> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, message: 'No autenticado' };
+  }
+
+  const parsed = CreateHouseholdSchema.safeParse({ name });
+  if (!parsed.success) {
+    const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+    return { ok: false, message: firstError || 'Nombre inválido' };
+  }
+
+  try {
+    // Usar función atómica create_household_with_owner
+    const res = await query<{ create_household_with_owner: string }>(
+      `SELECT create_household_with_owner($1, $2) as create_household_with_owner`,
+      [parsed.data.name, user.profile_id],
+    );
+    const householdId = res.rows[0]?.create_household_with_owner;
+    if (!householdId) {
+      return { ok: false, message: 'Error al crear el hogar' };
+    }
+
+    // Activar hogar
+    await query(
+      `INSERT INTO user_settings (profile_id, active_household_id, created_at, updated_at)
+       VALUES ($1, $2, NOW(), NOW())
+       ON CONFLICT (profile_id)
+       DO UPDATE SET active_household_id = EXCLUDED.active_household_id, updated_at = NOW()`,
+      [user.profile_id, householdId],
+    );
+
+    // Revalidar rutas afectadas
+    revalidatePath('/sickness', 'layout');
+    revalidatePath('/sickness', 'page');
+
+    return { ok: true, householdId };
+  } catch (error) {
+    console.error('[createHouseholdFromSelector] Error:', error);
+    return { ok: false, message: 'Error inesperado al crear hogar' };
+  }
+}

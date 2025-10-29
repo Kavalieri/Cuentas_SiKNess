@@ -94,9 +94,18 @@ export function GlobalPeriodSelector() {
       }
       console.log('✅ [GlobalPeriodSelector] Period created successfully');
       toast.success(`Período creado: ${MONTHS[pendingPeriod.month - 1]} ${pendingPeriod.year}`);
+      
+      // Guardar el periodo recién creado antes de refrescar
+      const createdYear = pendingPeriod.year;
+      const createdMonth = pendingPeriod.month;
+      
+      // Refrescar la lista de períodos
       await refreshPeriods();
-      // Seleccionar el período recién creado
-      await selectPeriod(pendingPeriod.year, pendingPeriod.month);
+      
+      // IMPORTANTE: Seleccionar explícitamente el período recién creado
+      // Esto evita que el contexto auto-seleccione otro periodo (último disponible)
+      await selectPeriod(createdYear, createdMonth);
+      
       // Cerrar dropdown después de crear
       setDropdownOpen(false);
     } catch (error) {
@@ -243,6 +252,38 @@ export function GlobalPeriodSelector() {
               const isActive = selectedPeriod?.year === selectedYear && selectedPeriod?.month === monthNumber;
               const isCurrent =
                 currentYear === selectedYear && new Date().getMonth() + 1 === monthNumber;
+              
+              // Buscar si existe periodo para este mes/año
+              const periodForMonth = periods.find(p => p.year === selectedYear && p.month === monthNumber);
+              const hasPeriod = !!periodForMonth;
+              const periodPhase = periodForMonth?.phase;
+              
+              // Determinar color de indicador según fase
+              let phaseColor = '';
+              let phaseLabel = '';
+              if (hasPeriod && periodPhase) {
+                switch (periodPhase) {
+                  case 'preparing':
+                    phaseColor = 'bg-yellow-500';
+                    phaseLabel = 'Configurando';
+                    break;
+                  case 'validation':
+                    phaseColor = 'bg-orange-500';
+                    phaseLabel = 'Validación';
+                    break;
+                  case 'active':
+                    phaseColor = 'bg-green-500';
+                    phaseLabel = 'Activo';
+                    break;
+                  case 'closed':
+                    phaseColor = 'bg-gray-500';
+                    phaseLabel = 'Cerrado';
+                    break;
+                  default:
+                    phaseColor = 'bg-blue-500';
+                    phaseLabel = 'Otro';
+                }
+              }
 
               return (
                 <Button
@@ -250,11 +291,21 @@ export function GlobalPeriodSelector() {
                   variant={isActive ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handlePeriodSelect(monthNumber)}
-                  className={`h-12 ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                  className={`h-16 relative ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                  title={hasPeriod ? phaseLabel : 'Sin periodo (clic para crear)'}
                 >
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center gap-1 w-full">
                     <span className="text-xs font-medium">{month.slice(0, 3)}</span>
                     {isCurrent && <span className="text-[10px] text-muted-foreground">Actual</span>}
+                    {hasPeriod && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className={`h-1.5 w-1.5 rounded-full ${phaseColor}`} />
+                        <span className="text-[9px] text-muted-foreground">{phaseLabel.slice(0, 4)}</span>
+                      </div>
+                    )}
+                    {!hasPeriod && (
+                      <span className="text-[9px] text-muted-foreground/60">+ Crear</span>
+                    )}
                   </div>
                 </Button>
               );
