@@ -233,23 +233,24 @@ export default function EstadisticasPage() {
             Datos filtrados por el período seleccionado en la barra superior
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Columna 1: Gastos por Categoría */}
-          <GastosPorCategoria
-            data={periodExpenses}
-            isLoading={loading}
-            title="Gastos por Categoría"
-          />
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Columna 1: Gastos por Categoría (gráfico más grande) */}
+          <div className="md:row-span-2">
+            <GastosPorCategoria
+              data={periodExpenses}
+              isLoading={loading}
+              title="Gastos por Categoría"
+            />
+          </div>
           
-          {/* Columna 2: Ingresos vs Gastos */}
-          <IngresosVsGastos
-            data={periodIncomeVsExpenses}
-            isLoading={loading}
-            title="Ingresos vs Gastos"
-          />
-
-          {/* Columna 3: Métricas del período */}
+          {/* Columna 2: Ingresos vs Gastos + Métricas */}
           <div className="space-y-4">
+            <IngresosVsGastos
+              data={periodIncomeVsExpenses}
+              isLoading={loading}
+              title="Ingresos vs Gastos"
+            />
+
             {/* Gasto medio diario del período */}
             {dailyMetrics && periodSummary && (
               <Card className="bg-muted/30">
