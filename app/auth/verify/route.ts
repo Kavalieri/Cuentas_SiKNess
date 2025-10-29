@@ -12,38 +12,19 @@ export async function GET(request: NextRequest) {
   // Usar redirect dinámico o default a /sickness
   const redirect = searchParams.get('redirect') || '/sickness';
 
-  console.log('🔍 Verify endpoint called');
-  console.log('Token received:', token?.substring(0, 20) + '...');
-  console.log('Redirect URL:', redirect);
-
   if (!token) {
-    console.log('❌ No token provided');
     return NextResponse.redirect(new URL('/login?error=missing_token', request.url));
   }
 
   // Verificar el token y crear sesión
-  console.log('Verifying token...');
   const result = await verifyMagicLink(token);
 
-  console.log('Verification result:', result);
-
   if (!result.success) {
-    console.log('❌ Verification failed:', result.error);
+    console.error('Verification failed:', result.error);
     return NextResponse.redirect(
       new URL(`/login?error=${encodeURIComponent(result.error || 'invalid_token')}`, request.url),
     );
   }
-
-  console.log('✅ Verification successful, creating response with cookie');
-
-  // DEBUG: Ver todos los headers recibidos
-  console.log('📋 Headers recibidos:');
-  request.headers.forEach((value, key) => {
-    if (key.includes('host') || key.includes('forward') || key.includes('proto')) {
-      console.log(`  ${key}: ${value}`);
-    }
-  });
-  console.log('  request.url:', request.url);
 
   // Crear respuesta de redirección
   // Usar el origin del request (respeta proxy/dominio) en lugar de request.url directo
@@ -55,7 +36,6 @@ export async function GET(request: NextRequest) {
 
   const origin = `${proto}://${host}`;
   const redirectUrl = new URL(redirect, origin);
-  console.log('🔗 Redirecting to:', redirectUrl.toString());
 
   const response = NextResponse.redirect(redirectUrl);
 
@@ -66,7 +46,6 @@ export async function GET(request: NextRequest) {
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
 
   if (sessionCookie) {
-    console.log('🍪 Setting session cookie in response');
     response.cookies.set({
       name: SESSION_COOKIE_NAME,
       value: sessionCookie.value,

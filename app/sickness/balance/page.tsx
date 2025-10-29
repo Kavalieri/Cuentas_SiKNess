@@ -203,17 +203,6 @@ export default function BalancePage() {
   const rawPhase = selectedPeriodFull?.phase ? normalizePeriodPhase(selectedPeriodFull.phase) : 'preparing';
   const phase: MonthlyPeriodPhase = rawPhase === 'unknown' ? 'preparing' : rawPhase;
 
-  // DEBUG: Ver qué fase tenemos y qué periodo está seleccionado
-  useEffect(() => {
-    console.log('🔍 DEBUG Balance Page:', {
-      selectedPeriod,
-      selectedPeriodFull,
-      rawPhase,
-      phase,
-      canCreateMovement: phase === 'active' || phase === 'validation' || phase === 'closing'
-    });
-  }, [selectedPeriod, selectedPeriodFull, rawPhase, phase]);
-
   const canCreateMovement = useMemo(
     () => phase === 'active' || phase === 'validation' || phase === 'closing',
     [phase],
@@ -221,13 +210,12 @@ export default function BalancePage() {
 
   // Handler para intentar crear nuevo movimiento
   const handleNewMovementClick = useCallback(() => {
-    console.log('🔘 Click en Nuevo movimiento:', { selectedPeriod, selectedPeriodFull, phase, canCreateMovement });
     if (!canCreateMovement) {
       setShowPhaseAlert(true);
       return;
     }
     setShowNewMovement(true);
-  }, [canCreateMovement, phase, selectedPeriod, selectedPeriodFull]);
+  }, [canCreateMovement]);
 
   // Cuando cambian los filtros, resetear a página 1
   useEffect(() => {

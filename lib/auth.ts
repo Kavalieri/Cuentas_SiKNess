@@ -199,6 +199,7 @@ export async function verifyMagicLink(
       sameSite: 'lax',
       maxAge: SESSION_EXPIRY,
       path: '/',
+      domain: process.env.NODE_ENV === 'production' ? '.sikwow.com' : undefined,
     });
 
     return { success: true };
@@ -608,6 +609,7 @@ export async function authenticateWithGoogle(
       sameSite: 'lax',
       maxAge: SESSION_EXPIRY,
       path: '/',
+      domain: process.env.NODE_ENV === 'production' ? '.sikwow.com' : undefined,
     });
 
     return { success: true, userId, sessionToken };

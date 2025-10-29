@@ -38,7 +38,15 @@ if pm2 list | grep -q "cuentassik-prod.*online"; then
     exit 0
 fi
 
-# Variables de entorno cargadas automáticamente por PM2 desde .env.production.local
+# Cargar variables de entorno explícitamente
+if [ -f ".env.production.local" ]; then
+    echo "📋 Cargando variables de entorno desde .env.production.local..."
+    set -a
+    source .env.production.local
+    set +a
+else
+    echo "⚠️  Archivo .env.production.local no encontrado"
+fi
 
 # Verificar que el build existe
 if [ ! -d ".next" ]; then
@@ -46,9 +54,9 @@ if [ ! -d ".next" ]; then
     exit 1
 fi
 
-# Iniciar proceso PM2
+# Iniciar proceso PM2 con variables de entorno
 echo "🚀 Iniciando proceso de producción..."
-pm2 start ecosystem.config.js --only cuentassik-prod
+pm2 start ecosystem.config.js --only cuentassik-prod --update-env
 
 # Verificar que se inició correctamente
 sleep 3

@@ -43,7 +43,6 @@ const MONTHS = [
 ];
 
 export function GlobalPeriodSelector() {
-  console.log('🟢 [GlobalPeriodSelector] COMPONENT RENDERED');
   const { selectedPeriod, selectPeriod, householdId, refreshPeriods, periods } = useSiKness();
 
   const currentYear = new Date().getFullYear();
@@ -61,20 +60,18 @@ export function GlobalPeriodSelector() {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
   const handlePeriodSelect = async (month: number) => {
-    console.log('🟠 [GlobalPeriodSelector] handlePeriodSelect called:', selectedYear, month);
     try {
       await selectPeriod(selectedYear, month, (y, m) => {
         // Si el período no existe, mostramos el diálogo de creación
         setTimeout(() => {
           setPendingPeriod({ year: y, month: m });
           setShowCreateDialog(true);
-          console.log('✅ [GlobalPeriodSelector] Dialog should be open now');
         }, 0);
       });
       // Si la selección fue exitosa, cerrar dropdown
       setDropdownOpen(false);
     } catch (error) {
-      console.error('🔴 [GlobalPeriodSelector] Error selecting period:', error);
+      console.error('Error selecting period:', error);
       toast.error('Error al seleccionar período');
     }
   };
@@ -82,17 +79,13 @@ export function GlobalPeriodSelector() {
   const handleConfirmCreate = async () => {
     if (!pendingPeriod || !householdId) return;
     setIsCreating(true);
-    console.log('🔵 [GlobalPeriodSelector] handleConfirmCreate called with:', { householdId, pendingPeriod });
     try {
-      console.log('🔵 [GlobalPeriodSelector] Calling createPeriodWithCategories...');
       const result = await createPeriodWithCategories(householdId, pendingPeriod.year, pendingPeriod.month);
-      console.log('🔵 [GlobalPeriodSelector] Result from createPeriodWithCategories:', result);
       if (!result.ok) {
-        console.error('🔴 [GlobalPeriodSelector] Creation failed:', result.message);
+        console.error('Period creation failed:', result.message);
         toast.error(result.message ?? 'Error al crear período');
         return;
       }
-      console.log('✅ [GlobalPeriodSelector] Period created successfully');
       toast.success(`Período creado: ${MONTHS[pendingPeriod.month - 1]} ${pendingPeriod.year}`);
 
       // Guardar el periodo recién creado antes de refrescar
@@ -181,12 +174,8 @@ export function GlobalPeriodSelector() {
             })[0];
 
             if (latestPeriod) {
-              console.log('🔄 [GlobalPeriodSelector] Auto-selecting latest period:', latestPeriod.year, latestPeriod.month);
               await selectPeriod(latestPeriod.year, latestPeriod.month);
             }
-          } else {
-            console.log('🔄 [GlobalPeriodSelector] No periods available after deletion');
-            // Nota: No podemos limpiar selectedPeriod desde aquí, el contexto lo manejará
           }
         }, 200);
       }

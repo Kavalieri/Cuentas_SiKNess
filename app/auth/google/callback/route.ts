@@ -33,17 +33,12 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 
-    console.log('🔍 Google OAuth callback called');
-    console.log('Code received:', code?.substring(0, 20) + '...');
-    console.log('State:', state);
-
     // Detectar origen del request
     const origin = detectOrigin(request);
-    console.log('🌐 Detected origin:', origin);
 
     // Verificar si hay error de OAuth
     if (error) {
-      console.error('❌ OAuth error:', error);
+      console.error('OAuth error:', error);
       const loginUrl = new URL('/login', origin);
       loginUrl.searchParams.set('error', `oauth_error_${error}`);
       return NextResponse.redirect(loginUrl);
@@ -58,30 +53,24 @@ export async function GET(request: NextRequest) {
     }
 
     // Autenticar con Google (establece cookie internamente)
-    console.log('🔐 Authenticating with Google...');
     const result = await authenticateWithGoogle(code, origin);
 
     if (!result.success || !result.sessionToken) {
-      console.error('❌ Google authentication failed:', result.error);
+      console.error('Google authentication failed:', result.error);
       const loginUrl = new URL('/login', origin);
       loginUrl.searchParams.set('error', result.error || 'auth_failed');
       return NextResponse.redirect(loginUrl);
     }
 
-    console.log('✅ Authentication successful, creating response with cookie');
-
     // Verificar si hay un token de invitación en el state
     let redirectUrl: URL;
     if (state && state.startsWith('invitation:')) {
       const invitationToken = state.replace('invitation:', '');
-      console.log('🎫 Invitation detected in state, redirecting to accept endpoint');
       redirectUrl = new URL(`/api/auth/accept-email-invitation/${invitationToken}`, origin);
     } else {
       // Redirigir SIEMPRE a la nueva interfaz /sickness
       redirectUrl = new URL('/sickness', origin);
     }
-
-    console.log('🔗 Redirecting to:', redirectUrl.toString());
 
     // Crear respuesta de redirect
     const response = NextResponse.redirect(redirectUrl);
@@ -93,7 +82,6 @@ export async function GET(request: NextRequest) {
     const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
 
     if (sessionCookie) {
-      console.log('🍪 Setting session cookie in response');
       response.cookies.set({
         name: SESSION_COOKIE_NAME,
         value: sessionCookie.value,

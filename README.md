@@ -172,43 +172,78 @@ psql -U cuentassik_dev_owner -d cuentassik_dev -f database/migrations/applied/20
 
 ### Variables de Entorno
 
-Crea un archivo `.env.development.local` en la raíz del proyecto:
+CuentasSiK utiliza **archivos de variables de entorno separados** para desarrollo y producción. Esto es **crítico** para el funcionamiento correcto de la autenticación.
+
+#### Configuración de Desarrollo
+
+Copia el ejemplo y personaliza los valores:
+
+```bash
+cp .env.development.example .env.development.local
+```
+
+Edita `.env.development.local` con tus valores:
 
 ```env
-# ============================================
-# BASE DE DATOS
-# ============================================
+# Base de datos de desarrollo
 DATABASE_URL="postgresql://cuentassik_user:tu_password@localhost:5432/cuentassik_dev"
 
-# ============================================
-# AUTENTICACIÓN (JWT)
-# ============================================
-# Genera una clave segura: openssl rand -base64 32
-JWT_SECRET="tu_clave_secreta_jwt_muy_segura"
+# JWT Secret (genera con: openssl rand -base64 32)
+JWT_SECRET="tu_clave_secreta_jwt_desarrollo"
 
-# ============================================
-# GOOGLE OAUTH 2.0
-# ============================================
-# Obtén credenciales en: https://console.cloud.google.com/
-GOOGLE_CLIENT_ID="tu_google_client_id"
-GOOGLE_CLIENT_SECRET="tu_google_client_secret"
+# Google OAuth (desarrollo)
+GOOGLE_CLIENT_ID="tu_google_client_id_dev"
+GOOGLE_CLIENT_SECRET="tu_google_client_secret_dev"
 
-# ============================================
-# SMTP (Correo electrónico)
-# ============================================
+# SMTP (correo electrónico)
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
 SMTP_SECURE="false"
 SMTP_USER="tu_email@gmail.com"
 SMTP_PASS="tu_app_password"
-SMTP_FROM="CuentasSiK <tu_email@gmail.com>"
 
-# ============================================
-# APLICACIÓN
-# ============================================
+# URL de desarrollo
 NEXT_PUBLIC_SITE_URL="http://localhost:3001"
 NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL="tu_email_admin@gmail.com"
 ```
+
+#### Configuración de Producción
+
+Copia el ejemplo de producción:
+
+```bash
+cp .env.production.example .env.production.local
+```
+
+Edita `.env.production.local` con valores **diferentes y seguros**:
+
+```env
+# Base de datos de producción
+DATABASE_URL="postgresql://cuentassik_user:PASSWORD_FUERTE@localhost:5432/cuentassik_prod"
+
+# JWT Secret (DIFERENTE al de desarrollo - genera con: openssl rand -base64 32)
+JWT_SECRET="SECRET_PRODUCCION_MUY_FUERTE_Y_DIFERENTE"
+
+# Google OAuth (producción - proyecto separado)
+GOOGLE_CLIENT_ID="tu_google_client_id_prod"
+GOOGLE_CLIENT_SECRET="tu_google_client_secret_prod"
+
+# SMTP configurado para producción
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="produccion@tudominio.com"
+SMTP_PASS="app_password_produccion"
+
+# URL pública de producción
+NEXT_PUBLIC_SITE_URL="https://tudominio.com"
+NEXT_PUBLIC_SYSTEM_ADMIN_EMAIL="admin@tudominio.com"
+```
+
+> ⚠️ **IMPORTANTE**:
+> - `JWT_SECRET` es **crítico** - si no está configurado correctamente, la autenticación fallará con error 401
+> - Usa `JWT_SECRET` **diferentes** en desarrollo y producción
+> - `NEXT_PUBLIC_SITE_URL` debe coincidir exactamente con tu dominio (sin trailing slash)
+> - Nunca commitees archivos `.env.*.local` al repositorio (están en `.gitignore`)
 
 ### Configurar Google OAuth
 
@@ -414,7 +449,63 @@ server {
 
 ---
 
-## 📚 Documentación
+## � Troubleshooting
+
+### Error 401 Unauthorized en API
+
+**Síntoma**: Al intentar cambiar periodos o realizar acciones, recibes errores 401 en las peticiones API.
+
+**Causa**: El `JWT_SECRET` no está cargado en las variables de entorno del proceso.
+
+**Solución**:
+
+1. Verifica que `.env.production.local` existe y contiene `JWT_SECRET`
+2. Si usas PM2, asegúrate de que el script de inicio carga las variables:
+   ```bash
+   # Reinicia con el script que carga variables explícitamente
+   ./scripts/pm2-prod-stop.sh
+   ./scripts/pm2-prod-start.sh
+   ```
+3. Verifica que las variables están cargadas:
+   ```bash
+   pm2 env <process_id> | grep JWT_SECRET
+   ```
+
+### Problemas con Google OAuth
+
+**Síntoma**: Error "redirect_uri_mismatch" al intentar login con Google.
+
+**Solución**:
+1. Verifica que `GOOGLE_REDIRECT_URI` en tu `.env` coincide exactamente con la URI autorizada en Google Cloud Console
+2. Desarrollo: `http://localhost:3001/auth/google/callback`
+3. Producción: `https://tudominio.com/auth/google/callback` (debe estar autorizada en Google Cloud)
+
+### Base de Datos no conecta
+
+**Síntoma**: Error de conexión a PostgreSQL.
+
+**Solución**:
+1. Verifica que PostgreSQL está ejecutándose: `systemctl status postgresql`
+2. Comprueba que `DATABASE_URL` es correcta
+3. Verifica credenciales del usuario `cuentassik_user`
+4. Asegúrate de que la base de datos existe: `psql -l | grep cuentassik`
+
+### Build Falla en Producción
+
+**Síntoma**: PM2 no inicia con error "Could not find a production build".
+
+**Solución**:
+```bash
+# Limpiar y reconstruir
+rm -rf .next
+npm run build
+```
+
+Para más ayuda, consulta la [documentación completa de troubleshooting](docs/TROUBLESHOOTING.md).
+
+---
+
+## �📚 Documentación
 
 ### Guías de Usuario
 - [🏠 Crear y Gestionar Hogares](docs/guides/HOGARES.md)
