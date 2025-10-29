@@ -21,50 +21,13 @@ const COLORS = [
   '#06b6d4', '#14b8a6', '#6366f1', '#f97316', '#84cc16', '#0ea5e9',
 ];
 
-// Función para renderizar etiquetas con porcentajes
-const renderCustomLabel = ({
-  cx,
-  cy,
-  midAngle,
-  outerRadius,
-  percent,
-}: {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  outerRadius: number;
-  percent: number;
-}) => {
-  // Solo mostrar etiquetas para porciones mayores al 5%
-  if (percent < 0.05) return null;
-
-  const RADIAN = Math.PI / 180;
-  const radius = outerRadius + 25;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="#666"
-      textAnchor={x > cx ? 'start' : 'end'}
-      dominantBaseline="central"
-      fontSize={12}
-      fontWeight={600}
-    >
-      {`${(percent * 100).toFixed(1)}%`}
-    </text>
-  );
-};
-
 // Función para renderizar leyenda personalizada con porcentajes
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const renderCustomLegend = (props: any) => {
   const { payload } = props;
-  
+
   if (!payload) return null;
-  
+
   return (
     <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
       {payload.map((entry: { value: string; color: string; payload: { percent: string } }, index: number) => (
@@ -145,27 +108,26 @@ export function GastosPorCategoria({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
+        <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
               data={dataWithPercentages}
               dataKey="amount"
               nameKey="category"
               cx="50%"
-              cy="45%"
-              outerRadius={90}
-              label={renderCustomLabel}
-              labelLine={{
-                stroke: '#999',
-                strokeWidth: 1,
-              }}
+              cy="50%"
+              outerRadius={100}
             >
               {dataWithPercentages.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => `${value.toFixed(2)} €`}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              formatter={(value: number, name: string, item: any) => {
+                const percent = item?.payload?.percent || '0.0';
+                return [`${value.toFixed(2)} € (${percent}%)`, name];
+              }}
               contentStyle={{
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 border: '1px solid #ccc',
