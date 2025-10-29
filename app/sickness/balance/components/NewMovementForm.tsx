@@ -187,7 +187,8 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
       // ✨ NUEVO: Mantener formulario abierto, limpiar solo amount y description
       setAmount("");
       setDescription("");
-      setOccurredAt(formatDateTimeLocal(new Date())); // Actualizar timestamp
+      // NO actualizar occurredAt: mantener la fecha del formulario para permitir registros consecutivos
+      // El usuario puede cambiarla manualmente si quiere otra fecha
       setJustSaved(true); // Activar feedback visual
 
       // Ocultar feedback después de 3 segundos

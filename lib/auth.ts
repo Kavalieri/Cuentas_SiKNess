@@ -570,22 +570,35 @@ export async function authenticateWithGoogle(
     let userId: string;
 
     if (userResult.rows.length > 0) {
-      // Usuario existe, actualizar información si es necesario
+      // Usuario existe
       const existingUser = userResult.rows[0];
       if (!existingUser) {
         return { success: false, error: 'Error al obtener usuario existente' };
       }
       userId = existingUser.auth_user_id;
 
-      // Actualizar avatar y nombre si cambiaron
-      if (userInfo.picture || userInfo.name) {
+      // Actualizar SOLO si los campos están vacíos (primer login desde Google)
+      // Si el usuario ya personalizó su nombre, respetarlo
+      const updates: { avatar_url?: string; display_name?: string; updated_at: string } = {
+        updated_at: new Date().toISOString(),
+      };
+
+      // Solo actualizar avatar si el usuario no tiene uno
+      if (userInfo.picture && !existingUser.avatar_url) {
+        updates.avatar_url = userInfo.picture;
+      }
+
+      // Solo actualizar display_name si está vacío o es el email (caso default)
+      const isDefaultName = !existingUser.display_name || existingUser.display_name === existingUser.email.split('@')[0];
+      if (userInfo.name && isDefaultName) {
+        updates.display_name = userInfo.name;
+      }
+
+      // Solo hacer update si hay cambios más allá de updated_at
+      if (updates.avatar_url || updates.display_name) {
         await sql.update(
           'profiles',
-          {
-            display_name: userInfo.name,
-            avatar_url: userInfo.picture,
-            updated_at: new Date().toISOString(),
-          },
+          updates,
           { auth_user_id: userId },
         );
       }
