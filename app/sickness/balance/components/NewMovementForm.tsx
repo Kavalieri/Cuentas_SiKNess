@@ -70,6 +70,7 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
   const [occurredAt, setOccurredAt] = useState<string>(() => formatDateTimeLocal(new Date()));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [justSaved, setJustSaved] = useState(false); // Nuevo: feedback tras guardar
 
   // Resetear formulario cuando se abre el modal
   useEffect(() => {
@@ -82,6 +83,7 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
       setRealPayerId(user?.id || undefined);
       setOccurredAt(formatDateTimeLocal(new Date()));
       setError(null);
+      setJustSaved(false); // Reset feedback al abrir
     }
   }, [open, canDirect, canCommon, user?.id]);
 
@@ -174,13 +176,24 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
       }
 
       toast.success('Movimiento creado correctamente');
+      
       // Refrescar la vista para ver el nuevo movimiento
       if (onSuccess) {
         try { await onSuccess(); } catch {}
       } else {
         router.refresh();
       }
-      onClose();
+      
+      // ✨ NUEVO: Mantener formulario abierto, limpiar solo amount y description
+      setAmount("");
+      setDescription("");
+      setOccurredAt(formatDateTimeLocal(new Date())); // Actualizar timestamp
+      setJustSaved(true); // Activar feedback visual
+      
+      // Ocultar feedback después de 3 segundos
+      setTimeout(() => setJustSaved(false), 3000);
+      
+      // NO cerrar el modal: onClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al crear movimiento';
       setError(message);
@@ -194,7 +207,14 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nuevo movimiento</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Nuevo movimiento
+            {justSaved && (
+              <span className="text-sm font-normal text-green-600 dark:text-green-400 animate-in fade-in">
+                ✓ ¿Otro movimiento?
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
