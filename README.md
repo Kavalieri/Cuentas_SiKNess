@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💰 CuentasSiK
+# 💰 Cuentas SiKNess
 
 **Sistema moderno de gestión de gastos compartidos**
 
