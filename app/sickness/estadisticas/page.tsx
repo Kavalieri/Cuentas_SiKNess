@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import { AlertCircle, BarChart3, TrendingDown, Wallet } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -58,7 +58,7 @@ export default function EstadisticasPage() {
     return `${months[selectedPeriodFull.month - 1]} ${selectedPeriodFull.year}`;
   }, [selectedPeriodFull]);
 
-    // Calcular métricas de presupuesto diario (solo si tenemos un periodo válido)
+  // Calcular métricas del período (presupuesto y gasto medio CORREGIDO)
   const dailyMetrics = useMemo(() => {
     if (!selectedPeriodFull || !periodSummary) return null;
 
@@ -67,22 +67,50 @@ export default function EstadisticasPage() {
 
     const now = new Date();
     const periodStart = new Date(year, month - 1, 1);
-    const periodEnd = new Date(year, month, 0);
-    const daysElapsed = Math.max(1, Math.ceil((now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)));
-    const daysRemaining = Math.max(0, Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    const periodEnd = new Date(year, month, 0); // Último día del mes
+    const totalDaysInPeriod = periodEnd.getDate(); // 28, 29, 30 o 31
 
-    const averageSpentPerDay = total_expenses / daysElapsed;
-    const dailyBudget = daysRemaining > 0 ? effective_balance / daysRemaining : 0;
     const isCurrentPeriod = now.getMonth() + 1 === month && now.getFullYear() === year;
+    const isPastPeriod = periodEnd < now;
     const isFuturePeriod = periodStart > now;
+
+    // Calcular días a considerar para gasto medio CORRECTAMENTE
+    let daysToConsider: number;
+    if (isPastPeriod) {
+      // Periodo terminado: usar TODOS los días del periodo (no días hasta hoy)
+      daysToConsider = totalDaysInPeriod;
+    } else if (isCurrentPeriod) {
+      // Periodo actual: desde día 1 hasta hoy (día del mes actual)
+      daysToConsider = Math.max(1, now.getDate());
+    } else {
+      // Periodo futuro: evitar división por cero
+      daysToConsider = 1;
+    }
+
+    const averageSpentPerDay = total_expenses / daysToConsider;
+
+    // Presupuesto diario solo tiene sentido en periodo actual con días restantes
+    const daysRemaining = isCurrentPeriod
+      ? Math.max(0, totalDaysInPeriod - now.getDate())
+      : 0;
+    const dailyBudget = daysRemaining > 0 ? effective_balance / daysRemaining : 0;
+
+    // Determinar si mostrar presupuesto diario (solo en fase preparation o pending_validation)
+    const shouldShowDailyBudget =
+      (phase === 'preparation' || phase === 'pending_validation') &&
+      isCurrentPeriod &&
+      daysRemaining > 0;
 
     return {
       averageSpentPerDay,
       dailyBudget,
-      daysElapsed,
+      daysToConsider, // Días realmente usados en el cálculo
+      totalDaysInPeriod,
       daysRemaining,
       isCurrentPeriod,
+      isPastPeriod,
       isFuturePeriod,
+      shouldShowDailyBudget,
       periodPhase: phase,
     };
   }, [selectedPeriodFull, periodSummary]);
@@ -154,71 +182,6 @@ export default function EstadisticasPage() {
         </p>
       </div>
 
-      {/* BLOQUE DESTACADO: Balance Actual y Presupuesto Diario */}
-      <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Wallet className="h-6 w-6 text-primary" />
-            Balance Actual - {periodName}
-          </CardTitle>
-          <CardDescription>Estado financiero y presupuesto disponible</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Balance Actual */}
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Balance disponible</p>
-              <div className="text-4xl font-bold">
-                {formatCurrency(globalBalance?.balance.closing || 0)}
-              </div>
-            </div>
-
-            {/* Presupuesto diario o estado del periodo */}
-            {dailyMetrics && dailyMetrics.isFuturePeriod ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Estado del período</p>
-                <div className="text-2xl font-medium text-blue-600">
-                  {dailyMetrics.periodPhase === 'preparation' && 'En preparación'}
-                  {dailyMetrics.periodPhase === 'pending_validation' && 'Pendiente de validar'}
-                  {dailyMetrics.periodPhase === 'open' && 'Abierto (futuro)'}
-                  {dailyMetrics.periodPhase === 'closed' && 'Cerrado (futuro)'}
-                </div>
-              </div>
-            ) : dailyMetrics && dailyMetrics.isCurrentPeriod && dailyMetrics.daysRemaining > 0 ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Puedes gastar por día</p>
-                <div className="text-3xl font-bold text-green-600">
-                  {formatCurrency(dailyMetrics.dailyBudget)}/día
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {dailyMetrics.daysRemaining} día{dailyMetrics.daysRemaining !== 1 ? 's' : ''} restante{dailyMetrics.daysRemaining !== 1 ? 's' : ''}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Presupuesto diario</p>
-                <div className="text-2xl font-medium text-muted-foreground">
-                  Período finalizado
-                </div>
-              </div>
-            )}
-
-            {/* Gasto medio por día */}
-            {dailyMetrics && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Gasto medio por día</p>
-                <div className="text-3xl font-bold text-orange-600">
-                  {formatCurrency(dailyMetrics.averageSpentPerDay)}/día
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {dailyMetrics.daysElapsed} día{dailyMetrics.daysElapsed !== 1 ? 's' : ''} transcurrido{dailyMetrics.daysElapsed !== 1 ? 's' : ''}
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* BLOQUE 1: Datos Globales */}
       <section className="space-y-4">
         <div>
@@ -282,14 +245,44 @@ export default function EstadisticasPage() {
             {dailyMetrics && periodSummary && (
               <Card className="bg-muted/30">
                 <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TrendingDown className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm font-medium">Gasto medio diario (período):</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-orange-500" />
+                        <span className="text-sm font-medium">Gasto medio diario (período):</span>
+                      </div>
+                      <span className="text-lg font-bold text-orange-600">
+                        {formatCurrency(dailyMetrics.averageSpentPerDay)}/día
+                      </span>
                     </div>
-                    <span className="text-lg font-bold text-orange-600">
-                      {formatCurrency(dailyMetrics.averageSpentPerDay)}/día
-                    </span>
+                    <p className="text-xs text-muted-foreground text-right">
+                      {dailyMetrics.daysToConsider} día{dailyMetrics.daysToConsider !== 1 ? 's' : ''} considerado{dailyMetrics.daysToConsider !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Presupuesto diario (solo en períodos activos en preparación/validación) */}
+            {dailyMetrics?.shouldShowDailyBudget && (
+              <Card className="border-2 border-green-600/30 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
+                <CardContent className="pt-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium">Presupuesto diario disponible:</span>
+                      </div>
+                      <span className="text-xl font-bold text-green-600">
+                        {formatCurrency(dailyMetrics.dailyBudget)}/día
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-right">
+                      {dailyMetrics.daysRemaining} día{dailyMetrics.daysRemaining !== 1 ? 's' : ''} restante{dailyMetrics.daysRemaining !== 1 ? 's' : ''}
+                    </p>
+                    <p className="text-xs text-green-700 dark:text-green-400 text-right italic">
+                      Basado en el balance efectivo del período
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -322,16 +315,18 @@ export default function EstadisticasPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
             <AlertCircle className="h-5 w-5" />
-            Información
+            Información sobre Estadísticas
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
           <p>✅ <strong>Datos en tiempo real:</strong> Los gráficos se actualizan automáticamente con tus transacciones.</p>
-          <p>📊 <strong>Gastos por Categoría:</strong> Muestra la distribución de gastos en cada categoría.</p>
-          <p>📈 <strong>Ingresos vs Gastos:</strong> Compara ingresos y gastos por mes.</p>
-          <p>💰 <strong>Presupuesto diario:</strong> Calcula cuánto puedes gastar cada día hasta fin de mes.</p>
-          <p>📉 <strong>Gasto medio:</strong> Promedio de gasto diario basado en el período actual.</p>
-          <p>🔄 <strong>Selecciona un período:</strong> Usa la barra superior para filtrar datos de un mes específico.</p>
+          <p>📊 <strong>Gastos por Categoría:</strong> Distribución de gastos clasificados por categoría.</p>
+          <p>📈 <strong>Ingresos vs Gastos:</strong> Comparativa mensual de ingresos y gastos.</p>
+          <p>� <strong>Gasto medio diario (global):</strong> Promedio histórico considerando todos tus datos.</p>
+          <p>📉 <strong>Gasto medio diario (período):</strong> Promedio de gasto basado en los días del período seleccionado (completos si es pasado, transcurridos si es actual).</p>
+          <p>💰 <strong>Presupuesto diario:</strong> Solo visible en períodos actuales durante preparación o validación. Calcula cuánto puedes gastar por día hasta fin de mes basándose en el balance efectivo.</p>
+          <p>🔄 <strong>Selección de período:</strong> Usa el selector superior para filtrar datos de un mes específico.</p>
+          <p>🔍 <strong>Consultas avanzadas:</strong> Exporta datos filtrados en CSV, JSON o Excel para análisis externos.</p>
         </CardContent>
       </Card>
     </div>
