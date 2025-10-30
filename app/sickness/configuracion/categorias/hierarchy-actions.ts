@@ -137,8 +137,8 @@ export async function getCategoryHierarchy(householdId: string): Promise<Result<
 
   try {
     // Verificar pertenencia al hogar
-    const memberCheck = await query<{ id: string }>(
-      `SELECT id FROM household_members WHERE household_id = $1 AND profile_id = $2`,
+    const memberCheck = await query<{ household_id: string; profile_id: string }>(
+      `SELECT household_id, profile_id FROM household_members WHERE household_id = $1 AND profile_id = $2`,
       [householdId, user.id]
     );
 

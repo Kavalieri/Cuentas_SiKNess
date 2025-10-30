@@ -81,8 +81,7 @@ export async function GET(req: NextRequest) {
         t.category_id,
         c.name as category_name,
         c.icon as category_icon,
-        sc.name as subcategory_name,
-        sc.icon as subcategory_icon,
+        c.parent_id as parent_category_id,
         pc.name as parent_category_name,
         p.email as profile_email,
         p.display_name as profile_display_name,
@@ -90,8 +89,7 @@ export async function GET(req: NextRequest) {
         rp.display_name as real_payer_display_name
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
-      LEFT JOIN subcategories sc ON sc.id = t.category_id
-      LEFT JOIN categories pc ON sc.parent_category_id = pc.id
+      LEFT JOIN categories pc ON c.parent_id = pc.id
       LEFT JOIN profiles p ON t.profile_id = p.id
       LEFT JOIN profiles rp ON t.real_payer_id = rp.id
       ${whereClause}
