@@ -63,7 +63,9 @@ export type TransactionFlowType = 'common' | 'direct';
 export type TransactionType = 'income' | 'expense' | 'income_direct' | 'expense_direct';
 
 export interface UnifiedTransactionData {
-  category_id?: string | null;
+  // Soporte para jerarquía de categorías (3 niveles)
+  category_id?: string | null; // DEPRECATED: solo para compatibilidad legacy
+  subcategory_id?: string | null; // NUEVO: subcategoría (3er nivel) - RECOMENDADO
   type: TransactionType;
   amount: number;
   currency: string;
@@ -93,8 +95,14 @@ const categoryIdSchema = z.preprocess(
   z.string().uuid().nullable(),
 );
 
+const subcategoryIdSchema = z.preprocess(
+  (val) => (val === '' || val === 'none' || val == null ? null : val),
+  z.string().uuid().nullable(),
+);
+
 const BaseTransactionSchema = z.object({
-  category_id: categoryIdSchema.optional(),
+  category_id: categoryIdSchema.optional(), // Legacy
+  subcategory_id: subcategoryIdSchema.optional(), // Nuevo: 3er nivel de jerarquía
   amount: z.coerce.number().positive('El monto debe ser mayor a 0'),
   currency: z.string().min(1).default('EUR'),
   description: z.string().optional(),
@@ -299,7 +307,8 @@ async function createCommonFlowTransaction(
     .insert({
       household_id: householdId,
       profile_id: profileId, // Quien registró la transacción
-      category_id: data.category_id,
+      // Priorizar subcategory_id si está disponible, sino usar category_id (legacy)
+      category_id: data.subcategory_id || data.category_id || null,
       type: data.type,
       amount: data.amount,
       currency: data.currency,
@@ -402,7 +411,8 @@ async function createDirectFlowTransaction(
   const insertData = {
     household_id: householdId,
     profile_id: profileId, // Quien registró
-    category_id: data.category_id,
+    // Priorizar subcategory_id si está disponible, sino usar category_id (legacy)
+    category_id: data.subcategory_id || data.category_id || null,
     type: 'expense_direct',
     amount: data.amount,
     currency: data.currency,

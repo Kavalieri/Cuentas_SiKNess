@@ -444,12 +444,7 @@ export default function BalancePage() {
         open={showNewMovement}
         onClose={() => setShowNewMovement(false)}
         members={members}
-        categories={categories.map((c) => ({
-          id: c.id,
-          name: c.name,
-          icon: c.icon,
-          type: c.type ?? ''
-        }))}
+        householdId={householdId || ''} // Pasar householdId para cargar jerarquía
         phase={phase}
         user={user}
         isOwner={isOwner}

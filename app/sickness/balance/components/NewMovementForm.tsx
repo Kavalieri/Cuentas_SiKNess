@@ -9,6 +9,12 @@ import { createUnifiedTransaction } from "@/lib/transactions/unified";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  getCategoryHierarchy,
+  type CategoryHierarchy,
+  type CategoryWithSubcategories,
+  type Subcategory,
+} from "@/app/sickness/configuracion/categorias/hierarchy-actions";
 
 
 // Tipos para props
@@ -18,18 +24,12 @@ interface Member {
   display_name: string;
   role: string;
 }
-interface Category {
-  id: string;
-  name: string;
-  type: string;
-  icon?: string;
-}
 
 interface NewMovementFormProps {
   open: boolean;
   onClose: () => void;
   members: Member[];
-  categories: Category[];
+  // Ya no necesitamos categorías flat
   phase: MonthlyPeriodPhase;
   user: { id: string; email: string; displayName: string; isSystemAdmin: boolean } | null;
   isOwner: boolean;
@@ -37,6 +37,8 @@ interface NewMovementFormProps {
   onSuccess?: () => void | Promise<void>;
   // Nuevo: pasar periodo explícito para evitar desajustes
   periodId?: string;
+  // Nuevo: householdId para cargar jerarquía
+  householdId: string;
 }
 
 function formatDateTimeLocal(date: Date) {
@@ -49,13 +51,18 @@ function formatDateTimeLocal(date: Date) {
   return `${y}-${m}-${d}T${hh}:${mm}`;
 }
 
-export function NewMovementForm({ open, onClose, members, categories, phase, user, isOwner, onSuccess, periodId }: NewMovementFormProps) {
+export function NewMovementForm({ open, onClose, members, phase, user, isOwner, onSuccess, periodId, householdId }: NewMovementFormProps) {
   const router = useRouter();
 
     // Fases: preparing (bloqueado), validation (solo gastos directos), active (todos)
   const canDirect = phase === "validation" || phase === "active"; // preparing: bloqueado
   const canCommon = phase === "active";
 
+  // ✨ NUEVO: Estado para jerarquía de categorías
+  const [hierarchy, setHierarchy] = useState<CategoryHierarchy[]>([]);
+  const [selectedParentId, setSelectedParentId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
 
   // Estados del formulario con valores por defecto inteligentes
   const [type, setType] = useState(() => {
@@ -64,7 +71,7 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
   });
   // Guardamos la cantidad como string para no forzar 0 y permitir borrar/escribir sin fricción
   const [amount, setAmount] = useState<string>("");
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
+  // Ya no usamos categoryId, ahora es subcategoryId
   const [description, setDescription] = useState("");
   const [realPayerId, setRealPayerId] = useState<string | undefined>(() => user?.id || undefined);
   const [occurredAt, setOccurredAt] = useState<string>(() => formatDateTimeLocal(new Date()));
@@ -72,13 +79,30 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false); // Nuevo: feedback tras guardar
 
+  // ✨ NUEVO: Cargar jerarquía de categorías al abrir el modal
+  useEffect(() => {
+    if (open && householdId) {
+      const loadHierarchy = async () => {
+        const result = await getCategoryHierarchy(householdId);
+        if (result.ok && result.data) {
+          setHierarchy(result.data);
+        } else {
+          toast.error('No se pudo cargar la jerarquía de categorías');
+        }
+      };
+      loadHierarchy();
+    }
+  }, [open, householdId]);
+
   // Resetear formulario cuando se abre el modal
   useEffect(() => {
     if (open) {
       const defaultType = (canDirect && !canCommon) ? "direct_expense" : "expense";
       setType(defaultType);
       setAmount("");
-      setCategoryId(undefined);
+      setSelectedParentId('');
+      setSelectedCategoryId('');
+      setSelectedSubcategoryId('');
       setDescription("");
       setRealPayerId(user?.id || undefined);
       setOccurredAt(formatDateTimeLocal(new Date()));
@@ -87,12 +111,28 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
     }
   }, [open, canDirect, canCommon, user?.id]);
 
-  // Filtrar categorías según tipo
-  const filteredCategories = useMemo(() => {
-    if (type === 'income') return categories.filter(c => c.type === 'income');
-    if (type === 'expense' || type === 'direct_expense') return categories.filter(c => c.type === 'expense');
-    return categories;
-  }, [categories, type]);
+  // ✨ NUEVO: Lógica de cascada para categorías
+  const filteredParents = useMemo(() => {
+    if (type === 'income') return hierarchy.filter(p => p.type === 'income');
+    if (type === 'expense' || type === 'direct_expense') return hierarchy.filter(p => p.type === 'expense');
+    return hierarchy;
+  }, [hierarchy, type]);
+
+  const selectedParent = useMemo(() => {
+    return hierarchy.find(p => p.id === selectedParentId);
+  }, [hierarchy, selectedParentId]);
+
+  const availableCategories = useMemo(() => {
+    return selectedParent?.categories || [];
+  }, [selectedParent]);
+
+  const selectedCategory = useMemo(() => {
+    return availableCategories.find(c => c.id === selectedCategoryId);
+  }, [availableCategories, selectedCategoryId]);
+
+  const availableSubcategories = useMemo(() => {
+    return selectedCategory?.subcategories || [];
+  }, [selectedCategory]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,11 +184,14 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
         setLoading(false);
         return;
       }
-      if ((categoryId === undefined || categoryId === null) && flow_type === 'common') {
-        setError('Selecciona una categoría');
+      
+      // ✨ NUEVO: Validación de subcategoría en flujo común
+      if (flow_type === 'common' && !selectedSubcategoryId) {
+        setError('Selecciona una subcategoría completa (grupo → categoría → subcategoría)');
         setLoading(false);
         return;
       }
+      
       if (flow_type === 'direct' && (realPayerId === undefined || realPayerId === null)) {
         setError('Selecciona quién pagó');
         setLoading(false);
@@ -156,7 +199,8 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
       }
 
       const result = await createUnifiedTransaction({
-        category_id: categoryId || null,
+        // ✨ NUEVO: Enviar subcategory_id en lugar de category_id
+        subcategory_id: selectedSubcategoryId || null,
         type: payloadType,
         amount: normalizedAmount,
         currency: 'EUR',
@@ -235,17 +279,73 @@ export function NewMovementForm({ open, onClose, members, categories, phase, use
             </Select>
           </div>
           <div>
-            <Label>Categoría</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
+            <Label>Grupo de categoría</Label>
+            <Select 
+              value={selectedParentId} 
+              onValueChange={(value) => {
+                setSelectedParentId(value);
+                setSelectedCategoryId(''); // Reset dependientes
+                setSelectedSubcategoryId('');
+              }}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona categoría" />
+                <SelectValue placeholder="Selecciona grupo" />
               </SelectTrigger>
               <SelectContent>
-                {filteredCategories?.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
+                {filteredParents.map((parent) => (
+                  <SelectItem key={parent.id} value={parent.id}>
                     <span className="flex items-center gap-2">
-                      {cat.icon && <span>{cat.icon}</span>}
-                      <span>{cat.name}</span>
+                      <span>{parent.icon}</span>
+                      <span>{parent.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Categoría</Label>
+            <Select 
+              value={selectedCategoryId} 
+              onValueChange={(value) => {
+                setSelectedCategoryId(value);
+                setSelectedSubcategoryId(''); // Reset dependiente
+              }}
+              disabled={!selectedParentId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={!selectedParentId ? 'Primero selecciona un grupo' : 'Selecciona categoría'} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCategories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    <span className="flex items-center gap-2">
+                      {category.icon && <span>{category.icon}</span>}
+                      <span>{category.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Subcategoría</Label>
+            <Select 
+              value={selectedSubcategoryId} 
+              onValueChange={setSelectedSubcategoryId}
+              disabled={!selectedCategoryId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={!selectedCategoryId ? 'Primero selecciona categoría' : 'Selecciona subcategoría'} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSubcategories.map((subcategory) => (
+                  <SelectItem key={subcategory.id} value={subcategory.id}>
+                    <span className="flex items-center gap-2">
+                      {subcategory.icon && <span>{subcategory.icon}</span>}
+                      <span>{subcategory.name}</span>
                     </span>
                   </SelectItem>
                 ))}

@@ -1,203 +1,426 @@
 'use client';
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import type { EmojiClickData } from 'emoji-picker-react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { createCategory, deleteCategory, updateCategory } from './actions';
+import { CategoryTreeView } from './CategoryTreeView';
 import {
-  createCategory,
-  deleteCategory,
-  getHouseholdCategories,
-  updateCategory,
-  type Category,
-} from './actions';
+    createParentCategory,
+    createSubcategory,
+    deleteParentCategory,
+    deleteSubcategory,
+    getCategoryHierarchy,
+    updateParentCategory,
+    updateSubcategory,
+    type CategoryHierarchy,
+    type CategoryWithSubcategories,
+    type Subcategory,
+} from './hierarchy-actions';
 
 // Import dinámico del emoji picker (solo client-side)
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+type DialogMode = 'parent' | 'category' | 'subcategory';
+type ActionType = 'create' | 'edit';
+
+type ParentFormData = {
+  id?: string;
+  name: string;
+  icon: string;
+  type: 'income' | 'expense';
+  displayOrder: number;
+};
 
 type CategoryFormData = {
   id?: string;
   name: string;
   icon: string;
-  type: 'income' | 'expense';
+  parentId: string;
+  displayOrder: number;
 };
+
+type SubcategoryFormData = {
+  id?: string;
+  name: string;
+  icon: string;
+  categoryId: string;
+  displayOrder: number;
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 export default function CategoriasPage() {
   const { householdId, isOwner } = useSiKness();
 
-  // Estados
-  const [categories, setCategories] = useState<Category[]>([]);
+  // Estados principales
+  const [hierarchy, setHierarchy] = useState<CategoryHierarchy[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
-  // Dialogs
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  // Dialog states
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<DialogMode>('parent');
+  const [actionType, setActionType] = useState<ActionType>('create');
 
-  // Formulario
-  const [formData, setFormData] = useState<CategoryFormData>({
+  // Form data states
+  const [parentForm, setParentForm] = useState<ParentFormData>({
     name: '',
     icon: '🏠',
     type: 'expense',
+    displayOrder: 0,
   });
 
-  // Categoría a eliminar
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryForm, setCategoryForm] = useState<CategoryFormData>({
+    name: '',
+    icon: '📁',
+    parentId: '',
+    displayOrder: 0,
+  });
 
-  // Cargar categorías
-  useEffect(() => {
+  const [subcategoryForm, setSubcategoryForm] = useState<SubcategoryFormData>({
+    name: '',
+    icon: '📄',
+    categoryId: '',
+    displayOrder: 0,
+  });
+
+  // ============================================================================
+  // LOAD HIERARCHY
+  // ============================================================================
+
+  const loadHierarchy = async () => {
     if (!householdId) return;
 
-    const loadCategories = async () => {
-      setLoading(true);
-      const result = await getHouseholdCategories(householdId);
+    setLoading(true);
+    const result = await getCategoryHierarchy(householdId);
 
-      if (result.ok && result.data) {
-        setCategories(result.data);
-      } else {
-        const errorMessage = !result.ok ? result.message : 'Error al cargar las categorías';
-        toast.error(errorMessage);
-      }
-      setLoading(false);
-    };
+    if (result.ok && result.data) {
+      setHierarchy(result.data);
+    } else if (!result.ok) {
+      toast.error(result.message || 'Error al cargar la jerarquía');
+    }
+    setLoading(false);
+  };
 
-    loadCategories();
+  useEffect(() => {
+    loadHierarchy();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [householdId]);
 
-  // Handlers
-  const handleCreateCategory = () => {
-    setFormData({ name: '', icon: '🏠', type: 'expense' });
-    setCreateDialogOpen(true);
+  useEffect(() => {
+    loadHierarchy();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [householdId]);
+
+  // ============================================================================
+  // PARENT CATEGORY HANDLERS
+  // ============================================================================
+
+  const handleCreateParent = () => {
+    setParentForm({ name: '', icon: '🏠', type: 'expense', displayOrder: 0 });
+    setDialogMode('parent');
+    setActionType('create');
+    setDialogOpen(true);
   };
 
-  const handleEditCategory = (category: Category) => {
-    setFormData({
+  const handleEditParent = (parent: CategoryHierarchy) => {
+    setParentForm({
+      id: parent.id,
+      name: parent.name,
+      icon: parent.icon,
+      type: parent.type,
+      displayOrder: parent.displayOrder,
+    });
+    setDialogMode('parent');
+    setActionType('edit');
+    setDialogOpen(true);
+  };
+
+  const handleDeleteParent = async (parent: CategoryHierarchy) => {
+    if (!householdId) return;
+
+    const confirmed = window.confirm(
+      `¿Eliminar el grupo "${parent.name}"?\n\nEsto también eliminará todas sus categorías y subcategorías.`,
+    );
+
+    if (!confirmed) return;
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append('parentId', parent.id);
+      formData.append('householdId', householdId);
+
+      const result = await deleteParentCategory(formData);
+
+      if (result.ok) {
+        toast.success(`Grupo "${parent.name}" eliminado`);
+        await loadHierarchy();
+      } else {
+        toast.error(result.message);
+      }
+    });
+  };
+
+  // ============================================================================
+  // CATEGORY HANDLERS
+  // ============================================================================
+
+  const handleCreateCategory = (parentId: string) => {
+    setCategoryForm({ name: '', icon: '📁', parentId, displayOrder: 0 });
+    setDialogMode('category');
+    setActionType('create');
+    setDialogOpen(true);
+  };
+
+  const handleEditCategory = (category: CategoryWithSubcategories, parentId: string) => {
+    setCategoryForm({
       id: category.id,
       name: category.name,
-      icon: category.icon,
-      type: category.type,
+      icon: category.icon || '📁',
+      parentId,
+      displayOrder: category.display_order || 0,
     });
-    setEditDialogOpen(true);
+    setDialogMode('category');
+    setActionType('edit');
+    setDialogOpen(true);
   };
 
-  const handleDeleteClick = (category: Category) => {
-    setCategoryToDelete(category);
-    setDeleteDialogOpen(true);
+  const handleDeleteCategory = async (category: CategoryWithSubcategories, parentId: string) => {
+    if (!householdId) return;
+
+    const confirmed = window.confirm(
+      `¿Eliminar la categoría "${category.name}"?\n\nEsto también eliminará todas sus subcategorías.`,
+    );
+
+    if (!confirmed) return;
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append('categoryId', category.id);
+
+      const result = await deleteCategory(formData);
+
+      if (result.ok) {
+        toast.success(`Categoría "${category.name}" eliminada`);
+        await loadHierarchy();
+      } else {
+        toast.error(result.message);
+      }
+    });
   };
 
-  const handleSubmitCreate = async (e: React.FormEvent) => {
+  // ============================================================================
+  // SUBCATEGORY HANDLERS
+  // ============================================================================
+
+  const handleCreateSubcategory = (categoryId: string) => {
+    setSubcategoryForm({ name: '', icon: '', categoryId, displayOrder: 0 });
+    setDialogMode('subcategory');
+    setActionType('create');
+    setDialogOpen(true);
+  };
+
+  const handleEditSubcategory = (subcategory: Subcategory, categoryId: string) => {
+    setSubcategoryForm({
+      id: subcategory.id,
+      name: subcategory.name,
+      icon: subcategory.icon || '',
+      categoryId,
+      displayOrder: subcategory.displayOrder || 0,
+    });
+    setDialogMode('subcategory');
+    setActionType('edit');
+    setDialogOpen(true);
+  };
+
+  const handleDeleteSubcategory = async (subcategory: Subcategory, categoryId: string) => {
+    if (!householdId) return;
+
+    const confirmed = window.confirm(`¿Eliminar la subcategoría "${subcategory.name}"?`);
+
+    if (!confirmed) return;
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append('subcategoryId', subcategory.id);
+
+      const result = await deleteSubcategory(formData);
+
+      if (result.ok) {
+        toast.success(`Subcategoría "${subcategory.name}" eliminada`);
+        await loadHierarchy();
+      } else {
+        toast.error(result.message);
+      }
+    });
+  };
+
+  // ============================================================================
+  // FORM SUBMIT HANDLERS
+  // ============================================================================
+
+  const handleSubmitParent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!householdId) return;
 
     startTransition(async () => {
-      const formDataObj = new FormData();
-      formDataObj.append('householdId', householdId);
-      formDataObj.append('name', formData.name);
-      formDataObj.append('icon', formData.icon);
-      formDataObj.append('type', formData.type);
+      const formData = new FormData();
+      formData.append('householdId', householdId);
+      formData.append('name', parentForm.name);
+      formData.append('icon', parentForm.icon);
+      formData.append('type', parentForm.type);
+      formData.append('displayOrder', parentForm.displayOrder.toString());
 
-      const result = await createCategory(formDataObj);
+      let result;
+
+      if (actionType === 'create') {
+        result = await createParentCategory(formData);
+      } else {
+        formData.append('parentId', parentForm.id!);
+        result = await updateParentCategory(formData);
+      }
 
       if (result.ok) {
-        toast.success(`Se ha creado la categoría "${formData.name}"`);
-        setCreateDialogOpen(false);
-        // Recargar categorías
-        const refreshResult = await getHouseholdCategories(householdId);
-        if (refreshResult.ok && refreshResult.data) {
-          setCategories(refreshResult.data);
-        }
+        toast.success(
+          actionType === 'create'
+            ? `Grupo "${parentForm.name}" creado`
+            : `Grupo "${parentForm.name}" actualizado`,
+        );
+        setDialogOpen(false);
+        await loadHierarchy();
       } else {
-        const errorMessage = !result.ok ? result.message : 'Error al crear la categoría';
-        toast.error(errorMessage);
+        toast.error(result.message);
       }
     });
   };
 
-  const handleSubmitUpdate = async (e: React.FormEvent) => {
+  const handleSubmitCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!householdId || !formData.id) return;
+    if (!householdId) return;
 
     startTransition(async () => {
-      const formDataObj = new FormData();
-      formDataObj.append('categoryId', formData.id!);
-      formDataObj.append('name', formData.name);
-      formDataObj.append('icon', formData.icon);
+      const formData = new FormData();
+      formData.append('name', categoryForm.name);
+      formData.append('icon', categoryForm.icon);
+      formData.append('parentId', categoryForm.parentId);
+      formData.append('displayOrder', categoryForm.displayOrder.toString());
 
-      const result = await updateCategory(formDataObj);
+      let result;
+
+      if (actionType === 'create') {
+        formData.append('householdId', householdId);
+        // Obtener el tipo del parent
+        const parent = hierarchy.find((p) => p.id === categoryForm.parentId);
+        if (parent) {
+          formData.append('type', parent.type);
+        }
+        result = await createCategory(formData);
+      } else {
+        formData.append('categoryId', categoryForm.id!);
+        result = await updateCategory(formData);
+      }
 
       if (result.ok) {
-        toast.success(`Se ha actualizado la categoría "${formData.name}"`);
-        setEditDialogOpen(false);
-        // Recargar categorías
-        const refreshResult = await getHouseholdCategories(householdId);
-        if (refreshResult.ok && refreshResult.data) {
-          setCategories(refreshResult.data);
-        }
+        toast.success(
+          actionType === 'create'
+            ? `Categoría "${categoryForm.name}" creada`
+            : `Categoría "${categoryForm.name}" actualizada`,
+        );
+        setDialogOpen(false);
+        await loadHierarchy();
       } else {
-        const errorMessage = !result.ok ? result.message : 'Error al actualizar la categoría';
-        toast.error(errorMessage);
+        toast.error(result.message);
       }
     });
   };
 
-  const handleConfirmDelete = async () => {
-    if (!householdId || !categoryToDelete) return;
+  const handleSubmitSubcategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!householdId) return;
 
     startTransition(async () => {
-      const formDataObj = new FormData();
-      formDataObj.append('categoryId', categoryToDelete.id);
+      const formData = new FormData();
+      formData.append('categoryId', subcategoryForm.categoryId);
+      formData.append('name', subcategoryForm.name);
+      if (subcategoryForm.icon) {
+        formData.append('icon', subcategoryForm.icon);
+      }
+      formData.append('displayOrder', subcategoryForm.displayOrder.toString());
 
-      const result = await deleteCategory(formDataObj);
+      let result;
+
+      if (actionType === 'create') {
+        result = await createSubcategory(formData);
+      } else {
+        formData.append('subcategoryId', subcategoryForm.id!);
+        result = await updateSubcategory(formData);
+      }
 
       if (result.ok) {
-        toast.success(`Se ha eliminado la categoría "${categoryToDelete.name}"`);
-        setDeleteDialogOpen(false);
-        setCategoryToDelete(null);
-        // Recargar categorías
-        const refreshResult = await getHouseholdCategories(householdId);
-        if (refreshResult.ok && refreshResult.data) {
-          setCategories(refreshResult.data);
-        }
+        toast.success(
+          actionType === 'create'
+            ? `Subcategoría "${subcategoryForm.name}" creada`
+            : `Subcategoría "${subcategoryForm.name}" actualizada`,
+        );
+        setDialogOpen(false);
+        await loadHierarchy();
       } else {
-        const errorMessage = !result.ok ? result.message : 'Error al eliminar la categoría';
-        toast.error(errorMessage);
+        toast.error(result.message);
       }
     });
   };
 
-  // Agrupar categorías por tipo
-  const expenseCategories = categories.filter((c) => c.type === 'expense');
-  const incomeCategories = categories.filter((c) => c.type === 'income');
+  // ============================================================================
+  // EMOJI PICKER HANDLER
+  // ============================================================================
+
+  const handleEmojiSelect = (emojiData: EmojiClickData) => {
+    if (dialogMode === 'parent') {
+      setParentForm({ ...parentForm, icon: emojiData.emoji });
+    } else if (dialogMode === 'category') {
+      setCategoryForm({ ...categoryForm, icon: emojiData.emoji });
+    } else {
+      setSubcategoryForm({ ...subcategoryForm, icon: emojiData.emoji });
+    }
+  };
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Cargando categorías...</p>
+        <p className="text-muted-foreground">Cargando jerarquía...</p>
       </div>
     );
   }
@@ -209,258 +432,273 @@ export default function CategoriasPage() {
         <div>
           <h1 className="text-2xl font-bold">Categorías</h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona las categorías de tus ingresos y gastos
+            Gestiona la jerarquía de categorías: Grupos → Categorías → Subcategorías
           </p>
         </div>
         {isOwner && (
-          <Button onClick={handleCreateCategory} size="sm">
+          <Button onClick={handleCreateParent} size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Nueva
+            Nuevo Grupo
           </Button>
         )}
       </div>
 
-      {/* Gastos */}
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold text-red-600">Gastos</h2>
-        <div className="grid gap-2">
-          {expenseCategories.length === 0 ? (
-            <p className="text-sm text-muted-foreground p-4 border rounded-lg">
-              No hay categorías de gastos
-            </p>
-          ) : (
-            expenseCategories.map((category) => (
-              <div
-                key={category.id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{category.icon}</span>
-                  <span className="font-medium">{category.name}</span>
-                </div>
-                {isOwner && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditCategory(category)}
-                      disabled={isPending}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(category)}
-                      disabled={isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      {/* Tree View */}
+      <CategoryTreeView
+        hierarchy={hierarchy}
+        isOwner={isOwner}
+        onEditParent={handleEditParent}
+        onDeleteParent={handleDeleteParent}
+        onCreateCategory={handleCreateCategory}
+        onEditCategory={handleEditCategory}
+        onDeleteCategory={handleDeleteCategory}
+        onCreateSubcategory={handleCreateSubcategory}
+        onEditSubcategory={handleEditSubcategory}
+        onDeleteSubcategory={handleDeleteSubcategory}
+      />
 
-      {/* Ingresos */}
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold text-green-600">Ingresos</h2>
-        <div className="grid gap-2">
-          {incomeCategories.length === 0 ? (
-            <p className="text-sm text-muted-foreground p-4 border rounded-lg">
-              No hay categorías de ingresos
-            </p>
-          ) : (
-            incomeCategories.map((category) => (
-              <div
-                key={category.id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{category.icon}</span>
-                  <span className="font-medium">{category.name}</span>
-                </div>
-                {isOwner && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditCategory(category)}
-                      disabled={isPending}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(category)}
-                      disabled={isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      {/* Unified Dialog for Create/Edit */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {actionType === 'create' ? 'Crear' : 'Editar'}{' '}
+              {dialogMode === 'parent'
+                ? 'Grupo'
+                : dialogMode === 'category'
+                  ? 'Categoría'
+                  : 'Subcategoría'}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogMode === 'parent' &&
+                'Los grupos organizan tus categorías por tipo (Gasto/Ingreso)'}
+              {dialogMode === 'category' && 'Las categorías agrupan subcategorías relacionadas'}
+              {dialogMode === 'subcategory' &&
+                'Las subcategorías son el nivel más específico de clasificación'}
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Dialog: Crear Categoría */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <form onSubmit={handleSubmitCreate}>
-            <DialogHeader>
-              <DialogTitle>Nueva Categoría</DialogTitle>
-              <DialogDescription>Crea una nueva categoría para tu hogar</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="create-type">Tipo</Label>
-                <select
-                  id="create-type"
-                  value={formData.type}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      type: e.target.value as 'income' | 'expense',
-                      icon: e.target.value === 'expense' ? '🏠' : '💰',
-                    }))
-                  }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="expense">Gasto</option>
-                  <option value="income">Ingreso</option>
-                </select>
+          {/* Parent Form */}
+          {dialogMode === 'parent' && (
+            <form onSubmit={handleSubmitParent} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="parent-name">Nombre</Label>
+                <Input
+                  id="parent-name"
+                  value={parentForm.name}
+                  onChange={(e) => setParentForm({ ...parentForm, name: e.target.value })}
+                  placeholder="Ej: Vivienda y Servicios"
+                  required
+                />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="create-icon">Icono</Label>
+
+              <div className="space-y-2">
+                <Label>Icono</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      id="create-icon"
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                      type="button"
-                    >
-                      <span className="text-2xl mr-2">{formData.icon}</span>
-                      <span className="text-muted-foreground">Seleccionar emoji</span>
+                    <Button variant="outline" className="w-full justify-start">
+                      <span className="text-2xl mr-2">{parentForm.icon || '🏠'}</span>
+                      <span className="text-muted-foreground">Click para cambiar</span>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <EmojiPicker
-                      onEmojiClick={(emojiData: EmojiClickData) => {
-                        setFormData((prev) => ({ ...prev, icon: emojiData.emoji }));
-                      }}
+                      onEmojiClick={handleEmojiSelect}
                       width="100%"
-                      height={350}
+                      height="350px"
+                      searchPlaceholder="Buscar emoji..."
+                      previewConfig={{ showPreview: false }}
                     />
                   </PopoverContent>
                 </Popover>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="create-name">Nombre</Label>
-                <Input
-                  id="create-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Ej: Supermercado"
-                  required
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={isPending || !formData.name.trim()}>
-                {isPending ? 'Creando...' : 'Crear'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
-      {/* Dialog: Editar Categoría */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <form onSubmit={handleSubmitUpdate}>
-            <DialogHeader>
-              <DialogTitle>Editar Categoría</DialogTitle>
-              <DialogDescription>Modifica el nombre o icono de la categoría</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-icon">Icono</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="edit-icon"
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                      type="button"
-                    >
-                      <span className="text-2xl mr-2">{formData.icon}</span>
-                      <span className="text-muted-foreground">Seleccionar emoji</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <EmojiPicker
-                      onEmojiClick={(emojiData: EmojiClickData) => {
-                        setFormData((prev) => ({ ...prev, icon: emojiData.emoji }));
-                      }}
-                      width="100%"
-                      height={350}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-name">Nombre</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Ej: Supermercado"
-                  required
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={isPending || !formData.name.trim()}>
-                {isPending ? 'Guardando...' : 'Guardar cambios'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog: Confirmar Eliminación */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar categoría?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. La categoría &quot;{categoryToDelete?.name}&quot;
-              será eliminada permanentemente.
-              {categoryToDelete && (
-                <span className="block mt-2 text-sm text-muted-foreground">
-                  Solo puedes eliminar categorías que no tengan transacciones asociadas.
-                </span>
+              {actionType === 'create' && (
+                <div className="space-y-2">
+                  <Label htmlFor="parent-type">Tipo</Label>
+                  <Select
+                    value={parentForm.type}
+                    onValueChange={(value: 'income' | 'expense') =>
+                      setParentForm({ ...parentForm, type: value })
+                    }
+                  >
+                    <SelectTrigger id="parent-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="expense">💸 Gasto</SelectItem>
+                      <SelectItem value="income">💰 Ingreso</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isPending ? 'Eliminando...' : 'Eliminar'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
+              <div className="space-y-2">
+                <Label htmlFor="parent-order">Orden (opcional)</Label>
+                <Input
+                  id="parent-order"
+                  type="number"
+                  value={parentForm.displayOrder}
+                  onChange={(e) =>
+                    setParentForm({ ...parentForm, displayOrder: parseInt(e.target.value) || 0 })
+                  }
+                  placeholder="0"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {actionType === 'create' ? 'Crear' : 'Actualizar'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+
+          {/* Category Form */}
+          {dialogMode === 'category' && (
+            <form onSubmit={handleSubmitCategory} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="category-name">Nombre</Label>
+                <Input
+                  id="category-name"
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  placeholder="Ej: Internet y Telefonía"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Icono</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start">
+                      <span className="text-2xl mr-2">{categoryForm.icon || '📁'}</span>
+                      <span className="text-muted-foreground">Click para cambiar</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <EmojiPicker
+                      onEmojiClick={handleEmojiSelect}
+                      width="100%"
+                      height="350px"
+                      searchPlaceholder="Buscar emoji..."
+                      previewConfig={{ showPreview: false }}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category-order">Orden (opcional)</Label>
+                <Input
+                  id="category-order"
+                  type="number"
+                  value={categoryForm.displayOrder}
+                  onChange={(e) =>
+                    setCategoryForm({
+                      ...categoryForm,
+                      displayOrder: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="0"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {actionType === 'create' ? 'Crear' : 'Actualizar'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+
+          {/* Subcategory Form */}
+          {dialogMode === 'subcategory' && (
+            <form onSubmit={handleSubmitSubcategory} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="subcategory-name">Nombre</Label>
+                <Input
+                  id="subcategory-name"
+                  value={subcategoryForm.name}
+                  onChange={(e) =>
+                    setSubcategoryForm({ ...subcategoryForm, name: e.target.value })
+                  }
+                  placeholder="Ej: Fibra óptica"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Icono (opcional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start">
+                      <span className="text-2xl mr-2">{subcategoryForm.icon || '📄'}</span>
+                      <span className="text-muted-foreground">Click para cambiar</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <EmojiPicker
+                      onEmojiClick={handleEmojiSelect}
+                      width="100%"
+                      height="350px"
+                      searchPlaceholder="Buscar emoji..."
+                      previewConfig={{ showPreview: false }}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subcategory-order">Orden (opcional)</Label>
+                <Input
+                  id="subcategory-order"
+                  type="number"
+                  value={subcategoryForm.displayOrder}
+                  onChange={(e) =>
+                    setSubcategoryForm({
+                      ...subcategoryForm,
+                      displayOrder: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="0"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {actionType === 'create' ? 'Crear' : 'Actualizar'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

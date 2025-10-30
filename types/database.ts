@@ -15,6 +15,10 @@ export type Database = {
           id: string;
           name: string;
           type: string;
+          parent_id: string | null;
+          display_order: number;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
           household_id: string;
@@ -22,6 +26,10 @@ export type Database = {
           id?: string;
           name: string;
           type?: string;
+          parent_id?: string | null;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
           household_id?: string;
@@ -29,6 +37,9 @@ export type Database = {
           id?: string;
           name?: string;
           type?: string;
+          parent_id?: string | null;
+          display_order?: number;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -36,6 +47,90 @@ export type Database = {
             columns: ['household_id'];
             isOneToOne: false;
             referencedRelation: 'households';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'categories_parent_id_fkey';
+            columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'category_parents';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      category_parents: {
+        Row: {
+          id: string;
+          household_id: string;
+          name: string;
+          icon: string;
+          type: 'income' | 'expense';
+          display_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id: string;
+          name: string;
+          icon: string;
+          type: 'income' | 'expense';
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          household_id?: string;
+          name?: string;
+          icon?: string;
+          type?: 'income' | 'expense';
+          display_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'category_parents_household_id_fkey';
+            columns: ['household_id'];
+            isOneToOne: false;
+            referencedRelation: 'households';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      subcategories: {
+        Row: {
+          id: string;
+          category_id: string;
+          name: string;
+          icon: string | null;
+          display_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          category_id: string;
+          name: string;
+          icon?: string | null;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          category_id?: string;
+          name?: string;
+          icon?: string | null;
+          display_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'subcategories_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
             referencedColumns: ['id'];
           },
         ];
@@ -1161,6 +1256,7 @@ export type Database = {
           split_data: Json | null;
           split_type: string;
           status: string;
+          subcategory_id: string | null;
           transaction_pair_id: string | null;
           type: string;
           updated_at: string;
@@ -1192,6 +1288,7 @@ export type Database = {
           split_data?: Json | null;
           split_type?: string;
           status?: string;
+          subcategory_id?: string | null;
           transaction_pair_id?: string | null;
           type: string;
           updated_at?: string;
@@ -1290,6 +1387,13 @@ export type Database = {
             columns: ['updated_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transactions_subcategory_id_fkey';
+            columns: ['subcategory_id'];
+            isOneToOne: false;
+            referencedRelation: 'subcategories';
             referencedColumns: ['id'];
           },
         ];
