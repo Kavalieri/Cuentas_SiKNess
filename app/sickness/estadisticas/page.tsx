@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions';
 import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
 import { AdvancedQueries } from './AdvancedQueries';
-import { GastosPorCategoria, IngresosVsGastos } from './components';
+import { CategoryTreemap, GastosPorCategoria, IngresosVsGastos, ParetoChart, TrendLineChart } from './components';
 
 interface GlobalBalance {
   balance: {
@@ -307,7 +307,52 @@ export default function EstadisticasPage() {
         </div>
       </section>
 
-      {/* BLOQUE 3: Análisis y Consultas Avanzadas */}
+      {/* BLOQUE 3: Visualizaciones Avanzadas de Jerarquía */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
+            🎯 Visualizaciones Avanzadas
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Análisis jerárquico de categorías con insights profundos
+          </p>
+        </div>
+
+        {householdId ? (
+          <>
+            {/* Fila 1: Treemap y Pareto */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <CategoryTreemap
+                householdId={householdId}
+                type="expense"
+              />
+              <ParetoChart
+                householdId={householdId}
+                type="expense"
+              />
+            </div>
+
+            {/* Fila 2: Gráfico de Tendencias (full width) */}
+            <div className="grid gap-6">
+              <TrendLineChart
+                householdId={householdId}
+                type="expense"
+                defaultMonths={6}
+              />
+            </div>
+          </>
+        ) : (
+          <Card>
+            <CardContent className="py-8">
+              <p className="text-center text-muted-foreground">
+                Selecciona un hogar para ver las visualizaciones avanzadas
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      {/* BLOQUE 4: Análisis y Consultas Avanzadas */}
       <section className="space-y-4">
         <div>
           <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -342,7 +387,15 @@ export default function EstadisticasPage() {
           <p>📉 <strong>Gasto medio diario (período):</strong> Promedio de gasto basado en los días del período seleccionado (completos si es pasado, transcurridos si es actual).</p>
           <p>💰 <strong>Presupuesto diario:</strong> Visible en períodos actuales durante preparación (SETUP), validación (LOCKED) o cuando está activo (OPEN - fase 3). Calcula cuánto puedes gastar por día hasta fin de mes basándose en el balance efectivo disponible.</p>
           <p>🔄 <strong>Selección de período:</strong> Usa el selector superior para filtrar datos de un mes específico.</p>
-          <p>🔍 <strong>Consultas avanzadas:</strong> Exporta datos filtrados en CSV, JSON o Excel para análisis externos.</p>
+          <div className="mt-3 pt-3 border-t border-blue-300 dark:border-blue-700">
+            <p className="font-semibold mb-2">🎯 Visualizaciones Avanzadas:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li><strong>Treemap de Jerarquía:</strong> Visualización de 3 niveles (Padres → Categorías → Subcategorías) con tamaño proporcional al gasto.</li>
+              <li><strong>Gráfico de Pareto:</strong> Identifica el 80% de tus gastos según el principio 80/20. Las categorías principales se destacan visualmente.</li>
+              <li><strong>Tendencia Temporal:</strong> Evolución mensual con detección inteligente de tendencias (al alza/a la baja/estable) y comparación con el promedio del período.</li>
+            </ul>
+          </div>
+          <p className="mt-3">🔍 <strong>Consultas avanzadas:</strong> Exporta datos filtrados en CSV, JSON o Excel para análisis externos.</p>
         </CardContent>
       </Card>
     </div>
