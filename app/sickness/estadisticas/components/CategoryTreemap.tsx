@@ -1,9 +1,9 @@
 'use client';
 
-import { ResponsiveTreeMap } from '@nivo/treemap';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useEffect, useState } from 'react';
 import { formatCurrency } from '@/lib/format';
+import { ResponsiveTreeMap } from '@nivo/treemap';
+import { useEffect, useState } from 'react';
 
 interface TreemapNode {
   name: string;
@@ -148,18 +148,18 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
             colors={(node) => {
               // Usar el color del nodo si está definido
               if (node.data.color) return node.data.color;
-              
+
               // Determinar el nivel basado en el path del nodo
               const pathParts = node.pathComponents || [];
               const depth = pathParts.length;
-              
+
               // Color por tipo y profundidad
               if (type === 'expense') {
                 return depth === 0 ? '#ef4444' : depth === 1 ? '#f87171' : '#fca5a5';
               } else if (type === 'income') {
                 return depth === 0 ? '#10b981' : depth === 1 ? '#34d399' : '#6ee7b7';
               }
-              
+
               // Default neutral
               return depth === 0 ? '#6366f1' : depth === 1 ? '#818cf8' : '#a5b4fc';
             }}
@@ -176,7 +176,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               // Calcular profundidad del nodo
               const pathParts = node.pathComponents || [];
               const depth = pathParts.length;
-              
+
               return (
                 <div className="bg-background border border-border rounded-lg shadow-lg p-3">
                   <div className="flex items-center gap-2 mb-2">
