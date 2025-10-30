@@ -231,8 +231,8 @@
     {
       "label": "🏗️ Build Solo (sin deploy)",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "build"],
+      "command": "bash",
+      "args": ["-c", "echo '🧹 Cleaning previous build...' && rm -rf .next && echo '🏗️ Building for production...' && npm run build"],
       "group": {
         "kind": "build",
         "isDefault": false

@@ -142,6 +142,7 @@ export function SiKnessBurgerMenu() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={false}
                     onClick={handleLinkClick}
                     className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
@@ -165,6 +166,7 @@ export function SiKnessBurgerMenu() {
           {/* Cerrar sesión */}
           <Link
             href="/api/auth/signout"
+            prefetch={false}
             onClick={handleLinkClick}
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
           >

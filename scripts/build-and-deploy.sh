@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo "🧹 Cleaning previous build..."
+rm -rf .next
+
 echo "🏗️ Building for production..."
 npm run build
 

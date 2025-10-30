@@ -58,7 +58,7 @@ export async function getUserProfile(): Promise<Result<UserProfile>> {
   try {
     const user = await getCurrentUser();
     console.log('[getUserProfile] Usuario obtenido:', user ? `ID: ${user.id}, Email: ${user.email}` : 'NULL');
-    
+
     if (!user) {
       console.log('[getUserProfile] ❌ Usuario no autenticado');
       return fail('Usuario no autenticado');
