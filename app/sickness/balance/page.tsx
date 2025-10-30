@@ -40,6 +40,9 @@ interface Transaction {
   paid_by?: string | null;
   category_name?: string;
   category_icon?: string;
+  subcategory_name?: string;
+  subcategory_icon?: string;
+  parent_category_name?: string;
   profile_email?: string;
   profile_display_name?: string;
   real_payer_email?: string;
@@ -531,15 +534,37 @@ export default function BalancePage() {
                             );
                           })()}
                         </span>
-                        {tx.category_name && (
-                          <>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              {tx.category_icon && <span>{tx.category_icon}</span>}
-                              {tx.category_name}
-                            </span>
-                          </>
-                        )}
+                        {/* Mostrar jerarquía de categoría: Categoría → Subcategoría */}
+                        {(() => {
+                          // Si tiene subcategoría, mostrar jerarquía completa
+                          if (tx.subcategory_name && tx.parent_category_name) {
+                            return (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  {tx.category_icon && <span>{tx.category_icon}</span>}
+                                  <span>{tx.parent_category_name} → {tx.subcategory_name}</span>
+                                  {tx.subcategory_icon && tx.subcategory_icon !== tx.category_icon && (
+                                    <span>{tx.subcategory_icon}</span>
+                                  )}
+                                </span>
+                              </>
+                            );
+                          }
+                          // Fallback: mostrar solo categoría (transacciones legacy)
+                          if (tx.category_name) {
+                            return (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  {tx.category_icon && <span>{tx.category_icon}</span>}
+                                  {tx.category_name}
+                                </span>
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
                         {/* Mostrar el miembro correcto según el tipo de transacción */}
                         {(() => {
                           // Para transacciones directas, mostrar el pagador real

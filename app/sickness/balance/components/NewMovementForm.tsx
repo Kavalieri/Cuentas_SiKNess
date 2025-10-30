@@ -1,4 +1,8 @@
 "use client";
+import {
+    getCategoryHierarchy,
+    type CategoryHierarchy
+} from "@/app/sickness/configuracion/categorias/hierarchy-actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,12 +13,6 @@ import { createUnifiedTransaction } from "@/lib/transactions/unified";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  getCategoryHierarchy,
-  type CategoryHierarchy,
-  type CategoryWithSubcategories,
-  type Subcategory,
-} from "@/app/sickness/configuracion/categorias/hierarchy-actions";
 
 
 // Tipos para props
@@ -184,14 +182,14 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         setLoading(false);
         return;
       }
-      
+
       // ✨ NUEVO: Validación de subcategoría en flujo común
       if (flow_type === 'common' && !selectedSubcategoryId) {
         setError('Selecciona una subcategoría completa (grupo → categoría → subcategoría)');
         setLoading(false);
         return;
       }
-      
+
       if (flow_type === 'direct' && (realPayerId === undefined || realPayerId === null)) {
         setError('Selecciona quién pagó');
         setLoading(false);
@@ -280,8 +278,8 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
           </div>
           <div>
             <Label>Grupo de categoría</Label>
-            <Select 
-              value={selectedParentId} 
+            <Select
+              value={selectedParentId}
               onValueChange={(value) => {
                 setSelectedParentId(value);
                 setSelectedCategoryId(''); // Reset dependientes
@@ -306,8 +304,8 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
 
           <div>
             <Label>Categoría</Label>
-            <Select 
-              value={selectedCategoryId} 
+            <Select
+              value={selectedCategoryId}
               onValueChange={(value) => {
                 setSelectedCategoryId(value);
                 setSelectedSubcategoryId(''); // Reset dependiente
@@ -332,8 +330,8 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
 
           <div>
             <Label>Subcategoría</Label>
-            <Select 
-              value={selectedSubcategoryId} 
+            <Select
+              value={selectedSubcategoryId}
               onValueChange={setSelectedSubcategoryId}
               disabled={!selectedCategoryId}
             >
