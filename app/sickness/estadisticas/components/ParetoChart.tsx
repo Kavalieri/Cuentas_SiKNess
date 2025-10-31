@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/format';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface ParetoDataPoint {
@@ -27,11 +27,7 @@ export function ParetoChart({ householdId, startDate, endDate, type = 'expense',
   const [error, setError] = useState<string | null>(null);
   const [threshold80, setThreshold80] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadParetoData();
-  }, [householdId, startDate, endDate, type, limit]);
-
-  const loadParetoData = async () => {
+  const loadParetoData = useCallback(async () => {
     if (!householdId) return;
 
     setLoading(true);
@@ -64,7 +60,11 @@ export function ParetoChart({ householdId, startDate, endDate, type = 'expense',
     } finally {
       setLoading(false);
     }
-  };
+  }, [householdId, startDate, endDate, type, limit]);
+
+  useEffect(() => {
+    loadParetoData();
+  }, [loadParetoData]);
 
   if (loading) {
     return (

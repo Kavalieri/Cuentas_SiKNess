@@ -1,8 +1,16 @@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { editDirectExpenseWithCompensatory } from './actions';
+import { 
+  getCategoryHierarchy, 
+  type CategoryHierarchy,
+  type CategoryWithSubcategories,
+  type Subcategory
+} from '@/app/sickness/configuracion/categorias/hierarchy-actions';
 
 interface EditDirectExpenseButtonProps {
   tx: {
@@ -15,16 +23,21 @@ interface EditDirectExpenseButtonProps {
   };
   householdId?: string;
   onSuccess?: () => void;
-  categories: Array<{ id: string; name: string }>;
 }
 
-export function EditDirectExpenseButton({ tx, householdId, onSuccess, categories }: EditDirectExpenseButtonProps) {
+export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDirectExpenseButtonProps) {
   const [open, setOpen] = useState(false);
+  
+  // ✨ Estados para jerarquía de 3 niveles
+  const [hierarchy, setHierarchy] = useState<CategoryHierarchy[]>([]);
+  const [selectedParentId, setSelectedParentId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
+  
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       amount: tx.amount,
       description: tx.description || '',
-      categoryId: tx.category_id || '',
       // Prefill desde performed_at si disponible; fallback a occurred_at
       occurredAt: tx.performed_at
         ? tx.performed_at.slice(0, 16)
@@ -32,14 +45,68 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, categories
     },
   });
 
-  const onSubmit = async (data: { amount: number; description: string; categoryId: string; occurredAt: string }) => {
+  // ✨ Cargar jerarquía y resolver valores iniciales al abrir
+  useEffect(() => {
+    if (open && householdId) {
+      const loadHierarchyAndResolve = async () => {
+        // Cargar jerarquía
+        const result = await getCategoryHierarchy(householdId);
+        if (result.ok && result.data) {
+          setHierarchy(result.data);
+          
+          // Resolver valores iniciales si existe category_id en la transacción
+          if (tx.category_id) {
+            // Buscar la categoría en la jerarquía
+            for (const parent of result.data) {
+              const category = parent.categories.find(c => c.id === tx.category_id);
+              if (category) {
+                setSelectedParentId(parent.id);
+                setSelectedCategoryId(category.id);
+                // Si tiene subcategorías, seleccionar la primera por defecto
+                // (o podrías dejar vacío para que el usuario elija)
+                setSelectedSubcategoryId('');
+                break;
+              }
+            }
+          }
+        } else {
+          toast.error('No se pudo cargar la jerarquía de categorías');
+        }
+      };
+      loadHierarchyAndResolve();
+    }
+  }, [open, householdId, tx.category_id]);
+
+  // ✨ Filtros cascada (solo gastos para direct expense)
+  const filteredParents = useMemo(() => {
+    return hierarchy.filter(p => p.type === 'expense');
+  }, [hierarchy]);
+
+  const selectedParent = useMemo(() => {
+    return hierarchy.find(p => p.id === selectedParentId);
+  }, [hierarchy, selectedParentId]);
+
+  const availableCategories = useMemo(() => {
+    return selectedParent?.categories || [];
+  }, [selectedParent]);
+
+  const selectedCategory = useMemo(() => {
+    return availableCategories.find(c => c.id === selectedCategoryId);
+  }, [availableCategories, selectedCategoryId]);
+
+  const availableSubcategories = useMemo(() => {
+    return selectedCategory?.subcategories || [];
+  }, [selectedCategory]);
+
+  const onSubmit = async (data: { amount: number; description: string; occurredAt: string }) => {
     try {
       const formData = new FormData();
       formData.append('movementId', tx.id);
       formData.append('householdId', householdId || '');
       formData.append('amount', String(data.amount));
       formData.append('description', data.description);
-      formData.append('categoryId', data.categoryId);
+      // ✨ Enviar subcategory_id en lugar de categoryId
+      formData.append('subcategoryId', selectedSubcategoryId || '');
       formData.append('occurredAt', data.occurredAt);
 
       const result = await editDirectExpenseWithCompensatory(formData);
@@ -91,15 +158,83 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, categories
                 className="border rounded px-2 py-1 w-full"
               />
             </div>
+            
+            {/* ✨ NUEVO: Jerarquía de 3 niveles */}
             <div>
-              <label className="block text-sm font-medium">Categoría</label>
-              <select {...register('categoryId')} className="border rounded px-2 py-1 w-full">
-                <option value="">Sin categoría</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <Label className="block text-sm font-medium mb-1">Grupo de categoría</Label>
+              <Select
+                value={selectedParentId}
+                onValueChange={(value) => {
+                  setSelectedParentId(value);
+                  setSelectedCategoryId(''); // Reset dependientes
+                  setSelectedSubcategoryId('');
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona grupo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredParents.map((parent) => (
+                    <SelectItem key={parent.id} value={parent.id}>
+                      <span className="flex items-center gap-2">
+                        <span>{parent.icon}</span>
+                        <span>{parent.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            <div>
+              <Label className="block text-sm font-medium mb-1">Categoría</Label>
+              <Select
+                value={selectedCategoryId}
+                onValueChange={(value) => {
+                  setSelectedCategoryId(value);
+                  setSelectedSubcategoryId(''); // Reset dependiente
+                }}
+                disabled={!selectedParentId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={!selectedParentId ? 'Primero selecciona un grupo' : 'Selecciona categoría'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCategories.map((category: CategoryWithSubcategories) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <span className="flex items-center gap-2">
+                        {category.icon && <span>{category.icon}</span>}
+                        <span>{category.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="block text-sm font-medium mb-1">Subcategoría</Label>
+              <Select
+                value={selectedSubcategoryId}
+                onValueChange={setSelectedSubcategoryId}
+                disabled={!selectedCategoryId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={!selectedCategoryId ? 'Primero selecciona categoría' : 'Selecciona subcategoría'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSubcategories.map((subcategory: Subcategory) => (
+                    <SelectItem key={subcategory.id} value={subcategory.id}>
+                      <span className="flex items-center gap-2">
+                        {subcategory.icon && <span>{subcategory.icon}</span>}
+                        <span>{subcategory.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div>
               <label className="block text-sm font-medium">Fecha y hora</label>
               <input

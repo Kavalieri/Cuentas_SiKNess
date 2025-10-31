@@ -1,5 +1,6 @@
 import { query } from '@/lib/pgServer';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     // Construir condiciones de filtro
     const conditions = ['t.household_id = $1', `t.type = $2`];
-    const params: any[] = [householdId, type];
+    const params: unknown[] = [householdId, type];
     let paramIndex = 3;
 
     if (startDate) {
@@ -44,18 +45,24 @@ export async function GET(req: NextRequest) {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Query para obtener las categorías ordenadas por monto (para Pareto)
+    // subcategory_id -> subcategories.category_id -> categories.parent_id -> category_parents
     const result = await query(
       `
       WITH category_totals AS (
         SELECT
-          COALESCE(sc.name, c.name) as category_name,
-          COALESCE(sc.icon, c.icon) as category_icon,
+          cp.name as parent_name,
+          cp.icon as parent_icon,
+          c.name as category_name,
+          c.icon as category_icon,
+          sc.name as subcategory_name,
+          sc.icon as subcategory_icon,
           SUM(t.amount) as total_amount
         FROM transactions t
-        LEFT JOIN subcategories sc ON sc.id = t.category_id
-        LEFT JOIN categories c ON c.id = t.category_id
+        LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
+        LEFT JOIN categories c ON c.id = sc.category_id
+        LEFT JOIN category_parents cp ON cp.id = c.parent_id
         ${whereClause}
-        GROUP BY category_name, category_icon
+        GROUP BY cp.name, cp.icon, c.name, c.icon, sc.name, sc.icon
         ORDER BY total_amount DESC
         LIMIT $${paramIndex}
       ),
@@ -64,8 +71,8 @@ export async function GET(req: NextRequest) {
         FROM category_totals
       )
       SELECT
-        ct.category_name,
-        ct.category_icon,
+        COALESCE(ct.subcategory_name, ct.category_name, ct.parent_name, 'Sin categoría') as category_name,
+        COALESCE(ct.subcategory_icon, ct.category_icon, ct.parent_icon, '📦') as category_icon,
         ct.total_amount,
         ROUND((ct.total_amount / ts.grand_total * 100)::numeric, 2) as percentage,
         ROUND(

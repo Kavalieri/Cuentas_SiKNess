@@ -1,5 +1,6 @@
 import { query } from '@/lib/pgServer';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     // Construir condiciones de filtro
     const conditions = ['t.household_id = $1'];
-    const params: any[] = [householdId];
+    const params: unknown[] = [householdId];
     let paramIndex = 2;
 
     if (type) {
@@ -55,23 +56,27 @@ export async function GET(req: NextRequest) {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Query principal: obtener la jerarquía con montos agregados
+    // subcategory_id -> subcategories.category_id -> categories.parent_id -> category_parents
     const result = await query(
       `
       WITH transaction_amounts AS (
         SELECT
-          COALESCE(sc.parent_category_id, t.category_id) as parent_id,
-          t.category_id,
-          pc.name as parent_name,
-          pc.icon as parent_icon,
-          COALESCE(sc.name, c.name) as category_name,
-          COALESCE(sc.icon, c.icon) as category_icon,
+          cp.id as parent_id,
+          cp.name as parent_name,
+          cp.icon as parent_icon,
+          c.id as category_id,
+          c.name as category_name,
+          c.icon as category_icon,
+          sc.id as subcategory_id,
+          sc.name as subcategory_name,
+          sc.icon as subcategory_icon,
           SUM(t.amount) as total_amount
         FROM transactions t
-        LEFT JOIN subcategories sc ON sc.id = t.category_id
-        LEFT JOIN categories c ON c.id = t.category_id
-        LEFT JOIN categories pc ON pc.id = sc.parent_category_id
+        LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
+        LEFT JOIN categories c ON c.id = sc.category_id
+        LEFT JOIN category_parents cp ON cp.id = c.parent_id
         ${whereClause}
-        GROUP BY parent_id, t.category_id, parent_name, parent_icon, category_name, category_icon
+        GROUP BY cp.id, cp.name, cp.icon, c.id, c.name, c.icon, sc.id, sc.name, sc.icon
       )
       SELECT
         parent_id,
@@ -79,9 +84,9 @@ export async function GET(req: NextRequest) {
         parent_icon,
         json_agg(
           json_build_object(
-            'name', category_name,
+            'name', COALESCE(subcategory_name, category_name, 'Sin categoría'),
             'value', total_amount,
-            'icon', category_icon,
+            'icon', COALESCE(subcategory_icon, category_icon, '📦'),
             'parentName', parent_name
           ) ORDER BY total_amount DESC
         ) as categories

@@ -137,7 +137,7 @@ const EditMovementSchema = z.object({
   householdId: z.string().uuid(),
   amount: z.coerce.number().positive(),
   description: z.string().optional(),
-  categoryId: z
+  subcategoryId: z
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
   occurredAt: z.string().min(1, 'Fecha/hora requerida'),
@@ -152,9 +152,9 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     console.error('[editDirectExpenseWithCompensatory] Validation failed:', parsed.error);
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
-  const { movementId, householdId, amount, description, categoryId, occurredAt } = parsed.data;
+  const { movementId, householdId, amount, description, subcategoryId, occurredAt } = parsed.data;
 
-  console.log('[editDirectExpenseWithCompensatory] Parsed data:', { movementId, householdId, amount, description, categoryId, occurredAt });
+  console.log('[editDirectExpenseWithCompensatory] Parsed data:', { movementId, householdId, amount, description, subcategoryId, occurredAt });
 
   const { occurred_at_date, performed_at_ts } = parseDateTimeInput(occurredAt);
 
@@ -253,14 +253,14 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     `UPDATE transactions
      SET amount = $1,
          description = $2,
-         category_id = $3,
+         subcategory_id = $3,
          occurred_at = $4,
          performed_at = $5,
          period_id = $6,
          updated_at = now(),
          updated_by_profile_id = $7
      WHERE id = $8 AND household_id = $9 AND flow_type = 'direct'`,
-    [amount, description || null, categoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, movementId, householdId]
+    [amount, description || null, subcategoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, movementId, householdId]
   );
   console.log('[editDirectExpenseWithCompensatory] Update result:', { rowCount: updateResult.rowCount });
 
@@ -303,7 +303,7 @@ const EditCommonSchema = z.object({
   householdId: z.string().uuid(),
   amount: z.coerce.number().positive(),
   description: z.string().optional(),
-  categoryId: z
+  subcategoryId: z
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
   occurredAt: z.string().min(1, 'Fecha/hora requerida'),
@@ -318,7 +318,7 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
 
-  const { movementId, householdId, amount, description, categoryId, occurredAt, paidBy } = parsed.data;
+  const { movementId, householdId, amount, description, subcategoryId, occurredAt, paidBy } = parsed.data;
 
   // Permisos: members pueden editar sus propios movimientos, owners pueden editar todos
   const profileId = await getCurrentProfileId();
@@ -369,7 +369,7 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
     `UPDATE transactions
      SET amount = $1,
          description = $2,
-         category_id = $3,
+         subcategory_id = $3,
          occurred_at = $4,
          performed_at = $5,
          period_id = $6,
@@ -377,7 +377,7 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
          updated_at = now(),
          updated_by_profile_id = $8
      WHERE id = $9 AND household_id = $10 AND flow_type = 'common'`,
-    [amount, description || null, categoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, paid_by, profileId, movementId, householdId]
+    [amount, description || null, subcategoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, paid_by, profileId, movementId, householdId]
   );
 
   // Revalidaciones necesarias

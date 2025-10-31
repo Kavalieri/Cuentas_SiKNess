@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/format';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface TrendDataPoint {
@@ -26,11 +26,7 @@ export function TrendLineChart({ householdId, type = 'expense', defaultMonths = 
   const [average, setAverage] = useState<number>(0);
   const [trend, setTrend] = useState<'up' | 'down' | 'stable'>('stable');
 
-  useEffect(() => {
-    loadTrendData();
-  }, [householdId, type, months]);
-
-  const loadTrendData = async () => {
+  const loadTrendData = useCallback(async () => {
     if (!householdId) return;
 
     setLoading(true);
@@ -56,7 +52,11 @@ export function TrendLineChart({ householdId, type = 'expense', defaultMonths = 
     } finally {
       setLoading(false);
     }
-  };
+  }, [householdId, type, months]);
+
+  useEffect(() => {
+    loadTrendData();
+  }, [loadTrendData]);
 
   const getTrendIcon = () => {
     if (trend === 'up') return type === 'expense' ? '📈 ⚠️' : '📈 ✅';

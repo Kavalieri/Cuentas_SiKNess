@@ -620,12 +620,6 @@ export default function BalancePage() {
                               await loadGlobalBalance();
                               await loadPeriodSummary();
                             }}
-                            categories={categories.map((c) => ({
-                              id: c.id,
-                              name: c.name,
-                              icon: c.icon,
-                              type: c.type ?? ''
-                            }))}
                           />
                           {/* Botón eliminar (solo owner) */}
                           {isOwner && (
@@ -652,7 +646,6 @@ export default function BalancePage() {
                               await loadGlobalBalance();
                               await loadPeriodSummary();
                             }}
-                            categories={categories.map((c) => ({ id: c.id, name: c.name }))}
                             members={members.map((m) => ({
                               profile_id: m.profile_id,
                               email: m.email,

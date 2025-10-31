@@ -214,7 +214,7 @@ export default function CategoriasPage() {
     setDialogOpen(true);
   };
 
-  const handleDeleteCategory = async (category: CategoryWithSubcategories, parentId: string) => {
+  const handleDeleteCategory = async (category: CategoryWithSubcategories, _parentId: string) => {
     if (!householdId) return;
 
     const confirmed = window.confirm(
@@ -262,7 +262,7 @@ export default function CategoriasPage() {
     setDialogOpen(true);
   };
 
-  const handleDeleteSubcategory = async (subcategory: Subcategory, categoryId: string) => {
+  const handleDeleteSubcategory = async (subcategory: Subcategory, _categoryId: string) => {
     if (!householdId) return;
 
     const confirmed = window.confirm(`¿Eliminar la subcategoría "${subcategory.name}"?`);

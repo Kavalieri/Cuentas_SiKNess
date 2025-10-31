@@ -85,7 +85,7 @@ export function CategoryTreeView({
           <Accordion type="multiple" className="w-full space-y-2">
           {parents.map((parent: CategoryHierarchy) => (
               <AccordionItem key={parent.id} value={parent.id}>
-                <AccordionTrigger className="hover:no-underline">
+                <AccordionTrigger className="hover:no-underline flex-row-reverse justify-end [&[data-state=open]>svg]:rotate-180 [&>svg]:order-first [&>svg]:mr-2">
                   <div className="flex items-center gap-3 flex-1">
                     <span className="text-2xl">{parent.icon}</span>
                     <div className="flex items-center gap-2 flex-1">
@@ -96,31 +96,38 @@ export function CategoryTreeView({
                     </div>
                     {isOwner && (
                       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             onEditParent(parent);
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onEditParent(parent);
+                            }
+                          }}
                         >
                           <Edit className="h-4 w-4" />
-                        </Button>
+                        </div>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground text-destructive hover:text-destructive cursor-pointer"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </div>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>¿Eliminar grupo "{parent.name}"?</AlertDialogTitle>
+                              <AlertDialogTitle>¿Eliminar grupo &quot;{parent.name}&quot;?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Esto eliminará todas las categorías y subcategorías dentro de este grupo.
                                 Si hay transacciones asociadas, no se podrá eliminar.
@@ -199,7 +206,7 @@ export function CategoryTreeView({
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
                                         <AlertDialogTitle>
-                                          ¿Eliminar categoría "{category.name}"?
+                                          ¿Eliminar categoría &quot;{category.name}&quot;?
                                         </AlertDialogTitle>
                                         <AlertDialogDescription>
                                           Esto eliminará todas las subcategorías dentro de esta categoría.
@@ -267,7 +274,7 @@ export function CategoryTreeView({
                                         <AlertDialogContent>
                                           <AlertDialogHeader>
                                             <AlertDialogTitle>
-                                              ¿Eliminar subcategoría "{subcategory.name}"?
+                                              ¿Eliminar subcategoría &quot;{subcategory.name}&quot;?
                                             </AlertDialogTitle>
                                             <AlertDialogDescription>
                                               Las transacciones asociadas quedarán sin subcategoría (no se eliminarán).

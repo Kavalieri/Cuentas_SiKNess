@@ -260,7 +260,7 @@ export async function updateCategory(formData: FormData): Promise<Result> {
 
     // Actualizar categoría
     const updates: string[] = ['name = $1', 'icon = $2', 'updated_by_profile_id = $3', 'updated_at = now()'];
-    const values: any[] = [name, icon, user.profile_id];
+    const values: unknown[] = [name, icon, user.profile_id];
     let paramCount = 3;
 
     if (parentId !== undefined) {

@@ -105,7 +105,7 @@ async function verifyHouseholdOwnership(householdId: string): Promise<Result<voi
     FROM household_members
     WHERE household_id = $1 AND profile_id = $2
     `,
-    [householdId, user.id]
+    [householdId, user.profile_id]
   );
 
   if (result.rows.length === 0) {
@@ -136,17 +136,25 @@ export async function getCategoryHierarchy(householdId: string): Promise<Result<
   }
 
   try {
+    console.log('[getCategoryHierarchy] 🔍 Iniciando con householdId:', householdId);
+    console.log('[getCategoryHierarchy] 🔍 User profile_id:', user.profile_id);
+
     // Verificar pertenencia al hogar
     const memberCheck = await query<{ household_id: string; profile_id: string }>(
       `SELECT household_id, profile_id FROM household_members WHERE household_id = $1 AND profile_id = $2`,
-      [householdId, user.id]
+      [householdId, user.profile_id]
     );
 
+    console.log('[getCategoryHierarchy] 👥 Member check rows:', memberCheck.rows.length);
+    console.log('[getCategoryHierarchy] 👥 Member check result:', JSON.stringify(memberCheck.rows));
+
     if (memberCheck.rows.length === 0) {
+      console.log('[getCategoryHierarchy] ❌ Usuario no pertenece al hogar');
       return fail('No perteneces a este hogar');
     }
 
-    // Obtener parents
+    // Obtener parent_categories
+    console.log('[getCategoryHierarchy] 📊 Buscando category_parents...');
     const parentsResult = await query<ParentCategory>(
       `
       SELECT id, household_id, name, icon, type, display_order, created_at, updated_at
@@ -156,6 +164,8 @@ export async function getCategoryHierarchy(householdId: string): Promise<Result<
       `,
       [householdId]
     );
+
+    console.log('[getCategoryHierarchy] 📊 Parents encontrados:', parentsResult.rows.length);
 
     const hierarchy: CategoryHierarchy[] = [];
 
@@ -206,9 +216,10 @@ export async function getCategoryHierarchy(householdId: string): Promise<Result<
       });
     }
 
+    console.log('[getCategoryHierarchy] ✅ Jerarquía construida, total parents:', hierarchy.length);
     return ok(hierarchy);
   } catch (error) {
-    console.error('Error fetching category hierarchy:', error);
+    console.error('[getCategoryHierarchy] ❌ Error fetching category hierarchy:', error);
     return fail('Error al obtener la jerarquía de categorías');
   }
 }

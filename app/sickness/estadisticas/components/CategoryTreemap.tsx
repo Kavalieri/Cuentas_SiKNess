@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/format';
 import { ResponsiveTreeMap } from '@nivo/treemap';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface TreemapNode {
   name: string;
@@ -34,11 +34,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadTreemapData();
-  }, [householdId, startDate, endDate, type]);
-
-  const loadTreemapData = async () => {
+  const loadTreemapData = useCallback(async () => {
     if (!householdId) return;
 
     setLoading(true);
@@ -64,7 +60,11 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
     } finally {
       setLoading(false);
     }
-  };
+  }, [householdId, startDate, endDate, type]);
+
+  useEffect(() => {
+    loadTreemapData();
+  }, [loadTreemapData]);
 
   if (loading) {
     return (
