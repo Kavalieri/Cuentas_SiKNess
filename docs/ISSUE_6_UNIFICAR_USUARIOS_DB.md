@@ -39,7 +39,7 @@ PROD: Objetos owned por → cuentassik_owner (unificado)
 
 **Objetivos del Reset:**
 - ✅ **Nueva tabla `_migrations` robusta** con auditoría completa
-- ✅ **Archivar todas las migraciones antiguas** (fresh start desde v1.0.0)
+- ✅ **Archivar todas las migraciones antiguas** (fresh start desde v2.1.0)
 - ✅ **Nueva seed baseline limpia** sin datos de prueba
 - ✅ **Sistema robusto de tracking** con estado, salida, errores
 - ✅ **Scripts actualizados** con `<` (stdin) y validaciones
@@ -442,7 +442,7 @@ CREATE TABLE _migrations (
   applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
   applied_by VARCHAR(100) DEFAULT CURRENT_USER NOT NULL,
   execution_time_ms INTEGER,
-  status VARCHAR(20) NOT NULL DEFAULT 'success' 
+  status VARCHAR(20) NOT NULL DEFAULT 'success'
     CHECK (status IN ('success', 'failed', 'rolled_back')),
   output_log TEXT,
   error_log TEXT,
@@ -451,23 +451,23 @@ CREATE TABLE _migrations (
   CONSTRAINT unique_migration_name UNIQUE (migration_name)
 );
 
-COMMENT ON TABLE _migrations IS 
+COMMENT ON TABLE _migrations IS
   'Control de migraciones aplicadas con auditoría completa';
-COMMENT ON COLUMN _migrations.migration_name IS 
+COMMENT ON COLUMN _migrations.migration_name IS
   'Nombre del archivo de migración (ej: 20251101_010000_create_unified_owner.sql)';
-COMMENT ON COLUMN _migrations.applied_at IS 
+COMMENT ON COLUMN _migrations.applied_at IS
   'Timestamp de cuándo se aplicó la migración';
-COMMENT ON COLUMN _migrations.applied_by IS 
+COMMENT ON COLUMN _migrations.applied_by IS
   'Usuario de PostgreSQL que aplicó la migración';
-COMMENT ON COLUMN _migrations.execution_time_ms IS 
+COMMENT ON COLUMN _migrations.execution_time_ms IS
   'Tiempo de ejecución en milisegundos';
-COMMENT ON COLUMN _migrations.status IS 
+COMMENT ON COLUMN _migrations.status IS
   'Estado: success (exitosa), failed (fallida), rolled_back (revertida)';
-COMMENT ON COLUMN _migrations.output_log IS 
+COMMENT ON COLUMN _migrations.output_log IS
   'Captura de stdout durante la ejecución';
-COMMENT ON COLUMN _migrations.error_log IS 
+COMMENT ON COLUMN _migrations.error_log IS
   'Captura de stderr si hubo errores';
-COMMENT ON COLUMN _migrations.checksum IS 
+COMMENT ON COLUMN _migrations.checksum IS
   'Hash SHA-256 del contenido del archivo para validación';
 ```
 
@@ -476,21 +476,21 @@ COMMENT ON COLUMN _migrations.checksum IS
 ```
 database/migrations/
 ├── archive/                           # Migraciones obsoletas archivadas
-│   └── pre_v1.0.0/                   # 89 migraciones antiguas (sincronía rota)
+│   └── pre_v2.1.0/                   # 89 migraciones antiguas (sincronía rota)
 │       ├── 20241014_150000_seed.sql
 │       ├── 20241015_*.sql
-│       └── ... (todas las pre-v1.0.0)
+│       └── ... (todas las pre-v2.1.0)
 ├── development/                       # ✏️ Nuevas migraciones en desarrollo
 │   └── (vacío inicialmente)
 ├── tested/                            # ✅ Validadas en DEV, listas para PROD
 │   └── (vacío inicialmente)
 └── applied/                           # 📦 Aplicadas exitosamente en PROD
-    └── 20251101_000000_baseline_v1.0.0.sql  # 🎯 Nueva seed baseline
+    └── 20251101_000000_baseline_v2.1.0.sql  # 🎯 Nueva seed baseline
 ```
 
-### 🌱 Nueva Seed Baseline v1.0.0
+### 🌱 Nueva Seed Baseline v2.1.0
 
-**Archivo**: `database/migrations/applied/20251101_000000_baseline_v1.0.0.sql`
+**Archivo**: `database/migrations/applied/20251101_000000_baseline_v2.1.0.sql`
 
 **Características**:
 ```sql
@@ -558,10 +558,10 @@ fi
 # Registrar en _migrations (si la tabla existe)
 sudo -u postgres psql -d "$DB_NAME" <<EOF
 INSERT INTO _migrations (
-  migration_name, 
-  execution_time_ms, 
-  status, 
-  output_log, 
+  migration_name,
+  execution_time_ms,
+  status,
+  output_log,
   checksum
 ) VALUES (
   '$(basename "$MIGRATION_FILE")',
@@ -606,7 +606,7 @@ select MIGRATION in "$DEV_DIR"/*.sql; do
     head -20 "$MIGRATION"
     echo ""
     read -p "¿Promover a tested? (s/N): " CONFIRM
-    
+
     if [[ "$CONFIRM" == "s" ]] || [[ "$CONFIRM" == "S" ]]; then
       mv "$MIGRATION" "$TESTED_DIR/"
       echo "✅ Migración promovida a tested/"
@@ -667,7 +667,7 @@ echo "📝 Migraciones aplicadas exitosamente en PROD:"
 select MIGRATION in "$TESTED_DIR"/*.sql; do
   if [[ -f "$MIGRATION" ]]; then
     read -p "¿Mover a applied/? (s/N): " CONFIRM
-    
+
     if [[ "$CONFIRM" == "s" ]] || [[ "$CONFIRM" == "S" ]]; then
       mv "$MIGRATION" "$APPLIED_DIR/"
       echo "✅ Migración archivada en applied/"
@@ -681,22 +681,22 @@ done
 ```
 
 #### Script 5: `archive_old_migrations.sh`
-**Propósito**: Archivar las 89 migraciones obsoletas pre-v1.0.0
+**Propósito**: Archivar las 89 migraciones obsoletas pre-v2.1.0
 
 ```bash
 #!/bin/bash
-# Archiva migraciones antiguas (pre-v1.0.0) con sincronía rota
+# Archiva migraciones antiguas (pre-v2.1.0) con sincronía rota
 
 SOURCE_DIR="database/migrations/applied"
-ARCHIVE_DIR="database/migrations/archive/pre_v1.0.0"
+ARCHIVE_DIR="database/migrations/archive/pre_v2.1.0"
 
 mkdir -p "$ARCHIVE_DIR"
 
-echo "📦 Archivando migraciones pre-v1.0.0..."
+echo "📦 Archivando migraciones pre-v2.1.0..."
 
 # Mover todas las migraciones antiguas EXCEPTO la nueva baseline
 find "$SOURCE_DIR" -name "*.sql" \
-  ! -name "20251101_000000_baseline_v1.0.0.sql" \
+  ! -name "20251101_000000_baseline_v2.1.0.sql" \
   -exec mv {} "$ARCHIVE_DIR/" \;
 
 echo "✅ Archivado completo"
@@ -713,44 +713,44 @@ echo "📊 Total archivadas: $(ls -1 "$ARCHIVE_DIR" | wc -l)"
 1️⃣ DESARROLLO
    📝 Crear: database/migrations/development/20251101_120000_add_feature.sql
    ⬇️
-   
+
 2️⃣ APLICAR A DEV
    $ ./scripts/apply_migration_dev.sh \
        database/migrations/development/20251101_120000_add_feature.sql
-   
+
    ✅ Migración aplicada en DEV
    ✅ Registrada en _migrations con output/checksum/tiempo
    ⬇️
-   
+
 3️⃣ VALIDAR EN DEV
    🧪 Probar funcionalidad
    🧪 Verificar datos
    🧪 Ejecutar tests
    ⬇️
-   
+
 4️⃣ PROMOVER A TESTED
    $ ./scripts/promote_to_tested.sh
-   
+
    ✅ Migración movida a database/migrations/tested/
    ⬇️
-   
+
 5️⃣ APLICAR A PROD
    $ ./scripts/apply_migration_prod.sh \
        database/migrations/tested/20251101_120000_add_feature.sql
-   
+
    💾 Backup automático de PROD
    ✅ Migración aplicada en PROD
    ✅ Registrada en _migrations
    ⬇️
-   
+
 6️⃣ VALIDAR EN PROD
    🧪 Verificar aplicación funciona
    🧪 Revisar PM2 logs
    ⬇️
-   
+
 7️⃣ PROMOVER A APPLIED
    $ ./scripts/promote_to_applied.sh
-   
+
    ✅ Migración archivada en database/migrations/applied/
    📦 Proceso completo
 ```
@@ -771,7 +771,7 @@ echo "📊 Total archivadas: $(ls -1 "$ARCHIVE_DIR" | wc -l)"
 **Organización**:
 - ✅ Workflow claro: development → tested → applied
 - ✅ Migraciones obsoletas archivadas (no se pierden)
-- ✅ Baseline limpia v1.0.0 sin datos de prueba
+- ✅ Baseline limpia v2.1.0 sin datos de prueba
 
 **Mantenibilidad**:
 - ✅ Scripts automatizados para todo el workflow
@@ -828,14 +828,14 @@ echo "📊 Total archivadas: $(ls -1 "$ARCHIVE_DIR" | wc -l)"
 
 ### Fase 8: Reset Sistema de Migraciones
 - [ ] Crear script `archive_old_migrations.sh`
-- [ ] Ejecutar archivado (89 migraciones → archive/pre_v1.0.0/)
+- [ ] Ejecutar archivado (89 migraciones → archive/pre_v2.1.0/)
 - [ ] Crear migración `20251101_060000_reset_migrations_table.sql`
 - [ ] Aplicar reset de tabla _migrations en DEV
 - [ ] Aplicar reset de tabla _migrations en PROD
 - [ ] Verificar nueva estructura de _migrations
 
-### Fase 9: Nueva Seed Baseline v1.0.0
-- [ ] Crear `20251101_000000_baseline_v1.0.0.sql`
+### Fase 9: Nueva Seed Baseline v2.1.0
+- [ ] Crear `20251101_000000_baseline_v2.1.0.sql`
 - [ ] Hardcodear `SET ROLE cuentassik_owner;`
 - [ ] Eliminar todos los datos de prueba
 - [ ] Validar en base de datos temporal
@@ -859,7 +859,7 @@ echo "📊 Total archivadas: $(ls -1 "$ARCHIVE_DIR" | wc -l)"
 - [ ] Actualizar `database/README.md`
   - [ ] Documentar nuevo workflow de migraciones
   - [ ] Añadir ejemplos de uso de scripts
-  - [ ] Documentar estructura archive/pre_v1.0.0/
+  - [ ] Documentar estructura archive/pre_v2.1.0/
 - [ ] Actualizar `.github/copilot-instructions.md`
   - [ ] Actualizar roles de base de datos
   - [ ] Documentar uso de stdin (`<`) para migraciones
@@ -899,11 +899,11 @@ Vistas Materializadas: 3 → cuentassik_owner
 ```
 database/migrations/
 ├── archive/
-│   └── pre_v1.0.0/              # 89 migraciones antiguas archivadas
+│   └── pre_v2.1.0/              # 89 migraciones antiguas archivadas
 ├── development/                  # Migraciones nuevas en desarrollo
 ├── tested/                       # Validadas en DEV, listas para PROD
 └── applied/                      # Aplicadas exitosamente en PROD
-    └── 20251101_000000_baseline_v1.0.0.sql  # Baseline limpia
+    └── 20251101_000000_baseline_v2.1.0.sql  # Baseline limpia
 ```
 
 **Tabla `_migrations` (con auditoría completa)**:
@@ -940,7 +940,7 @@ database/migrations/
 - ✅ Backup automático antes de aplicar en PROD
 - ✅ Workflow claro: development → tested → applied
 - ✅ Auditoría automática en cada paso
-- ✅ Baseline limpia v1.0.0 sin datos de prueba
+- ✅ Baseline limpia v2.1.0 sin datos de prueba
 
 **Documentación**:
 - ✅ PostgreSQL sistema completo actualizado
@@ -964,7 +964,7 @@ database/migrations/
 
 ### Migration System Reset (Fases 8-11)
 - Fase 8: Reset tabla _migrations → 10 minutos
-- Fase 9: Nueva seed v1.0.0 → 30 minutos (ya incluido en Fase 5)
+- Fase 9: Nueva seed v2.1.0 → 30 minutos (ya incluido en Fase 5)
 - Fase 10: Actualizar 5 scripts → 1 hora
 - Fase 11: Actualizar documentación → 1 hora
 **Subtotal: ~2-3 horas**
@@ -978,11 +978,11 @@ database/migrations/
 ---
 
 **Estado**: ✏️ Documentación completa - Pendiente de aprobación para implementación
-**Próximos pasos**: 
+**Próximos pasos**:
 1. Revisión y aprobación del plan completo
 2. Crear migraciones de ownership unification (Fases 1-6)
 3. Crear migración de reset de _migrations (Fase 8)
-4. Crear nueva seed baseline v1.0.0 (Fase 9)
+4. Crear nueva seed baseline v2.1.0 (Fase 9)
 5. Implementar nuevos scripts (Fase 10)
 6. Actualizar documentación (Fase 11)
 7. Validación completa del sistema (Fase 12)
