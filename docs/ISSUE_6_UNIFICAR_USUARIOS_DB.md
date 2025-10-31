@@ -1,22 +1,24 @@
-# Issue #6: Unificar usuarios DB - Análisis Completo
+# Issue #6: Unificar usuarios DB - Análisis Completo + Reset Sistema Migraciones
 
 **Fecha**: 31 Octubre 2025
 **Estado**: 🔄 En Progreso
 
 ---
 
-## 🎯 Objetivo del Issue
+## 🎯 Objetivos del Issue
+
+### Objetivo Principal: Unificar Ownership
 
 **Situación Actual (INCORRECTA):**
 ```
-DEV:  Objetos owned por → cuentassik_dev_owner
-PROD: Objetos owned por → cuentassik_prod_owner
+DEV:  Objetos owned por → cuentassik_dev_owner + postgres (fragmentado)
+PROD: Objetos owned por → cuentassik_prod_owner + postgres (fragmentado)
 ```
 
 **Situación Deseada (CORRECTA):**
 ```
-DEV:  Objetos owned por → cuentassik_owner
-PROD: Objetos owned por → cuentassik_owner
+DEV:  Objetos owned por → cuentassik_owner (unificado)
+PROD: Objetos owned por → cuentassik_owner (unificado)
 ```
 
 **Beneficios:**
@@ -25,6 +27,22 @@ PROD: Objetos owned por → cuentassik_owner
 - ✅ **Entorno profesional** con estructura espejo
 - ✅ **Simplicidad** en gestión de permisos
 - ✅ **Sin conflictos** (las tablas están en bases de datos separadas)
+
+### Objetivo Secundario: Reset Sistema de Migraciones
+
+**Problemas Actuales:**
+- ⚠️ Tabla `_migrations` simple sin auditoría completa
+- ⚠️ 89 migraciones obsoletas archivadas (sincronía rota pre-v0.3.0)
+- ⚠️ Seed baseline con variable `:SEED_OWNER` (permite owners inconsistentes)
+- ⚠️ Sin registro de salida/errores de aplicación
+- ⚠️ Sin timestamps de ejecución ni usuario que aplicó
+
+**Objetivos del Reset:**
+- ✅ **Nueva tabla `_migrations` robusta** con auditoría completa
+- ✅ **Archivar todas las migraciones antiguas** (fresh start desde v1.0.0)
+- ✅ **Nueva seed baseline limpia** sin datos de prueba
+- ✅ **Sistema robusto de tracking** con estado, salida, errores
+- ✅ **Scripts actualizados** con `<` (stdin) y validaciones
 
 ---
 
@@ -344,7 +362,7 @@ DECLARE
 BEGIN
   SELECT COUNT(*) INTO v_dev_count FROM pg_tables WHERE tableowner = 'cuentassik_dev_owner';
   SELECT COUNT(*) INTO v_prod_count FROM pg_tables WHERE tableowner = 'cuentassik_prod_owner';
-  
+
   IF v_dev_count > 0 OR v_prod_count > 0 THEN
     RAISE EXCEPTION 'Aún hay objetos con owners obsoletos. Abortar.';
   END IF;
@@ -396,6 +414,372 @@ echo "============================================"
 
 ---
 
+## 🔄 Nuevo Sistema de Migraciones (Reset Completo)
+
+### 📋 Diseño de Nueva Tabla `_migrations`
+
+**Tabla Actual (INADECUADA):**
+```sql
+CREATE TABLE _migrations (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Problemas**:
+- ❌ No captura output/errores
+- ❌ No registra tiempo de ejecución
+- ❌ No registra quién aplicó la migración
+- ❌ No tiene estado (success/failed/rolled_back)
+- ❌ No tiene checksums para verificación de integridad
+
+**Tabla Nueva (ROBUSTA CON AUDITORÍA COMPLETA):**
+```sql
+CREATE TABLE _migrations (
+  id SERIAL PRIMARY KEY,
+  migration_name VARCHAR(255) NOT NULL UNIQUE,
+  applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  applied_by VARCHAR(100) DEFAULT CURRENT_USER NOT NULL,
+  execution_time_ms INTEGER,
+  status VARCHAR(20) NOT NULL DEFAULT 'success' 
+    CHECK (status IN ('success', 'failed', 'rolled_back')),
+  output_log TEXT,
+  error_log TEXT,
+  checksum VARCHAR(64),
+  description TEXT,
+  CONSTRAINT unique_migration_name UNIQUE (migration_name)
+);
+
+COMMENT ON TABLE _migrations IS 
+  'Control de migraciones aplicadas con auditoría completa';
+COMMENT ON COLUMN _migrations.migration_name IS 
+  'Nombre del archivo de migración (ej: 20251101_010000_create_unified_owner.sql)';
+COMMENT ON COLUMN _migrations.applied_at IS 
+  'Timestamp de cuándo se aplicó la migración';
+COMMENT ON COLUMN _migrations.applied_by IS 
+  'Usuario de PostgreSQL que aplicó la migración';
+COMMENT ON COLUMN _migrations.execution_time_ms IS 
+  'Tiempo de ejecución en milisegundos';
+COMMENT ON COLUMN _migrations.status IS 
+  'Estado: success (exitosa), failed (fallida), rolled_back (revertida)';
+COMMENT ON COLUMN _migrations.output_log IS 
+  'Captura de stdout durante la ejecución';
+COMMENT ON COLUMN _migrations.error_log IS 
+  'Captura de stderr si hubo errores';
+COMMENT ON COLUMN _migrations.checksum IS 
+  'Hash SHA-256 del contenido del archivo para validación';
+```
+
+### 📁 Nueva Estructura de Directorios de Migraciones
+
+```
+database/migrations/
+├── archive/                           # Migraciones obsoletas archivadas
+│   └── pre_v1.0.0/                   # 89 migraciones antiguas (sincronía rota)
+│       ├── 20241014_150000_seed.sql
+│       ├── 20241015_*.sql
+│       └── ... (todas las pre-v1.0.0)
+├── development/                       # ✏️ Nuevas migraciones en desarrollo
+│   └── (vacío inicialmente)
+├── tested/                            # ✅ Validadas en DEV, listas para PROD
+│   └── (vacío inicialmente)
+└── applied/                           # 📦 Aplicadas exitosamente en PROD
+    └── 20251101_000000_baseline_v1.0.0.sql  # 🎯 Nueva seed baseline
+```
+
+### 🌱 Nueva Seed Baseline v1.0.0
+
+**Archivo**: `database/migrations/applied/20251101_000000_baseline_v1.0.0.sql`
+
+**Características**:
+```sql
+-- ✅ Owner hardcodeado (sin variables)
+SET ROLE cuentassik_owner;
+
+-- ✅ NO contiene datos de prueba
+-- (sin "Casa Test", sin usuarios de prueba)
+
+-- ✅ Solo estructura limpia
+CREATE TABLE households (...);
+CREATE TABLE profiles (...);
+-- etc...
+
+-- ✅ Todos los objetos son propiedad de cuentassik_owner
+```
+
+**Diferencias con seed anterior**:
+- ❌ **Antes**: Usaba `:SEED_OWNER` variable (permitía dev_owner O prod_owner)
+- ✅ **Ahora**: Hardcodeado `SET ROLE cuentassik_owner;`
+- ❌ **Antes**: Incluía "Casa Test" household con datos de prueba
+- ✅ **Ahora**: Solo estructura, sin datos de prueba
+- ❌ **Antes**: Propiedad fragmentada (dev_owner vs prod_owner)
+- ✅ **Ahora**: Todo propiedad de cuentassik_owner
+
+### 🔧 Nuevos Scripts de Migraciones
+
+#### Script 1: `apply_migration_dev.sh`
+**Propósito**: Aplicar migración desde `/development` a base de datos DEV
+
+```bash
+#!/bin/bash
+# Aplica migración a DEV con auditoría completa
+
+MIGRATION_FILE="$1"
+DB_NAME="cuentassik_dev"
+
+# Validaciones
+if [[ ! -f "$MIGRATION_FILE" ]]; then
+  echo "❌ Archivo no encontrado: $MIGRATION_FILE"
+  exit 1
+fi
+
+# Generar checksum
+CHECKSUM=$(sha256sum "$MIGRATION_FILE" | cut -d' ' -f1)
+
+# Capturar tiempo de inicio
+START_TIME=$(date +%s%3N)
+
+# ✅ Aplicar migración usando STDIN (<) no -f
+OUTPUT=$(sudo -u postgres psql -d "$DB_NAME" < "$MIGRATION_FILE" 2>&1)
+EXIT_CODE=$?
+
+# Calcular tiempo de ejecución
+END_TIME=$(date +%s%3N)
+EXEC_TIME=$((END_TIME - START_TIME))
+
+# Determinar estado
+if [[ $EXIT_CODE -eq 0 ]]; then
+  STATUS="success"
+else
+  STATUS="failed"
+fi
+
+# Registrar en _migrations (si la tabla existe)
+sudo -u postgres psql -d "$DB_NAME" <<EOF
+INSERT INTO _migrations (
+  migration_name, 
+  execution_time_ms, 
+  status, 
+  output_log, 
+  checksum
+) VALUES (
+  '$(basename "$MIGRATION_FILE")',
+  $EXEC_TIME,
+  '$STATUS',
+  \$log\$$OUTPUT\$log\$,
+  '$CHECKSUM'
+) ON CONFLICT (migration_name) DO UPDATE SET
+  applied_at = CURRENT_TIMESTAMP,
+  execution_time_ms = EXCLUDED.execution_time_ms,
+  status = EXCLUDED.status,
+  output_log = EXCLUDED.output_log;
+EOF
+
+# Mostrar resultado
+if [[ $EXIT_CODE -eq 0 ]]; then
+  echo "✅ Migración aplicada exitosamente en DEV"
+  echo "⏱️  Tiempo de ejecución: ${EXEC_TIME}ms"
+else
+  echo "❌ Migración falló en DEV"
+  echo "$OUTPUT"
+  exit 1
+fi
+```
+
+#### Script 2: `promote_to_tested.sh`
+**Propósito**: Mover migración de `/development` a `/tested` tras validación
+
+```bash
+#!/bin/bash
+# Promociona migración validada de development → tested
+
+DEV_DIR="database/migrations/development"
+TESTED_DIR="database/migrations/tested"
+
+# Listar migraciones disponibles
+echo "📝 Migraciones disponibles en development:"
+select MIGRATION in "$DEV_DIR"/*.sql; do
+  if [[ -f "$MIGRATION" ]]; then
+    echo ""
+    echo "📄 Contenido de $(basename "$MIGRATION"):"
+    head -20 "$MIGRATION"
+    echo ""
+    read -p "¿Promover a tested? (s/N): " CONFIRM
+    
+    if [[ "$CONFIRM" == "s" ]] || [[ "$CONFIRM" == "S" ]]; then
+      mv "$MIGRATION" "$TESTED_DIR/"
+      echo "✅ Migración promovida a tested/"
+      echo "🚀 Lista para aplicar en PROD"
+    else
+      echo "❌ Promoción cancelada"
+    fi
+    break
+  fi
+done
+```
+
+#### Script 3: `apply_migration_prod.sh`
+**Propósito**: Aplicar migración desde `/tested` a base de datos PROD
+
+```bash
+#!/bin/bash
+# Aplica migración a PROD con auditoría completa y backup automático
+
+MIGRATION_FILE="$1"
+DB_NAME="cuentassik_prod"
+BACKUP_DIR="/home/kava/workspace/backups"
+
+# Validaciones
+if [[ ! -f "$MIGRATION_FILE" ]]; then
+  echo "❌ Archivo no encontrado: $MIGRATION_FILE"
+  exit 1
+fi
+
+# ⚠️ BACKUP OBLIGATORIO antes de aplicar en PROD
+echo "💾 Creando backup de seguridad de PROD..."
+BACKUP_FILE="$BACKUP_DIR/prod_pre_migration_$(date +%Y%m%d_%H%M%S).sql"
+sudo -u postgres pg_dump -d "$DB_NAME" > "$BACKUP_FILE"
+
+if [[ $? -ne 0 ]]; then
+  echo "❌ Backup falló. Abortando migración."
+  exit 1
+fi
+
+echo "✅ Backup creado: $BACKUP_FILE"
+
+# Resto del script igual a apply_migration_dev.sh
+# (mismo código de checksum, tiempo, aplicación con <, registro en _migrations)
+```
+
+#### Script 4: `promote_to_applied.sh`
+**Propósito**: Mover migración de `/tested` a `/applied` tras éxito en PROD
+
+```bash
+#!/bin/bash
+# Promociona migración exitosa de tested → applied
+
+TESTED_DIR="database/migrations/tested"
+APPLIED_DIR="database/migrations/applied"
+
+# Listar migraciones disponibles
+echo "📝 Migraciones aplicadas exitosamente en PROD:"
+select MIGRATION in "$TESTED_DIR"/*.sql; do
+  if [[ -f "$MIGRATION" ]]; then
+    read -p "¿Mover a applied/? (s/N): " CONFIRM
+    
+    if [[ "$CONFIRM" == "s" ]] || [[ "$CONFIRM" == "S" ]]; then
+      mv "$MIGRATION" "$APPLIED_DIR/"
+      echo "✅ Migración archivada en applied/"
+      echo "📦 Proceso completo"
+    else
+      echo "❌ Archivado cancelado"
+    fi
+    break
+  fi
+done
+```
+
+#### Script 5: `archive_old_migrations.sh`
+**Propósito**: Archivar las 89 migraciones obsoletas pre-v1.0.0
+
+```bash
+#!/bin/bash
+# Archiva migraciones antiguas (pre-v1.0.0) con sincronía rota
+
+SOURCE_DIR="database/migrations/applied"
+ARCHIVE_DIR="database/migrations/archive/pre_v1.0.0"
+
+mkdir -p "$ARCHIVE_DIR"
+
+echo "📦 Archivando migraciones pre-v1.0.0..."
+
+# Mover todas las migraciones antiguas EXCEPTO la nueva baseline
+find "$SOURCE_DIR" -name "*.sql" \
+  ! -name "20251101_000000_baseline_v1.0.0.sql" \
+  -exec mv {} "$ARCHIVE_DIR/" \;
+
+echo "✅ Archivado completo"
+echo "📊 Total archivadas: $(ls -1 "$ARCHIVE_DIR" | wc -l)"
+```
+
+### 🔄 Workflow Completo de Migraciones
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WORKFLOW: development → tested → applied                        │
+└─────────────────────────────────────────────────────────────────┘
+
+1️⃣ DESARROLLO
+   📝 Crear: database/migrations/development/20251101_120000_add_feature.sql
+   ⬇️
+   
+2️⃣ APLICAR A DEV
+   $ ./scripts/apply_migration_dev.sh \
+       database/migrations/development/20251101_120000_add_feature.sql
+   
+   ✅ Migración aplicada en DEV
+   ✅ Registrada en _migrations con output/checksum/tiempo
+   ⬇️
+   
+3️⃣ VALIDAR EN DEV
+   🧪 Probar funcionalidad
+   🧪 Verificar datos
+   🧪 Ejecutar tests
+   ⬇️
+   
+4️⃣ PROMOVER A TESTED
+   $ ./scripts/promote_to_tested.sh
+   
+   ✅ Migración movida a database/migrations/tested/
+   ⬇️
+   
+5️⃣ APLICAR A PROD
+   $ ./scripts/apply_migration_prod.sh \
+       database/migrations/tested/20251101_120000_add_feature.sql
+   
+   💾 Backup automático de PROD
+   ✅ Migración aplicada en PROD
+   ✅ Registrada en _migrations
+   ⬇️
+   
+6️⃣ VALIDAR EN PROD
+   🧪 Verificar aplicación funciona
+   🧪 Revisar PM2 logs
+   ⬇️
+   
+7️⃣ PROMOVER A APPLIED
+   $ ./scripts/promote_to_applied.sh
+   
+   ✅ Migración archivada en database/migrations/applied/
+   📦 Proceso completo
+```
+
+### 📊 Ventajas del Nuevo Sistema
+
+**Trazabilidad Completa**:
+- ✅ Cada migración registra quién, cuándo, cuánto tiempo
+- ✅ Output completo capturado para debugging
+- ✅ Checksums para verificar integridad de archivos
+- ✅ Estados claros (success/failed/rolled_back)
+
+**Seguridad**:
+- ✅ Uso de stdin (`<`) en lugar de `-f` (más seguro)
+- ✅ Backup automático antes de aplicar en PROD
+- ✅ Validación en DEV obligatoria antes de PROD
+
+**Organización**:
+- ✅ Workflow claro: development → tested → applied
+- ✅ Migraciones obsoletas archivadas (no se pierden)
+- ✅ Baseline limpia v1.0.0 sin datos de prueba
+
+**Mantenibilidad**:
+- ✅ Scripts automatizados para todo el workflow
+- ✅ Auditoría automática en cada paso
+- ✅ Fácil rollback con backups automáticos
+
+---
+
 ## ✅ Checklist de Implementación
 
 ### Pre-requisitos
@@ -442,6 +826,56 @@ echo "============================================"
 - [ ] Probar migración de prueba en ambos entornos
 - [ ] Documentar cambios en CHANGELOG.md
 
+### Fase 8: Reset Sistema de Migraciones
+- [ ] Crear script `archive_old_migrations.sh`
+- [ ] Ejecutar archivado (89 migraciones → archive/pre_v1.0.0/)
+- [ ] Crear migración `20251101_060000_reset_migrations_table.sql`
+- [ ] Aplicar reset de tabla _migrations en DEV
+- [ ] Aplicar reset de tabla _migrations en PROD
+- [ ] Verificar nueva estructura de _migrations
+
+### Fase 9: Nueva Seed Baseline v1.0.0
+- [ ] Crear `20251101_000000_baseline_v1.0.0.sql`
+- [ ] Hardcodear `SET ROLE cuentassik_owner;`
+- [ ] Eliminar todos los datos de prueba
+- [ ] Validar en base de datos temporal
+- [ ] Verificar que todos los objetos son owned by cuentassik_owner
+- [ ] Commitear a repositorio en `database/migrations/applied/`
+
+### Fase 10: Actualizar Scripts
+- [ ] Crear `apply_migration_dev.sh` (usa `<`, captura output, audit)
+- [ ] Crear `promote_to_tested.sh`
+- [ ] Crear `apply_migration_prod.sh` (usa `<`, backup auto, audit)
+- [ ] Crear `promote_to_applied.sh`
+- [ ] Probar workflow completo: dev → tested → prod → applied
+- [ ] Actualizar permisos de ejecución (chmod +x)
+
+### Fase 11: Actualizar Documentación
+- [ ] Reescribir `docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md`
+  - [ ] Actualizar roles (eliminar dev_owner/prod_owner)
+  - [ ] Documentar cuentassik_owner
+  - [ ] Actualizar comandos de restauración
+  - [ ] Documentar nueva tabla _migrations
+- [ ] Actualizar `database/README.md`
+  - [ ] Documentar nuevo workflow de migraciones
+  - [ ] Añadir ejemplos de uso de scripts
+  - [ ] Documentar estructura archive/pre_v1.0.0/
+- [ ] Actualizar `.github/copilot-instructions.md`
+  - [ ] Actualizar roles de base de datos
+  - [ ] Documentar uso de stdin (`<`) para migraciones
+
+### Fase 12: Validación Final del Sistema Completo
+- [ ] Crear migración de prueba en development/
+- [ ] Aplicar a DEV con nuevo script
+- [ ] Verificar registro en _migrations (todos los campos)
+- [ ] Promover a tested/
+- [ ] Aplicar a PROD con nuevo script
+- [ ] Verificar backup automático creado
+- [ ] Verificar registro en _migrations de PROD
+- [ ] Promover a applied/
+- [ ] Verificar que workflow completo funciona
+- [ ] Documentar tiempo total de ejecución
+
 ---
 
 ## 🎯 Resultado Esperado
@@ -449,7 +883,7 @@ echo "============================================"
 ### Estructura Final de Roles
 ```
 postgres          → Superusuario del sistema (LOGIN)
-cuentassik_owner  → Owner único de objetos (NOLOGIN)
+cuentassik_owner  → Owner único de objetos en DEV y PROD (NOLOGIN)
 cuentassik_user   → Usuario de aplicación (LOGIN)
 ```
 
@@ -461,15 +895,94 @@ Secuencias:            2 → cuentassik_owner
 Vistas Materializadas: 3 → cuentassik_owner
 ```
 
+### Sistema de Migraciones Final
+```
+database/migrations/
+├── archive/
+│   └── pre_v1.0.0/              # 89 migraciones antiguas archivadas
+├── development/                  # Migraciones nuevas en desarrollo
+├── tested/                       # Validadas en DEV, listas para PROD
+└── applied/                      # Aplicadas exitosamente en PROD
+    └── 20251101_000000_baseline_v1.0.0.sql  # Baseline limpia
+```
+
+**Tabla `_migrations` (con auditoría completa)**:
+- ✅ migration_name (único)
+- ✅ applied_at (timestamp)
+- ✅ applied_by (usuario)
+- ✅ execution_time_ms (performance)
+- ✅ status (success/failed/rolled_back)
+- ✅ output_log (stdout capturado)
+- ✅ error_log (stderr capturado)
+- ✅ checksum (integridad SHA-256)
+
+**Scripts de Workflow**:
+- ✅ `apply_migration_dev.sh` - Aplica a DEV con auditoría
+- ✅ `promote_to_tested.sh` - Promociona dev → tested
+- ✅ `apply_migration_prod.sh` - Aplica a PROD con backup automático
+- ✅ `promote_to_applied.sh` - Promociona tested → applied
+- ✅ `archive_old_migrations.sh` - Archiva migraciones obsoletas
+
 ### Ventajas Conseguidas
+
+**Ownership Unificado**:
 - ✅ Migraciones portables entre DEV y PROD sin modificaciones
 - ✅ Estructura espejo entre entornos
 - ✅ Gestión simplificada de permisos
 - ✅ Seed baseline limpia y profesional
 - ✅ Default privileges consistentes
-- ✅ Documentación completa y actualizada
+
+**Sistema de Migraciones Robusto**:
+- ✅ Trazabilidad completa de cada migración
+- ✅ Captura de output/errores para debugging
+- ✅ Checksums para verificar integridad
+- ✅ Uso de stdin (`<`) más seguro que `-f`
+- ✅ Backup automático antes de aplicar en PROD
+- ✅ Workflow claro: development → tested → applied
+- ✅ Auditoría automática en cada paso
+- ✅ Baseline limpia v1.0.0 sin datos de prueba
+
+**Documentación**:
+- ✅ PostgreSQL sistema completo actualizado
+- ✅ README de database con nuevo workflow
+- ✅ Copilot instructions actualizadas
+- ✅ Ejemplos de uso de scripts incluidos
 
 ---
 
-**Estado**: Pendiente de aprobación para proceder con implementación
-**Próximo paso**: Crear migración Fase 1 (crear rol cuentassik_owner)
+## 📊 Estimación de Tiempo
+
+### Ownership Unification (Fases 1-7)
+- Fase 1: Crear rol unificado → 2 minutos
+- Fase 2: Transferir ownership DEV → 5 minutos
+- Fase 3: Transferir ownership PROD → 5 minutos
+- Fase 4: Actualizar default privileges → 3 minutos
+- Fase 5: Nueva seed baseline → 30 minutos
+- Fase 6: Eliminar roles obsoletos → 2 minutos
+- Fase 7: Auditoría final → 10 minutos
+**Subtotal: ~1 hora**
+
+### Migration System Reset (Fases 8-11)
+- Fase 8: Reset tabla _migrations → 10 minutos
+- Fase 9: Nueva seed v1.0.0 → 30 minutos (ya incluido en Fase 5)
+- Fase 10: Actualizar 5 scripts → 1 hora
+- Fase 11: Actualizar documentación → 1 hora
+**Subtotal: ~2-3 horas**
+
+### Validación Final (Fase 12)
+- Fase 12: Pruebas completas → 1 hora
+**Subtotal: ~1 hora**
+
+**TOTAL ESTIMADO: 4-5 horas**
+
+---
+
+**Estado**: ✏️ Documentación completa - Pendiente de aprobación para implementación
+**Próximos pasos**: 
+1. Revisión y aprobación del plan completo
+2. Crear migraciones de ownership unification (Fases 1-6)
+3. Crear migración de reset de _migrations (Fase 8)
+4. Crear nueva seed baseline v1.0.0 (Fase 9)
+5. Implementar nuevos scripts (Fase 10)
+6. Actualizar documentación (Fase 11)
+7. Validación completa del sistema (Fase 12)
