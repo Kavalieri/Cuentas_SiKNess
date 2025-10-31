@@ -21,6 +21,7 @@ interface EditCommonMovementButtonProps {
     amount: number;
     description?: string;
     category_id?: string;
+    subcategory_id?: string;
     occurred_at?: string;
     performed_at?: string | null;
     paid_by?: string | null; // Para ingresos, el profile_id del miembro
@@ -63,17 +64,27 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
         if (result.ok && result.data) {
           setHierarchy(result.data);
           
-          // Resolver valores iniciales si existe category_id en la transacción
-          if (tx.category_id) {
-            // Buscar la categoría en la jerarquía
+          // ✅ Priorizar subcategory_id sobre category_id
+          const targetId = tx.subcategory_id || tx.category_id;
+          if (targetId) {
+            // ✅ Buscar en toda la jerarquía (parent → category → subcategory)
             for (const parent of result.data) {
-              const category = parent.categories.find(c => c.id === tx.category_id);
-              if (category) {
-                setSelectedParentId(parent.id);
-                setSelectedCategoryId(category.id);
-                // Si tiene subcategorías, seleccionar la primera por defecto
-                setSelectedSubcategoryId('');
-                break;
+              for (const category of parent.categories) {
+                // ✅ Primero buscar en subcategorías
+                const subcategory = category.subcategories?.find(s => s.id === targetId);
+                if (subcategory) {
+                  setSelectedParentId(parent.id);
+                  setSelectedCategoryId(category.id);
+                  setSelectedSubcategoryId(subcategory.id);
+                  return; // Salir completamente
+                }
+                // ✅ Fallback: verificar si targetId es la categoría (legacy)
+                if (category.id === targetId) {
+                  setSelectedParentId(parent.id);
+                  setSelectedCategoryId(category.id);
+                  setSelectedSubcategoryId('');
+                  return;
+                }
               }
             }
           }
@@ -83,7 +94,7 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
       };
       loadHierarchyAndResolve();
     }
-  }, [open, householdId, tx.category_id]);
+  }, [open, householdId, tx.category_id, tx.subcategory_id]);
 
   // ✨ Filtros cascada (ingresos o gastos según el tipo de transacción)
   const filteredParents = useMemo(() => {

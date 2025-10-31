@@ -18,6 +18,7 @@ interface EditDirectExpenseButtonProps {
     amount: number;
     description?: string;
     category_id?: string;
+    subcategory_id?: string;
     occurred_at?: string;
     performed_at?: string | null;
   };
@@ -54,18 +55,28 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
         if (result.ok && result.data) {
           setHierarchy(result.data);
           
-          // Resolver valores iniciales si existe category_id en la transacción
-          if (tx.category_id) {
-            // Buscar la categoría en la jerarquía
+          // Resolver valores iniciales desde subcategory_id (prioritario) o category_id (legacy)
+          const targetId = tx.subcategory_id || tx.category_id;
+          if (targetId) {
+            // Recorrer jerarquía completa para encontrar la subcategoría
             for (const parent of result.data) {
-              const category = parent.categories.find(c => c.id === tx.category_id);
-              if (category) {
-                setSelectedParentId(parent.id);
-                setSelectedCategoryId(category.id);
-                // Si tiene subcategorías, seleccionar la primera por defecto
-                // (o podrías dejar vacío para que el usuario elija)
-                setSelectedSubcategoryId('');
-                break;
+              for (const category of parent.categories) {
+                // Buscar en subcategorías primero
+                const subcategory = category.subcategories?.find(s => s.id === targetId);
+                if (subcategory) {
+                  // Encontrada subcategoría → configurar todo el path
+                  setSelectedParentId(parent.id);
+                  setSelectedCategoryId(category.id);
+                  setSelectedSubcategoryId(subcategory.id);
+                  return; // Salir completamente
+                }
+                // Si no es subcategoría, verificar si es categoría (legacy)
+                if (category.id === targetId) {
+                  setSelectedParentId(parent.id);
+                  setSelectedCategoryId(category.id);
+                  setSelectedSubcategoryId('');
+                  return;
+                }
               }
             }
           }
@@ -75,7 +86,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
       };
       loadHierarchyAndResolve();
     }
-  }, [open, householdId, tx.category_id]);
+  }, [open, householdId, tx.category_id, tx.subcategory_id]);
 
   // ✨ Filtros cascada (solo gastos para direct expense)
   const filteredParents = useMemo(() => {
