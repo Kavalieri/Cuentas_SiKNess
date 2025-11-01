@@ -155,6 +155,59 @@ console.log(result.rows);
 
 ---
 
+## 🔄 Sistema de Auto-generación de Types (✅ Completado)
+
+**Estado**: ✅ **Issue #8 y #10 COMPLETADOS**
+
+### TypeScript Types Autogenerados
+
+Los types de base de datos se generan **automáticamente** desde el schema PostgreSQL usando `kysely-codegen`.
+
+**Archivo generado**: `types/database.generated.ts`
+- **Líneas**: ~1,013 (43 tablas + enums)
+- **Formato**: Kysely (interfaces TypeScript)
+- **Source of truth**: Schema PostgreSQL
+- **Mantenimiento**: ✅ CERO (100% automático)
+
+### Regeneración Automática en Migraciones
+
+Cuando aplicas una migración, **los types se regeneran automáticamente**:
+
+```bash
+./scripts/apply_migration.sh dev mi_migracion.sql
+
+# Output:
+✅ Migración aplicada exitosamente (125ms)
+🔄 Regenerando types TypeScript desde esquema PostgreSQL...
+✅ Types regenerados exitosamente
+```
+
+**Beneficios**:
+- ✅ Sincronización automática schema ↔ types
+- ✅ Compilación TypeScript siempre limpia
+- ✅ Cero mantenimiento manual
+- ✅ JSDoc completo desde comentarios SQL
+
+### Regeneración Manual
+
+```bash
+# DEV
+npm run types:generate:dev
+
+# PROD
+npm run types:generate:prod
+```
+
+**VS Code Tasks disponibles**:
+- `🔄 Regenerar Types (DEV)`
+- `🔄 Regenerar Types (PROD)`
+
+**Documentación completa**: 
+- `docs/ISSUE_8_AUTO_GENERACION_TYPES.md`
+- `database/README.md` (sección auto-generación)
+
+---
+
 ## 🔄 Sistema de Migraciones
 
 ### Estructura de Directorios

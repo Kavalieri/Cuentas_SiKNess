@@ -508,7 +508,68 @@ async function getPersonalBalance(householdId: string, profileId: string) {
 
 ---
 
-## 📝 **Migraciones**
+## � **Auto-generación de Types TypeScript** (✅ Completado)
+
+**Estado**: Issue #8 y #10 completados exitosamente.
+
+### Sistema Implementado
+
+Los TypeScript types se generan **automáticamente** desde el schema PostgreSQL usando `kysely-codegen`.
+
+**Archivo generado**: `types/database.generated.ts`
+- **Líneas**: ~1,013 (43 tablas + enums)
+- **Formato**: Kysely (interfaces TypeScript nativas)
+- **Source of truth**: Schema PostgreSQL actual
+- **Mantenimiento**: ✅ CERO (100% automático)
+
+### Regeneración Automática en Migraciones
+
+**Al aplicar cualquier migración**, los types se regeneran automáticamente:
+
+```bash
+./scripts/apply_migration.sh dev 20251101_add_new_column.sql
+
+# Output automático:
+✅ Migración aplicada exitosamente en DEV (125ms)
+
+🔄 Regenerando types TypeScript desde esquema PostgreSQL...
+✅ Types regenerados exitosamente
+
+📝 Recuerda hacer commit de los cambios:
+   git add database/migrations/ types/database.generated.ts
+   git commit -m 'feat(db): add new column to table'
+```
+
+### Regeneración Manual (cuando sea necesario)
+
+```bash
+# DEV
+npm run types:generate:dev
+
+# PROD  
+npm run types:generate:prod
+```
+
+**VS Code Tasks**:
+- `🔄 Regenerar Types (DEV)`
+- `🔄 Regenerar Types (PROD)`
+
+### Beneficios
+
+- ✅ **Sincronización perfecta**: Types siempre reflejan schema real
+- ✅ **Compilación limpia**: TypeScript nunca se queja de columnas faltantes
+- ✅ **Cero mantenimiento**: No hay que actualizar types manualmente
+- ✅ **JSDoc automático**: Comentarios SQL se convierten en documentación TypeScript
+- ✅ **Workflow fluido**: Aplica migración → Types actualizados → Continúa programando
+
+### Documentación Completa
+
+- `database/README.md` - Sección "🔄 Auto-generación de Types TypeScript"
+- `docs/ISSUE_8_AUTO_GENERACION_TYPES.md` - Documentación técnica completa
+
+---
+
+## �📝 **Migraciones**
 
 ### Directorio
 
@@ -869,28 +930,38 @@ SELECT * FROM _migrations ORDER BY applied_at DESC LIMIT 10;
 
 ### **🔍 VSCode Tasks Disponibles**
 
-**Migraciones**:
-
-- `➕ Crear Nueva Migración` - Genera archivo con timestamp
-- `🔧 Aplicar Migraciones en DEV` - Aplica development/ a DEV
-- `✅ Promover a Tested` - Mueve de development/ a tested/
-- `📋 Listar Migraciones por Estado` - Ver qué hay en cada directorio
-- `🔍 Ver Última Migración Aplicada` - Consulta tabla \_migrations
-
-**Sincronización**:
-
-- `📥 ESCENARIO 1: Sincronizar PROD → DEV` - Copia datos PROD→DEV
-- `📊 ESCENARIO 1: Ver estado sincronización` - Info última sync
-- `🔍 ESCENARIO 1: Verificar diferencias PROD/DEV` - Compara datos
-
-**Producción**:
-
-- `🚀 ESCENARIO 2: Desplegar a PRODUCCIÓN` - Aplica tested/ a PROD
-- `📦 ESCENARIO 2: Backup manual PROD` - Backup bajo demanda
-- `📊 ESCENARIO 2: Estado migraciones PROD` - Ver \_migrations en PROD
-- `🔄 ESCENARIO 2: Reiniciar PM2` - Restart app después de deploy
-
 **Acceso**: `Ctrl+Shift+P` → `Tasks: Run Task`
+
+#### 🗄️ Migraciones - Creación y Gestión
+
+- `➕ Crear Nueva Migración` - Genera archivo con timestamp en `development/`
+- `� Ver Estado de Migraciones` - Muestra cantidad en development/tested/applied/archive
+- `⬆️ Promover Migración (dev → tested)` - Mueve migración probada a tested/
+
+#### � Migraciones - Aplicar (DEV)
+
+- `🔄 DEV: Aplicar Migración Específica` - Aplica una migración específica con prompt interactivo
+- `� DEV: Aplicar Todas las Migraciones Pendientes` - Aplica todas las migraciones en development/
+
+#### 🚀 Migraciones - Aplicar (PROD)
+
+- `� PROD: Aplicar Migración Específica` - Aplica migración a PROD con doble confirmación de seguridad
+
+#### 🔄 Types - Auto-generación
+
+- `� Regenerar Types (DEV)` - Regenera types/database.generated.ts desde schema DEV
+- `� Regenerar Types (PROD)` - Regenera types/database.generated.ts desde schema PROD
+
+#### �️ Database - Sincronización y Auditoría
+
+- `🔄 Sincronizar DEV → PROD (Database)` - Copia datos (no estructura) de PROD a DEV
+- `📊 Verificar Estado Bases de Datos` - Muestra contadores de tablas principales en DEV y PROD
+- `� Auditoría de Ownership Unificado` - Verifica ownership model correcto (Issue #6)
+
+**Notas**:
+- Las migraciones auto-regeneran types al aplicarse (Issue #10)
+- Backups automáticos antes de operaciones en PROD
+- Panel dedicado para operaciones críticas, compartido para consultas
 
 ---
 

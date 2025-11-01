@@ -22,7 +22,12 @@
 📚 **Gestión de la base de datos**: [../docs/POSTGRESQL_SISTEMA_COMPLETO.md](../docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md)
 📚 **DB Seed**: [../database/migrations/applied/20251014_150000_seed.sql](../database/migrations/applied/20251014_150000_seed.sql)
 
-📚 **Tareas**: [../.vscode/tasks.json](../.vscode/tasks.json)
+📚 **Tareas VS Code**: [../.vscode/tasks.json](../.vscode/tasks.json)
+- 🎮 **PM2**: Iniciar/Detener/Reiniciar DEV y PROD (con archivado logs)
+- 📊 **Monitoreo**: Ver logs, estado general
+- 🗄️ **Migraciones**: Crear, aplicar, promover, ver estado
+- 🔄 **Types**: Regenerar automáticamente o manual
+- 🗄️ **Database**: Sincronización, auditoría, verificación
 
 ---
 
@@ -80,15 +85,67 @@
 - NO hacer build en producción salvo petición explícita del usuario.
 - El servidor DEV está siempre encendido con recarga en caliente; usa las Tareas VS Code para reiniciarlo o ver los logs si es necesario.
 - Si necesitas reiniciar DEV o PROD, usa exclusivamente las tareas definidas (no ejecutes comandos manuales). Ver `.vscode/tasks.json`.
-- Usar MCP de git y github para gestionar el repositorio cómodamente.
-- Si algun elemento documentado resulta no ser cierto, editar actualizando al estado real o deprecar archivando.
-- Revisar tareas pendientes en `docs/TO-DO` y actualizar su estado. Una vez terminadas, mover a `docs/TO-DO/DONE`.
-- Documentar cualquier cambio en la estructura del proyecto o en las dependencias en los `AGENT.md` y `/docs`
+- **✅ USAR MCPs Git/GitHub**: Para todas las operaciones git (commit, push, status, etc.)
+- **❌ NO USAR `run_in_terminal` para Git**: Los comandos git SIEMPRE mediante MCPs
+- Si algún elemento documentado resulta no ser cierto, editar actualizando al estado real o deprecar archivando.
+- Revisar tareas pendientes en GitHub Issues y actualizar su estado. Issues cerrados con documentación en `docs/`.
+- Documentar cualquier cambio en la estructura del proyecto o en las dependencias en los `AGENTS.md` y `/docs`
 - npm run lint y npm run typecheck para validar compilación, **NO BUILD**
 - ❌ **NUNCA usar Supabase MCPs** (proyecto migrado a PostgreSQL directo)
 - ❌ **NUNCA usar Vercel MCPs** (deploy en servidor propio con PM2)
 - ❌ **NUNCA aplicar migraciones desde la aplicación** (usar `/scripts` y `.vscode/tasks.json` dedicados)
 - ❌ **NO USAR**: Archivos de documentación .md en la raíz (excepto README.md, CHANGELOG.md, CONTRIBUTING.md, LICENSE) (usar directorio `docs/`)
+
+---
+
+## 🔄 Sistema de Auto-generación de Types (Issue #8 ✅ - Issue #10 ✅)
+
+**Estado**: ✅ **COMPLETADO Y FUNCIONAL**
+
+### TypeScript Types Autogenerados
+
+Los types de base de datos se generan **automáticamente** desde el schema PostgreSQL usando `kysely-codegen`.
+
+**Archivo generado**: `types/database.generated.ts`
+- **Líneas**: ~1,013 (43 tablas + enums)
+- **Formato**: Kysely (interfaces TypeScript)
+- **Source of truth**: Schema PostgreSQL
+- **Mantenimiento**: ✅ CERO (100% automático)
+
+### Regeneración Automática en Migraciones
+
+Cuando aplicas una migración, **los types se regeneran automáticamente**:
+
+```bash
+./scripts/apply_migration.sh dev mi_migracion.sql
+
+# Output:
+✅ Migración aplicada exitosamente (125ms)
+🔄 Regenerando types TypeScript desde esquema PostgreSQL...
+✅ Types regenerados exitosamente
+```
+
+**Beneficios**:
+- ✅ Sincronización automática schema ↔ types
+- ✅ Compilación TypeScript siempre limpia
+- ✅ Cero mantenimiento manual
+- ✅ JSDoc completo desde comentarios SQL
+
+### Regeneración Manual (cuando sea necesario)
+
+```bash
+# DEV
+npm run types:generate:dev
+
+# PROD
+npm run types:generate:prod
+```
+
+**VS Code Tasks disponibles**:
+- `🔄 Regenerar Types (DEV)`
+- `🔄 Regenerar Types (PROD)`
+
+**Documentación completa**: `docs/ISSUE_8_AUTO_GENERACION_TYPES.md`
 
 ---
 
