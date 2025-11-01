@@ -21,12 +21,14 @@ interface EditDirectExpenseButtonProps {
     subcategory_id?: string;
     occurred_at?: string;
     performed_at?: string | null;
+    real_payer_id?: string; // ✨ NUEVO: ID del pagador actual
   };
   householdId?: string;
   onSuccess?: () => void;
+  members?: Array<{ profile_id: string; email: string; display_name?: string; role?: string }>; // ✨ NUEVO: lista de miembros
 }
 
-export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDirectExpenseButtonProps) {
+export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = [] }: EditDirectExpenseButtonProps) {
   const [open, setOpen] = useState(false);
 
   // ✨ Estados para jerarquía de 3 niveles
@@ -35,7 +37,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       amount: tx.amount,
       description: tx.description || '',
@@ -43,8 +45,11 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
       occurredAt: tx.performed_at
         ? tx.performed_at.slice(0, 16)
         : (tx.occurred_at ? (tx.occurred_at.length > 10 ? tx.occurred_at.slice(0, 16) : `${tx.occurred_at}T00:00`) : ''),
+      realPayerId: tx.real_payer_id || '', // ✨ NUEVO: pagador actual
     },
   });
+
+  const realPayerId = watch('realPayerId');
 
   // ✨ Cargar jerarquía y resolver valores iniciales al abrir
   useEffect(() => {
@@ -109,7 +114,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
     return selectedCategory?.subcategories || [];
   }, [selectedCategory]);
 
-  const onSubmit = async (data: { amount: number; description: string; occurredAt: string }) => {
+  const onSubmit = async (data: { amount: number; description: string; occurredAt: string; realPayerId: string }) => {
     try {
       const formData = new FormData();
       formData.append('movementId', tx.id);
@@ -119,6 +124,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
       // ✨ Enviar subcategory_id en lugar de categoryId
       formData.append('subcategoryId', selectedSubcategoryId || '');
       formData.append('occurredAt', data.occurredAt);
+      formData.append('realPayerId', data.realPayerId); // ✨ NUEVO: pagador
 
       const result = await editDirectExpenseWithCompensatory(formData);
 
@@ -244,6 +250,27 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* ✨ NUEVO: Selector de pagador */}
+            <div>
+              <Label className="block text-sm font-medium mb-1">Pagador</Label>
+              <Select
+                value={realPayerId}
+                onValueChange={(value) => setValue('realPayerId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona pagador" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((member) => (
+                    <SelectItem key={member.profile_id} value={member.profile_id}>
+                      <span>{member.display_name || member.email}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.realPayerId && <span className="text-xs text-red-500">Selecciona un pagador</span>}
             </div>
 
             <div>

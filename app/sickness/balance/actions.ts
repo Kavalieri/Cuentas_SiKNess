@@ -141,6 +141,7 @@ const EditMovementSchema = z.object({
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
   occurredAt: z.string().min(1, 'Fecha/hora requerida'),
+  realPayerId: z.string().uuid().optional(), // ✨ NUEVO: pagador para gastos directos
 });
 
 // Edita movimiento directo y su compensatorio si existe
@@ -152,9 +153,9 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     console.error('[editDirectExpenseWithCompensatory] Validation failed:', parsed.error);
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
-  const { movementId, householdId, amount, description, subcategoryId, occurredAt } = parsed.data;
+  const { movementId, householdId, amount, description, subcategoryId, occurredAt, realPayerId } = parsed.data;
 
-  console.log('[editDirectExpenseWithCompensatory] Parsed data:', { movementId, householdId, amount, description, subcategoryId, occurredAt });
+  console.log('[editDirectExpenseWithCompensatory] Parsed data:', { movementId, householdId, amount, description, subcategoryId, occurredAt, realPayerId });
 
   const { occurred_at_date, performed_at_ts } = parseDateTimeInput(occurredAt);
 
@@ -258,9 +259,10 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
          performed_at = $5,
          period_id = $6,
          updated_at = now(),
-         updated_by_profile_id = $7
-     WHERE id = $8 AND household_id = $9 AND flow_type = 'direct'`,
-    [amount, description || null, subcategoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, movementId, householdId]
+         updated_by_profile_id = $7,
+         real_payer_id = $8
+     WHERE id = $9 AND household_id = $10 AND flow_type = 'direct'`,
+    [amount, description || null, subcategoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, realPayerId || tx.real_payer_id, movementId, householdId]
   );
   console.log('[editDirectExpenseWithCompensatory] Update result:', { rowCount: updateResult.rowCount });
 
@@ -275,12 +277,13 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
            performed_at = $4,
            period_id = $5,
            updated_at = now(),
-           updated_by_profile_id = $6
-       WHERE transaction_pair_id = $7
+           updated_by_profile_id = $6,
+           real_payer_id = $7
+       WHERE transaction_pair_id = $8
          AND flow_type = 'direct'
          AND type IN ('income','income_direct')
-         AND household_id = $8`,
-      [amount, `Equilibrio: ${description || 'Gasto directo'}`, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, pairId, householdId]
+         AND household_id = $9`,
+      [amount, `Equilibrio: ${description || 'Gasto directo'}`, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, realPayerId || tx.real_payer_id, pairId, householdId]
     );
   }
 

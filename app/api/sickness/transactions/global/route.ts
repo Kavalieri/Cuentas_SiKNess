@@ -79,17 +79,33 @@ export async function GET(req: NextRequest) {
         t.real_payer_id,
         t.paid_by,
         t.category_id,
-        c.name as category_name,
-        c.icon as category_icon,
-        c.parent_id as parent_category_id,
-        pc.name as parent_category_name,
+        t.subcategory_id,
+        -- Subcategoría (nivel 3)
+        sc.name as subcategory_name,
+        sc.icon as subcategory_icon,
+        sc.parent_id as category_id_from_subcategory,
+        -- Categoría (nivel 2) - puede venir de category_id directo o del parent de subcategory
+        COALESCE(c.name, pc_from_sc.name) as category_name,
+        COALESCE(c.icon, pc_from_sc.icon) as category_icon,
+        -- Parent (nivel 1) - buscar desde category_id o desde la categoría padre de subcategoría
+        COALESCE(pc.name, gpc.name) as parent_category_name,
+        -- Información de perfiles
         p.email as profile_email,
         p.display_name as profile_display_name,
         rp.email as real_payer_email,
         rp.display_name as real_payer_display_name
       FROM transactions t
+      -- Subcategoría (si existe)
+      LEFT JOIN categories sc ON t.subcategory_id = sc.id
+      -- Categoría desde subcategory parent
+      LEFT JOIN categories pc_from_sc ON sc.parent_id = pc_from_sc.id
+      -- Categoría directa (legacy)
       LEFT JOIN categories c ON t.category_id = c.id
+      -- Parent desde categoría directa
       LEFT JOIN categories pc ON c.parent_id = pc.id
+      -- Grand parent desde subcategoría (parent del parent de subcategoría)
+      LEFT JOIN categories gpc ON pc_from_sc.parent_id = gpc.id
+      -- Perfiles
       LEFT JOIN profiles p ON t.profile_id = p.id
       LEFT JOIN profiles rp ON t.real_payer_id = rp.id
       ${whereClause}

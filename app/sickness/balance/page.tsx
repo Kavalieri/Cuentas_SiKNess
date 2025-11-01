@@ -35,6 +35,7 @@ interface Transaction {
   occurred_at: string;
   performed_at?: string | null;
   category_id?: string;
+  subcategory_id?: string; // ✨ NUEVO: necesario para edición
   profile_id?: string;
   real_payer_id?: string;
   transaction_pair_id?: string;
@@ -516,6 +517,12 @@ export default function BalancePage() {
                         <EditDirectExpenseButton
                           tx={tx}
                           householdId={householdId || undefined}
+                          members={members.map((m) => ({
+                            profile_id: m.profile_id,
+                            email: m.email,
+                            display_name: m.display_name,
+                            role: m.role
+                          }))}
                           onSuccess={async () => {
                             await loadTransactions();
                             await loadGlobalBalance();
