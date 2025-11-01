@@ -169,12 +169,13 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
               <label className="block text-sm font-medium">Importe (€)</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min={0.01}
                 {...register('amount', { required: true, min: 0.01 })}
                 className="border rounded px-2 py-1 w-full"
               />
-              {errors.amount && <span className="text-xs text-red-500">Importe obligatorio</span>}
+              {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
             </div>
             <div>
               <label className="block text-sm font-medium">Descripción</label>

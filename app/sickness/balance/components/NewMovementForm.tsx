@@ -351,15 +351,20 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
             </Select>
           </div>
           <div>
-            <Label>Cantidad</Label>
+            <Label>Cantidad (€)</Label>
             <Input
-              type="text"
+              type="number"
               inputMode="decimal"
-              placeholder="0,00"
+              step="0.01"
+              min="0.01"
+              placeholder="0.00"
               value={amount}
               onChange={e => setAmount(e.target.value)}
               required
             />
+            {amount && parseFloat(amount) <= 0 && (
+              <span className="text-xs text-red-500">El importe debe ser mayor que 0</span>
+            )}
           </div>
           <div>
             <Label>Fecha y hora</Label>
