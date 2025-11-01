@@ -77,6 +77,9 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false); // Nuevo: feedback tras guardar
 
+  // ✨ NUEVO: Clave localStorage para recordar valores del formulario
+  const STORAGE_KEY = `newMovementForm_${householdId}`;
+
   // ✨ NUEVO: Cargar jerarquía de categorías al abrir el modal
   useEffect(() => {
     if (open && householdId) {
@@ -92,22 +95,52 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
     }
   }, [open, householdId]);
 
-  // Resetear formulario cuando se abre el modal
+  // ✨ MEJORADO: Cargar valores previos desde localStorage al abrir
   useEffect(() => {
     if (open) {
       const defaultType = (canDirect && !canCommon) ? "direct_expense" : "expense";
-      setType(defaultType);
+      
+      // Intentar cargar valores previos
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          // Restaurar valores si existen y son válidos
+          if (parsed.type && (parsed.type === 'expense' || parsed.type === 'income' || parsed.type === 'direct_expense')) {
+            setType(parsed.type);
+          } else {
+            setType(defaultType);
+          }
+          setSelectedParentId(parsed.selectedParentId || '');
+          setSelectedCategoryId(parsed.selectedCategoryId || '');
+          setSelectedSubcategoryId(parsed.selectedSubcategoryId || '');
+          setRealPayerId(parsed.realPayerId || user?.id || undefined);
+        } else {
+          // Sin valores previos, usar defaults
+          setType(defaultType);
+          setSelectedParentId('');
+          setSelectedCategoryId('');
+          setSelectedSubcategoryId('');
+          setRealPayerId(user?.id || undefined);
+        }
+      } catch (err) {
+        // Si hay error leyendo localStorage, usar defaults
+        console.error('Error loading localStorage:', err);
+        setType(defaultType);
+        setSelectedParentId('');
+        setSelectedCategoryId('');
+        setSelectedSubcategoryId('');
+        setRealPayerId(user?.id || undefined);
+      }
+
+      // Siempre limpiar estos campos
       setAmount("");
-      setSelectedParentId('');
-      setSelectedCategoryId('');
-      setSelectedSubcategoryId('');
       setDescription("");
-      setRealPayerId(user?.id || undefined);
       setOccurredAt(formatDateTimeLocal(new Date()));
       setError(null);
-      setJustSaved(false); // Reset feedback al abrir
+      setJustSaved(false);
     }
-  }, [open, canDirect, canCommon, user?.id]);
+  }, [open, canDirect, canCommon, user?.id, householdId, STORAGE_KEY]);
 
   // ✨ NUEVO: Lógica de cascada para categorías
   const filteredParents = useMemo(() => {
@@ -219,6 +252,19 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
 
       toast.success('Movimiento creado correctamente');
 
+      // ✨ NUEVO: Guardar valores en localStorage para siguiente uso
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          type,
+          selectedParentId,
+          selectedCategoryId,
+          selectedSubcategoryId,
+          realPayerId: flow_type === 'direct' ? realPayerId : undefined,
+        }));
+      } catch (err) {
+        console.error('Error saving to localStorage:', err);
+      }
+
       // Refrescar la vista para ver el nuevo movimiento
       if (onSuccess) {
         try { await onSuccess(); } catch {}
@@ -226,7 +272,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         router.refresh();
       }
 
-      // ✨ NUEVO: Mantener formulario abierto, limpiar solo amount y description
+      // ✨ Mantener formulario abierto, limpiar solo amount y description
       setAmount("");
       setDescription("");
       // NO actualizar occurredAt: mantener la fecha del formulario para permitir registros consecutivos
@@ -246,11 +292,42 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
     }
   };
 
+  // ✨ NUEVO: Función para limpiar valores guardados en localStorage
+  const handleClearSaved = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      // Reset a valores por defecto
+      const defaultType = (canDirect && !canCommon) ? "direct_expense" : "expense";
+      setType(defaultType);
+      setSelectedParentId('');
+      setSelectedCategoryId('');
+      setSelectedSubcategoryId('');
+      setRealPayerId(user?.id || undefined);
+      setAmount("");
+      setDescription("");
+      toast.success('Valores guardados borrados');
+    } catch (err) {
+      console.error('Error clearing localStorage:', err);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nuevo movimiento</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Nuevo movimiento</DialogTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleClearSaved}
+              className="text-xs text-muted-foreground hover:text-foreground"
+              title="Borrar valores guardados y empezar de cero"
+            >
+              🔄 Limpiar
+            </Button>
+          </div>
         </DialogHeader>
 
         {/* Banner de feedback tras guardar */}
