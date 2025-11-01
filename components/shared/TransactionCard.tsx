@@ -13,14 +13,14 @@ interface TransactionCardProps {
     description?: string;
     occurred_at: string;
     performed_at?: string | null;
-    
+
     // ✅ Jerarquía completa de 3 niveles
     parent_category_name?: string;  // 🟢 Grupo (nivel 1)
     category_name?: string;         // 🟡 Categoría (nivel 2)
     category_icon?: string;
     subcategory_name?: string;      // 🔵 Subcategoría (nivel 3)
     subcategory_icon?: string;
-    
+
     profile_id?: string;
     profile_email?: string;
     profile_display_name?: string;
@@ -88,18 +88,23 @@ export function TransactionCard({
       );
     }
 
-    // ❌ CASO 3: Fallback legacy (solo categoría, sin grupo)
+    // ✅ CASO 3: Categoría sin subcategoría (grupo puede estar presente)
     if (tx.category_name) {
       return (
         <span className="flex items-center gap-1 text-xs">
+          {tx.parent_category_name && (
+            <>
+              <span className="text-muted-foreground">{tx.parent_category_name}</span>
+              <span className="text-muted-foreground">→</span>
+            </>
+          )}
           {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
           <span className="font-medium">{tx.category_name}</span>
-          <span className="text-xs text-amber-500 ml-2">⚠️ Sin grupo</span>
         </span>
       );
     }
 
-    // ❌ Sin categoría
+    // ⚠️ Fallback final: Sin categoría
     return <span className="text-muted-foreground text-xs">Sin categoría</span>;
   };
 
@@ -107,16 +112,25 @@ export function TransactionCard({
     <div className="border rounded-lg hover:bg-accent/50 transition-colors">
       {/* Vista Colapsada - Mobile First */}
       <div className="p-3 space-y-2">
-        {/* Línea 1: Descripción + Importe (siempre visible) */}
+        {/* Línea 1: Categoría/Subcategoría + Importe (siempre visible) */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium truncate">{tx.description || 'Sin descripción'}</span>
-              {tx.flow_type === 'direct' && (
-                <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded whitespace-nowrap">
-                  Directo
+            <div className="flex flex-col gap-1">
+              {/* Título: Categoría - Subcategoría */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium truncate">
+                  {tx.subcategory_name
+                    ? `${tx.category_name} - ${tx.subcategory_name}`
+                    : tx.category_name || 'Sin categoría'}
                 </span>
-              )}
+                {tx.flow_type === 'direct' && (
+                  <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded whitespace-nowrap">
+                    Directo
+                  </span>
+                )}
+              </div>
+              {/* Jerarquía completa visible siempre */}
+              <div className="text-xs text-muted-foreground">{renderCategory()}</div>
             </div>
           </div>
           <span
@@ -147,17 +161,16 @@ export function TransactionCard({
           )}
         </div>
 
-        {/* Línea 3: Categoría (siempre visible en mobile, oculta en desktop si colapsado) */}
-        <div className={`text-sm ${isExpanded ? '' : 'md:hidden'}`}>{renderCategory()}</div>
-
         {/* Vista Expandida: Información adicional */}
         {isExpanded && (
           <div className="pt-2 space-y-2 border-t">
-            {/* Categoría en desktop expandido */}
-            <div className="hidden md:block">
-              <span className="text-sm text-muted-foreground">Categoría: </span>
-              {renderCategory()}
-            </div>
+            {/* Descripción (si existe) */}
+            {tx.description && (
+              <div className="text-sm">
+                <span className="text-muted-foreground">Descripción: </span>
+                <span>{tx.description}</span>
+              </div>
+            )}
 
             {/* Miembro */}
             {memberName && (
@@ -166,14 +179,6 @@ export function TransactionCard({
                   {tx.flow_type === 'direct' ? 'Pagador: ' : 'Registrado por: '}
                 </span>
                 <span className="font-medium">{memberName}</span>
-              </div>
-            )}
-
-            {/* Descripción completa si es muy larga */}
-            {tx.description && tx.description.length > 50 && (
-              <div className="text-sm">
-                <span className="text-muted-foreground">Descripción completa: </span>
-                <span>{tx.description}</span>
               </div>
             )}
 
