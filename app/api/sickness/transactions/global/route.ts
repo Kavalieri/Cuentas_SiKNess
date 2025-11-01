@@ -83,12 +83,11 @@ export async function GET(req: NextRequest) {
         -- Subcategoría (nivel 3)
         sc.name as subcategory_name,
         sc.icon as subcategory_icon,
-        sc.parent_id as category_id_from_subcategory,
-        -- Categoría (nivel 2) - puede venir de category_id directo o del parent de subcategory
-        COALESCE(c.name, pc_from_sc.name) as category_name,
-        COALESCE(c.icon, pc_from_sc.icon) as category_icon,
-        -- Parent (nivel 1) - buscar desde category_id o desde la categoría padre de subcategoría
-        COALESCE(pc.name, gpc.name) as parent_category_name,
+        -- Categoría (nivel 2) - puede venir directamente o desde el parent de subcategory
+        COALESCE(cat.name, cat_from_sub.name) as category_name,
+        COALESCE(cat.icon, cat_from_sub.icon) as category_icon,
+        -- Grupo/Parent (nivel 1) - desde category_parents
+        COALESCE(cp.name, cp_from_sub.name) as parent_category_name,
         -- Información de perfiles
         p.email as profile_email,
         p.display_name as profile_display_name,
@@ -97,16 +96,16 @@ export async function GET(req: NextRequest) {
         pb.email as paid_by_email,
         pb.display_name as paid_by_display_name
       FROM transactions t
-      -- Subcategoría (si existe)
-      LEFT JOIN categories sc ON t.subcategory_id = sc.id
-      -- Categoría desde subcategory parent
-      LEFT JOIN categories pc_from_sc ON sc.parent_id = pc_from_sc.id
-      -- Categoría directa (legacy)
-      LEFT JOIN categories c ON t.category_id = c.id
-      -- Parent desde categoría directa
-      LEFT JOIN categories pc ON c.parent_id = pc.id
-      -- Grand parent desde subcategoría (parent del parent de subcategoría)
-      LEFT JOIN categories gpc ON pc_from_sc.parent_id = gpc.id
+      -- Subcategoría (tabla subcategories)
+      LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+      -- Categoría desde subcategoría (subcategories.category_id → categories.id)
+      LEFT JOIN categories cat_from_sub ON sc.category_id = cat_from_sub.id
+      -- Grupo desde categoría de subcategoría (categories.parent_id → category_parents.id)
+      LEFT JOIN category_parents cp_from_sub ON cat_from_sub.parent_id = cp_from_sub.id
+      -- Categoría directa (legacy: transactions.category_id → categories.id)
+      LEFT JOIN categories cat ON t.category_id = cat.id
+      -- Grupo desde categoría directa (categories.parent_id → category_parents.id)
+      LEFT JOIN category_parents cp ON cat.parent_id = cp.id
       -- Perfiles
       LEFT JOIN profiles p ON t.profile_id = p.id
       LEFT JOIN profiles rp ON t.real_payer_id = rp.id
