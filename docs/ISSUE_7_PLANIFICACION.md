@@ -1,8 +1,8 @@
 # Issue #7: Plantear la migración hacia Prisma - Planificación
 
-**Fecha inicio**: 31 Octubre 2025  
-**Fecha cierre**: 1 Noviembre 2025  
-**Estado**: ✅ COMPLETADO  
+**Fecha inicio**: 31 Octubre 2025
+**Fecha cierre**: 1 Noviembre 2025
+**Estado**: ✅ COMPLETADO
 **Issue GitHub**: [#7 - Plantear la migración hacia Prisma](https://github.com/Kavalieri/Cuentas_SiKNess/issues/7)
 
 ---
@@ -285,6 +285,6 @@ Sin considerar:
 
 ---
 
-**Análisis completado por**: AI Assistant  
-**Aprobado por**: Usuario (Kavalieri)  
+**Análisis completado por**: AI Assistant
+**Aprobado por**: Usuario (Kavalieri)
 **Fecha de cierre**: 1 Noviembre 2025

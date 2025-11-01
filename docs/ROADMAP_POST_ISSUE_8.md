@@ -1,7 +1,7 @@
 # 🗺️ Roadmap Post Issue #8: Sistema de Types y Query Layer
 
-**Fecha**: 1 Noviembre 2025  
-**Autor**: AI Assistant + Kavalieri  
+**Fecha**: 1 Noviembre 2025
+**Autor**: AI Assistant + Kavalieri
 **Contexto**: Plan de acción tras completar Issue #8 (Auto-generación de types)
 
 ---
@@ -59,8 +59,8 @@ npm run types:generate:dev
 3. Actualizar documentación en `database/README.md` (5 min)
 4. Testing con migración de prueba (5 min)
 
-**Esfuerzo**: 30 minutos  
-**Prioridad**: 🔴 ALTA (complementa Issue #8)  
+**Esfuerzo**: 30 minutos
+**Prioridad**: 🔴 ALTA (complementa Issue #8)
 **Riesgo**: ✅ MUY BAJO
 
 **Motivo para hacerlo:**
@@ -114,12 +114,12 @@ import type { Transactions } from '@/types/database.generated';
 3. **Tracking en** `docs/MIGRATION_TYPES_PROGRESS.md`
 4. **Sin deadline artificial** (puede tomar semanas/meses)
 
-**Esfuerzo estimado**: 
+**Esfuerzo estimado**:
 - Preparación: 2 horas
 - Migración de ~50 archivos: 20-30 horas (distribuidas en tiempo)
 - Finalización: 1 hora
 
-**Prioridad**: 🟢 BAJA (no urgente, no bloqueante)  
+**Prioridad**: 🟢 BAJA (no urgente, no bloqueante)
 **Riesgo**: ✅ MUY BAJO (incremental, testing constante)
 
 **Motivos para hacerlo:**
@@ -175,8 +175,8 @@ export const db = new Kysely<Database>({
 ```typescript
 // ANTES (SQL manual)
 const result = await query<Transaction>(
-  `SELECT * FROM transactions 
-   WHERE household_id = $1 
+  `SELECT * FROM transactions
+   WHERE household_id = $1
    AND occurred_at BETWEEN $2 AND $3
    ORDER BY occurred_at DESC`,
   [householdId, startDate, endDate]
@@ -242,8 +242,8 @@ const period = await db
 - SQL directo es más simple para equipo pequeño
 - Enfocarse solo en auto-generación de types (Issue #8)
 
-**Esfuerzo PoC**: 4-5 días  
-**Prioridad**: 🟡 MEDIA (evaluar después de Issue #10)  
+**Esfuerzo PoC**: 4-5 días
+**Prioridad**: 🟡 MEDIA (evaluar después de Issue #10)
 **Riesgo**: ✅ BAJO (solo PoC, fácil revertir)
 
 **Motivos para hacerlo:**
@@ -479,11 +479,11 @@ const result = await query<Transactions>(
 
 ---
 
-**📅 ÚLTIMA ACTUALIZACIÓN**: 1 Noviembre 2025  
-**📊 ESTADO**: Issue #8 completado, Issues #10, #9, #11 creados y priorizados  
+**📅 ÚLTIMA ACTUALIZACIÓN**: 1 Noviembre 2025
+**📊 ESTADO**: Issue #8 completado, Issues #10, #9, #11 creados y priorizados
 **🎯 SIGUIENTE PASO**: Completar Issue #10 (30 minutos)
 
 ---
 
-**🎉 Excelente trabajo en Issue #8 - Sistema de types optimizado**  
+**🎉 Excelente trabajo en Issue #8 - Sistema de types optimizado**
 **🚀 Siguiente: Hacer el workflow perfecto con Issue #10**

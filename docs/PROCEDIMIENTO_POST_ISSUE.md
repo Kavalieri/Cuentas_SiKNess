@@ -216,8 +216,8 @@ gh issue list --state closed --limit 5
 
 ## 📖 Ejemplo Completo: Issue #6
 
-**Issue**: Unificar usuarios DB  
-**Fecha**: 31 Octubre 2025  
+**Issue**: Unificar usuarios DB
+**Fecha**: 31 Octubre 2025
 **Resultado**: v2.1.0
 
 ### Pasos Ejecutados:
@@ -269,16 +269,16 @@ mcp_github_github_issue_read({ owner, repo, issue_number: 6, method: "get" })
 mcp_github_github_add_issue_comment({ owner, repo, issue_number: 6, body: "..." })
 
 // Cerrar issue
-mcp_github_github_issue_write({ 
-  method: "update", 
-  owner, 
-  repo, 
-  issue_number: 6, 
-  state: "closed" 
+mcp_github_github_issue_write({
+  method: "update",
+  owner,
+  repo,
+  issue_number: 6,
+  state: "closed"
 })
 ```
 
 ---
 
-**✅ Procedimiento Validado con Issue #6**  
+**✅ Procedimiento Validado con Issue #6**
 **Última actualización**: 31 Octubre 2025

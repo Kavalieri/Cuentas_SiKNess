@@ -1,8 +1,8 @@
 # Issue #8: Auto-generación de Types desde PostgreSQL
 
-**Fecha**: 31 Octubre 2025  
-**Estado**: ✅ COMPLETADO  
-**Prioridad**: HIGH  
+**Fecha**: 31 Octubre 2025
+**Estado**: ✅ COMPLETADO
+**Prioridad**: HIGH
 **Tiempo invertido**: ~2 horas
 
 ---
@@ -292,5 +292,5 @@ Ahora que tenemos types generados con kysely-codegen, evaluar si el query builde
 
 **✅ ISSUE #8 COMPLETADO EXITOSAMENTE**
 
-*Tiempo de implementación: 2 horas (incluyendo troubleshooting de @databases)*  
+*Tiempo de implementación: 2 horas (incluyendo troubleshooting de @databases)*
 *Resultado: Sistema de auto-generación funcional y documentado*

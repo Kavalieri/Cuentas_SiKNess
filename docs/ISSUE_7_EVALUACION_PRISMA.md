@@ -1,7 +1,7 @@
 # Issue #7: Evaluación de Migración a Prisma ORM
 
-**Fecha**: 1 Noviembre 2025  
-**Estado**: 🔍 En Análisis  
+**Fecha**: 1 Noviembre 2025
+**Estado**: 🔍 En Análisis
 **Issue**: [#7 - Plantear la migración hacia Prisma](https://github.com/Kavalieri/Cuentas_SiKNess/issues/7)
 
 ---
@@ -692,7 +692,7 @@ Generar `types/database.ts` automáticamente desde schema PostgreSQL.
 - ✅ Compatible con sistema actual
 - ✅ Bajo esfuerzo (1 día implementación)
 
-**Esfuerzo**: 1-2 días  
+**Esfuerzo**: 1-2 días
 **Beneficio**: Alto (elimina mantenimiento manual de types)
 
 ---
@@ -734,7 +734,7 @@ const transactions = await db
 - Queries CRUD simples (80% de casos)
 - Fallback a raw SQL para funciones y queries complejas (20%)
 
-**Esfuerzo**: 1-2 semanas (migración gradual)  
+**Esfuerzo**: 1-2 semanas (migración gradual)
 **Beneficio**: Medio-Alto (mejor DX sin comprometer arquitectura)
 
 ---
@@ -763,7 +763,7 @@ ROLLBACK;
 c) **Checksums automáticos**
 Ya implementado en `apply_migration.sh` ✅
 
-**Esfuerzo**: 2-3 días  
+**Esfuerzo**: 2-3 días
 **Beneficio**: Bajo-Medio (sistema actual ya robusto)
 
 ---
@@ -778,7 +778,7 @@ Generar documentación del schema automáticamente.
 
 **Output**: HTML interactivo con diagramas ER, relaciones, índices, etc.
 
-**Esfuerzo**: 1 día  
+**Esfuerzo**: 1 día
 **Beneficio**: Medio (mejor onboarding, documentación visual)
 
 ---
@@ -800,7 +800,7 @@ npm install --save-dev @databases/pg-schema-print-types
 # CI/CD: regenerar tras aplicar migraciones
 ```
 
-**Esfuerzo**: 2 días  
+**Esfuerzo**: 2 días
 **Beneficio**: Elimina mantenimiento manual de 1952 líneas de types
 
 ---
@@ -817,7 +817,7 @@ npm install kysely
 # Mantener raw SQL para funciones y queries complejas
 ```
 
-**Esfuerzo**: 1-2 semanas (PoC + migración gradual)  
+**Esfuerzo**: 1-2 semanas (PoC + migración gradual)
 **Beneficio**: Mejor DX sin comprometer arquitectura
 
 **Criterios de éxito:**
@@ -839,7 +839,7 @@ npm install --save-dev @databases/pg-schema-cli
 # Integrar en CI/CD
 ```
 
-**Esfuerzo**: 1 día  
+**Esfuerzo**: 1 día
 **Beneficio**: Onboarding más rápido, documentación visual
 
 ---
@@ -885,6 +885,6 @@ npm install --save-dev @databases/pg-schema-cli
 
 ---
 
-**Análisis completado por**: AI Assistant  
-**Fecha**: 1 Noviembre 2025  
+**Análisis completado por**: AI Assistant
+**Fecha**: 1 Noviembre 2025
 **Revisión requerida**: Usuario (Kavalieri)
