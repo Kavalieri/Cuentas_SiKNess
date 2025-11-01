@@ -1,5 +1,3 @@
-'use server';
-
 import { query } from '@/lib/db';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
