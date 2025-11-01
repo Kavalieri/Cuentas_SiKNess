@@ -1,16 +1,16 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { useState, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { editDirectExpenseWithCompensatory } from './actions';
-import { 
-  getCategoryHierarchy, 
+import {
+  getCategoryHierarchy,
   type CategoryHierarchy,
   type CategoryWithSubcategories,
   type Subcategory
 } from '@/app/sickness/configuracion/categorias/hierarchy-actions';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { editDirectExpenseWithCompensatory } from './actions';
 
 interface EditDirectExpenseButtonProps {
   tx: {
@@ -28,13 +28,13 @@ interface EditDirectExpenseButtonProps {
 
 export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDirectExpenseButtonProps) {
   const [open, setOpen] = useState(false);
-  
+
   // ✨ Estados para jerarquía de 3 niveles
   const [hierarchy, setHierarchy] = useState<CategoryHierarchy[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<string>('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
-  
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       amount: tx.amount,
@@ -54,7 +54,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
         const result = await getCategoryHierarchy(householdId);
         if (result.ok && result.data) {
           setHierarchy(result.data);
-          
+
           // Resolver valores iniciales desde subcategory_id (prioritario) o category_id (legacy)
           const targetId = tx.subcategory_id || tx.category_id;
           if (targetId) {
@@ -169,7 +169,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
                 className="border rounded px-2 py-1 w-full"
               />
             </div>
-            
+
             {/* ✨ NUEVO: Jerarquía de 3 niveles */}
             <div>
               <Label className="block text-sm font-medium mb-1">Grupo de categoría</Label>
@@ -245,7 +245,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess }: EditDire
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium">Fecha y hora</label>
               <input
