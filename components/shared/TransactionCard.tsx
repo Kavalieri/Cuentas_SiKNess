@@ -27,6 +27,8 @@ interface TransactionCardProps {
     real_payer_email?: string;
     real_payer_display_name?: string;
     paid_by?: string | null; // ID del miembro que pagó (común) o NULL si cuenta común
+    paid_by_email?: string;
+    paid_by_display_name?: string;
   };
   isOwner: boolean;
   currentUserId?: string;
@@ -62,8 +64,11 @@ export function TransactionCard({
     paidBy = tx.real_payer_display_name || tx.real_payer_email || 'Desconocido';
   } else {
     // Flujos comunes: si paid_by es NULL = cuenta común, si no = miembro específico
-    // TODO: Necesitamos el nombre del miembro de paid_by desde el API
-    paidBy = tx.paid_by ? 'Miembro específico' : 'Cuenta Común';
+    if (tx.paid_by) {
+      paidBy = tx.paid_by_display_name || tx.paid_by_email || 'Miembro específico';
+    } else {
+      paidBy = 'Cuenta Común';
+    }
   }
 
   // Renderizar jerarquía de categoría (solo para vista expandida)

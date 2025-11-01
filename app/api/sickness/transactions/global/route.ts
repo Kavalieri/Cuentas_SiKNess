@@ -93,7 +93,9 @@ export async function GET(req: NextRequest) {
         p.email as profile_email,
         p.display_name as profile_display_name,
         rp.email as real_payer_email,
-        rp.display_name as real_payer_display_name
+        rp.display_name as real_payer_display_name,
+        pb.email as paid_by_email,
+        pb.display_name as paid_by_display_name
       FROM transactions t
       -- Subcategoría (si existe)
       LEFT JOIN categories sc ON t.subcategory_id = sc.id
@@ -108,6 +110,7 @@ export async function GET(req: NextRequest) {
       -- Perfiles
       LEFT JOIN profiles p ON t.profile_id = p.id
       LEFT JOIN profiles rp ON t.real_payer_id = rp.id
+      LEFT JOIN profiles pb ON t.paid_by = pb.id
       ${whereClause}
   -- Ordenar por la fecha/hora real del evento, luego fecha contable y finalmente captura
   ORDER BY t.performed_at DESC NULLS LAST, t.occurred_at DESC, t.created_at DESC
