@@ -13,11 +13,14 @@ interface TransactionCardProps {
     description?: string;
     occurred_at: string;
     performed_at?: string | null;
-    category_name?: string;
+    
+    // ✅ Jerarquía completa de 3 niveles
+    parent_category_name?: string;  // 🟢 Grupo (nivel 1)
+    category_name?: string;         // 🟡 Categoría (nivel 2)
     category_icon?: string;
-    subcategory_name?: string;
+    subcategory_name?: string;      // 🔵 Subcategoría (nivel 3)
     subcategory_icon?: string;
-    parent_category_name?: string;
+    
     profile_id?: string;
     profile_email?: string;
     profile_display_name?: string;
@@ -56,13 +59,16 @@ export function TransactionCard({
 
   // Renderizar jerarquía de categoría
   const renderCategory = () => {
-    if (tx.subcategory_name && tx.parent_category_name) {
+    // ✅ CASO 1: Jerarquía completa (grupo → categoría → subcategoría)
+    if (tx.parent_category_name && tx.category_name && tx.subcategory_name) {
       return (
-        <span className="flex items-center gap-1">
-          {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
-          <span>{tx.parent_category_name}</span>
+        <span className="flex items-center gap-1 text-xs">
+          <span className="text-muted-foreground">{tx.parent_category_name}</span>
           <span className="text-muted-foreground">→</span>
-          <span>{tx.subcategory_name}</span>
+          {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
+          <span>{tx.category_name}</span>
+          <span className="text-muted-foreground">→</span>
+          <span className="font-medium">{tx.subcategory_name}</span>
           {tx.subcategory_icon && tx.subcategory_icon !== tx.category_icon && (
             <span className="text-sm">{tx.subcategory_icon}</span>
           )}
@@ -70,17 +76,31 @@ export function TransactionCard({
       );
     }
 
-    // Fallback: categoría legacy
-    if (tx.category_name) {
+    // ✅ CASO 2: Solo grupo y categoría (sin subcategoría)
+    if (tx.parent_category_name && tx.category_name) {
       return (
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1 text-xs">
+          <span className="text-muted-foreground">{tx.parent_category_name}</span>
+          <span className="text-muted-foreground">→</span>
           {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
-          <span>{tx.category_name}</span>
+          <span className="font-medium">{tx.category_name}</span>
         </span>
       );
     }
 
-    return <span className="text-muted-foreground">Sin categoría</span>;
+    // ❌ CASO 3: Fallback legacy (solo categoría, sin grupo)
+    if (tx.category_name) {
+      return (
+        <span className="flex items-center gap-1 text-xs">
+          {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
+          <span className="font-medium">{tx.category_name}</span>
+          <span className="text-xs text-amber-500 ml-2">⚠️ Sin grupo</span>
+        </span>
+      );
+    }
+
+    // ❌ Sin categoría
+    return <span className="text-muted-foreground text-xs">Sin categoría</span>;
   };
 
   return (
