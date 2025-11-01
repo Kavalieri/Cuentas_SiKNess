@@ -202,7 +202,7 @@ npm run types:generate:prod
 - `🔄 Regenerar Types (DEV)`
 - `🔄 Regenerar Types (PROD)`
 
-**Documentación completa**: 
+**Documentación completa**:
 - `docs/ISSUE_8_AUTO_GENERACION_TYPES.md`
 - `database/README.md` (sección auto-generación)
 

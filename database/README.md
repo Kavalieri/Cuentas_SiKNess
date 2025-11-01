@@ -214,7 +214,7 @@ Los TypeScript types se regeneran **automáticamente** tras aplicar migraciones.
 # 2. Types se regeneran automáticamente ✨
 # Output:
 # ✅ Migración aplicada exitosamente en DEV (125ms)
-# 
+#
 # 🔄 Regenerando types TypeScript desde esquema PostgreSQL...
 # ✅ Types regenerados exitosamente
 
@@ -326,8 +326,8 @@ WHERE grantee = 'cuentassik_user' AND table_schema = 'public'
 ORDER BY table_name;
 
 -- Ownership de objetos
-SELECT tablename, tableowner 
-FROM pg_tables 
+SELECT tablename, tableowner
+FROM pg_tables
 WHERE schemaname = 'public'
 LIMIT 10;
 -- Todos deben ser: cuentassik_owner
@@ -354,7 +354,7 @@ sudo -u postgres psql
 
 ```sql
 -- Dentro de psql
-SELECT 
+SELECT
   migration_name,
   applied_at,
   status,

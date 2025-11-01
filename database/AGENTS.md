@@ -546,7 +546,7 @@ Los TypeScript types se generan **automáticamente** desde el schema PostgreSQL 
 # DEV
 npm run types:generate:dev
 
-# PROD  
+# PROD
 npm run types:generate:prod
 ```
 
