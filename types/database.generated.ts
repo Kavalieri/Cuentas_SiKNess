@@ -795,9 +795,33 @@ export interface Transactions {
    */
   performed_at: Timestamp | null;
   /**
-   * Email del usuario que realmente realizó la transacción
+   * ⚠️ DEPRECADO: Reemplazado por performed_by_profile_id (UUID fuerte).
+   *    
+   *    Mantener temporalmente para:
+   *    - Auditoría de la migración
+   *    - Rollback si fuera necesario
+   *    - Verificación de datos históricos
+   *    
+   *    ELIMINAR EN FUTURO: Una vez verificada estabilidad del nuevo campo.
+   *    
+   *    Historial:
+   *    - Creado: [fecha original]
+   *    - Deprecado: 2025-11-01 (Issue #19, #20)
+   *    - Reemplazado por: performed_by_profile_id
    */
-  performed_by_email: string | null;
+  performed_by_email_deprecated: string | null;
+  /**
+   * UUID del miembro que FÍSICAMENTE ejecutó la transacción (pasó tarjeta, hizo ingreso).
+   *    
+   *    Semántica:
+   *    - Gastos comunes: quien pasó la tarjeta (diferente de paid_by = Cuenta Común)
+   *    - Ingresos comunes: quien hizo el ingreso (normalmente coincide con paid_by)
+   *    - Gastos directos: quien realizó el gasto (coincide con real_payer_id)
+   *    - Ingresos compensatorios: NULL (automático del sistema, no hay ejecutor físico)
+   *    
+   *    Complementa a paid_by (origen del dinero) para tracking dual completo.
+   */
+  performed_by_profile_id: string | null;
   period_id: string | null;
   profile_id: string | null;
   /**
