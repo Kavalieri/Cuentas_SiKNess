@@ -102,11 +102,11 @@ VALUES (
 EOF
 
     echo "✅ Aplicada exitosamente en $ENV_NAME (${EXECUTION_TIME}ms)"
-    
+
     # ✨ NUEVO: Auto-regenerar types TypeScript
     echo ""
     echo "🔄 Regenerando types TypeScript desde esquema PostgreSQL..."
-    
+
     if [ "$ENV_NAME" == "DEV" ]; then
       if npm run types:generate:dev --silent 2>&1 | grep -q "Introspected"; then
         echo "✅ Types regenerados exitosamente"
