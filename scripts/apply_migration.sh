@@ -102,6 +102,26 @@ VALUES (
 EOF
 
     echo "✅ Aplicada exitosamente en $ENV_NAME (${EXECUTION_TIME}ms)"
+    
+    # ✨ NUEVO: Auto-regenerar types TypeScript
+    echo ""
+    echo "🔄 Regenerando types TypeScript desde esquema PostgreSQL..."
+    
+    if [ "$ENV_NAME" == "DEV" ]; then
+      if npm run types:generate:dev --silent 2>&1 | grep -q "Introspected"; then
+        echo "✅ Types regenerados exitosamente"
+      else
+        echo "⚠️  Warning: Error regenerando types (no crítico)"
+        echo "   Puedes hacerlo manualmente: npm run types:generate:dev"
+      fi
+    else
+      if npm run types:generate:prod --silent 2>&1 | grep -q "Introspected"; then
+        echo "✅ Types regenerados exitosamente"
+      else
+        echo "⚠️  Warning: Error regenerando types (no crítico)"
+        echo "   Puedes hacerlo manualmente: npm run types:generate:prod"
+      fi
+    fi
 
   else
     STATUS="failed"
@@ -161,3 +181,8 @@ echo ""
 echo "=========================================="
 echo "✅ Proceso completado"
 echo "=========================================="
+echo ""
+echo "📝 Recuerda hacer commit de los cambios:"
+echo "   git add database/migrations/ types/database.generated.ts"
+echo "   git commit -m 'feat(db): aplicar migración $MIGRATION_FILE'"
+echo ""

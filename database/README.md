@@ -199,7 +199,64 @@ CREATE TABLE _migrations (
 
 ---
 
-## 📝 Workflow de Desarrollo
+## � Auto-generación de Types TypeScript
+
+**Sistema implementado**: Issue #8 (kysely-codegen)
+
+Los TypeScript types se regeneran **automáticamente** tras aplicar migraciones.
+
+### Workflow Automático
+
+```bash
+# 1. Aplicar migración
+./scripts/apply_migration.sh dev 20251101_120000_add_refunds.sql
+
+# 2. Types se regeneran automáticamente ✨
+# Output:
+# ✅ Migración aplicada exitosamente en DEV (125ms)
+# 
+# 🔄 Regenerando types TypeScript desde esquema PostgreSQL...
+# ✅ Types regenerados exitosamente
+
+# 3. Commit ambos cambios
+git add database/migrations/ types/database.generated.ts
+git commit -m "feat(db): añadir sistema de refunds"
+```
+
+### Regeneración Manual
+
+Si necesitas regenerar types sin aplicar migración:
+
+```bash
+# DEV
+npm run types:generate:dev
+
+# PROD
+npm run types:generate:prod
+```
+
+**VS Code Task**: `Ctrl+Shift+P` → `Tasks: Run Task` → "🔄 Regenerar Types (DEV/PROD)"
+
+### Archivo Generado
+
+- **Ubicación**: `types/database.generated.ts`
+- **Formato**: Kysely (interfaces TypeScript)
+- **Líneas**: ~1,013 (43 tablas + enums)
+- **Tiempo generación**: ~50ms
+- **Source of truth**: PostgreSQL schema
+
+### Beneficios
+
+- ✅ **Sincronización automática**: Types siempre actualizados con schema
+- ✅ **Cero mantenimiento manual**: Eliminación de 1,951 líneas manuales
+- ✅ **Compilación limpia**: Sin errores tras migraciones
+- ✅ **JSDoc completo**: Comentarios SQL como documentación
+
+**Documentación completa**: `docs/ISSUE_8_AUTO_GENERACION_TYPES.md`
+
+---
+
+## �📝 Workflow de Desarrollo
 
 ### Crear Nueva Migración
 

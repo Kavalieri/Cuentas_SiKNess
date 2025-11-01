@@ -247,29 +247,155 @@
       },
       "problemMatcher": []
     },
+    // ========================================
+    // 🗄️ MIGRACIONES - CREACIÓN Y GESTIÓN
+    // ========================================
     {
-      "label": "🔄 Aplicar Migraciones a DEV",
+      "label": "➕ Crear Nueva Migración",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/apply_migrations_dev.sh",
-      "group": "build"
+      "command": "${workspaceFolder}/scripts/create_migration.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 Ver Estado de Migraciones",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/migration_status.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
     },
     {
       "label": "⬆️ Promover Migración (dev → tested)",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/promote_migration.sh"
-    },
-    {
-      "label": "📊 Ver Estado Migraciones",
-      "type": "shell",
-      "command": "echo '📊 DEVELOPMENT:' && ls -1 ${workspaceFolder}/database/migrations/development/*.sql 2>/dev/null | wc -l && echo '✅ TESTED:' && ls -1 ${workspaceFolder}/database/migrations/tested/*.sql 2>/dev/null | wc -l && echo '📦 APPLIED:' && ls -1 ${workspaceFolder}/database/migrations/applied/*.sql 2>/dev/null | wc -l && echo '🗄️ ARCHIVE:' && ls -1 ${workspaceFolder}/database/migrations/applied/archive/*.sql 2>/dev/null | wc -l"
+      "command": "${workspaceFolder}/scripts/promote_migration.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
     },
     // ========================================
-    // 🗄️ DATABASE - SINCRONIZACIÓN
+    // 🔧 MIGRACIONES - APLICAR (DEV)
+    // ========================================
+    {
+      "label": "� DEV: Aplicar Migración Específica",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "read -p '📄 Nombre del archivo (ej: 20251101_120000_add_feature.sql): ' FILENAME && ${workspaceFolder}/scripts/apply_migration.sh dev \"$FILENAME\""
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 DEV: Aplicar Todas las Migraciones Pendientes",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/apply_migrations_dev.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    // ========================================
+    // 🚀 MIGRACIONES - APLICAR (PROD)
+    // ========================================
+    {
+      "label": "🚀 PROD: Aplicar Migración Específica",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "read -p '⚠️  PRODUCCIÓN - Archivo (ej: 20251101_120000_add_feature.sql): ' FILENAME && read -p '¿Confirmas aplicar en PROD? (yes/no): ' CONFIRM && [[ \"$CONFIRM\" == \"yes\" ]] && ${workspaceFolder}/scripts/apply_migration.sh prod \"$FILENAME\" || echo '❌ Operación cancelada'"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    // ========================================
+    // � TYPES - AUTO-GENERACIÓN
+    // ========================================
+    {
+      "label": "🔄 Regenerar Types (DEV)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "types:generate:dev"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Regenerar Types (PROD)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "types:generate:prod"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    // ========================================
+    // 🗄️ DATABASE - SINCRONIZACIÓN Y AUDITORÍA
     // ========================================
     {
       "label": "🔄 Sincronizar DEV → PROD (Database)",
       "type": "shell",
-      "command": "./scripts/sync_dev_to_prod.sh",
+      "command": "${workspaceFolder}/scripts/sync_dev_to_prod.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -296,6 +422,21 @@
         "focus": false,
         "panel": "shared",
         "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔍 Auditoría de Ownership Unificado",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/audit_unified_ownership.sh",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
       },
       "problemMatcher": []
     }
