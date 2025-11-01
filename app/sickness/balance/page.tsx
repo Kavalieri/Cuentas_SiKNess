@@ -21,6 +21,7 @@ import { EditCommonMovementButton } from './EditCommonMovementButton';
 import { EditDirectExpenseButton } from './EditDirectExpenseButton';
 
 // Eliminado ContributionsDisplay: la contribución no se muestra en balance
+import { TransactionCard } from '@/components/shared/TransactionCard';
 import { NewMovementForm } from './components';
 import { BalanceFilters } from './components/BalanceFilters';
 
@@ -504,170 +505,65 @@ export default function BalancePage() {
             <>
               <div className="space-y-2">
                 {paginatedTransactions.map((tx) => (
-                  <div
+                  <TransactionCard
                     key={tx.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{tx.description || 'Sin descripción'}</span>
-                        {tx.flow_type === 'direct' && (
-                          <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded">
-                            Directo
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                        <span>
-                          {(() => {
-                            const src = tx.performed_at || tx.occurred_at;
-                            const d = parseLocalDate(src as string);
-                            return (
-                              <>
-                                {d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                {tx.performed_at && (
-                                  <span className="ml-1 text-[11px] text-muted-foreground">
-                                    {d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </span>
-                        {/* Mostrar jerarquía de categoría: Categoría → Subcategoría */}
-                        {(() => {
-                          // Si tiene subcategoría, mostrar jerarquía completa
-                          if (tx.subcategory_name && tx.parent_category_name) {
-                            return (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  {tx.category_icon && <span>{tx.category_icon}</span>}
-                                  <span>{tx.parent_category_name} → {tx.subcategory_name}</span>
-                                  {tx.subcategory_icon && tx.subcategory_icon !== tx.category_icon && (
-                                    <span>{tx.subcategory_icon}</span>
-                                  )}
-                                </span>
-                              </>
-                            );
-                          }
-                          // Fallback: mostrar solo categoría (transacciones legacy)
-                          if (tx.category_name) {
-                            return (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  {tx.category_icon && <span>{tx.category_icon}</span>}
-                                  {tx.category_name}
-                                </span>
-                              </>
-                            );
-                          }
-                          return null;
-                        })()}
-                        {/* Mostrar el miembro correcto según el tipo de transacción */}
-                        {(() => {
-                          // Para transacciones directas, mostrar el pagador real
-                          if (tx.flow_type === 'direct' && tx.real_payer_display_name) {
-                            return (
-                              <>
-                                <span>•</span>
-                                <span>{tx.real_payer_display_name}</span>
-                              </>
-                            );
-                          }
-                          // Para transacciones comunes, mostrar quien la registró
-                          if (tx.flow_type === 'common' && tx.profile_display_name) {
-                            return (
-                              <>
-                                <span>•</span>
-                                <span>{tx.profile_display_name}</span>
-                              </>
-                            );
-                          }
-                          // Fallback a emails si no hay nombres para mostrar
-                          const emailToShow = tx.flow_type === 'direct' ? tx.real_payer_email : tx.profile_email;
-                          if (emailToShow) {
-                            return (
-                              <>
-                                <span>•</span>
-                                <span>{emailToShow}</span>
-                              </>
-                            );
-                          }
-                          return null;
-                        })()}
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0 ml-4 flex items-center gap-2">
-                      <span
-                        className={`text-lg font-semibold ${
-                          (tx.type === 'income' || tx.type === 'income_direct') ? 'text-green-600' : 'text-red-600'
-                        }`}
-                      >
-                        {(tx.type === 'income' || tx.type === 'income_direct') ? '+' : '-'}
-                        {formatCurrency(tx.amount)}
-                      </span>
-                      {/* Botones editar/eliminar para owner */}
-                      {(isOwner || tx.profile_id === user?.id) && tx.flow_type === 'direct' && (
-                        <div className="flex gap-1">
-                          {/* Botón editar */}
-                          <EditDirectExpenseButton
-                            tx={tx}
-                            householdId={householdId || undefined}
-                            onSuccess={async () => {
-                              await loadTransactions();
-                              await loadGlobalBalance();
-                              await loadPeriodSummary();
-                            }}
-                          />
-                          {/* Botón eliminar (solo owner) */}
-                          {isOwner && (
-                            <DeleteDirectButton
-                              txId={tx.id}
-                              householdId={householdId || ''}
-                              onDone={async () => {
-                                await loadTransactions();
-                                await loadGlobalBalance();
-                                await loadPeriodSummary();
-                              }}
-                            />
-                          )}
-                        </div>
-                      )}
-
-                      {(isOwner || tx.profile_id === user?.id) && tx.flow_type === 'common' && (
-                        <div className="flex gap-1">
-                          <EditCommonMovementButton
-                            tx={tx}
-                            householdId={householdId || undefined}
-                            onSuccess={async () => {
-                              await loadTransactions();
-                              await loadGlobalBalance();
-                              await loadPeriodSummary();
-                            }}
-                            members={members.map((m) => ({
-                              profile_id: m.profile_id,
-                              email: m.email,
-                              display_name: m.display_name,
-                              role: m.role
-                            }))}
-                          />
-                          {isOwner && (
-                            <DeleteCommonButton
-                              txId={tx.id}
-                              householdId={householdId || ''}
-                              onDone={async () => {
-                                await loadTransactions();
-                                await loadGlobalBalance();
-                                await loadPeriodSummary();
-                              }}
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                    tx={tx}
+                    isOwner={isOwner}
+                    currentUserId={user?.id}
+                    parseLocalDate={parseLocalDate}
+                    editButton={
+                      tx.flow_type === 'direct' ? (
+                        <EditDirectExpenseButton
+                          tx={tx}
+                          householdId={householdId || undefined}
+                          onSuccess={async () => {
+                            await loadTransactions();
+                            await loadGlobalBalance();
+                            await loadPeriodSummary();
+                          }}
+                        />
+                      ) : (
+                        <EditCommonMovementButton
+                          tx={tx}
+                          householdId={householdId || undefined}
+                          onSuccess={async () => {
+                            await loadTransactions();
+                            await loadGlobalBalance();
+                            await loadPeriodSummary();
+                          }}
+                          members={members.map((m) => ({
+                            profile_id: m.profile_id,
+                            email: m.email,
+                            display_name: m.display_name,
+                            role: m.role
+                          }))}
+                        />
+                      )
+                    }
+                    deleteButton={
+                      tx.flow_type === 'direct' ? (
+                        <DeleteDirectButton
+                          txId={tx.id}
+                          householdId={householdId || ''}
+                          onDone={async () => {
+                            await loadTransactions();
+                            await loadGlobalBalance();
+                            await loadPeriodSummary();
+                          }}
+                        />
+                      ) : (
+                        <DeleteCommonButton
+                          txId={tx.id}
+                          householdId={householdId || ''}
+                          onDone={async () => {
+                            await loadTransactions();
+                            await loadGlobalBalance();
+                            await loadPeriodSummary();
+                          }}
+                        />
+                      )
+                    }
+                  />
                 ))}
               </div>
 
