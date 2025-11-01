@@ -2,7 +2,7 @@
 
 **Issues relacionados**: #17, #19
 **Fecha**: 1 Noviembre 2025
-**Estado**: 🟡 Pendiente de ejecución
+**Estado**: � En ejecución (DB tests completados)
 
 ---
 
@@ -13,7 +13,7 @@ Validar que el sistema de Cuenta Común funciona correctamente:
 2. Transacciones de gasto común usan `paid_by = joint_account_uuid`
 3. Transacciones de ingreso común usan `paid_by = member_uuid`
 4. UI muestra correctamente "Cuenta Común" vs nombre de miembro
-5. Las 26 transacciones corruptas se reparan correctamente
+5. Las 24 transacciones corruptas se reparan correctamente (22 con UUID miembro + 2 con NULL)
 
 ---
 
@@ -24,7 +24,7 @@ Validar que el sistema de Cuenta Común funciona correctamente:
 - [x] Migración `20251101_130000_create_joint_accounts` aplicada
 - [x] Tabla `joint_accounts` existe con 1 registro
 - [x] Trigger `trigger_create_joint_account` instalado
-- [ ] Script de reparación `20251101_fix_paid_by_common_transactions.sql` ejecutado
+- [x] Script de reparación `20251101_fix_paid_by_common_transactions.sql` ejecutado
 
 ### Aplicación
 - [x] Código compilando sin errores
@@ -48,22 +48,22 @@ psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
 ### Test DB-2: Verificar Trigger Auto-creación
 ```sql
 -- 2. Verificar trigger instalado
-SELECT tgname, tgtype, tgenabled 
-FROM pg_trigger 
+SELECT tgname, tgtype, tgenabled
+FROM pg_trigger
 WHERE tgname = 'trigger_create_joint_account';
 
 -- Resultado esperado: 1 fila
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -78,7 +78,7 @@ JOIN households h ON h.id = ja.household_id;
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -89,13 +89,54 @@ SELECT COUNT(*) as corrupted_count
 FROM transactions t
 WHERE t.flow_type = 'common'
   AND t.type = 'expense'
-  AND t.paid_by NOT IN (SELECT id FROM joint_accounts);
+  AND (t.paid_by IS NULL OR t.paid_by NOT IN (SELECT id FROM joint_accounts));
 
--- Resultado esperado: 26 (o el número actual de corruptas)
+-- Resultado esperado: 24 (22 con UUID miembro + 2 con NULL)
 ```
 
-**Estado**: ⬜ Pendiente
+**Estado**: ✅ Completado
+**Resultado**: 24 transacciones corruptas encontradas (Mercadona, Jamón, Día, Luz, Agua, etc.)
+
+---
+
+### Test DB-5: Ejecutar Script de Reparación
+```bash
+# Ejecutar script de reparación
+psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev \
+  -f scripts/data-fixes/20251101_fix_paid_by_common_transactions.sql
+```
+
+**Pasos**:
+1. ✅ Ejecutado PASO 1 (análisis) - 22 transacciones identificadas
+2. ✅ Revisado output - datos correctos
+3. ✅ Ejecutado PASO 2 (UPDATE) - 22 actualizadas
+4. ✅ Verificado PASO 3 (verificación) - 0 incorrectas restantes
+5. ✅ Corregidas 2 adicionales con paid_by = NULL
+
+**Estado**: ✅ Completado
 **Resultado**: 
+- 22 transacciones actualizadas (paid_by: UUID miembro → UUID joint_account)
+- 2 transacciones adicionales actualizadas (paid_by: NULL → UUID joint_account)
+- Total: 24 transacciones reparadas
+- Monto total: 630.01€ (de las 22 principales)
+- COMMIT exitoso
+
+---
+
+### Test DB-6: Transacciones Corruptas (POST-FIX)
+```sql
+-- Repetir query después de fix
+SELECT COUNT(*) as corrupted_count
+FROM transactions t
+WHERE t.flow_type = 'common'
+  AND t.type = 'expense'
+  AND (t.paid_by IS NULL OR t.paid_by NOT IN (SELECT id FROM joint_accounts));
+
+-- Resultado esperado: 0
+```
+
+**Estado**: ✅ Completado
+**Resultado**: 0 transacciones incorrectas restantes. ✅ 24 gastos comunes con Cuenta Común.
 
 ---
 
@@ -114,7 +155,7 @@ psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev \
 5. Verificar PASO 3 (verificación)
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -131,7 +172,7 @@ WHERE t.flow_type = 'common'
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -165,7 +206,7 @@ ORDER BY occurred_at DESC LIMIT 1;
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -197,7 +238,7 @@ ORDER BY occurred_at DESC LIMIT 1;
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -222,7 +263,7 @@ ORDER BY occurred_at DESC LIMIT 1;
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -243,7 +284,7 @@ ORDER BY occurred_at DESC LIMIT 1;
 - [ ] Ninguna muestra "Kava" u otro nombre de miembro
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -262,7 +303,7 @@ curl -X GET "http://localhost:3001/api/sickness/transactions/global?householdId=
 - [ ] Ingresos comunes muestran nombre del miembro
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -281,7 +322,7 @@ console.log(result);
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
@@ -299,7 +340,7 @@ console.log(isMember); // Esperado: false
 ```
 
 **Estado**: ⬜ Pendiente
-**Resultado**: 
+**Resultado**:
 
 ---
 
