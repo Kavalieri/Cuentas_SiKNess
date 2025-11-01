@@ -1,10 +1,23 @@
 #!/bin/bash
 # Script: Aplicar migración al sistema v2.1.0+
-# Fecha: 31 Octubre 2025
+# Fecha: 31 Octubre 2025 (Actualizado: 1 Noviembre 2025)
 # Fase 10/12 del Issue #6
 #
 # Uso: ./apply_migration.sh <entorno> <archivo_migracion>
-# Ejemplo: ./apply_migration.sh dev 20251101_120000_add_new_feature.sql
+#
+# Ejemplos:
+#   ./apply_migration.sh dev 20251101_120000_add_new_feature.sql
+#     → Busca en: database/migrations/development/
+#
+#   ./apply_migration.sh prod 20251101_120000_add_new_feature.sql
+#     → Busca en: database/migrations/tested/ (migraciones probadas)
+#
+# Workflow recomendado:
+#   1. Crear migración en development/
+#   2. Aplicar a DEV con: ./apply_migration.sh dev <archivo>
+#   3. Probar en DEV
+#   4. Mover a tested/: mv database/migrations/development/<archivo> database/migrations/tested/
+#   5. Aplicar a PROD con: ./apply_migration.sh prod <archivo>
 
 set -e
 
@@ -15,19 +28,19 @@ if [ "$#" -ne 2 ]; then
   echo "Uso: $0 <entorno> <archivo_migracion>"
   echo ""
   echo "Entornos válidos:"
-  echo "  - dev   : Aplica a cuentassik_dev"
-  echo "  - prod  : Aplica a cuentassik_prod"
-  echo "  - both  : Aplica a ambos"
+  echo "  - dev   : Aplica a cuentassik_dev (desde development/)"
+  echo "  - prod  : Aplica a cuentassik_prod (desde tested/)"
+  echo "  - both  : Aplica a ambos (desde development/)"
   echo ""
   echo "Ejemplo:"
   echo "  $0 dev 20251101_120000_add_new_feature.sql"
+  echo "  $0 prod 20251101_120000_add_new_feature.sql"
   exit 1
 fi
 
 ENV="$1"
 MIGRATION_FILE="$2"
 REPO_ROOT="/home/kava/workspace/proyectos/CuentasSiK/repo"
-MIGRATION_PATH="$REPO_ROOT/database/migrations/development/$MIGRATION_FILE"
 
 # Validar entorno
 if [[ ! "$ENV" =~ ^(dev|prod|both)$ ]]; then
@@ -36,9 +49,27 @@ if [[ ! "$ENV" =~ ^(dev|prod|both)$ ]]; then
   exit 1
 fi
 
+# Determinar directorio de migraciones según entorno
+# DEV: usa development/ (trabajo activo)
+# PROD: usa tested/ (migraciones probadas en DEV)
+if [ "$ENV" = "prod" ]; then
+  MIGRATION_DIR="tested"
+else
+  MIGRATION_DIR="development"
+fi
+
+MIGRATION_PATH="$REPO_ROOT/database/migrations/$MIGRATION_DIR/$MIGRATION_FILE"
+
 # Validar archivo existe
 if [ ! -f "$MIGRATION_PATH" ]; then
   echo "❌ Error: Archivo no encontrado: $MIGRATION_PATH"
+  echo ""
+  if [ "$ENV" = "prod" ]; then
+    echo "💡 Para PROD, el archivo debe estar en: database/migrations/tested/"
+    echo "   Asegúrate de haber movido la migración desde development/ a tested/"
+  else
+    echo "💡 Para DEV, el archivo debe estar en: database/migrations/development/"
+  fi
   exit 1
 fi
 

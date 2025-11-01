@@ -81,12 +81,11 @@ WHERE flow_type = 'common'
 \echo ''
 
 -- ============================================
--- PASO 2: ACTUALIZACIÓN (comentado por seguridad)
+-- PASO 2: ACTUALIZACIÓN (ACTIVADO)
 -- ============================================
 
--- ⚠️  DESCOMENTAR SOLO DESPUÉS DE REVISAR PASO 1
+-- ✅ PASO 2 ACTIVADO - SE EJECUTARÁ LA CORRECCIÓN
 
-/*
 \echo '=== INICIANDO ACTUALIZACIÓN ==='
 
 BEGIN;
@@ -139,11 +138,7 @@ FROM backup_paid_by_fix;
 \echo '    Si hay problemas: ejecutar ROLLBACK;'
 \echo ''
 
--- DECISIÓN MANUAL:
--- COMMIT;   -- Si todo correcto
--- ROLLBACK; -- Si hay problemas
-
-*/
+COMMIT;  -- ✅ Auto-commit activado tras verificación
 
 -- ============================================
 -- PASO 3: VERIFICACIÓN POST-ACTUALIZACIÓN

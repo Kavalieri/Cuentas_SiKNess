@@ -1,7 +1,7 @@
 # Issue #16 - Transacciones sin Subcategoría (Revisión Manual)
 
-**Fecha:** 2025-11-01  
-**Hogar:** SiK (`d0c3fe46-f19e-4d60-bc13-fd8b2f7be228`)  
+**Fecha:** 2025-11-01
+**Hogar:** SiK (`d0c3fe46-f19e-4d60-bc13-fd8b2f7be228`)
 **Entorno:** PRODUCCIÓN
 
 ---
@@ -20,8 +20,8 @@
 ### Patrones Detectados:
 
 #### 1. **Aportación Cuenta Conjunta** (79 transacciones)
-**Categoría:** Aportación Cuenta Conjunta  
-**Grupo:** Otros Ingresos  
+**Categoría:** Aportación Cuenta Conjunta
+**Grupo:** Otros Ingresos
 **Tipo:** Mayormente "Equilibrio:" (ajustes automáticos)
 
 **Ejemplos:**
@@ -36,7 +36,7 @@
 ---
 
 #### 2. **Suministros** (22 transacciones)
-**Categorías:** Agua, Luz, Internet  
+**Categorías:** Agua, Luz, Internet
 **Grupo:** Suministros
 
 **Ejemplos:**
@@ -44,7 +44,7 @@
 - "Luz" → Categoría: Luz
 - "Internet" → Categoría: Internet
 
-**Acción recomendada:** 
+**Acción recomendada:**
 - Crear subcategoría "Agua Potable" para Agua
 - Crear subcategoría "Electricidad" para Luz
 - Crear subcategoría "Fibra Óptica" o "ADSL" para Internet
@@ -52,7 +52,7 @@
 ---
 
 #### 3. **Menaje del Hogar** (10 transacciones)
-**Categoría:** Menaje  
+**Categoría:** Menaje
 **Grupo:** Hogar
 
 **Ejemplos:**
@@ -60,27 +60,27 @@
 - "Estantería Amazon"
 - "Mesa IKEA"
 
-**Acción recomendada:** 
+**Acción recomendada:**
 - Crear subcategorías: "Bazar/Chino", "Muebles", "Utensilios"
 
 ---
 
 #### 4. **Vivienda** (6 transacciones)
-**Categoría:** Vivienda  
+**Categoría:** Vivienda
 **Grupo:** Hogar
 
 **Ejemplos:**
 - "Alquiler restante"
 - "Comuinidad ago, sep, oct" (comunidad)
 
-**Acción recomendada:** 
+**Acción recomendada:**
 - Ya existe "Alquiler" → asignar manualmente
 - Crear subcategoría "Comunidad de Propietarios"
 
 ---
 
 #### 5. **Supermercado sin marca específica** (7 transacciones)
-**Categoría:** Supermercado  
+**Categoría:** Supermercado
 **Grupo:** Alimentación
 
 **Ejemplos:**
@@ -88,46 +88,46 @@
 - "Gomez Merino"
 - "Varios" (x2)
 
-**Acción recomendada:** 
+**Acción recomendada:**
 - Crear subcategoría "Otros Supermercados"
 - O asignar a marca más cercana manualmente
 
 ---
 
 #### 6. **Salud/Personal** (3 transacciones)
-**Categoría:** Salud  
+**Categoría:** Salud
 **Grupo:** Personal
 
 **Ejemplos:**
 - "Bazar Ana 'Manta'"
 - "Cucarachas Amazon"
 
-**Acción recomendada:** 
+**Acción recomendada:**
 - Revisar categoría (¿debería ser Hogar/Limpieza?)
 - Crear subcategorías específicas
 
 ---
 
 #### 7. **Mascotas** (1 transacción)
-**Categoría:** Mascotas  
+**Categoría:** Mascotas
 **Grupo:** Personal
 
 **Ejemplo:**
 - "Fuente y protector sofá AMAZON"
 
-**Acción recomendada:** 
+**Acción recomendada:**
 - Crear subcategorías: "Accesorios", "Alimentación", "Veterinario"
 
 ---
 
 #### 8. **Mantenimiento** (1 transacción)
-**Categoría:** Mantenimiento  
+**Categoría:** Mantenimiento
 **Grupo:** Hogar
 
 **Ejemplo:**
 - "En realidad es Luz y agua pero Meh"
 
-**Acción recomendada:** 
+**Acción recomendada:**
 - Reasignar a categorías correctas (Luz + Agua)
 - O crear subcategoría "Reparaciones"
 
@@ -289,7 +289,7 @@
   - Agua → "Agua Potable"
   - Luz → "Electricidad"
   - Internet → "Fibra Óptica" / "ADSL" / "Móvil"
-  
+
 - **Menaje:**
   - "Bazar/Chino"
   - "Muebles"
@@ -308,7 +308,7 @@
 - Supermercados sin marca (7) → Baja prioridad
 
 ### 3. **Aportación Cuenta Conjunta (79)**
-**Decisión requerida:** 
+**Decisión requerida:**
 - ¿Crear subcategorías específicas por tipo de equilibrio?
 - ¿Dejar sin subcategoría (son ajustes automáticos)?
 

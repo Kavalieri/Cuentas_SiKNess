@@ -41,21 +41,21 @@ show_help() {
 list_migrations() {
   echo -e "${BLUE}📋 Migraciones en development/:${NC}"
   echo ""
-  
+
   local count=0
   if [ -d "$DEV_DIR" ]; then
     for migration in "$DEV_DIR"/*.sql; do
       [ -e "$migration" ] || continue
       [ "$(basename "$migration")" = ".gitkeep" ] && continue
-      
+
       filename=$(basename "$migration")
       filesize=$(du -h "$migration" | cut -f1)
       count=$((count + 1))
-      
+
       echo -e "  ${GREEN}$count.${NC} $filename ${YELLOW}($filesize)${NC}"
     done
   fi
-  
+
   if [ $count -eq 0 ]; then
     echo -e "${YELLOW}⚠️  No hay migraciones en development/${NC}"
   else
@@ -67,12 +67,12 @@ list_migrations() {
 promote_file() {
   local filename=$1
   local filepath="$DEV_DIR/$filename"
-  
+
   if [ ! -f "$filepath" ]; then
     echo -e "${RED}❌ Error: No existe $filename en development/${NC}"
     return 1
   fi
-  
+
   mkdir -p "$TESTED_DIR"
   mv "$filepath" "$TESTED_DIR/"
   echo -e "${GREEN}✅ $filename → tested/${NC}"
@@ -82,44 +82,44 @@ promote_file() {
 promote_all() {
   local count=0
   local promoted=0
-  
+
   for migration in "$DEV_DIR"/*.sql; do
     [ -e "$migration" ] || continue
     filename=$(basename "$migration")
     [ "$filename" = ".gitkeep" ] && continue
-    
+
     count=$((count + 1))
   done
-  
+
   if [ $count -eq 0 ]; then
     echo -e "${YELLOW}⚠️  No hay migraciones para promocionar${NC}"
     return 0
   fi
-  
+
   echo -e "${YELLOW}⚠️  Vas a promocionar $count migración(es) a tested/${NC}"
   echo ""
   echo "Esto significa que están validadas y listas para PROD."
   echo ""
   read -p "¿Continuar? (yes/no): " confirm
-  
+
   if [ "$confirm" != "yes" ]; then
     echo -e "${RED}❌ Operación cancelada${NC}"
     return 1
   fi
-  
+
   echo ""
   mkdir -p "$TESTED_DIR"
-  
+
   for migration in "$DEV_DIR"/*.sql; do
     [ -e "$migration" ] || continue
     filename=$(basename "$migration")
     [ "$filename" = ".gitkeep" ] && continue
-    
+
     mv "$migration" "$TESTED_DIR/"
     echo -e "${GREEN}✅ $filename → tested/${NC}"
     promoted=$((promoted + 1))
   done
-  
+
   echo ""
   echo -e "${GREEN}✅ Promocionadas $promoted migración(es)${NC}"
 }
@@ -128,45 +128,45 @@ promote_pattern() {
   local pattern=$1
   local count=0
   local promoted=0
-  
+
   echo -e "${BLUE}📋 Migraciones que coinciden con '$pattern':${NC}"
   echo ""
-  
+
   for migration in "$DEV_DIR"/$pattern; do
     [ -e "$migration" ] || continue
     filename=$(basename "$migration")
     [ "$filename" = ".gitkeep" ] && continue
-    
+
     echo "  • $filename"
     count=$((count + 1))
   done
-  
+
   if [ $count -eq 0 ]; then
     echo -e "${YELLOW}⚠️  No hay migraciones que coincidan${NC}"
     return 0
   fi
-  
+
   echo ""
   read -p "¿Promocionar estas $count migración(es)? (yes/no): " confirm
-  
+
   if [ "$confirm" != "yes" ]; then
     echo -e "${RED}❌ Operación cancelada${NC}"
     return 1
   fi
-  
+
   echo ""
   mkdir -p "$TESTED_DIR"
-  
+
   for migration in "$DEV_DIR"/$pattern; do
     [ -e "$migration" ] || continue
     filename=$(basename "$migration")
     [ "$filename" = ".gitkeep" ] && continue
-    
+
     mv "$migration" "$TESTED_DIR/"
     echo -e "${GREEN}✅ $filename → tested/${NC}"
     promoted=$((promoted + 1))
   done
-  
+
   echo ""
   echo -e "${GREEN}✅ Promocionadas $promoted migración(es)${NC}"
 }
@@ -175,29 +175,29 @@ interactive_mode() {
   echo "⬆️  Promover Migración (dev → tested)"
   echo "====================================="
   echo ""
-  
+
   # Verificar que existan migraciones
   if [ ! -d "$DEV_DIR" ] || [ -z "$(ls -A $DEV_DIR/*.sql 2>/dev/null | grep -v '.gitkeep')" ]; then
     echo -e "${YELLOW}⚠️  No hay migraciones en development/${NC}"
     exit 0
   fi
-  
+
   list_migrations
   echo ""
   echo -e "${BLUE}Selecciona una migración (número) o:${NC}"
   echo "  • 'a' para promocionar TODAS"
   echo "  • 'q' para salir"
   echo ""
-  
+
   local migrations=()
   for migration in "$DEV_DIR"/*.sql; do
     [ -e "$migration" ] || continue
     [ "$(basename "$migration")" = ".gitkeep" ] && continue
     migrations+=("$migration")
   done
-  
+
   read -p "Opción: " choice
-  
+
   case "$choice" in
     q|Q)
       echo -e "${YELLOW}❌ Cancelado${NC}"
@@ -211,12 +211,12 @@ interactive_mode() {
       if [ $index -ge 0 ] && [ $index -lt ${#migrations[@]} ]; then
         local migration="${migrations[$index]}"
         local filename=$(basename "$migration")
-        
+
         echo ""
         echo -e "${BLUE}📄 Migración seleccionada: $filename${NC}"
         echo ""
         read -p "¿Está validada y lista para PROD? (yes/no): " confirm
-        
+
         if [ "$confirm" = "yes" ]; then
           promote_file "$filename"
         else

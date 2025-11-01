@@ -114,7 +114,7 @@ psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev \
 5. ✅ Corregidas 2 adicionales con paid_by = NULL
 
 **Estado**: ✅ Completado
-**Resultado**: 
+**Resultado**:
 - 22 transacciones actualizadas (paid_by: UUID miembro → UUID joint_account)
 - 2 transacciones adicionales actualizadas (paid_by: NULL → UUID joint_account)
 - Total: 24 transacciones reparadas

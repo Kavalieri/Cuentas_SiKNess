@@ -1,14 +1,14 @@
 -- Issue #17: Corregir paid_by en gastos comunes
--- 
+--
 -- PROBLEMA: Algunos gastos comunes tienen paid_by con UUID cuando debería ser NULL
 -- EJEMPLO: Mercadona (b9102649-3744-4c54-b527-8b9aeb6bbf4d)
 --
--- REGLA: 
+-- REGLA:
 -- - Gastos comunes (flow_type='common') pagados desde cuenta común → paid_by = NULL
 -- - Solo cuando un miembro específico paga un gasto común → paid_by = UUID
 
 -- 1. Ver todos los gastos comunes con paid_by no NULL
-SELECT 
+SELECT
   t.id,
   t.description,
   t.flow_type,
@@ -17,7 +17,7 @@ SELECT
   t.occurred_at,
   p.display_name as registrado_por,
   pb.display_name as paid_by_name,
-  CASE 
+  CASE
     WHEN t.paid_by IS NULL THEN '✅ NULL (Correcto)'
     ELSE '❌ Tiene UUID (puede ser incorrecto)'
   END as status
@@ -30,7 +30,7 @@ WHERE t.flow_type = 'common'
 ORDER BY t.occurred_at DESC;
 
 -- 2. VERIFICACIÓN: ¿Cuántos hay?
-SELECT 
+SELECT
   COUNT(*) as total_con_paid_by,
   COUNT(DISTINCT t.paid_by) as miembros_unicos
 FROM transactions t
