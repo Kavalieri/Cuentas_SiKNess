@@ -215,9 +215,11 @@ export function TransactionCard({
               </div>
             )}
 
-            {/* Realizado por (quién pagó) */}
+            {/* Gastado/Ingresado por (según tipo) */}
             <div className="text-sm">
-              <span className="text-muted-foreground">Realizado por: </span>
+              <span className="text-muted-foreground">
+                {isIncome ? 'Ingresado por: ' : 'Gastado por: '}
+              </span>
               <span className="font-medium">{paidBy}</span>
             </div>
 
