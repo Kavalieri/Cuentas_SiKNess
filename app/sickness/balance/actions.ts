@@ -165,14 +165,15 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   console.log('[editDirectExpenseWithCompensatory] Current profile ID:', profileId);
   if (!profileId) return fail('No autenticado');
 
-  // Obtener el period_id de la transacción para validar la fase
-  const periodRes = await query<{ period_id: string | null }>(
-    `SELECT period_id FROM transactions WHERE id = $1 AND household_id = $2`,
+  // Obtener el period_id Y performed_by_profile_id de la transacción
+  const periodRes = await query<{ period_id: string | null; performed_by_profile_id: string | null }>(
+    `SELECT period_id, performed_by_profile_id FROM transactions WHERE id = $1 AND household_id = $2`,
     [movementId, householdId]
   );
 
   const periodId = periodRes.rows[0]?.period_id;
-  console.log('[editDirectExpenseWithCompensatory] Period ID:', periodId);
+  const existingPerformedBy = periodRes.rows[0]?.performed_by_profile_id;
+  console.log('[editDirectExpenseWithCompensatory] Period ID:', periodId, 'Existing performed_by:', existingPerformedBy);
 
   if (!periodId) {
     return fail('No se pudo determinar el período de la transacción');
@@ -250,7 +251,14 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     return fail('No se pudo determinar el período de la nueva fecha');
   }
 
-  // Actualizar gasto directo (con auditoría y nuevo period_id)
+  // Obtener Cuenta Común para asegurar que gastos directos usen paid_by correcto (Issue #18)
+  const jointResult = await getJointAccountId(householdId);
+  if (!jointResult.ok) {
+    return fail('No se pudo obtener la Cuenta Común del hogar');
+  }
+  const jointAccountId = jointResult.data!;
+
+  // Actualizar gasto directo (con auditoría, nuevo period_id y dual-field preservado)
   const updateResult = await query(
     `UPDATE transactions
      SET amount = $1,
@@ -261,13 +269,29 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
          period_id = $6,
          updated_at = now(),
          updated_by_profile_id = $7,
-         real_payer_id = $8
-     WHERE id = $9 AND household_id = $10 AND flow_type = 'direct'`,
-    [amount, description || null, subcategoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, realPayerId || tx.real_payer_id, movementId, householdId]
+         real_payer_id = $8,
+         paid_by = $9,
+         performed_by_profile_id = COALESCE($10, $11, real_payer_id)
+     WHERE id = $12 AND household_id = $13 AND flow_type = 'direct'`,
+    [
+      amount,
+      description || null,
+      subcategoryId ?? null,
+      occurred_at_date,
+      performed_at_ts,
+      newPeriodId,
+      profileId ?? null,
+      realPayerId || tx.real_payer_id,
+      jointAccountId, // NUEVO CRITERIO: paid_by = joint_account (Issue #18)
+      existingPerformedBy, // Preservar performed_by existente
+      realPayerId, // Fallback a realPayerId si no existe performed_by
+      movementId,
+      householdId
+    ]
   );
   console.log('[editDirectExpenseWithCompensatory] Update result:', { rowCount: updateResult.rowCount });
 
-  // Actualizar ingreso compensatorio si existe
+  // Actualizar ingreso compensatorio si existe (preservando paid_by = member)
   if (pairId) {
     console.log('[editDirectExpenseWithCompensatory] Updating compensatory income');
     await query(
@@ -279,12 +303,25 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
            period_id = $5,
            updated_at = now(),
            updated_by_profile_id = $6,
-           real_payer_id = $7
-       WHERE transaction_pair_id = $8
+           real_payer_id = $7,
+           paid_by = $8,
+           performed_by_profile_id = NULL
+       WHERE transaction_pair_id = $9
          AND flow_type = 'direct'
          AND type IN ('income','income_direct')
-         AND household_id = $9`,
-      [amount, `Equilibrio: ${description || 'Gasto directo'}`, occurred_at_date, performed_at_ts, newPeriodId, profileId ?? null, realPayerId || tx.real_payer_id, pairId, householdId]
+         AND household_id = $10`,
+      [
+        amount,
+        `Equilibrio: ${description || 'Gasto directo'}`,
+        occurred_at_date,
+        performed_at_ts,
+        newPeriodId,
+        profileId ?? null,
+        realPayerId || tx.real_payer_id,
+        realPayerId || tx.real_payer_id, // paid_by = member (beneficiario)
+        pairId,
+        householdId
+      ]
     );
   }
 

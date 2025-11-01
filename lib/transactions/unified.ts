@@ -79,11 +79,15 @@ export interface UnifiedTransactionData {
   // Si no se proporciona, se calcula desde occurred_at (legacy behavior)
   period_id?: string;
 
-  // Para flujo común
-  paid_by?: string | null; // NULL = cuenta común, UUID = usuario específico
+  // SISTEMA DUAL-FIELD (Issue #19, #20)
+  // Campo 1: paid_by (origen del dinero)
+  paid_by?: string | null; // UUID joint_account o member
+
+  // Campo 2: performed_by_profile_id (ejecutor físico)
+  performed_by_profile_id?: string; // UUID del miembro que realizó la transacción
 
   // Para flujo directo
-  real_payer_id?: string; // Quien pagó realmente de su bolsillo
+  real_payer_id?: string; // Quien pagó realmente de su bolsillo (legacy)
   creates_balance_pair?: boolean; // Si debe crear transacción de equilibrio
 }
 
@@ -115,12 +119,14 @@ const CommonFlowSchema = BaseTransactionSchema.extend({
   type: z.enum(['income', 'expense']),
   flow_type: z.literal('common'),
   paid_by: z.string().optional(), // UUID del pagador o 'common'
+  performed_by_profile_id: z.string().uuid().optional(), // Ejecutor físico (nuevo)
 });
 
 const DirectFlowSchema = BaseTransactionSchema.extend({
   type: z.enum(['income_direct', 'expense_direct']),
   flow_type: z.literal('direct'),
   real_payer_id: z.string().uuid(), // Obligatorio: quien pagó de su bolsillo
+  performed_by_profile_id: z.string().uuid().optional(), // Ejecutor físico (nuevo)
   creates_balance_pair: z.boolean().default(true),
 });
 
@@ -292,6 +298,7 @@ async function createCommonFlowTransaction(
 
   // Determinar paid_by según tipo de transacción
   let paidBy: string;
+  let performedBy: string;
 
   if (data.type === 'expense') {
     // Gastos comunes: el dinero SALE de la Cuenta Común
@@ -300,12 +307,18 @@ async function createCommonFlowTransaction(
       return fail('No se pudo obtener la Cuenta Común del hogar');
     }
     paidBy = jointResult.data!; // data existe cuando ok=true
+
+    // Ejecutor: quien pasó la tarjeta (default: usuario actual)
+    performedBy = data.performed_by_profile_id || profileId;
   } else if (data.type === 'income') {
     // Ingresos comunes: el dinero SALE del miembro (entra a Cuenta Común)
     if (!data.paid_by || data.paid_by === 'common') {
       return fail('Los ingresos comunes deben tener un miembro asignado');
     }
     paidBy = data.paid_by;
+
+    // Ejecutor: mismo que aporta (quien hizo el ingreso)
+    performedBy = data.performed_by_profile_id || data.paid_by;
   } else {
     return fail('Tipo de transacción común inválido');
   }
@@ -324,12 +337,13 @@ async function createCommonFlowTransaction(
       occurred_at: occurred_at_date,
       performed_at: performed_at_ts,
       period_id: periodId,
-      paid_by: paidBy,
+      paid_by: paidBy, // Campo 1: Origen del dinero
+      performed_by_profile_id: performedBy, // Campo 2: Ejecutor físico (NUEVO)
       flow_type: 'common',
       created_by_profile_id: profileId,
       updated_by_profile_id: profileId,
       created_by_member_id: profileId,
-      performed_by_email: userEmail,
+      performed_by_email: userEmail, // Legacy (deprecated)
     })
     .select('id')
     .single();
@@ -412,6 +426,15 @@ async function createDirectFlowTransaction(
 
   const realPayerEmail = realPayerProfile?.email || userEmail;
 
+  // NUEVO CRITERIO (Issue #18): Gastos directos usan paid_by = joint_account_uuid
+  // Justificación: "El ingreso directo previo ya identificó quién puso ese dinero.
+  //                 El dinero sale de la cuenta común."
+  const jointResult = await getJointAccountId(householdId);
+  if (!jointResult.ok) {
+    return fail('No se pudo obtener la Cuenta Común del hogar');
+  }
+  const jointAccountId = jointResult.data!;
+
   // Generar UUID para emparejar las transacciones
   const pairId = crypto.randomUUID();
 
@@ -428,13 +451,18 @@ async function createDirectFlowTransaction(
     occurred_at: occurred_at_date,
     performed_at: performed_at_ts,
     period_id: periodId,
+    // SISTEMA DUAL-FIELD (Issue #19, #20, #18)
+    paid_by: jointAccountId, // Campo 1: Origen del dinero (Cuenta Común - NUEVO CRITERIO)
+    performed_by_profile_id: data.performed_by_profile_id || data.real_payer_id, // Campo 2: Ejecutor físico (quien pagó)
+    // Legacy
+    real_payer_id: data.real_payer_id, // Legacy: quien pagó de bolsillo
+    performed_by_email: realPayerEmail, // Legacy (deprecated)
+    // Metadata
     flow_type: 'direct',
     transaction_pair_id: pairId,
     created_by_member_id: profileId,
-    real_payer_id: data.real_payer_id, // Quien pagó realmente
     created_by_profile_id: profileId,
     updated_by_profile_id: profileId,
-    performed_by_email: realPayerEmail, // ✅ CORREGIDO: Email del pagador real
   };
 
   const { data: expenseTransaction, error: expenseError } = await supabase
@@ -483,14 +511,18 @@ async function createDirectFlowTransaction(
         occurred_at: occurred_at_date,
         performed_at: performed_at_ts,
         period_id: periodId,
+        // SISTEMA DUAL-FIELD (Issue #19, #20)
+        paid_by: data.real_payer_id, // Campo 1: El ingreso se atribuye al que pagó
+        performed_by_profile_id: null, // Campo 2: Sistema automático (NULL)
+        // Legacy
+        real_payer_id: data.real_payer_id, // Mismo pagador real
+        performed_by_email: realPayerEmail, // Legacy (deprecated)
+        // Metadata
         flow_type: 'direct',
         transaction_pair_id: pairId,
         created_by_member_id: profileId,
-        real_payer_id: data.real_payer_id, // Mismo pagador real
-        paid_by: data.real_payer_id, // El ingreso se atribuye al que pagó
         created_by_profile_id: profileId,
         updated_by_profile_id: profileId,
-        performed_by_email: realPayerEmail, // ✅ CORREGIDO: Email del pagador real
       })
       .select('id')
       .single();
