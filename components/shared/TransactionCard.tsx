@@ -1,7 +1,7 @@
 'use client';
 
 import { formatCurrency } from '@/lib/format';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 
 interface TransactionCardProps {
@@ -15,10 +15,10 @@ interface TransactionCardProps {
     performed_at?: string | null;
 
     // ✅ Jerarquía completa de 3 niveles
-    parent_category_name?: string;  // 🟢 Grupo (nivel 1)
-    category_name?: string;         // 🟡 Categoría (nivel 2)
+    parent_category_name?: string; // 🟢 Grupo (nivel 1)
+    category_name?: string; // 🟡 Categoría (nivel 2)
     category_icon?: string;
-    subcategory_name?: string;      // 🔵 Subcategoría (nivel 3)
+    subcategory_name?: string; // 🔵 Subcategoría (nivel 3)
     subcategory_icon?: string;
 
     profile_id?: string;
@@ -26,6 +26,7 @@ interface TransactionCardProps {
     profile_display_name?: string;
     real_payer_email?: string;
     real_payer_display_name?: string;
+    paid_by?: string | null; // ID del miembro que pagó (común) o NULL si cuenta común
   };
   isOwner: boolean;
   currentUserId?: string;
@@ -51,87 +52,110 @@ export function TransactionCard({
   const src = tx.performed_at || tx.occurred_at;
   const date = parseLocalDate(src as string);
 
-  // Determinar qué miembro mostrar
-  const memberName =
-    tx.flow_type === 'direct'
-      ? tx.real_payer_display_name || tx.real_payer_email
-      : tx.profile_display_name || tx.profile_email;
+  // Determinar qué miembro mostrar como "registrado por"
+  const registeredBy = tx.profile_display_name || tx.profile_email || 'Desconocido';
 
-  // Renderizar jerarquía de categoría
-  const renderCategory = () => {
-    // ✅ CASO 1: Jerarquía completa (grupo → categoría → subcategoría)
-    if (tx.parent_category_name && tx.category_name && tx.subcategory_name) {
-      return (
-        <span className="flex items-center gap-1 text-xs">
-          <span className="text-muted-foreground">{tx.parent_category_name}</span>
-          <span className="text-muted-foreground">→</span>
+  // Determinar quién realizó el pago
+  let paidBy: string;
+  if (tx.flow_type === 'direct') {
+    // Flujos directos: usar real_payer
+    paidBy = tx.real_payer_display_name || tx.real_payer_email || 'Desconocido';
+  } else {
+    // Flujos comunes: si paid_by es NULL = cuenta común, si no = miembro específico
+    // TODO: Necesitamos el nombre del miembro de paid_by desde el API
+    paidBy = tx.paid_by ? 'Miembro específico' : 'Cuenta Común';
+  }
+
+  // Renderizar jerarquía de categoría (solo para vista expandida)
+  const renderCategoryHierarchy = () => {
+    const parts = [];
+
+    // Grupo (nivel 1)
+    if (tx.parent_category_name) {
+      parts.push(
+        <span key="group" className="text-muted-foreground">
+          {tx.parent_category_name}
+        </span>,
+      );
+    }
+
+    // Categoría (nivel 2)
+    if (tx.category_name) {
+      if (parts.length > 0) {
+        parts.push(
+          <span key="arrow1" className="text-muted-foreground">
+            {' '}
+            →{' '}
+          </span>,
+        );
+      }
+      parts.push(
+        <span key="category" className="flex items-center gap-1">
           {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
-          <span>{tx.category_name}</span>
-          <span className="text-muted-foreground">→</span>
-          <span className="font-medium">{tx.subcategory_name}</span>
+          <span className="font-medium">{tx.category_name}</span>
+        </span>,
+      );
+    }
+
+    // Subcategoría (nivel 3)
+    if (tx.subcategory_name) {
+      parts.push(
+        <span key="arrow2" className="text-muted-foreground">
+          {' '}
+          →{' '}
+        </span>,
+      );
+      parts.push(
+        <span key="subcategory" className="flex items-center gap-1">
           {tx.subcategory_icon && tx.subcategory_icon !== tx.category_icon && (
             <span className="text-sm">{tx.subcategory_icon}</span>
           )}
-        </span>
+          <span className="font-medium">{tx.subcategory_name}</span>
+        </span>,
       );
     }
 
-    // ✅ CASO 2: Solo grupo y categoría (sin subcategoría)
-    if (tx.parent_category_name && tx.category_name) {
-      return (
-        <span className="flex items-center gap-1 text-xs">
-          <span className="text-muted-foreground">{tx.parent_category_name}</span>
-          <span className="text-muted-foreground">→</span>
-          {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
-          <span className="font-medium">{tx.category_name}</span>
-        </span>
-      );
+    if (parts.length === 0) {
+      return <span className="text-muted-foreground text-xs">Sin categoría</span>;
     }
 
-    // ✅ CASO 3: Categoría sin subcategoría (grupo puede estar presente)
-    if (tx.category_name) {
-      return (
-        <span className="flex items-center gap-1 text-xs">
-          {tx.parent_category_name && (
-            <>
-              <span className="text-muted-foreground">{tx.parent_category_name}</span>
-              <span className="text-muted-foreground">→</span>
-            </>
-          )}
-          {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
-          <span className="font-medium">{tx.category_name}</span>
-        </span>
-      );
-    }
+    return <div className="flex items-center gap-0 text-sm flex-wrap">{parts}</div>;
+  };
 
-    // ⚠️ Fallback final: Sin categoría
-    return <span className="text-muted-foreground text-xs">Sin categoría</span>;
+  // Obtener icono y texto para título colapsado
+  const getTitleIcon = () => {
+    // Priorizar icono de subcategoría si existe, si no categoría
+    return tx.subcategory_icon || tx.category_icon || null;
+  };
+
+  const getTitleText = () => {
+    if (tx.subcategory_name) {
+      return `${tx.category_name} - ${tx.subcategory_name}`;
+    }
+    return tx.category_name || 'Sin categoría';
   };
 
   return (
-    <div className="border rounded-lg hover:bg-accent/50 transition-colors">
+    <div
+      className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+      onClick={() => setIsExpanded(!isExpanded)}
+    >
       {/* Vista Colapsada - Mobile First */}
       <div className="p-3 space-y-2">
-        {/* Línea 1: Categoría/Subcategoría + Importe (siempre visible) */}
+        {/* Línea 1: Título con icono + Badge + Importe */}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col gap-1">
-              {/* Título: Categoría - Subcategoría */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium truncate">
-                  {tx.subcategory_name
-                    ? `${tx.category_name} - ${tx.subcategory_name}`
-                    : tx.category_name || 'Sin categoría'}
-                </span>
-                {tx.flow_type === 'direct' && (
-                  <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded whitespace-nowrap">
-                    Directo
-                  </span>
-                )}
-              </div>
-              {/* Jerarquía completa visible siempre */}
-              <div className="text-xs text-muted-foreground">{renderCategory()}</div>
+          <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+            {/* Título: Icono + Categoría - Subcategoría */}
+            <div className="flex items-center gap-2">
+              {getTitleIcon() && <span className="text-lg">{getTitleIcon()}</span>}
+              <span className="font-medium truncate">{getTitleText()}</span>
             </div>
+            {/* Badge flujo directo */}
+            {tx.flow_type === 'direct' && (
+              <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded whitespace-nowrap">
+                Directo
+              </span>
+            )}
           </div>
           <span
             className={`text-lg font-semibold whitespace-nowrap ${
@@ -143,7 +167,12 @@ export function TransactionCard({
           </span>
         </div>
 
-        {/* Línea 2: Fecha + Hora (siempre visible) */}
+        {/* Línea 2: Descripción (si existe) */}
+        {tx.description && (
+          <div className="text-sm text-muted-foreground truncate">{tx.description}</div>
+        )}
+
+        {/* Línea 3: Fecha + Hora */}
         <div className="text-sm text-muted-foreground">
           {date.toLocaleDateString('es-ES', {
             day: '2-digit',
@@ -163,24 +192,35 @@ export function TransactionCard({
 
         {/* Vista Expandida: Información adicional */}
         {isExpanded && (
-          <div className="pt-2 space-y-2 border-t">
-            {/* Descripción (si existe) */}
-            {tx.description && (
+          <div
+            className="pt-2 space-y-2 border-t"
+            onClick={(e) => e.stopPropagation()} // Evitar cerrar al hacer clic dentro
+          >
+            {/* Jerarquía completa */}
+            <div className="text-sm">
+              <span className="text-muted-foreground">Categoría: </span>
+              {renderCategoryHierarchy()}
+            </div>
+
+            {/* Descripción completa (si es larga) */}
+            {tx.description && tx.description.length > 50 && (
               <div className="text-sm">
-                <span className="text-muted-foreground">Descripción: </span>
+                <span className="text-muted-foreground">Descripción completa: </span>
                 <span>{tx.description}</span>
               </div>
             )}
 
-            {/* Miembro */}
-            {memberName && (
-              <div className="text-sm">
-                <span className="text-muted-foreground">
-                  {tx.flow_type === 'direct' ? 'Pagador: ' : 'Registrado por: '}
-                </span>
-                <span className="font-medium">{memberName}</span>
-              </div>
-            )}
+            {/* Realizado por (quién pagó) */}
+            <div className="text-sm">
+              <span className="text-muted-foreground">Realizado por: </span>
+              <span className="font-medium">{paidBy}</span>
+            </div>
+
+            {/* Registrado por */}
+            <div className="text-sm">
+              <span className="text-muted-foreground">Registrado por: </span>
+              <span className="font-medium">{registeredBy}</span>
+            </div>
 
             {/* Tipo de flujo */}
             <div className="text-sm">
@@ -190,37 +230,28 @@ export function TransactionCard({
                 {isIncome ? '(Ingreso)' : '(Gasto)'}
               </span>
             </div>
+
+            {/* Botones de acción */}
+            {canEdit && (
+              <div className="flex gap-2 pt-2">
+                {editButton ? (
+                  editButton
+                ) : (
+                  <button
+                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // TODO: Acción de editar
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                )}
+                {isOwner && deleteButton}
+              </div>
+            )}
           </div>
         )}
-
-        {/* Línea Final: Botón Expandir + Acciones */}
-        <div className="flex items-center justify-between pt-2 gap-2 flex-wrap sm:flex-nowrap">
-          {/* Botón expandir/colapsar */}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="h-4 w-4" />
-                Ver menos
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4" />
-                Ver más
-              </>
-            )}
-          </button>
-
-          {/* Botones de acción (Editar/Eliminar) */}
-          {canEdit && (
-            <div className="flex gap-1">
-              {editButton}
-              {isOwner && deleteButton}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
