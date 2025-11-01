@@ -62,11 +62,16 @@
   sudo -u postgres psql -U cuentassik_user -d cuentassik_dev
   ```
 
-#### **3. Roles Owner por entorno (NOLOGIN)**
+#### **3. Rol Owner Unificado (NOLOGIN) - v2.1.0**
 
-- **`cuentassik_dev_owner`** (DEV) y **`cuentassik_prod_owner`** (PROD)
-  - Propietarios de todos los objetos en cada BD
-  - Usados para DDL/migraciones (con `SET ROLE`)
+- **`cuentassik_owner`** ⭐ (Unificado para DEV y PROD)
+  - Propietario de TODOS los objetos en AMBAS bases de datos
+  - Usado para DDL/migraciones (con `SET ROLE cuentassik_owner;`)
+  - Reemplaza a los roles obsoletos por entorno (Issue #6)
+
+**⚠️ Roles OBSOLETOS (eliminados en v2.1.0):**
+- ❌ `cuentassik_dev_owner` (reemplazado por `cuentassik_owner`)
+- ❌ `cuentassik_prod_owner` (reemplazado por `cuentassik_owner`)
 
 #### **4. `www-data` (Usuario del Sistema Linux - NO PostgreSQL)**
 
@@ -77,7 +82,7 @@
 
 ### **Tabla de Operaciones por Usuario**
 
-| Operación                        | `postgres` | `cuentassik_user` | `cuentassik_[env]_owner` |
+| Operación                        | `postgres` | `cuentassik_user` | `cuentassik_owner` |
 | -------------------------------- | ---------- | ----------------- | ------------------------ |
 | Consultar datos (SELECT)         | ✅         | ✅                | ✅                       |
 | Insertar/Actualizar/Borrar datos | ✅         | ✅                | ✅                       |

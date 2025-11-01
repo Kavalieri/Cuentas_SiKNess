@@ -3,6 +3,7 @@
 
 'use server';
 
+import { getJointAccountId } from '@/lib/jointAccount';
 import { normalizePeriodPhase } from '@/lib/periods';
 import { getCurrentUser, getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Result } from '@/lib/result';
@@ -289,17 +290,24 @@ async function createCommonFlowTransaction(
   }
   // En validation y closing también permitimos movimientos comunes
 
-  // Determinar paid_by
-  let paidBy: string | null = profileId; // Default: usuario actual
-  if (data.paid_by === 'common') {
-    paidBy = null; // Cuenta común
-  } else if (data.paid_by && data.paid_by !== '') {
-    paidBy = data.paid_by; // Usuario específico
-  }
+  // Determinar paid_by según tipo de transacción
+  let paidBy: string;
 
-  // Validación: Si es ingreso, paid_by NO puede ser NULL
-  if (data.type === 'income' && paidBy === null) {
-    return fail('Los ingresos deben tener un usuario asignado para trazabilidad');
+  if (data.type === 'expense') {
+    // Gastos comunes: el dinero SALE de la Cuenta Común
+    const jointResult = await getJointAccountId(householdId);
+    if (!jointResult.ok) {
+      return fail('No se pudo obtener la Cuenta Común del hogar');
+    }
+    paidBy = jointResult.data!; // data existe cuando ok=true
+  } else if (data.type === 'income') {
+    // Ingresos comunes: el dinero SALE del miembro (entra a Cuenta Común)
+    if (!data.paid_by || data.paid_by === 'common') {
+      return fail('Los ingresos comunes deben tener un miembro asignado');
+    }
+    paidBy = data.paid_by;
+  } else {
+    return fail('Tipo de transacción común inválido');
   }
 
   const { data: transaction, error } = await supabase

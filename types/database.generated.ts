@@ -422,6 +422,19 @@ export interface Invitations {
   type: Generated<string>;
 }
 
+export interface JointAccounts {
+  created_at: Generated<Timestamp>;
+  /**
+   * Nombre visible de la cuenta común. Default: "Cuenta Común".
+   */
+  display_name: Generated<string>;
+  /**
+   * Hogar al que pertenece esta cuenta común (uno por hogar).
+   */
+  household_id: string;
+  id: Generated<string>;
+}
+
 export interface JournalAdjustments {
   action: string;
   adjustment_id: string | null;
@@ -986,6 +999,7 @@ export interface DB {
   household_settings: HouseholdSettings;
   households: Households;
   invitations: Invitations;
+  joint_accounts: JointAccounts;
   journal_adjustments: JournalAdjustments;
   journal_invitations: JournalInvitations;
   journal_roles: JournalRoles;

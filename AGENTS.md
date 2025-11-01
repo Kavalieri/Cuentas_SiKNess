@@ -105,17 +105,23 @@ mcp_shell_execute_command('psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_de
 
 - Rol `LOGIN` de mínimos privilegios (NO superuser, NO createdb, NO createrole, NO DDL)
 - Privilegios: `SELECT, INSERT, UPDATE, DELETE` en tablas y `USAGE, SELECT` en secuencias
-- NO es owner de los objetos; los owners son roles NOLOGIN por entorno
+- NO es owner de los objetos; el owner es `cuentassik_owner` (rol unificado)
 - Usado en:
   - Aplicación Next.js (DATABASE_URL en .env)
   - Queries manuales para debugging
   - Scripts de sincronización de datos (no estructura)
 
-3. **`cuentassik_[env]_owner`** (Roles NOLOGIN para DDL)
+3. **`cuentassik_owner`** ⭐ (Rol NOLOGIN para DDL - Unificado v2.1.0)
 
-- `cuentassik_dev_owner` (DEV) y `cuentassik_prod_owner` (PROD)
-- Propietarios de los objetos de cada BD; se usan para DDL/migraciones
-- Recomendado: Conectarse como `postgres` y ejecutar `SET ROLE cuentassik_[env]_owner;` dentro de las migraciones
+- Rol unificado para AMBOS entornos (DEV y PROD)
+- Tipo: `NOLOGIN` (no puede conectar directamente)
+- Propietario de TODOS los objetos de base de datos en ambos entornos
+- Usado para: DDL/migraciones (CREATE, ALTER, DROP, funciones SECURITY DEFINER)
+- **Ejecución**: Conectarse como `postgres` y ejecutar `SET ROLE cuentassik_owner;` dentro de migraciones
+
+**⚠️ Roles OBSOLETOS (eliminados en Issue #6 - v2.1.0):**
+- ❌ `cuentassik_dev_owner` (reemplazado por `cuentassik_owner`)
+- ❌ `cuentassik_prod_owner` (reemplazado por `cuentassik_owner`)
 
 ### Bases de Datos
 
@@ -246,7 +252,7 @@ Aplicar cambios de estructura (migraciones) a producción SIN tocar datos.
 **Qué hace:**
 
 1. Backup OBLIGATORIO de PROD
-2. Aplica migraciones del directorio `tested/` (conexión como `postgres` y `SET ROLE cuentassik_prod_owner;` para crear/alterar objetos)
+2. Aplica migraciones del directorio `tested/` (conexión como `postgres` y `SET ROLE cuentassik_owner;` para crear/alterar objetos)
 3. Solo modifica ESTRUCTURA (tablas, columnas, índices)
 4. NO toca los datos existentes
 5. Mueve migraciones aplicadas a `applied/`

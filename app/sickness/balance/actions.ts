@@ -4,6 +4,7 @@
 'use server';
 import { getCurrentProfileId, isHouseholdOwner } from '@/lib/adminCheck';
 import { query } from '@/lib/db';
+import { getJointAccountId } from '@/lib/jointAccount';
 import { normalizePeriodPhase } from '@/lib/periods';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
@@ -355,17 +356,24 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
   const newPeriodId = periodIdRes.rows[0]?.ensure_monthly_period;
   if (!newPeriodId) return fail('No se pudo determinar el período de la fecha indicada');
 
-  // Resolver paid_by
-  let paid_by: string | null = null;
-  if (paidBy && paidBy !== '' && paidBy !== 'common') {
-    paid_by = paidBy; // UUID
-  } else if (paidBy === 'common' || !paidBy) {
-    paid_by = null; // cuenta común
-  }
+  // Resolver paid_by según tipo de transacción
+  let paid_by: string;
 
-  // Reglas: ingresos requieren paid_by no nulo
-  if (tx && tx.type === 'income' && paid_by === null) {
-    return fail('Los ingresos comunes deben tener un miembro asignado');
+  if (tx.type === 'expense') {
+    // Gastos comunes: dinero sale de Cuenta Común
+    const jointResult = await getJointAccountId(householdId);
+    if (!jointResult.ok) {
+      return fail('No se pudo obtener la Cuenta Común');
+    }
+    paid_by = jointResult.data!;
+  } else if (tx.type === 'income') {
+    // Ingresos comunes: dinero sale del miembro
+    if (!paidBy || paidBy === 'common') {
+      return fail('Los ingresos comunes deben tener un miembro asignado');
+    }
+    paid_by = paidBy;
+  } else {
+    return fail('Tipo de transacción inválido');
   }
 
   await query(

@@ -54,31 +54,59 @@ apply_to_database() {
   # Calcular checksum
   CHECKSUM=$(md5sum "$MIGRATION_PATH" | awk '{print $1}')
 
-  # Verificar si ya está aplicada
+  # Verificar si ya está aplicada EXITOSAMENTE
   ALREADY_APPLIED=$(sudo -u postgres psql -d "$DB_NAME" -t -A << EOF
-SELECT COUNT(*) FROM _migrations WHERE migration_name = '$MIGRATION_FILE';
+SELECT COUNT(*) FROM _migrations
+WHERE migration_name = '$MIGRATION_FILE'
+  AND status = 'success';
 EOF
   )
 
   if [ "$ALREADY_APPLIED" -gt "0" ]; then
-    echo "⏭️  Ya aplicada en $ENV_NAME - Saltando"
+    echo "⏭️  Ya aplicada exitosamente en $ENV_NAME - Saltando"
     return 0
+  fi
+
+  # Verificar si hubo intentos fallidos previos
+  FAILED_ATTEMPTS=$(sudo -u postgres psql -d "$DB_NAME" -t -A << EOF
+SELECT COUNT(*) FROM _migrations
+WHERE migration_name = '$MIGRATION_FILE'
+  AND status = 'failed';
+EOF
+  )
+
+  if [ "$FAILED_ATTEMPTS" -gt "0" ]; then
+    echo "⚠️  Detectados $FAILED_ATTEMPTS intento(s) fallido(s) previo(s)"
+    echo "   Reintentando aplicación..."
   fi
 
   # Registrar inicio
   START_TIME=$(date +%s%3N)
 
+  # Copiar migración a /tmp para que postgres pueda leerla (permisos)
+  TMP_MIGRATION="/tmp/migration_$(basename "$MIGRATION_FILE")"
+  echo "📋 Copiando a ubicación temporal..."
+  sudo cp "$MIGRATION_PATH" "$TMP_MIGRATION"
+  sudo chmod 644 "$TMP_MIGRATION"
+
   # Aplicar migración
   echo "📝 Ejecutando SQL..."
-  if sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -f "$MIGRATION_PATH" > /tmp/migration_output.log 2>&1; then
+  if sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 << EOF > /tmp/migration_output.log 2>&1
+-- Cambiar a owner para DDL
+SET ROLE cuentassik_owner;
+
+-- Ejecutar migración
+\i $TMP_MIGRATION
+EOF
+  then
     STATUS="success"
     END_TIME=$(date +%s%3N)
     EXECUTION_TIME=$((END_TIME - START_TIME))
     OUTPUT_LOG=$(cat /tmp/migration_output.log)
     ERROR_LOG=""
 
-    # Registrar en _migrations
-    sudo -u postgres psql -d "$DB_NAME" > /dev/null 2>&1 << EOF
+    # Registrar en _migrations (sin silenciar errores para debugging)
+    if ! sudo -u postgres psql -d "$DB_NAME" << EOF
 INSERT INTO _migrations (
   migration_name,
   applied_at,
@@ -100,8 +128,15 @@ VALUES (
   'Aplicada automáticamente'
 );
 EOF
+    then
+      echo "⚠️  Advertencia: Migración aplicada pero registro en _migrations falló"
+      echo "   La estructura está actualizada pero el tracking puede estar incompleto"
+    fi
 
     echo "✅ Aplicada exitosamente en $ENV_NAME (${EXECUTION_TIME}ms)"
+
+    # Limpiar archivo temporal
+    sudo rm -f "$TMP_MIGRATION"
 
     # ✨ NUEVO: Auto-regenerar types TypeScript
     echo ""
@@ -133,8 +168,8 @@ EOF
     echo "❌ Error al aplicar en $ENV_NAME:"
     cat /tmp/migration_output.log
 
-    # Registrar error
-    sudo -u postgres psql -d "$DB_NAME" > /dev/null 2>&1 << EOF
+    # Registrar error (sin silenciar para debugging)
+    if ! sudo -u postgres psql -d "$DB_NAME" << EOF
 INSERT INTO _migrations (
   migration_name,
   applied_at,
@@ -154,7 +189,12 @@ VALUES (
   '$CHECKSUM'
 );
 EOF
+    then
+      echo "⚠️  Advertencia: No se pudo registrar el error en _migrations"
+    fi
 
+    # Limpiar archivo temporal
+    sudo rm -f "$TMP_MIGRATION"
     return 1
   fi
 

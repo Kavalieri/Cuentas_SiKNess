@@ -93,8 +93,14 @@ export async function GET(req: NextRequest) {
         p.display_name as profile_display_name,
         rp.email as real_payer_email,
         rp.display_name as real_payer_display_name,
+        -- paid_by: puede ser miembro O Cuenta Común
+        CASE
+          WHEN ja.id IS NOT NULL THEN ja.display_name
+          WHEN pb.display_name IS NOT NULL THEN pb.display_name
+          ELSE NULL
+        END as paid_by_display_name,
         pb.email as paid_by_email,
-        pb.display_name as paid_by_display_name
+        ja.id IS NOT NULL as paid_by_is_joint_account
       FROM transactions t
       -- Subcategoría (tabla subcategories)
       LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
@@ -110,6 +116,8 @@ export async function GET(req: NextRequest) {
       LEFT JOIN profiles p ON t.profile_id = p.id
       LEFT JOIN profiles rp ON t.real_payer_id = rp.id
       LEFT JOIN profiles pb ON t.paid_by = pb.id
+      -- Cuenta Común (join_accounts)
+      LEFT JOIN joint_accounts ja ON t.paid_by = ja.id
       ${whereClause}
   -- Ordenar por la fecha/hora real del evento, luego fecha contable y finalmente captura
   ORDER BY t.performed_at DESC NULLS LAST, t.occurred_at DESC, t.created_at DESC

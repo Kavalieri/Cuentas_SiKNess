@@ -1,8 +1,23 @@
 # CuentasSiK - Sistema PostgreSQL: Documentación Completa
 
-**Fecha**: Octubre 2025
-**Autor**: AI Assistant
-**Proyecto**: CuentasSiK
+**⚠️ ADVERTENCIA: DOCUMENTACIÓN OBSOLETA (pre-v2.1.0)**
+
+**Fecha Original**: Octubre 2025
+**Estado**: ❌ **DEPRECADA** - Reemplazada por Issue #6 (Unificación de Ownership)
+**Usar en su lugar**: `database/README.md` (versión actualizada v2.1.0)
+
+**Cambios Críticos desde esta versión:**
+- ❌ `cuentassik_dev_owner` → ✅ `cuentassik_owner` (unificado)
+- ❌ `cuentassik_prod_owner` → ✅ `cuentassik_owner` (unificado)
+- Sistema de roles por entorno eliminado en favor de ownership unificado
+
+**📚 Documentación Actual:**
+- [database/README.md](../../../database/README.md) - Sistema v2.1.0
+- [docs/ISSUE_6_UNIFICAR_USUARIOS_DB.md](../../ISSUE_6_UNIFICAR_USUARIOS_DB.md) - Migración realizada
+
+---
+
+# ⚠️ CONTENIDO HISTÓRICO (NO USAR) ⚠️
 
 ---
 
