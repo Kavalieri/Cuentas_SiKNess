@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Respuesta del endpoint de lookup de periodo
@@ -27,7 +27,7 @@ const periodCache = new Map<string, PeriodLookupResponse>();
 
 /**
  * Hook para validar tipos de transacción permitidos según la fecha seleccionada
- * 
+ *
  * @param selectedDate - Fecha seleccionada en formato YYYY-MM-DD o Date
  * @returns {
  *   allowedTypes: Tipos de transacción permitidos para esta fecha
@@ -37,18 +37,18 @@ const periodCache = new Map<string, PeriodLookupResponse>();
  *   isLoading: Si está cargando la validación
  *   error: Error si hubo problema al consultar
  * }
- * 
+ *
  * @example
  * ```tsx
  * const { allowedTypes, canCreate, message, isLoading } = useDatePeriodValidation(selectedDate);
- * 
+ *
  * // Mostrar feedback bajo el campo de fecha
  * {message && (
  *   <p className={canCreate ? "text-green-600" : "text-red-600"}>
  *     {message}
  *   </p>
  * )}
- * 
+ *
  * // Deshabilitar tipos no permitidos
  * <option value="income" disabled={!allowedTypes.includes('income')}>
  *   Ingreso
@@ -62,7 +62,7 @@ export function useDatePeriodValidation(selectedDate: string | Date | null) {
   const [phase, setPhase] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Ref para cancelar requests obsoletos
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -71,13 +71,13 @@ export function useDatePeriodValidation(selectedDate: string | Date | null) {
    */
   const normalizeDateToString = useCallback((date: string | Date | null): string | null => {
     if (!date) return null;
-    
+
     if (typeof date === 'string') {
       // Ya está en formato string, asumimos que es YYYY-MM-DD o YYYY-MM-DDTHH:MM
       const datePart = date.split('T')[0];
       return datePart || null;
     }
-    
+
     // Convertir Date a YYYY-MM-DD
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -157,7 +157,7 @@ export function useDatePeriodValidation(selectedDate: string | Date | null) {
    */
   useEffect(() => {
     const dateString = normalizeDateToString(selectedDate);
-    
+
     if (!dateString) {
       // Sin fecha seleccionada
       setAllowedTypes([]);

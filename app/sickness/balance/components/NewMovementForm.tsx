@@ -104,14 +104,14 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
     // Solo ajustar si el tipo actual no está permitido
     if (periodAllowedTypes.length > 0 && !periodAllowedTypes.includes(type)) {
       // Seleccionar el primer tipo permitido como fallback
-      const defaultType = periodAllowedTypes.includes('direct_expense') 
+      const defaultType = periodAllowedTypes.includes('direct_expense')
         ? 'direct_expense'
         : periodAllowedTypes.includes('expense')
           ? 'expense'
           : periodAllowedTypes.includes('income')
             ? 'income'
             : periodAllowedTypes[0] || 'expense';
-      
+
       setType(defaultType);
     }
   }, [periodAllowedTypes, type]);
@@ -124,8 +124,8 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
-          // Restaurar valores si existen y son válidos
-          if (parsed.type && (parsed.type === 'expense' || parsed.type === 'income' || parsed.type === 'direct_expense' || parsed.type === 'direct_income')) {
+          // Restaurar valores si existen y son válidos (direct_income nunca es válido - es automático)
+          if (parsed.type && (parsed.type === 'expense' || parsed.type === 'income' || parsed.type === 'direct_expense')) {
             setType(parsed.type);
           }
           setSelectedParentId(parsed.selectedParentId || '');
@@ -358,44 +358,38 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <Label>Tipo</Label>
-            <Select 
-              value={type} 
-              onValueChange={setType} 
+            <Select
+              value={type}
+              onValueChange={setType}
               disabled={!periodCanCreate || periodIsLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder={
-                  periodIsLoading 
-                    ? 'Verificando periodo...' 
-                    : !periodCanCreate 
-                      ? 'No se pueden crear movimientos' 
+                  periodIsLoading
+                    ? 'Verificando periodo...'
+                    : !periodCanCreate
+                      ? 'No se pueden crear movimientos'
                       : 'Selecciona tipo'
                 } />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem 
-                  value="direct_expense" 
+                <SelectItem
+                  value="direct_expense"
                   disabled={!periodAllowedTypes.includes('direct_expense')}
                 >
                   Gasto directo {!periodAllowedTypes.includes('direct_expense') && '🚫'}
                 </SelectItem>
-                <SelectItem 
-                  value="expense" 
+                <SelectItem
+                  value="expense"
                   disabled={!periodAllowedTypes.includes('expense')}
                 >
                   Gasto común {!periodAllowedTypes.includes('expense') && '🚫'}
                 </SelectItem>
-                <SelectItem 
-                  value="income" 
+                <SelectItem
+                  value="income"
                   disabled={!periodAllowedTypes.includes('income')}
                 >
                   Ingreso común {!periodAllowedTypes.includes('income') && '🚫'}
-                </SelectItem>
-                <SelectItem 
-                  value="direct_income" 
-                  disabled={!periodAllowedTypes.includes('direct_income')}
-                >
-                  Ingreso directo {!periodAllowedTypes.includes('direct_income') && '🚫'}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -567,8 +561,8 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
           {error && <div className="text-red-600 text-sm">{error}</div>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>Cancelar</Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={loading || !periodCanCreate || periodIsLoading}
             >
               {loading ? 'Creando...' : 'Crear'}

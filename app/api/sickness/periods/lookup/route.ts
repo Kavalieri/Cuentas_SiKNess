@@ -1,11 +1,11 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import type { MonthlyPeriods } from '@/types/database.generated';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * GET /api/sickness/periods/lookup?date=YYYY-MM-DD
- * 
+ *
  * Busca el periodo mensual correspondiente a una fecha específica
  * Retorna información sobre la fase y tipos de transacción permitidos
  */
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     // Note: monthly_periods no tiene start_date/end_date, usamos year/month para calcular
     const result = await query<MonthlyPeriods>(
       `
-      SELECT 
+      SELECT
         id,
         household_id,
         year,
@@ -63,11 +63,11 @@ export async function GET(request: NextRequest) {
     }
 
     const period = result.rows[0]!; // Assertion: ya verificamos que existe
-    
+
     // Extraer el valor de phase (es un ColumnType en Kysely)
     // El type de phase puede ser complejo, usamos string como safe cast
     const phaseValue = String(
-      typeof period.phase === 'object' && period.phase !== null 
+      typeof period.phase === 'object' && period.phase !== null
         ? (period.phase as { value?: string }).value || period.phase
         : period.phase
     );
@@ -93,8 +93,8 @@ export async function GET(request: NextRequest) {
         break;
 
       case 'active':
-        // Fase active: Todos los tipos permitidos
-        allowedTypes = ['income', 'expense', 'direct_income', 'direct_expense'];
+        // Fase active: Todos los tipos permitidos (excepto direct_income que es automático)
+        allowedTypes = ['income', 'expense', 'direct_expense'];
         message = 'Periodo activo. Todos los tipos de movimiento permitidos.';
         canCreate = true;
         break;
