@@ -37,6 +37,7 @@ interface Transaction {
   performed_at?: string | null;
   category_id?: string;
   subcategory_id?: string; // ✨ NUEVO: necesario para edición
+  transaction_number?: number; // ✨ Issue #27: Número de transacción
   is_compensatory_income?: boolean; // ✨ Issue #26: Flag para ingresos compensatorios
   profile_id?: string;
   real_payer_id?: string;
@@ -510,11 +511,12 @@ function BalancePageContent() {
                 {paginatedTransactions.map((tx) => {
                   // Issue #26: Ocultar botones para ingresos compensatorios automáticos
                   const isCompensatoryIncome = tx.is_compensatory_income === true;
-                  
+
                   return (
                     <TransactionCard
                       key={tx.id}
                       tx={tx}
+                      allTransactions={transactions}
                       isOwner={isOwner}
                       currentUserId={user?.id}
                       parseLocalDate={parseLocalDate}

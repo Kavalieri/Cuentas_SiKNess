@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCategoryHierarchy } from '@/contexts/CategoryHierarchyContext';
+import { Pencil } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -143,11 +144,14 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
   return (
     <>
       <button
-        className="ml-2 px-2 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300"
+        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
         title="Editar movimiento común"
-        onClick={() => setOpen(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
       >
-        Editar
+        <Pencil className="h-4 w-4" />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

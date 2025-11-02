@@ -852,6 +852,10 @@ export interface Transactions {
    */
   subcategory_id: string | null;
   /**
+   * Número secuencial único por household. Asignado automáticamente por trigger en nuevas inserciones.
+   */
+  transaction_number: number | null;
+  /**
    * UUID que vincula gastos directos con sus ingresos automáticos correspondientes
    */
   transaction_pair_id: string | null;

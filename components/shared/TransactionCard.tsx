@@ -13,6 +13,8 @@ interface TransactionCardProps {
     description?: string;
     occurred_at: string;
     performed_at?: string | null;
+    transaction_number?: number; // ✨ Issue #27: Número de transacción
+    transaction_pair_id?: string; // ✨ Issue #27: Para identificar pares directos
     is_compensatory_income?: boolean; // ✨ Issue #26: Flag para ingresos compensatorios
 
     // ✅ Jerarquía completa de 3 niveles
@@ -36,6 +38,7 @@ interface TransactionCardProps {
     performed_by_profile_id?: string | null; // UUID del ejecutor físico
     performed_by_display_name?: string | null; // Nombre del ejecutor desde API
   };
+  allTransactions?: TransactionCardProps['tx'][]; // ✨ Issue #27: Para encontrar pares directos
   isOwner: boolean;
   currentUserId?: string;
   editButton?: React.ReactNode;
@@ -45,12 +48,36 @@ interface TransactionCardProps {
 
 export function TransactionCard({
   tx,
+  allTransactions,
   isOwner,
   currentUserId,
   editButton,
   deleteButton,
   parseLocalDate,
 }: TransactionCardProps) {
+  // ✨ Issue #27: Formatear número de transacción (pares directos: #X-Y)
+  const formatTransactionNumber = (): string => {
+    if (!tx.transaction_number) return '';
+
+    // Si es flujo directo y tiene par, mostrar ambos números
+    if (tx.flow_type === 'direct' && tx.transaction_pair_id && allTransactions) {
+      const pairTx = allTransactions.find(
+        (t) => t.transaction_pair_id === tx.transaction_pair_id && t.id !== tx.id,
+      );
+
+      if (pairTx?.transaction_number) {
+        // Ordenar: gasto primero, ingreso segundo (convención del sistema)
+        const isExpense = tx.type === 'expense_direct';
+        const num1 = isExpense ? tx.transaction_number : pairTx.transaction_number;
+        const num2 = isExpense ? pairTx.transaction_number : tx.transaction_number;
+        return `${num1}-${num2}`;
+      }
+    }
+
+    // Flujo común: solo el número
+    return tx.transaction_number.toString();
+  };
+
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isIncome = tx.type === 'income' || tx.type === 'income_direct';
@@ -160,75 +187,86 @@ export function TransactionCard({
       className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
       onClick={() => setIsExpanded(!isExpanded)}
     >
-      {/* Vista Colapsada - Mobile First */}
+      {/* Vista Colapsada - Mobile First - Estructura fija 4 líneas (Issue #27) */}
       <div className="p-3 space-y-2">
-        {/* Línea 1: Título con icono + Badge + Importe */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-            {/* Título: Icono + Categoría - Subcategoría */}
-            <div className="flex items-center gap-2">
-              {getTitleIcon() && <span className="text-lg">{getTitleIcon()}</span>}
-              <span className="font-medium truncate">{getTitleText()}</span>
-            </div>
-            {/* Badge flujo directo */}
-            {tx.flow_type === 'direct' && (
-              <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded whitespace-nowrap">
-                Directo
-              </span>
-            )}
-            {/* Badge ingreso compensatorio - Issue #26 */}
-            {tx.is_compensatory_income && (
-              <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded whitespace-nowrap">
-                Automático
-              </span>
-            )}
-          </div>
+        {/* LÍNEA 1: Badges (siempre presente, reserva espacio con min-h) */}
+        <div className="flex items-center gap-2 flex-wrap min-h-[20px]">
+          {/* Badge número de transacción */}
+          {tx.transaction_number && (
+            <span
+              className={`inline-flex items-center px-1.5 py-0.5 text-xs font-mono rounded whitespace-nowrap ${
+                tx.flow_type === 'direct'
+                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              #{formatTransactionNumber()}
+            </span>
+          )}
+          {/* Badge ingreso compensatorio - Issue #26 */}
+          {tx.is_compensatory_income && (
+            <span className="inline-flex items-center px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded whitespace-nowrap">
+              Automático
+            </span>
+          )}
+        </div>
+
+        {/* LÍNEA 2: Categoría (título) - SIN MONTO */}
+        <div className="flex items-center gap-2">
+          {getTitleIcon() && <span className="text-lg flex-shrink-0">{getTitleIcon()}</span>}
+          <span className="font-medium text-sm truncate">{getTitleText()}</span>
+        </div>
+
+        {/* LÍNEA 3: Descripción (subtítulo) */}
+        {tx.description && (
+          <div className="text-sm text-muted-foreground truncate">{tx.description}</div>
+        )}
+
+        {/* LÍNEA 4: Monto (izquierda) + Fecha (derecha) - POSICIONES FIJAS */}
+        <div className="flex items-center justify-between">
           <span
-            className={`text-lg font-semibold whitespace-nowrap ${
+            className={`text-lg font-semibold ${
               isIncome ? 'text-green-600' : 'text-red-600'
             }`}
           >
             {isIncome ? '+' : '-'}
             {formatCurrency(tx.amount)}
           </span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {date.toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+            })}
+          </span>
         </div>
 
-        {/* Línea 2: Descripción (si existe) */}
-        {tx.description && (
-          <div className="text-sm text-muted-foreground truncate">{tx.description}</div>
-        )}
-
-        {/* Línea 3: Fecha + Hora */}
-        <div className="text-sm text-muted-foreground">
-          {date.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          })}
-          {tx.performed_at && (
-            <span className="ml-1">
-              •{' '}
-              {date.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          )}
-        </div>
-
-        {/* Vista Expandida: Información adicional */}
+        {/* Vista Expandida: Información adicional simplificada */}
         {isExpanded && (
           <div
             className="pt-2 space-y-2 border-t"
             onClick={(e) => e.stopPropagation()} // Evitar cerrar al hacer clic dentro
           >
-            {/* Jerarquía completa */}
+            {/* Solo Grupo (no repetir jerarquía completa) */}
             <div className="text-sm">
-              <span className="text-muted-foreground">Categoría: </span>
-              {renderCategoryHierarchy()}
+              <span className="text-muted-foreground">Grupo: </span>
+              <span className="font-medium">{tx.parent_category_name || 'Sin grupo'}</span>
             </div>
 
-            {/* Descripción completa (si es larga) */}
+            {/* Hora (movida desde vista colapsada) */}
+            {tx.performed_at && (
+              <div className="text-sm">
+                <span className="text-muted-foreground">Hora: </span>
+                <span className="font-medium">
+                  {date.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+            )}
+
+            {/* Descripción completa (si es larga, >50 caracteres) */}
             {tx.description && tx.description.length > 50 && (
               <div className="text-sm">
                 <span className="text-muted-foreground">Descripción completa: </span>
@@ -250,17 +288,8 @@ export function TransactionCard({
               <span className="font-medium">{registeredBy}</span>
             </div>
 
-            {/* Tipo de flujo */}
-            <div className="text-sm">
-              <span className="text-muted-foreground">Tipo: </span>
-              <span className="font-medium">
-                {tx.flow_type === 'direct' ? 'Flujo Directo' : 'Flujo Común'}{' '}
-                {isIncome ? '(Ingreso)' : '(Gasto)'}
-              </span>
-            </div>
-
-            {/* Botones de acción */}
-            {canEdit && (
+            {/* Botones de acción (solo si no es compensatory income - Issue #26) */}
+            {canEdit && !tx.is_compensatory_income && (
               <div className="flex gap-2 pt-2">
                 {editButton ? (
                   editButton
