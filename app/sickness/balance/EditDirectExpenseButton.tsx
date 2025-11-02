@@ -22,11 +22,11 @@ interface EditDirectExpenseButtonProps {
     subcategory_id?: string;
     occurred_at?: string;
     performed_at?: string | null;
-    real_payer_id?: string; // ✨ NUEVO: ID del pagador actual
+    performed_by_profile_id?: string; // ✅ Unificado: ID del ejecutor
   };
   householdId?: string;
   onSuccess?: () => void;
-  members?: Array<{ profile_id: string; email: string; display_name?: string; role?: string }>; // ✨ NUEVO: lista de miembros
+  members?: Array<{ profile_id: string; email: string; display_name?: string; role?: string }>;
 }
 
 export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = [] }: EditDirectExpenseButtonProps) {
@@ -48,7 +48,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
       occurredAt: tx.performed_at
         ? tx.performed_at.slice(0, 16)
         : (tx.occurred_at ? (tx.occurred_at.length > 10 ? tx.occurred_at.slice(0, 16) : `${tx.occurred_at}T00:00`) : ''),
-      performedBy: tx.real_payer_id || '', // ✅ Unificado: performed_by_profile_id
+      performedBy: tx.performed_by_profile_id || '', // ✅ Unificado: performed_by_profile_id
     },
   });
 
