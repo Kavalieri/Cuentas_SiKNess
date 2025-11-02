@@ -80,6 +80,9 @@ export async function GET(req: NextRequest) {
         t.paid_by,
         t.category_id,
         t.subcategory_id,
+        -- SISTEMA DUAL-FIELD (Issue #20)
+        t.performed_by_profile_id,
+        COALESCE(p_performer.display_name, p_performer.email) as performed_by_display_name,
         -- Subcategoría (nivel 3)
         sc.name as subcategory_name,
         sc.icon as subcategory_icon,
@@ -116,6 +119,8 @@ export async function GET(req: NextRequest) {
       LEFT JOIN profiles p ON t.profile_id = p.id
       LEFT JOIN profiles rp ON t.real_payer_id = rp.id
       LEFT JOIN profiles pb ON t.paid_by = pb.id
+      -- Ejecutor físico (NUEVO - Issue #20)
+      LEFT JOIN profiles p_performer ON t.performed_by_profile_id = p_performer.id
       -- Cuenta Común (join_accounts)
       LEFT JOIN joint_accounts ja ON t.paid_by = ja.id
       ${whereClause}
