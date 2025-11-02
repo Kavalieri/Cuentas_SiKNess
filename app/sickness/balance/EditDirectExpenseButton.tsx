@@ -3,6 +3,7 @@ import type {
     Subcategory
 } from '@/app/sickness/configuracion/categorias/hierarchy-actions';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCategoryHierarchy } from '@/contexts/CategoryHierarchyContext';
@@ -229,9 +230,9 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
 
             {/* ✅ Orden consistente con NewMovementForm: ¿Quién pagó? → Importe → Fecha → Descripción */}
             <div>
-              <Label className="block text-sm font-medium mb-1">¿Quién pagó de su bolsillo?</Label>
+              <Label htmlFor="performedBy">¿Quién pagó de su bolsillo?</Label>
               <Select
-                value={performedBy}
+                value={performedBy || ''}
                 onValueChange={(value) => setValue('performedBy', value)}
               >
                 <SelectTrigger>
@@ -249,34 +250,34 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Cantidad (€)</label>
-              <input
+              <Label htmlFor="amount">Cantidad (€)</Label>
+              <Input
+                id="amount"
                 type="number"
                 inputMode="decimal"
                 step="0.01"
                 min={0.01}
                 {...register('amount', { required: true, min: 0.01 })}
-                className="border rounded px-2 py-1 w-full"
               />
               {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Fecha y hora</label>
-              <input
+              <Label htmlFor="occurredAt">Fecha y hora</Label>
+              <Input
+                id="occurredAt"
                 type="datetime-local"
                 {...register('occurredAt', { required: true })}
-                className="border rounded px-2 py-1 w-full"
               />
               {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Descripción</label>
-              <input
+              <Label htmlFor="description">Descripción</Label>
+              <Input
+                id="description"
                 type="text"
                 {...register('description')}
-                className="border rounded px-2 py-1 w-full"
               />
             </div>
             <DialogFooter>

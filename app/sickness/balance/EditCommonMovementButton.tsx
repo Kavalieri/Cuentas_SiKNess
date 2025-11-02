@@ -6,6 +6,7 @@ import type {
     Subcategory
 } from '@/app/sickness/configuracion/categorias/hierarchy-actions';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCategoryHierarchy } from '@/contexts/CategoryHierarchyContext';
@@ -33,7 +34,6 @@ interface EditCommonMovementButtonProps {
 
 export function EditCommonMovementButton({ tx, householdId, onSuccess, members }: EditCommonMovementButtonProps) {
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ✨ Usar jerarquía pre-cargada del Context (Issue #22)
   const { hierarchy } = useCategoryHierarchy();
@@ -43,7 +43,7 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       amount: tx.amount,
       description: tx.description || '',
@@ -54,6 +54,8 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
       performedBy: tx.performed_by_profile_id || '',
     },
   });
+
+  const performedBy = watch('performedBy');
 
   // ✨ Resolver valores iniciales al abrir (usando jerarquía pre-cargada)
   useEffect(() => {
@@ -108,7 +110,6 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
   }, [selectedCategory]);
 
   const onSubmit = async (data: { amount: number; description: string; occurredAt: string; performedBy: string }) => {
-    setIsSubmitting(true);
     try {
       const formData = new FormData();
       formData.append('movementId', tx.id);
@@ -133,8 +134,6 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
     } catch (error) {
       console.error('Error editando movimiento común:', error);
       toast.error('Error inesperado al actualizar el movimiento');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -234,54 +233,58 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
 
             {/* ✅ Orden consistente con NewMovementForm: ¿Quién realizó? → Importe → Fecha → Descripción */}
             <div>
-              <label className="block text-sm font-medium">
+              <Label htmlFor="performedBy">
                 {tx.type === 'income' ? '¿Quién ingresó el dinero?' : '¿Quién realizó esta transacción?'}
-              </label>
-              <select
-                {...register('performedBy', { required: 'Selecciona un miembro' })}
-                className="border rounded px-2 py-1 w-full"
+              </Label>
+              <Select
+                value={performedBy || ''}
+                onValueChange={(value) => setValue('performedBy', value)}
               >
-                <option value="">Selecciona miembro</option>
-                {members.map((m) => (
-                  <option key={m.profile_id} value={m.profile_id}>
-                    {m.display_name || m.email}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona miembro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((m) => (
+                    <SelectItem key={m.profile_id} value={m.profile_id}>
+                      {m.display_name || m.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.performedBy && (
                 <span className="text-xs text-red-500">{errors.performedBy.message}</span>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Cantidad (€)</label>
-              <input
+              <Label htmlFor="amount">Cantidad (€)</Label>
+              <Input
+                id="amount"
                 type="number"
                 inputMode="decimal"
                 step="0.01"
                 min={0.01}
                 {...register('amount', { required: true, min: 0.01 })}
-                className="border rounded px-2 py-1 w-full"
               />
               {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Fecha y hora</label>
-              <input
+              <Label htmlFor="occurredAt">Fecha y hora</Label>
+              <Input
+                id="occurredAt"
                 type="datetime-local"
                 {...register('occurredAt', { required: true })}
-                className="border rounded px-2 py-1 w-full"
               />
               {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Descripción</label>
-              <input
+              <Label htmlFor="description">Descripción</Label>
+              <Input
+                id="description"
                 type="text"
                 {...register('description')}
-                className="border rounded px-2 py-1 w-full"
               />
             </div>
 
