@@ -116,8 +116,9 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
       formData.append('householdId', householdId || '');
       formData.append('amount', String(data.amount));
       formData.append('description', data.description);
-      // ✨ Enviar subcategory_id en lugar de categoryId
+      // ✅ Issue #38: Enviar subcategoryId Y categoryId para actualizar ambos campos
       formData.append('subcategoryId', selectedSubcategoryId || '');
+      formData.append('categoryId', selectedSubcategoryId ? '' : (selectedCategoryId || ''));
       formData.append('occurredAt', data.occurredAt);
       // ✅ Issue #29: Enviar performedBy (ejecutor físico)
       formData.append('performedBy', data.performedBy);
@@ -258,14 +259,20 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
 
             <div>
               <Label htmlFor="amount">Cantidad (€)</Label>
-              <Input
-                id="amount"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min={0.01}
-                {...register('amount', { required: true, min: 0.01 })}
-              />
+              <div className="relative">
+                <Input
+                  id="amount"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={0.01}
+                  {...register('amount', { required: true, min: 0.01 })}
+                  className="pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+                  €
+                </span>
+              </div>
               {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
             </div>
 

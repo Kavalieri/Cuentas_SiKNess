@@ -467,16 +467,22 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
 
           <div>
             <Label>Cantidad (€)</Label>
-            <Input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0.01"
-              placeholder="0.00"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                required
+                className="pr-8"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+                €
+              </span>
+            </div>
             {amount && parseFloat(amount) <= 0 && (
               <span className="text-xs text-red-500">El importe debe ser mayor que 0</span>
             )}

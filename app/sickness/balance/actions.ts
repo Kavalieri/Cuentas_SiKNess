@@ -333,6 +333,9 @@ const EditCommonSchema = z.object({
   subcategoryId: z
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
+  categoryId: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
+    .optional(),
   occurredAt: z.string().min(1, 'Fecha/hora requerida'),
   // ✅ Issue #29: performedBy (ejecutor físico) - obligatorio
   performedBy: z.string().uuid('Debe ser un UUID válido'),
@@ -345,7 +348,7 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
 
-  const { movementId, householdId, amount, description, subcategoryId, occurredAt, performedBy } = parsed.data;
+  const { movementId, householdId, amount, description, subcategoryId, categoryId, occurredAt, performedBy } = parsed.data;
 
   // Validación: performedBy obligatorio
   if (!performedBy) {
@@ -406,15 +409,16 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
      SET amount = $1,
          description = $2,
          subcategory_id = $3,
-         occurred_at = $4,
-         performed_at = $5,
-         period_id = $6,
-         performed_by_profile_id = $7,
-         paid_by = $8,
+         category_id = $4,
+         occurred_at = $5,
+         performed_at = $6,
+         period_id = $7,
+         performed_by_profile_id = $8,
+         paid_by = $9,
          updated_at = now(),
-         updated_by_profile_id = $9
-     WHERE id = $10 AND household_id = $11 AND flow_type = 'common'`,
-    [amount, description || null, subcategoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, performedBy, paid_by, profileId, movementId, householdId]
+         updated_by_profile_id = $10
+     WHERE id = $11 AND household_id = $12 AND flow_type = 'common'`,
+    [amount, description || null, subcategoryId ?? null, categoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, performedBy, paid_by, profileId, movementId, householdId]
   );
 
   // Revalidaciones necesarias

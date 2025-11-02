@@ -251,14 +251,20 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
 
             <div>
               <Label htmlFor="amount">Cantidad (€)</Label>
-              <Input
-                id="amount"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min={0.01}
-                {...register('amount', { required: true, min: 0.01 })}
-              />
+              <div className="relative">
+                <Input
+                  id="amount"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={0.01}
+                  {...register('amount', { required: true, min: 0.01 })}
+                  className="pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+                  €
+                </span>
+              </div>
               {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
             </div>
 
