@@ -335,7 +335,7 @@ async function createCommonFlowTransaction(
       // created_by_profile_id: profileId, // ❌ Issue #31: DEPRECADO - Usa profile_id
       updated_by_profile_id: profileId,
       created_by_member_id: profileId,
-      performed_by_email: userEmail, // Legacy (deprecated)
+      // performed_by_email: ❌ ELIMINADO - Campo deprecado que no existe en BD
     })
     .select('id')
     .single();
@@ -409,17 +409,9 @@ async function createDirectFlowTransaction(
 
   // Permitir direct en validation, active y closing
 
-  // Obtener email del performed_by_profile_id para auditoría
-  const { data: performedByProfile } = await supabase
-    .from('profiles')
-    .select('email')
-    .eq('id', data.performed_by_profile_id)
-    .single();
-
-  const performedByEmail = performedByProfile?.email || userEmail;
-
   // ❌ Issue #33: paid_by DEPRECADO - Ya no se escribe
   // ❌ Issue #30: real_payer_id DEPRECADO - Ya no se escribe
+  // ❌ performed_by_email DEPRECADO - Ya no existe en BD
 
   // Generar UUID para emparejar las transacciones
   const pairId = crypto.randomUUID();
@@ -438,7 +430,7 @@ async function createDirectFlowTransaction(
     performed_at: performed_at_ts,
     period_id: periodId,
     performed_by_profile_id: data.performed_by_profile_id, // ✅ Campo único de verdad - quien pagó
-    performed_by_email: performedByEmail, // Legacy (deprecated)
+    // performed_by_email: ❌ ELIMINADO - Campo deprecado que no existe en BD
     // Metadata
     flow_type: 'direct',
     transaction_pair_id: pairId,
@@ -493,7 +485,7 @@ async function createDirectFlowTransaction(
         performed_at: performed_at_ts,
         period_id: periodId,
         performed_by_profile_id: data.performed_by_profile_id, // ✅ Campo único de verdad - quien pagó
-        performed_by_email: performedByEmail, // Legacy (deprecated)
+        // performed_by_email: ❌ ELIMINADO - Campo deprecado que no existe en BD
         // Metadata
         flow_type: 'direct',
         transaction_pair_id: pairId,
