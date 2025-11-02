@@ -13,6 +13,7 @@ interface TransactionCardProps {
     description?: string;
     occurred_at: string;
     performed_at?: string | null;
+    is_compensatory_income?: boolean; // ✨ Issue #26: Flag para ingresos compensatorios
 
     // ✅ Jerarquía completa de 3 niveles
     parent_category_name?: string; // 🟢 Grupo (nivel 1)
@@ -30,7 +31,7 @@ interface TransactionCardProps {
     paid_by_email?: string;
     paid_by_display_name?: string;
     paid_by_is_joint_account?: boolean; // Flag desde API: true si paid_by es Cuenta Común
-    
+
     // ✨ NUEVO: Sistema dual-field (Issue #20)
     performed_by_profile_id?: string | null; // UUID del ejecutor físico
     performed_by_display_name?: string | null; // Nombre del ejecutor desde API
@@ -173,6 +174,12 @@ export function TransactionCard({
             {tx.flow_type === 'direct' && (
               <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded whitespace-nowrap">
                 Directo
+              </span>
+            )}
+            {/* Badge ingreso compensatorio - Issue #26 */}
+            {tx.is_compensatory_income && (
+              <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded whitespace-nowrap">
+                Automático
               </span>
             )}
           </div>

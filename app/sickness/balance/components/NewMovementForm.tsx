@@ -100,7 +100,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
   useEffect(() => {
     if (open) {
       const defaultType = (canDirect && !canCommon) ? "direct_expense" : "expense";
-      
+
       // Intentar cargar valores previos
       try {
         const stored = localStorage.getItem(STORAGE_KEY);

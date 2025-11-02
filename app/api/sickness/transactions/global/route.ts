@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
         t.paid_by,
         t.category_id,
         t.subcategory_id,
+        t.is_compensatory_income,
         -- SISTEMA DUAL-FIELD (Issue #20)
         t.performed_by_profile_id,
         COALESCE(p_performer.display_name, p_performer.email) as performed_by_display_name,

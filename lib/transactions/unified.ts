@@ -520,6 +520,7 @@ async function createDirectFlowTransaction(
         // Metadata
         flow_type: 'direct',
         transaction_pair_id: pairId,
+        is_compensatory_income: true, // ✨ Issue #26: Marcar como ingreso compensatorio automático
         created_by_member_id: profileId,
         created_by_profile_id: profileId,
         updated_by_profile_id: profileId,

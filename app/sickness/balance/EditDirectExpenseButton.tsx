@@ -1,5 +1,4 @@
 import type {
-    CategoryHierarchy,
     CategoryWithSubcategories,
     Subcategory
 } from '@/app/sickness/configuracion/categorias/hierarchy-actions';

@@ -1,7 +1,7 @@
 # Testing Manual - Issue #23: Verificar el funcionamiento
 
-**Fecha**: 2 Noviembre 2025  
-**Issue**: #23  
+**Fecha**: 2 Noviembre 2025
+**Issue**: #23
 **Objetivo**: Verificar que todos los cambios recientes funcionan correctamente
 
 ---
@@ -71,7 +71,7 @@ Después de los cambios recientes (especialmente Issue #22 - optimización de ca
 #### Test 2.2: Crear nuevo período
 1. Seleccionar mes: **Diciembre 2025** (o el mes siguiente disponible)
 2. Clic en "Crear Período"
-3. **Esperado**: 
+3. **Esperado**:
    - Modal de confirmación aparece
    - Mensaje claro sobre qué se va a crear
 4. Confirmar creación
@@ -135,7 +135,7 @@ LIMIT 5;
 
 **Verificar en DB**:
 ```sql
-SELECT 
+SELECT
   id,
   type,
   flow_type,
@@ -188,7 +188,7 @@ LIMIT 5;
 
 **Verificar en DB**:
 ```sql
-SELECT 
+SELECT
   id,
   type,
   flow_type,
@@ -237,7 +237,7 @@ WHERE description = 'Test gasto común - Issue #23';
 
 **Verificar en DB**:
 ```sql
-SELECT 
+SELECT
   id,
   type,
   flow_type,
@@ -268,7 +268,7 @@ WHERE description = 'Test ingreso - Issue #23';
 
 ```sql
 -- Ver las 3 transacciones de prueba con TODOS los campos
-SELECT 
+SELECT
   id,
   household_id,
   profile_id,
@@ -282,11 +282,11 @@ SELECT
   subcategory_id,        -- Debe ser NOT NULL (nuevo en Issue #20)
   real_payer_id,         -- Para gastos directos
   performed_by_profile_id, -- Para todos los movimientos (Issue #21)
-  
+
   -- Fechas
   occurred_at,
   performed_at,
-  
+
   -- Metadatos
   transaction_pair_id,
   period_id,
@@ -324,7 +324,7 @@ FROM transactions
 WHERE description = 'Test gasto directo - Issue #23';
 
 -- Buscar su ingreso compensatorio usando transaction_pair_id
-SELECT 
+SELECT
   id,
   type,
   flow_type,
@@ -432,7 +432,7 @@ WHERE year = 2025 AND month = 12;
 
 **Verificar en DB**:
 ```sql
-SELECT 
+SELECT
   amount,
   description,
   subcategory_id,
@@ -454,14 +454,14 @@ WHERE description = 'Test gasto común - EDITADO';
    - Cantidad: 60.00 €
    - Descripción: "Test gasto directo - EDITADO"
 4. Guardar
-5. **Esperado**: 
+5. **Esperado**:
    - Gasto actualizado
    - **CRÍTICO**: Ingreso compensatorio también actualizado
 
 **Verificar propagación en DB**:
 ```sql
 -- Ver gasto y su ingreso compensatorio
-SELECT 
+SELECT
   t1.id as gasto_id,
   t1.amount as gasto_amount,
   t1.description as gasto_desc,
@@ -511,7 +511,7 @@ WHERE description LIKE '%Test gasto común%';
 1. Buscar "Test gasto directo - EDITADO"
 2. Clic en "Eliminar"
 3. Confirmar
-4. **Esperado**: 
+4. **Esperado**:
    - Gasto desaparece
    - Ingreso compensatorio también desaparece
 
@@ -586,8 +586,8 @@ WHERE description LIKE '%Test ingreso%';
 [Añadir observaciones generales aquí]
 ```
 
-**Fecha de Testing**: _______________  
-**Tester**: _______________  
+**Fecha de Testing**: _______________
+**Tester**: _______________
 
 ---
 

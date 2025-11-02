@@ -2,7 +2,6 @@
 
 import { editCommonMovement } from '@/app/sickness/balance/actions';
 import type {
-    CategoryHierarchy,
     CategoryWithSubcategories,
     Subcategory
 } from '@/app/sickness/configuracion/categorias/hierarchy-actions';

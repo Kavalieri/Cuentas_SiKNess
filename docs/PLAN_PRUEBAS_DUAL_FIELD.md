@@ -1,7 +1,7 @@
 # Plan de Pruebas - Sistema Dual-Field
 
-**Fecha**: 2 Noviembre 2025  
-**Issues**: #19, #20, #18  
+**Fecha**: 2 Noviembre 2025
+**Issues**: #19, #20, #18
 **Commits**: 7c9d6a2 (Phase 1), a193a7a (Phase 2), fdba4c3 (Phase 3), 51ea18b (Phase 4), 32c2c2a (Phase 5)
 
 ---
@@ -46,7 +46,7 @@ Validar que el sistema dual-field (`paid_by` + `performed_by_profile_id`) funcio
 
 **Validación Backend**:
 ```sql
-SELECT 
+SELECT
   t.id,
   t.type,
   t.flow_type,
@@ -228,7 +228,7 @@ localStorage.getItem('newMovementForm_<household_id>');
 **Validación Backend**:
 ```sql
 -- Verificar historial de auditoría
-SELECT 
+SELECT
   id,
   performed_by_profile_id,
   amount,
@@ -273,7 +273,7 @@ ORDER BY updated_at DESC;
 **Validación SQL**:
 ```sql
 -- Verificar cobertura de migración
-SELECT 
+SELECT
   COUNT(*) as total_transacciones,
   COUNT(performed_by_profile_id) as con_ejecutor,
   COUNT(*) - COUNT(performed_by_profile_id) as sin_ejecutor
@@ -297,7 +297,7 @@ FROM transactions;
 1. Insertar transacción manualmente en DEV sin ejecutor:
 ```sql
 INSERT INTO transactions (
-  household_id, profile_id, type, flow_type, amount, 
+  household_id, profile_id, type, flow_type, amount,
   occurred_at, paid_by, performed_by_profile_id
 ) VALUES (
   '<household_id>', '<kava_id>', 'expense', 'common', 25.00,
@@ -392,7 +392,7 @@ INSERT INTO transactions (
 - ✅ Query con EXPLAIN ANALYZE:
 ```sql
 EXPLAIN ANALYZE
-SELECT t.id, t.type, t.amount, ..., 
+SELECT t.id, t.type, t.amount, ...,
        COALESCE(p_performer.display_name, p_performer.email) as performed_by_display_name
 FROM transactions t
 LEFT JOIN profiles p_performer ON t.performed_by_profile_id = p_performer.id

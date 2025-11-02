@@ -20,9 +20,9 @@ interface CategoryHierarchyProviderProps {
 /**
  * Provider que carga la jerarquía de categorías UNA SOLA VEZ al montar
  * y la mantiene en memoria para reutilizar en todos los componentes hijos.
- * 
+ *
  * Evita el problema de N+1 queries y carga repetida en cada diálogo.
- * 
+ *
  * @example
  * <CategoryHierarchyProvider householdId={householdId}>
  *   <BalancePage />
@@ -43,9 +43,9 @@ export function CategoryHierarchyProvider({ children, householdId }: CategoryHie
     try {
       setLoading(true);
       setError(null);
-      
+
       const result = await getCategoryHierarchy(householdId);
-      
+
       if (result.ok && result.data) {
         setHierarchy(result.data);
       } else {
@@ -77,10 +77,10 @@ export function CategoryHierarchyProvider({ children, householdId }: CategoryHie
 
 /**
  * Hook para acceder a la jerarquía de categorías pre-cargada
- * 
+ *
  * @returns {CategoryHierarchyContextType} Jerarquía cargada, estado de loading y función refresh
  * @throws {Error} Si se usa fuera del CategoryHierarchyProvider
- * 
+ *
  * @example
  * const { hierarchy, loading } = useCategoryHierarchy();
  * if (loading) return <Spinner />;
@@ -88,10 +88,10 @@ export function CategoryHierarchyProvider({ children, householdId }: CategoryHie
  */
 export function useCategoryHierarchy() {
   const context = useContext(CategoryHierarchyContext);
-  
+
   if (!context) {
     throw new Error('useCategoryHierarchy debe usarse dentro de CategoryHierarchyProvider');
   }
-  
+
   return context;
 }

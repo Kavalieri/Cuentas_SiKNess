@@ -37,6 +37,7 @@ interface Transaction {
   performed_at?: string | null;
   category_id?: string;
   subcategory_id?: string; // ✨ NUEVO: necesario para edición
+  is_compensatory_income?: boolean; // ✨ Issue #26: Flag para ingresos compensatorios
   profile_id?: string;
   real_payer_id?: string;
   transaction_pair_id?: string;
@@ -506,73 +507,82 @@ function BalancePageContent() {
           ) : (
             <>
               <div className="space-y-2">
-                {paginatedTransactions.map((tx) => (
-                  <TransactionCard
-                    key={tx.id}
-                    tx={tx}
-                    isOwner={isOwner}
-                    currentUserId={user?.id}
-                    parseLocalDate={parseLocalDate}
-                    editButton={
-                      tx.flow_type === 'direct' ? (
-                        <EditDirectExpenseButton
-                          tx={tx}
-                          householdId={householdId || undefined}
-                          members={members.map((m) => ({
-                            profile_id: m.profile_id,
-                            email: m.email,
-                            display_name: m.display_name,
-                            role: m.role
-                          }))}
-                          onSuccess={async () => {
-                            await loadTransactions();
-                            await loadGlobalBalance();
-                            await loadPeriodSummary();
-                          }}
-                        />
-                      ) : (
-                        <EditCommonMovementButton
-                          tx={tx}
-                          householdId={householdId || undefined}
-                          onSuccess={async () => {
-                            await loadTransactions();
-                            await loadGlobalBalance();
-                            await loadPeriodSummary();
-                          }}
-                          members={members.map((m) => ({
-                            profile_id: m.profile_id,
-                            email: m.email,
-                            display_name: m.display_name,
-                            role: m.role
-                          }))}
-                        />
-                      )
-                    }
-                    deleteButton={
-                      tx.flow_type === 'direct' ? (
-                        <DeleteDirectButton
-                          txId={tx.id}
-                          householdId={householdId || ''}
-                          onDone={async () => {
-                            await loadTransactions();
-                            await loadGlobalBalance();
-                            await loadPeriodSummary();
-                          }}
-                        />
-                      ) : (
-                        <DeleteCommonButton
-                          txId={tx.id}
-                          householdId={householdId || ''}
-                          onDone={async () => {
-                            await loadTransactions();
-                            await loadGlobalBalance();
-                            await loadPeriodSummary();
-                          }}
-                        />
-                      )
-                    }
-                  />
-                ))}
+                {paginatedTransactions.map((tx) => {
+                  // Issue #26: Ocultar botones para ingresos compensatorios automáticos
+                  const isCompensatoryIncome = tx.is_compensatory_income === true;
+                  
+                  return (
+                    <TransactionCard
+                      key={tx.id}
+                      tx={tx}
+                      isOwner={isOwner}
+                      currentUserId={user?.id}
+                      parseLocalDate={parseLocalDate}
+                      editButton={
+                        isCompensatoryIncome ? undefined : ( // ✨ Ocultar si es compensatorio
+                          tx.flow_type === 'direct' ? (
+                            <EditDirectExpenseButton
+                              tx={tx}
+                              householdId={householdId || undefined}
+                              members={members.map((m) => ({
+                                profile_id: m.profile_id,
+                                email: m.email,
+                                display_name: m.display_name,
+                                role: m.role
+                              }))}
+                              onSuccess={async () => {
+                                await loadTransactions();
+                                await loadGlobalBalance();
+                                await loadPeriodSummary();
+                              }}
+                            />
+                          ) : (
+                            <EditCommonMovementButton
+                              tx={tx}
+                              householdId={householdId || undefined}
+                              onSuccess={async () => {
+                                await loadTransactions();
+                                await loadGlobalBalance();
+                                await loadPeriodSummary();
+                              }}
+                              members={members.map((m) => ({
+                                profile_id: m.profile_id,
+                                email: m.email,
+                                display_name: m.display_name,
+                                role: m.role
+                              }))}
+                            />
+                          )
+                        )
+                      }
+                      deleteButton={
+                        isCompensatoryIncome ? undefined : ( // ✨ Ocultar si es compensatorio
+                          tx.flow_type === 'direct' ? (
+                            <DeleteDirectButton
+                              txId={tx.id}
+                              householdId={householdId || ''}
+                              onDone={async () => {
+                                await loadTransactions();
+                                await loadGlobalBalance();
+                                await loadPeriodSummary();
+                              }}
+                            />
+                          ) : (
+                            <DeleteCommonButton
+                              txId={tx.id}
+                              householdId={householdId || ''}
+                              onDone={async () => {
+                                await loadTransactions();
+                                await loadGlobalBalance();
+                                await loadPeriodSummary();
+                              }}
+                            />
+                          )
+                        )
+                      }
+                    />
+                  );
+                })}
               </div>
 
               {/* Controles de paginación */}
@@ -610,7 +620,7 @@ function BalancePageContent() {
 // ✨ Wrapper con CategoryHierarchyProvider (Issue #22)
 export default function BalancePage() {
   const { householdId } = useSiKness();
-  
+
   if (!householdId) {
     return <div>Cargando...</div>;
   }

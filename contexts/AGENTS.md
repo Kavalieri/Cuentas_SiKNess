@@ -28,4 +28,3 @@ Carga y cachea la jerarquía completa de categorías (parents → categories →
 
 - ❌ No llamar APIs directamente desde el Provider; delega en acciones o hooks específicos.
 - ❌ No acceder a DB desde contextos.
-
