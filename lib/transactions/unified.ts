@@ -306,11 +306,12 @@ async function createCommonFlowTransaction(
     performedBy = data.performed_by_profile_id || profileId;
   } else if (data.type === 'income') {
     // Ingresos comunes: el dinero SALE del miembro (entra a Cuenta Común)
-    // Ejecutor: mismo que aporta (quien hizo el ingreso)
-    if (!data.paid_by || data.paid_by === 'common') {
+    // Ejecutor: quien hizo el ingreso
+    // ✅ Issue #30/#33: Solo usar performed_by_profile_id (paid_by deprecado)
+    if (!data.performed_by_profile_id) {
       return fail('Los ingresos comunes deben tener un miembro asignado');
     }
-    performedBy = data.performed_by_profile_id || data.paid_by;
+    performedBy = data.performed_by_profile_id;
   } else {
     return fail('Tipo de transacción común inválido');
   }
