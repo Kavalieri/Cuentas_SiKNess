@@ -33,9 +33,9 @@ BEGIN
   SELECT COUNT(*) INTO v_total_transactions FROM transactions;
   SELECT COUNT(*) INTO v_with_category FROM transactions WHERE category_id IS NOT NULL;
   SELECT COUNT(*) INTO v_with_subcategory FROM transactions WHERE subcategory_id IS NOT NULL;
-  
+
   v_candidates := v_with_category - v_with_subcategory;
-  
+
   RAISE NOTICE '📊 Estado inicial:';
   RAISE NOTICE '   Total transacciones: %', v_total_transactions;
   RAISE NOTICE '   Con category_id: %', v_with_category;
@@ -44,8 +44,9 @@ BEGIN
 END $$;
 
 -- Paso 2: Actualizar subcategory_id donde hay match exacto (case-insensitive)
+-- Ignora el prefijo "Equilibrio:" al hacer matching
 WITH matched_subcategories AS (
-  SELECT 
+  SELECT
     t.id AS transaction_id,
     s.id AS subcategory_id,
     t.description AS original_description,
@@ -54,37 +55,77 @@ WITH matched_subcategories AS (
   FROM transactions t
   JOIN categories c ON t.category_id = c.id
   JOIN subcategories s ON s.category_id = t.category_id
-  WHERE 
+  WHERE
     t.subcategory_id IS NULL
     AND t.category_id IS NOT NULL
-    AND LOWER(TRIM(t.description)) = LOWER(TRIM(s.name))
+    -- Limpiar prefijo "Equilibrio:" solo para matching (no modifica description)
+    AND LOWER(TRIM(REGEXP_REPLACE(t.description, '^Equilibrio:\s*', '', 'i'))) = LOWER(TRIM(s.name))
 )
 UPDATE transactions
-SET 
+SET
   subcategory_id = matched_subcategories.subcategory_id,
   updated_at = CURRENT_TIMESTAMP
 FROM matched_subcategories
 WHERE transactions.id = matched_subcategories.transaction_id;
 
--- Paso 3: Reportar resultados
+-- Paso 3: Asignar "Otros" como fallback para transacciones sin match
+-- Solo si existe una subcategoría llamada "Otros" para esa categoría
+WITH otros_fallback AS (
+  SELECT
+    t.id AS transaction_id,
+    s.id AS subcategory_id
+  FROM transactions t
+  JOIN categories c ON t.category_id = c.id
+  JOIN subcategories s ON s.category_id = c.id
+  WHERE
+    t.subcategory_id IS NULL
+    AND t.category_id IS NOT NULL
+    AND LOWER(TRIM(s.name)) = 'otros'
+)
+UPDATE transactions
+SET
+  subcategory_id = otros_fallback.subcategory_id,
+  updated_at = CURRENT_TIMESTAMP
+FROM otros_fallback
+WHERE transactions.id = otros_fallback.transaction_id;
+
+-- Paso 4: Reportar resultados
 DO $$
 DECLARE
   v_updated_count INTEGER;
+  v_exact_matches INTEGER;
+  v_otros_assigned INTEGER;
   v_remaining_without_subcategory INTEGER;
 BEGIN
   -- Contar cuántas se actualizaron (comparando con estado inicial)
-  SELECT COUNT(*) INTO v_updated_count 
-  FROM transactions 
-  WHERE subcategory_id IS NOT NULL 
-    AND updated_at >= CURRENT_TIMESTAMP - INTERVAL '5 seconds';
-  
+  SELECT COUNT(*) INTO v_updated_count
+  FROM transactions
+  WHERE subcategory_id IS NOT NULL
+    AND updated_at >= CURRENT_TIMESTAMP - INTERVAL '10 seconds';
+
+  -- Contar matches exactos (excluyendo "Otros")
+  SELECT COUNT(*) INTO v_exact_matches
+  FROM transactions t
+  JOIN subcategories s ON t.subcategory_id = s.id
+  WHERE t.updated_at >= CURRENT_TIMESTAMP - INTERVAL '10 seconds'
+    AND LOWER(TRIM(s.name)) != 'otros';
+
+  -- Contar asignaciones a "Otros"
+  SELECT COUNT(*) INTO v_otros_assigned
+  FROM transactions t
+  JOIN subcategories s ON t.subcategory_id = s.id
+  WHERE t.updated_at >= CURRENT_TIMESTAMP - INTERVAL '10 seconds'
+    AND LOWER(TRIM(s.name)) = 'otros';
+
   SELECT COUNT(*) INTO v_remaining_without_subcategory
   FROM transactions
   WHERE category_id IS NOT NULL AND subcategory_id IS NULL;
-  
+
   RAISE NOTICE '';
   RAISE NOTICE '✅ Migración completada:';
-  RAISE NOTICE '   Subcategorías inferidas: %', v_updated_count;
+  RAISE NOTICE '   Total actualizadas: %', v_updated_count;
+  RAISE NOTICE '   - Matches exactos: %', v_exact_matches;
+  RAISE NOTICE '   - Asignadas a "Otros": %', v_otros_assigned;
   RAISE NOTICE '   Sin subcategoría (válido): %', v_remaining_without_subcategory;
   RAISE NOTICE '';
   RAISE NOTICE '📋 Verificación recomendada:';
@@ -93,14 +134,14 @@ BEGIN
   RAISE NOTICE '   LEFT JOIN categories c ON t.category_id = c.id';
   RAISE NOTICE '   LEFT JOIN subcategories s ON t.subcategory_id = s.id';
   RAISE NOTICE '   WHERE t.updated_at >= CURRENT_TIMESTAMP - INTERVAL ''1 minute''';
-  RAISE NOTICE '   ORDER BY t.occurred_at DESC LIMIT 20;';
+  RAISE NOTICE '   ORDER BY t.updated_at DESC LIMIT 20;';
 END $$;
 
 COMMIT;
 
 -- Nota: El índice para subcategory_id debe crearse como owner:
--- CREATE INDEX IF NOT EXISTS idx_transactions_subcategory_id 
--- ON transactions(subcategory_id) 
+-- CREATE INDEX IF NOT EXISTS idx_transactions_subcategory_id
+-- ON transactions(subcategory_id)
 -- WHERE subcategory_id IS NOT NULL;
 
 -- Notas finales:
