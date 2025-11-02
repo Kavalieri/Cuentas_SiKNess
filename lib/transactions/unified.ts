@@ -461,7 +461,7 @@ async function createDirectFlowTransaction(
     flow_type: 'direct',
     transaction_pair_id: pairId,
     created_by_member_id: profileId,
-    created_by_profile_id: profileId,
+    // created_by_profile_id: profileId, // ❌ DEPRECADO (Issue #31): Duplica profile_id
     updated_by_profile_id: profileId,
   };
 
@@ -522,7 +522,7 @@ async function createDirectFlowTransaction(
         transaction_pair_id: pairId,
         is_compensatory_income: true, // ✨ Issue #26: Marcar como ingreso compensatorio automático
         created_by_member_id: profileId,
-        created_by_profile_id: profileId,
+        // created_by_profile_id: profileId, // ❌ DEPRECADO (Issue #31): Duplica profile_id
         updated_by_profile_id: profileId,
       })
       .select('id')
