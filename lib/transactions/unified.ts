@@ -3,7 +3,6 @@
 
 'use server';
 
-import { getJointAccountId } from '@/lib/jointAccount';
 import { normalizePeriodPhase } from '@/lib/periods';
 import { getCurrentUser, getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Result } from '@/lib/result';
@@ -296,28 +295,23 @@ async function createCommonFlowTransaction(
   }
   // En validation y closing también permitimos movimientos comunes
 
-  // Determinar paid_by según tipo de transacción
-  let paidBy: string;
+  // ❌ Issue #33: paid_by DEPRECADO - Ya no se escribe, se calcula dinámicamente
+  // REGLA DE CÁLCULO:
+  //   - Gastos: paid_by = joint_account_id (dinero sale de Cuenta Común)
+  //   - Ingresos: paid_by = performed_by_profile_id (dinero sale del miembro)
+
   let performedBy: string;
 
   if (data.type === 'expense') {
     // Gastos comunes: el dinero SALE de la Cuenta Común
-    const jointResult = await getJointAccountId(householdId);
-    if (!jointResult.ok) {
-      return fail('No se pudo obtener la Cuenta Común del hogar');
-    }
-    paidBy = jointResult.data!; // data existe cuando ok=true
-
     // Ejecutor: quien pasó la tarjeta (default: usuario actual)
     performedBy = data.performed_by_profile_id || profileId;
   } else if (data.type === 'income') {
     // Ingresos comunes: el dinero SALE del miembro (entra a Cuenta Común)
+    // Ejecutor: mismo que aporta (quien hizo el ingreso)
     if (!data.paid_by || data.paid_by === 'common') {
       return fail('Los ingresos comunes deben tener un miembro asignado');
     }
-    paidBy = data.paid_by;
-
-    // Ejecutor: mismo que aporta (quien hizo el ingreso)
     performedBy = data.performed_by_profile_id || data.paid_by;
   } else {
     return fail('Tipo de transacción común inválido');
@@ -337,8 +331,8 @@ async function createCommonFlowTransaction(
       occurred_at: occurred_at_date,
       performed_at: performed_at_ts,
       period_id: periodId,
-      paid_by: paidBy, // Campo 1: Origen del dinero
-      performed_by_profile_id: performedBy, // Campo 2: Ejecutor físico (NUEVO)
+      // paid_by: paidBy, // ❌ Issue #33: DEPRECADO - Se calcula dinámicamente
+      performed_by_profile_id: performedBy, // ✅ Campo único de verdad
       flow_type: 'common',
       // created_by_profile_id: profileId, // ❌ Issue #31: DEPRECADO - Usa profile_id
       updated_by_profile_id: profileId,
@@ -426,14 +420,8 @@ async function createDirectFlowTransaction(
 
   const realPayerEmail = realPayerProfile?.email || userEmail;
 
-  // NUEVO CRITERIO (Issue #18): Gastos directos usan paid_by = joint_account_uuid
-  // Justificación: "El ingreso directo previo ya identificó quién puso ese dinero.
-  //                 El dinero sale de la cuenta común."
-  const jointResult = await getJointAccountId(householdId);
-  if (!jointResult.ok) {
-    return fail('No se pudo obtener la Cuenta Común del hogar');
-  }
-  const jointAccountId = jointResult.data!;
+  // ❌ Issue #33: paid_by DEPRECADO - Ya no se escribe
+  // REGLA: Gastos directos → paid_by se calcula como joint_account_id
 
   // Generar UUID para emparejar las transacciones
   const pairId = crypto.randomUUID();
@@ -451,9 +439,8 @@ async function createDirectFlowTransaction(
     occurred_at: occurred_at_date,
     performed_at: performed_at_ts,
     period_id: periodId,
-    // SISTEMA DUAL-FIELD (Issue #19, #20, #18)
-    paid_by: jointAccountId, // Campo 1: Origen del dinero (Cuenta Común - NUEVO CRITERIO)
-    performed_by_profile_id: data.performed_by_profile_id || data.real_payer_id, // Campo 2: Ejecutor físico (quien pagó)
+    // paid_by: jointAccountId, // ❌ Issue #33: DEPRECADO - Se calcula dinámicamente
+    performed_by_profile_id: data.performed_by_profile_id || data.real_payer_id, // ✅ Campo único de verdad
     // Legacy
     real_payer_id: data.real_payer_id, // Legacy: quien pagó de bolsillo
     performed_by_email: realPayerEmail, // Legacy (deprecated)
@@ -511,9 +498,8 @@ async function createDirectFlowTransaction(
         occurred_at: occurred_at_date,
         performed_at: performed_at_ts,
         period_id: periodId,
-        // SISTEMA DUAL-FIELD (Issue #19, #20, #34)
-        paid_by: data.real_payer_id, // Campo 1: El ingreso se atribuye al que pagó
-        performed_by_profile_id: data.real_payer_id, // Campo 2: ✅ Issue #34 - Coherencia: mismo que pagó
+        // paid_by: data.real_payer_id, // ❌ Issue #33: DEPRECADO - Se calcula dinámicamente
+        performed_by_profile_id: data.real_payer_id, // ✅ Campo único de verdad
         // Legacy
         real_payer_id: data.real_payer_id, // Mismo pagador real
         performed_by_email: realPayerEmail, // Legacy (deprecated)

@@ -175,9 +175,10 @@ export async function GET(req: NextRequest) {
 
     // Sumar aportaciones a la cuenta común por miembro en el período
     // Regla: contar cualquier ingreso común del miembro, excepto "Pago Préstamo".
+    // Issue #33: Usar performed_by_profile_id (fuente única de verdad) en lugar de paid_by
     const commonIncomesAgg = await query<{ profile_id: string | null; total: string }>(
       `
-        SELECT t.paid_by as profile_id, SUM(t.amount)::numeric::text AS total
+        SELECT t.performed_by_profile_id as profile_id, SUM(t.amount)::numeric::text AS total
         FROM transactions t
         LEFT JOIN categories c ON c.id = t.category_id
         WHERE t.household_id = $1
@@ -188,7 +189,7 @@ export async function GET(req: NextRequest) {
             t.period_id = $2
             OR (t.period_id IS NULL AND t.occurred_at >= $3 AND t.occurred_at < $4)
           )
-        GROUP BY t.paid_by
+        GROUP BY t.performed_by_profile_id
       `,
       [householdId, period.id, startDate, endDate]
     );

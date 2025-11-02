@@ -58,7 +58,7 @@ export async function getExportData(options: ExportOptions): Promise<Result<Expo
       currency,
       description,
       category_id,
-      paid_by
+      performed_by_profile_id
     `,
     )
     .eq('household_id', householdId)
@@ -106,11 +106,11 @@ export async function getExportData(options: ExportOptions): Promise<Result<Expo
     currency: string;
     description: string | null;
     category_id: string | null;
-    paid_by: string | null;
+    performed_by_profile_id: string | null; // Issue #33: Usar performed_by_profile_id
   };
   const txRows = transactions as unknown as TxRow[];
   const categoryIds = [...new Set(txRows.map((t) => t.category_id).filter((v): v is string => !!v))];
-  const userIds = [...new Set(txRows.map((t) => t.paid_by).filter((v): v is string => !!v))];
+  const userIds = [...new Set(txRows.map((t) => t.performed_by_profile_id).filter((v): v is string => !!v))];
 
   // Obtener datos relacionados en paralelo
   const [categoriesResult, profilesResult] = await Promise.all([
@@ -137,10 +137,11 @@ export async function getExportData(options: ExportOptions): Promise<Result<Expo
   const categoriesMap = new Map<string, CategoryRow>(categoriesData.map((c) => [c.id, c]));
   const profilesMap = new Map<string, ProfileRow>(profilesData.map((p) => [p.id, p]));
   // Enriquecer transacciones con datos relacionados
+  // Issue #33: Usar performed_by_profile_id para lookup de profiles
   const enrichedTransactions = txRows.map((transaction) => ({
     ...transaction,
     categories: transaction.category_id ? categoriesMap.get(transaction.category_id) ?? null : null,
-    profiles: transaction.paid_by ? profilesMap.get(transaction.paid_by) ?? null : null,
+    profiles: transaction.performed_by_profile_id ? profilesMap.get(transaction.performed_by_profile_id) ?? null : null,
   }));
 
   // Tipar transacciones con relaciones anidadas

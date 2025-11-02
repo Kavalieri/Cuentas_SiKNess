@@ -792,6 +792,17 @@ export interface Transactions {
    */
   is_compensatory_income: Generated<boolean>;
   occurred_at: Timestamp | null;
+  /**
+   * ⚠️ DEPRECATED (Issue #33): Campo calculado dinámicamente.
+   *    
+   *    REGLAS DE CÁLCULO:
+   *    - Gastos (expense, expense_direct): paid_by = joint_account_id (Cuenta Común)
+   *    - Ingresos (income, income_direct): paid_by = performed_by_profile_id (Miembro)
+   *    
+   *    Usar performed_by_profile_id como fuente única de verdad.
+   *    Este campo almacenado será eliminado físicamente en una migración futura.
+   *    Deprecado: 02 November 2025
+   */
   paid_by: string | null;
   /**
    * Umbral de importe para emparejamiento automático (diferencia aceptada)
