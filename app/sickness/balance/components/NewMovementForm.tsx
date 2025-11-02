@@ -72,6 +72,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
   // Ya no usamos categoryId, ahora es subcategoryId
   const [description, setDescription] = useState("");
   const [realPayerId, setRealPayerId] = useState<string | undefined>(() => user?.id || undefined);
+  const [performedBy, setPerformedBy] = useState<string | undefined>(() => user?.id || undefined); // ✨ NUEVO: ejecutor físico
   const [occurredAt, setOccurredAt] = useState<string>(() => formatDateTimeLocal(new Date()));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,6 +116,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
           setSelectedCategoryId(parsed.selectedCategoryId || '');
           setSelectedSubcategoryId(parsed.selectedSubcategoryId || '');
           setRealPayerId(parsed.realPayerId || user?.id || undefined);
+          setPerformedBy(parsed.performedBy || user?.id || undefined); // ✨ NUEVO: restaurar ejecutor
         } else {
           // Sin valores previos, usar defaults
           setType(defaultType);
@@ -122,6 +124,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
           setSelectedCategoryId('');
           setSelectedSubcategoryId('');
           setRealPayerId(user?.id || undefined);
+          setPerformedBy(user?.id || undefined); // ✨ NUEVO: default ejecutor = usuario actual
         }
       } catch (err) {
         // Si hay error leyendo localStorage, usar defaults
@@ -131,6 +134,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         setSelectedCategoryId('');
         setSelectedSubcategoryId('');
         setRealPayerId(user?.id || undefined);
+        setPerformedBy(user?.id || undefined); // ✨ NUEVO: default ejecutor = usuario actual
       }
 
       // Siempre limpiar estos campos
@@ -229,6 +233,13 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         return;
       }
 
+      // ✨ NUEVO: Validación de ejecutor para flujos comunes (required)
+      if (flow_type === 'common' && !performedBy) {
+        setError('Selecciona quién realizó la transacción');
+        setLoading(false);
+        return;
+      }
+
       const result = await createUnifiedTransaction({
         // ✨ NUEVO: Enviar subcategory_id en lugar de category_id
         subcategory_id: selectedSubcategoryId || null,
@@ -239,6 +250,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         occurred_at: occurredAt,
         flow_type,
         real_payer_id: flow_type === 'direct' ? realPayerId : undefined,
+        performed_by_profile_id: performedBy, // ✨ NUEVO: ejecutor físico (dual-field)
         creates_balance_pair: flow_type === 'direct' ? true : undefined,
         period_id: periodId,
       });
@@ -260,6 +272,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
           selectedCategoryId,
           selectedSubcategoryId,
           realPayerId: flow_type === 'direct' ? realPayerId : undefined,
+          performedBy, // ✨ NUEVO: guardar ejecutor
         }));
       } catch (err) {
         console.error('Error saving to localStorage:', err);
@@ -303,6 +316,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
       setSelectedCategoryId('');
       setSelectedSubcategoryId('');
       setRealPayerId(user?.id || undefined);
+      setPerformedBy(user?.id || undefined); // ✨ NUEVO: reset ejecutor
       setAmount("");
       setDescription("");
       toast.success('Valores guardados borrados');
@@ -427,6 +441,35 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
               </SelectContent>
             </Select>
           </div>
+          {/* ✨ NUEVO: Selector de ejecutor físico (dual-field) */}
+          {(type === 'expense' || type === 'income') && (
+            <div>
+              <Label>¿Quién realizó esta transacción?</Label>
+              <Select value={performedBy} onValueChange={setPerformedBy}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona quién realizó la transacción" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isOwner
+                    ? members?.map((m) => (
+                        <SelectItem key={m.profile_id} value={m.profile_id}>
+                          {m.display_name || m.email}
+                        </SelectItem>
+                      ))
+                    : members
+                        .filter((m) => user && m.profile_id === user.id)
+                        .map((m) => (
+                          <SelectItem key={m.profile_id} value={m.profile_id}>
+                            {m.display_name || m.email}
+                          </SelectItem>
+                        ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Indica quién pasó la tarjeta o hizo el pago físicamente
+              </p>
+            </div>
+          )}
           <div>
             <Label>Cantidad (€)</Label>
             <Input
