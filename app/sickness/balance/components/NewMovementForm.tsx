@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDatePeriodValidation } from "@/lib/hooks/useDatePeriodValidation";
 import type { MonthlyPeriodPhase } from "@/lib/periods";
 import { createUnifiedTransaction } from "@/lib/transactions/unified";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -52,10 +54,6 @@ function formatDateTimeLocal(date: Date) {
 export function NewMovementForm({ open, onClose, members, phase, user, isOwner, onSuccess, periodId, householdId }: NewMovementFormProps) {
   const router = useRouter();
 
-    // Fases: preparing (bloqueado), validation (solo gastos directos), active (todos)
-  const canDirect = phase === "validation" || phase === "active"; // preparing: bloqueado
-  const canCommon = phase === "active";
-
   // ✨ NUEVO: Estado para jerarquía de categorías
   const [hierarchy, setHierarchy] = useState<CategoryHierarchy[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<string>('');
@@ -63,10 +61,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
 
   // Estados del formulario con valores por defecto inteligentes
-  const [type, setType] = useState(() => {
-    if (canDirect && !canCommon) return "direct_expense";
-    return "expense";
-  });
+  const [type, setType] = useState<string>("expense"); // Valor inicial genérico
   // Guardamos la cantidad como string para no forzar 0 y permitir borrar/escribir sin fricción
   const [amount, setAmount] = useState<string>("");
   // Ya no usamos categoryId, ahora es subcategoryId
@@ -77,6 +72,14 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false); // Nuevo: feedback tras guardar
+
+  // ✨ NUEVO: Validación de periodo basada en fecha seleccionada (Issue #37)
+  const {
+    allowedTypes: periodAllowedTypes,
+    canCreate: periodCanCreate,
+    message: periodMessage,
+    isLoading: periodIsLoading,
+  } = useDatePeriodValidation(occurredAt);
 
   // ✨ NUEVO: Clave localStorage para recordar valores del formulario
   const STORAGE_KEY = `newMovementForm_${householdId}`;
@@ -96,21 +99,34 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
     }
   }, [open, householdId]);
 
+  // ✨ NUEVO: Ajustar tipo seleccionado cuando cambian los tipos permitidos (Issue #37)
+  useEffect(() => {
+    // Solo ajustar si el tipo actual no está permitido
+    if (periodAllowedTypes.length > 0 && !periodAllowedTypes.includes(type)) {
+      // Seleccionar el primer tipo permitido como fallback
+      const defaultType = periodAllowedTypes.includes('direct_expense') 
+        ? 'direct_expense'
+        : periodAllowedTypes.includes('expense')
+          ? 'expense'
+          : periodAllowedTypes.includes('income')
+            ? 'income'
+            : periodAllowedTypes[0] || 'expense';
+      
+      setType(defaultType);
+    }
+  }, [periodAllowedTypes, type]);
+
   // ✨ MEJORADO: Cargar valores previos desde localStorage al abrir
   useEffect(() => {
     if (open) {
-      const defaultType = (canDirect && !canCommon) ? "direct_expense" : "expense";
-
       // Intentar cargar valores previos
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
           // Restaurar valores si existen y son válidos
-          if (parsed.type && (parsed.type === 'expense' || parsed.type === 'income' || parsed.type === 'direct_expense')) {
+          if (parsed.type && (parsed.type === 'expense' || parsed.type === 'income' || parsed.type === 'direct_expense' || parsed.type === 'direct_income')) {
             setType(parsed.type);
-          } else {
-            setType(defaultType);
           }
           setSelectedParentId(parsed.selectedParentId || '');
           setSelectedCategoryId(parsed.selectedCategoryId || '');
@@ -118,7 +134,6 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
           setPerformedBy(parsed.performedBy || user?.id || undefined);
         } else {
           // Sin valores previos, usar defaults
-          setType(defaultType);
           setSelectedParentId('');
           setSelectedCategoryId('');
           setSelectedSubcategoryId('');
@@ -127,7 +142,6 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
       } catch (err) {
         // Si hay error leyendo localStorage, usar defaults
         console.error('Error loading localStorage:', err);
-        setType(defaultType);
         setSelectedParentId('');
         setSelectedCategoryId('');
         setSelectedSubcategoryId('');
@@ -141,7 +155,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
       setError(null);
       setJustSaved(false);
     }
-  }, [open, canDirect, canCommon, user?.id, householdId, STORAGE_KEY]);
+  }, [open, user?.id, householdId, STORAGE_KEY]);
 
   // ✨ NUEVO: Lógica de cascada para categorías
   const filteredParents = useMemo(() => {
@@ -300,8 +314,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
     try {
       localStorage.removeItem(STORAGE_KEY);
       // Reset a valores por defecto
-      const defaultType = (canDirect && !canCommon) ? "direct_expense" : "expense";
-      setType(defaultType);
+      setType('expense'); // Valor por defecto genérico
       setSelectedParentId('');
       setSelectedCategoryId('');
       setSelectedSubcategoryId('');
@@ -345,14 +358,45 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <Label>Tipo</Label>
-            <Select value={type} onValueChange={setType} disabled={!canDirect && !canCommon}>
+            <Select 
+              value={type} 
+              onValueChange={setType} 
+              disabled={!periodCanCreate || periodIsLoading}
+            >
               <SelectTrigger>
-                <SelectValue placeholder={phase === 'preparing' ? 'Periodo en preparación' : 'Selecciona tipo'} />
+                <SelectValue placeholder={
+                  periodIsLoading 
+                    ? 'Verificando periodo...' 
+                    : !periodCanCreate 
+                      ? 'No se pueden crear movimientos' 
+                      : 'Selecciona tipo'
+                } />
               </SelectTrigger>
               <SelectContent>
-                {canDirect && <SelectItem value="direct_expense">Gasto directo</SelectItem>}
-                {canCommon && <SelectItem value="expense">Gasto común</SelectItem>}
-                {canCommon && <SelectItem value="income">Ingreso común</SelectItem>}
+                <SelectItem 
+                  value="direct_expense" 
+                  disabled={!periodAllowedTypes.includes('direct_expense')}
+                >
+                  Gasto directo {!periodAllowedTypes.includes('direct_expense') && '🚫'}
+                </SelectItem>
+                <SelectItem 
+                  value="expense" 
+                  disabled={!periodAllowedTypes.includes('expense')}
+                >
+                  Gasto común {!periodAllowedTypes.includes('expense') && '🚫'}
+                </SelectItem>
+                <SelectItem 
+                  value="income" 
+                  disabled={!periodAllowedTypes.includes('income')}
+                >
+                  Ingreso común {!periodAllowedTypes.includes('income') && '🚫'}
+                </SelectItem>
+                <SelectItem 
+                  value="direct_income" 
+                  disabled={!periodAllowedTypes.includes('direct_income')}
+                >
+                  Ingreso directo {!periodAllowedTypes.includes('direct_income') && '🚫'}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -495,21 +539,40 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
               onChange={e => setOccurredAt(e.target.value)}
               required
             />
+            {/* ✨ NUEVO: Feedback en tiempo real sobre el periodo (Issue #37) */}
+            {periodIsLoading && (
+              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Verificando periodo...</span>
+              </div>
+            )}
+            {!periodIsLoading && periodMessage && (
+              <div className={`flex items-start gap-2 mt-2 text-xs ${
+                periodCanCreate ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {periodCanCreate ? (
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                )}
+                <span>{periodMessage}</span>
+              </div>
+            )}
           </div>
           <div>
             <Label>Descripción</Label>
             <Input value={description} onChange={e => setDescription(e.target.value)} />
           </div>
 
-          {phase === 'preparing' && (
-            <div className="text-amber-600 text-sm">
-              Este período está en preparación: no se pueden crear movimientos todavía.
-            </div>
-          )}
           {error && <div className="text-red-600 text-sm">{error}</div>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>Cancelar</Button>
-            <Button type="submit" disabled={loading || phase === 'preparing'}>{loading ? 'Creando...' : 'Crear'}</Button>
+            <Button 
+              type="submit" 
+              disabled={loading || !periodCanCreate || periodIsLoading}
+            >
+              {loading ? 'Creando...' : 'Crear'}
+            </Button>
           </div>
         </form>
       </DialogContent>

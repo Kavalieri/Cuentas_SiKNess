@@ -26,16 +26,16 @@ interface BalanceFiltersProps {
 }
 
 
-export function BalanceFilters({ 
-  filters, 
-  categoryGroups, 
-  categories, 
-  subcategories, 
-  members, 
-  periods = [], 
-  onChange, 
-  onNewMovement, 
-  canCreateMovement 
+export function BalanceFilters({
+  filters,
+  categoryGroups,
+  categories,
+  subcategories,
+  members,
+  periods = [],
+  onChange,
+  onNewMovement,
+  canCreateMovement
 }: BalanceFiltersProps) {
   const [open, setOpen] = useState(false);
 
@@ -165,7 +165,7 @@ export function BalanceFilters({
               value={filters.group}
               onChange={(e) => {
                 // Al cambiar grupo, resetear categoría y subcategoría
-                onChange({ 
+                onChange({
                   group: e.target.value,
                   category: '',
                   subcategory: ''
@@ -189,7 +189,7 @@ export function BalanceFilters({
               value={filters.category}
               onChange={(e) => {
                 // Al cambiar categoría, resetear subcategoría
-                onChange({ 
+                onChange({
                   category: e.target.value,
                   subcategory: ''
                 });
