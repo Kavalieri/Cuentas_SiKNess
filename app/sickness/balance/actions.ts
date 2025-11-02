@@ -341,8 +341,8 @@ const EditCommonSchema = z.object({
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
   occurredAt: z.string().min(1, 'Fecha/hora requerida'),
-  // paidBy: 'common' | uuid
-  paidBy: z.string().optional(),
+  // ✅ Issue #29: performedBy (ejecutor físico) - obligatorio
+  performedBy: z.string().uuid('Debe ser un UUID válido'),
 });
 
 // Edita un movimiento del flujo común (income/expense)
@@ -352,7 +352,12 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
 
-  const { movementId, householdId, amount, description, subcategoryId, occurredAt, paidBy } = parsed.data;
+  const { movementId, householdId, amount, description, subcategoryId, occurredAt, performedBy } = parsed.data;
+
+  // Validación: performedBy obligatorio
+  if (!performedBy) {
+    return fail('Debes indicar quién gastó/ingresó');
+  }
 
   // Permisos: members pueden editar sus propios movimientos, owners pueden editar todos
   const profileId = await getCurrentProfileId();
@@ -386,7 +391,7 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
   const newPeriodId = periodIdRes.rows[0]?.ensure_monthly_period;
   if (!newPeriodId) return fail('No se pudo determinar el período de la fecha indicada');
 
-  // Resolver paid_by según tipo de transacción
+  // ✅ Issue #29 + #33: paid_by se calcula automáticamente según tipo
   let paid_by: string;
 
   if (tx.type === 'expense') {
@@ -397,11 +402,8 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
     }
     paid_by = jointResult.data!;
   } else if (tx.type === 'income') {
-    // Ingresos comunes: dinero sale del miembro
-    if (!paidBy || paidBy === 'common') {
-      return fail('Los ingresos comunes deben tener un miembro asignado');
-    }
-    paid_by = paidBy;
+    // Ingresos comunes: dinero ingresado por el miembro (performedBy)
+    paid_by = performedBy;
   } else {
     return fail('Tipo de transacción inválido');
   }
@@ -414,11 +416,12 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
          occurred_at = $4,
          performed_at = $5,
          period_id = $6,
-         paid_by = $7,
+         performed_by_profile_id = $7, 
+         paid_by = $8,
          updated_at = now(),
-         updated_by_profile_id = $8
-     WHERE id = $9 AND household_id = $10 AND flow_type = 'common'`,
-    [amount, description || null, subcategoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, paid_by, profileId, movementId, householdId]
+         updated_by_profile_id = $9
+     WHERE id = $10 AND household_id = $11 AND flow_type = 'common'`,
+    [amount, description || null, subcategoryId ?? null, occurred_at_date, performed_at_ts, newPeriodId, performedBy, paid_by, profileId, movementId, householdId]
   );
 
   // Revalidaciones necesarias

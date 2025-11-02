@@ -90,28 +90,9 @@ export function TransactionCard({
   // Determinar qué miembro mostrar como "registrado por"
   const registeredBy = tx.profile_display_name || tx.profile_email || 'Desconocido';
 
-  // Determinar quién realizó el pago (Sistema Dual-Field Issue #20)
-  let paidBy: string;
-  if (tx.flow_type === 'direct') {
-    // Flujos directos: usar real_payer
-    paidBy = tx.real_payer_display_name || tx.real_payer_email || 'Desconocido';
-  } else {
-    // Flujos comunes: verificar si es Cuenta Común o miembro específico
-    if (tx.paid_by_is_joint_account) {
-      // ✨ NUEVO: Sistema dual-field - mostrar ejecutor físico
-      if (tx.performed_by_display_name) {
-        paidBy = `Cuenta Común (realizado por ${tx.performed_by_display_name})`;
-      } else {
-        paidBy = 'Cuenta Común';
-      }
-    } else if (tx.paid_by_display_name) {
-      paidBy = tx.paid_by_display_name;
-    } else if (tx.paid_by_email) {
-      paidBy = tx.paid_by_email;
-    } else {
-      paidBy = 'Desconocido';
-    }
-  }
+  // ✅ Issue #29: Simplificado - solo mostrar ejecutor (performed_by_profile_id)
+  // Los badges ya identifican el tipo (Común/Directo/Compensatorio)
+  const paidBy = tx.performed_by_display_name || 'Desconocido';
 
   // Obtener icono y texto para título colapsado
   const getTitleIcon = () => {

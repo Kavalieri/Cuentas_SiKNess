@@ -24,7 +24,7 @@ interface EditCommonMovementButtonProps {
     subcategory_id?: string;
     occurred_at?: string;
     performed_at?: string | null;
-    paid_by?: string | null; // Para ingresos, el profile_id del miembro
+    performed_by_profile_id?: string | null; // ✅ Issue #29: Ejecutor físico
   };
   householdId?: string;
   onSuccess?: () => void;
@@ -50,12 +50,10 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
       occurredAt: tx.performed_at
         ? tx.performed_at.slice(0, 16)
         : (tx.occurred_at ? (tx.occurred_at.length > 10 ? tx.occurred_at.slice(0, 16) : `${tx.occurred_at}T00:00`) : ''),
-      // Para ingresos: usar el profile_id del miembro que lo aportó; para gastos: 'common'
-      paidBy: tx.type === 'income' && tx.paid_by ? tx.paid_by : 'common',
+      // ✅ Issue #29: Usar performed_by_profile_id (ejecutor físico)
+      performedBy: tx.performed_by_profile_id || '',
     },
   });
-
-  const paidBy = watch('paidBy');
 
   // ✨ Resolver valores iniciales al abrir (usando jerarquía pre-cargada)
   useEffect(() => {
@@ -109,7 +107,7 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
     return selectedCategory?.subcategories || [];
   }, [selectedCategory]);
 
-  const onSubmit = async (data: { amount: number; description: string; occurredAt: string; paidBy: string }) => {
+  const onSubmit = async (data: { amount: number; description: string; occurredAt: string; performedBy: string }) => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -120,7 +118,8 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
       // ✨ Enviar subcategory_id en lugar de categoryId
       formData.append('subcategoryId', selectedSubcategoryId || '');
       formData.append('occurredAt', data.occurredAt);
-      formData.append('paidBy', data.paidBy);
+      // ✅ Issue #29: Enviar performedBy (ejecutor físico)
+      formData.append('performedBy', data.performedBy);
 
       const result = await editCommonMovement(formData);
 
@@ -138,8 +137,6 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
       setIsSubmitting(false);
     }
   };
-
-  const requiresMember = tx.type === 'income';
 
   return (
     <>
@@ -268,20 +265,32 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
 
             {/* Pagador (para ingresos es obligatorio) */}
             <div>
-              <label className="block text-sm font-medium">Pagado por</label>
+              <input
+                type="datetime-local"
+                {...register('occurredAt', { required: true })}
+                className="border rounded px-2 py-1 w-full"
+              />
+              {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
+            </div>
+
+            {/* ✅ Issue #29: Ejecutado por / Ingresado por */}
+            <div>
+              <label className="block text-sm font-medium">
+                {tx.type === 'income' ? 'Ingresado por' : 'Gastado por'}
+              </label>
               <select
-                {...register('paidBy', { required: requiresMember ? 'Selecciona un miembro' : false })}
+                {...register('performedBy', { required: 'Selecciona un miembro' })}
                 className="border rounded px-2 py-1 w-full"
               >
-                <option value="common">Cuenta común</option>
+                <option value="">Selecciona miembro</option>
                 {members.map((m) => (
                   <option key={m.profile_id} value={m.profile_id}>
                     {m.display_name || m.email}
                   </option>
                 ))}
               </select>
-              {requiresMember && paidBy === 'common' && (
-                <span className="text-xs text-red-500">Para ingresos, selecciona un miembro</span>
+              {errors.performedBy && (
+                <span className="text-xs text-red-500">{errors.performedBy.message}</span>
               )}
             </div>
 
