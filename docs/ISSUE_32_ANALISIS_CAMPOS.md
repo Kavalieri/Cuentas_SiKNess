@@ -30,7 +30,7 @@ GROUP BY type, flow_type;
 
 **Resultados:**
 ```
-     type      | flow_type | total | paid_by_unicos 
+     type      | flow_type | total | paid_by_unicos
 ---------------+-----------+-------+----------------
  expense        | common    |    24 |              1
  expense_direct | direct    |    85 |              1
@@ -38,7 +38,7 @@ GROUP BY type, flow_type;
  income_direct  | direct    |    85 |              2
 ```
 
-**Conclusión 1**: 
+**Conclusión 1**:
 - Gastos: Solo 1 valor único (la Cuenta Común)
 - Ingresos: 2 valores únicos (diferentes miembros)
 
@@ -58,7 +58,7 @@ GROUP BY t.type, t.flow_type;
 
 **Resultados:**
 ```
-     type      | flow_type | total | es_cuenta_comun | no_es_cuenta_comun 
+     type      | flow_type | total | es_cuenta_comun | no_es_cuenta_comun
 ---------------+-----------+-------+-----------------+--------------------
  expense        | common    |    24 |              24 |                  0
  expense_direct | direct    |    85 |              85 |                  0
@@ -81,12 +81,12 @@ WHERE type IN ('income', 'income_direct');
 
 **Resultados:**
 ```
- total | paid_by_igual_performed_by | diferentes | con_null 
+ total | paid_by_igual_performed_by | diferentes | con_null
 -------+----------------------------+------------+----------
     89 |                         78 |         11 |        0
 ```
 
-**Conclusión 3**: 
+**Conclusión 3**:
 - 87.6% de ingresos: `paid_by` = `performed_by_profile_id`
 - 12.4% difieren (11 casos)
 
@@ -108,7 +108,7 @@ LIMIT 15;
 
 **Resultados:**
 ```
-     type      |     description      | is_compensatory_income | paid_by_nombre | performed_by_nombre 
+     type      |     description      | is_compensatory_income | paid_by_nombre | performed_by_nombre
 ---------------+----------------------+------------------------+----------------+---------------------
  income_direct | Equilibrio: Alquiler | t                      | Sarini13       | Kava
  income_direct | Equilibrio: Vodafone | t                      | Sarini13       | Kava
@@ -136,7 +136,7 @@ WHERE is_compensatory_income = true;
 
 Resultado:
 ```
- total_compensatorios | iguales | diferentes 
+ total_compensatorios | iguales | diferentes
 ----------------------+---------+------------
                    82 |      71 |         11
 ```
@@ -159,7 +159,7 @@ FROM transactions;
 
 **Resultados:**
 ```
- total | identicos | diferentes | porcentaje_diferentes 
+ total | identicos | diferentes | porcentaje_diferentes
 -------+-----------+------------+-----------------------
    198 |       184 |         14 |                  7.07
 ```
@@ -184,7 +184,7 @@ LIMIT 15;
 
 **Resultados:**
 ```
-     type      |     description      | amount | registrado_por | ejecutado_por | created_at 
+     type      |     description      | amount | registrado_por | ejecutado_por | created_at
 ---------------+----------------------+--------+----------------+---------------+------------
  expense_direct | Internet             |     27 | Kava           | Sarini13      | 2025-10-29
  income_direct  | Equilibrio: Internet |     27 | Kava           | Sarini13      | 2025-10-29
@@ -217,7 +217,7 @@ FROM transactions;
 
 **Resultados:**
 ```
- total | identicos | diferentes | con_null 
+ total | identicos | diferentes | con_null
 -------+-----------+------------+----------
    198 |       198 |          0 |        0
 ```
@@ -273,12 +273,12 @@ function getPaidBy(tx: Transaction, jointAccountId: string): string {
     // Gastos SIEMPRE salen de Cuenta Común
     return jointAccountId;
   }
-  
+
   if (tx.type === 'income' || tx.type === 'income_direct') {
     // Ingresos SIEMPRE del miembro que ingresa
     return tx.performed_by_profile_id;
   }
-  
+
   throw new Error(`Tipo desconocido: ${tx.type}`);
 }
 ```
@@ -353,7 +353,7 @@ function getPaidBy(tx: Transaction, jointAccountId: string): string {
 **Lógica de cálculo**:
 ```sql
 -- Calcular paid_by en queries:
-CASE 
+CASE
   WHEN t.type IN ('expense', 'expense_direct') THEN ja.id
   ELSE t.performed_by_profile_id
 END as paid_by_calculated
@@ -412,10 +412,10 @@ END as paid_by_calculated
 interface Transaction {
   // Campo 1: Auditoría (quién registró)
   profile_id: string; // UUID - FK a profiles
-  
+
   // Campo 2: Ejecutor físico (quién ejecutó)
   performed_by_profile_id: string; // UUID - FK a profiles
-  
+
   // Campos calculados en queries:
   // paid_by_calculated: string (calculado según tipo)
 }
@@ -428,9 +428,9 @@ interface Transaction {
 
 /**
  * Fragmento SQL para calcular paid_by en queries.
- * 
+ *
  * Uso:
- * SELECT 
+ * SELECT
  *   t.*,
  *   ${getPaidByCalculatedSQL()} as paid_by_calculated
  * FROM transactions t
@@ -438,7 +438,7 @@ interface Transaction {
  */
 export function getPaidByCalculatedSQL(): string {
   return `
-    CASE 
+    CASE
       WHEN t.type IN ('expense', 'expense_direct') THEN ja.id
       ELSE t.performed_by_profile_id
     END

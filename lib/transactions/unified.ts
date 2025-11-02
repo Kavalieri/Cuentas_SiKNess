@@ -340,7 +340,7 @@ async function createCommonFlowTransaction(
       paid_by: paidBy, // Campo 1: Origen del dinero
       performed_by_profile_id: performedBy, // Campo 2: Ejecutor físico (NUEVO)
       flow_type: 'common',
-      created_by_profile_id: profileId,
+      // created_by_profile_id: profileId, // ❌ Issue #31: DEPRECADO - Usa profile_id
       updated_by_profile_id: profileId,
       created_by_member_id: profileId,
       performed_by_email: userEmail, // Legacy (deprecated)
@@ -511,9 +511,9 @@ async function createDirectFlowTransaction(
         occurred_at: occurred_at_date,
         performed_at: performed_at_ts,
         period_id: periodId,
-        // SISTEMA DUAL-FIELD (Issue #19, #20)
+        // SISTEMA DUAL-FIELD (Issue #19, #20, #34)
         paid_by: data.real_payer_id, // Campo 1: El ingreso se atribuye al que pagó
-        performed_by_profile_id: null, // Campo 2: Sistema automático (NULL)
+        performed_by_profile_id: data.real_payer_id, // Campo 2: ✅ Issue #34 - Coherencia: mismo que pagó
         // Legacy
         real_payer_id: data.real_payer_id, // Mismo pagador real
         performed_by_email: realPayerEmail, // Legacy (deprecated)
