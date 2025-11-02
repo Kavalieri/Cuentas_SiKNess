@@ -156,28 +156,7 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
             <DialogTitle>Editar {tx.type === 'income' ? 'ingreso' : 'gasto'} común</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium">Importe (€)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min={0.01}
-                {...register('amount', { required: true, min: 0.01 })}
-                className="border rounded px-2 py-1 w-full"
-              />
-              {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Descripción</label>
-              <input
-                type="text"
-                {...register('description')}
-                className="border rounded px-2 py-1 w-full"
-              />
-            </div>
-
-            {/* ✨ NUEVO: Jerarquía de 3 niveles */}
+            {/* ✨ Orden consistente con NewMovementForm: Jerarquía de 3 niveles primero */}
             <div>
               <Label className="block text-sm font-medium mb-1">Grupo de categoría</Label>
               <Select
@@ -251,6 +230,28 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Importe y Descripción después de la jerarquía (orden consistente) */}
+            <div>
+              <label className="block text-sm font-medium">Importe (€)</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0.01}
+                {...register('amount', { required: true, min: 0.01 })}
+                className="border rounded px-2 py-1 w-full"
+              />
+              {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Descripción</label>
+              <input
+                type="text"
+                {...register('description')}
+                className="border rounded px-2 py-1 w-full"
+              />
             </div>
 
             <div>
