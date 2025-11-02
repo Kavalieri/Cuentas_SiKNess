@@ -12,15 +12,18 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const householdId = searchParams.get('householdId');
     const limitParam = searchParams.get('limit');
-    const flowType = searchParams.get('flowType'); // 'all' | 'common' | 'direct'
+    const type = searchParams.get('type'); // 'income' | 'expense' | '' (todos)
+    const flowType = searchParams.get('flowType'); // 'common' | 'direct' | '' (todos)
     const memberId = searchParams.get('memberId');
+    const groupId = searchParams.get('groupId'); // Filtro por grupo (category_parents)
     const categoryId = searchParams.get('categoryId');
+    const subcategoryId = searchParams.get('subcategoryId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const search = searchParams.get('search'); // Para filtros de búsqueda por descripción
 
     // Solo aplicar limit reducido si NO hay filtros de búsqueda activos
-    const hasSearchFilters = search || categoryId || flowType !== 'all';
+    const hasSearchFilters = search || categoryId || subcategoryId || groupId || type || flowType;
     const limit = hasSearchFilters ? 1000 : (limitParam ? Math.min(parseInt(limitParam, 10), 500) : 100);
 
     if (!householdId) {
@@ -32,6 +35,16 @@ export async function GET(req: NextRequest) {
     const params: unknown[] = [householdId];
     let paramIndex = 2;
 
+    // Filtro de tipo: income o expense (incluye sus variantes direct_income y direct_expense)
+    if (type && type !== 'all') {
+      if (type === 'income') {
+        conditions.push(`(t.type = 'income' OR t.type = 'direct_income')`);
+      } else if (type === 'expense') {
+        conditions.push(`(t.type = 'expense' OR t.type = 'direct_expense')`);
+      }
+    }
+
+    // Filtro de flujo: common o direct
     if (flowType && flowType !== 'all') {
       conditions.push(`t.flow_type = $${paramIndex}`);
       params.push(flowType);
@@ -44,9 +57,24 @@ export async function GET(req: NextRequest) {
       paramIndex++;
     }
 
+    // Filtro por grupo (category_parents) - busca en ambas rutas
+    if (groupId) {
+      conditions.push(`(cp.id = $${paramIndex} OR cp_from_sub.id = $${paramIndex})`);
+      params.push(groupId);
+      paramIndex++;
+    }
+
+    // Filtro por categoría (nivel 2) - busca en ambas rutas
     if (categoryId) {
-      conditions.push(`t.category_id = $${paramIndex}`);
+      conditions.push(`(t.category_id = $${paramIndex} OR cat_from_sub.id = $${paramIndex})`);
       params.push(categoryId);
+      paramIndex++;
+    }
+
+    // Filtro por subcategoría (nivel 3)
+    if (subcategoryId) {
+      conditions.push(`t.subcategory_id = $${paramIndex}`);
+      params.push(subcategoryId);
       paramIndex++;
     }
 

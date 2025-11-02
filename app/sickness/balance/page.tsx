@@ -81,15 +81,20 @@ function BalancePageContent() {
   // Filtros unificados en un solo objeto
   const [filters, setFilters] = useState({
     member: '',
-    category: '',
+    group: '',      // Nuevo: Filtro por grupo (category_parents)
+    category: '',   // Categoría (nivel 2)
+    subcategory: '', // Nuevo: Subcategoría (nivel 3)
     type: '',
+    flowType: '',   // Nuevo: Filtro por flujo (common/direct)
     search: '',
     startDate: '',
     endDate: ''
   });
 
   const [members, setMembers] = useState<Array<{ profile_id: string; email: string; display_name: string; role: string }>>([]);
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; icon?: string; type?: string }>>([]);
+  const [categoryGroups, setCategoryGroups] = useState<Array<{ id: string; name: string; icon?: string; type?: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; icon?: string; type?: string; parent_id?: string }>>([]);
+  const [subcategories, setSubcategories] = useState<Array<{ id: string; name: string; icon?: string; category_id?: string }>>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   // Estados para balance global y resumen del periodo
@@ -157,9 +162,12 @@ function BalancePageContent() {
         // NO limitar - traer TODAS para paginar en frontend
       });
 
-      if (filters.type) params.append('flowType', filters.type);
+      if (filters.type) params.append('type', filters.type);
+      if (filters.flowType) params.append('flowType', filters.flowType);
       if (filters.member) params.append('memberId', filters.member);
+      if (filters.group) params.append('groupId', filters.group);
       if (filters.category) params.append('categoryId', filters.category);
+      if (filters.subcategory) params.append('subcategoryId', filters.subcategory);
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
 
@@ -237,20 +245,22 @@ function BalancePageContent() {
     if (!householdId) return;
     (async () => {
       try {
-        const [mRes, cRes] = await Promise.all([
+        const [mRes, hRes] = await Promise.all([
           fetch(`/api/sickness/household/members?householdId=${householdId}`),
-          fetch(`/api/sickness/household/categories?householdId=${householdId}`),
+          fetch(`/api/sickness/household/category-hierarchy?householdId=${householdId}`),
         ]);
         if (mRes.ok) {
-          const data = await mRes.json();
-          setMembers(data.members || []);
+          const mData = await mRes.json();
+          setMembers(mData.members || []);
         }
-        if (cRes.ok) {
-          const data = await cRes.json();
-          setCategories(data.categories || []);
+        if (hRes.ok) {
+          const hData = await hRes.json();
+          setCategoryGroups(hData.groups || []);
+          setCategories(hData.categories || []);
+          setSubcategories(hData.subcategories || []);
         }
-      } catch (e) {
-        console.error('Error cargando filtros', e);
+      } catch (error) {
+        console.error('Error loading filter options:', error);
       }
     })();
   }, [householdId]);
@@ -416,7 +426,9 @@ function BalancePageContent() {
       <BalanceFilters
         filters={filters}
         members={members}
+        categoryGroups={categoryGroups}
         categories={categories}
+        subcategories={subcategories}
         periods={periods}
         onChange={(partial) => setFilters((prev) => ({ ...prev, ...partial }))}
       />
