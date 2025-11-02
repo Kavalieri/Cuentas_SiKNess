@@ -784,6 +784,10 @@ export interface Transactions {
    * UUID generado automáticamente por PostgreSQL
    */
   id: Generated<string>;
+  /**
+   * TRUE si es un ingreso compensatorio creado automáticamente al registrar un gasto directo. Estos ingresos NO deben editarse directamente, solo desde el gasto asociado.
+   */
+  is_compensatory_income: Generated<boolean>;
   occurred_at: Timestamp | null;
   paid_by: string | null;
   /**
@@ -796,14 +800,14 @@ export interface Transactions {
   performed_at: Timestamp | null;
   /**
    * ⚠️ DEPRECADO: Reemplazado por performed_by_profile_id (UUID fuerte).
-   *
+   *    
    *    Mantener temporalmente para:
    *    - Auditoría de la migración
    *    - Rollback si fuera necesario
    *    - Verificación de datos históricos
-   *
+   *    
    *    ELIMINAR EN FUTURO: Una vez verificada estabilidad del nuevo campo.
-   *
+   *    
    *    Historial:
    *    - Creado: [fecha original]
    *    - Deprecado: 2025-11-01 (Issue #19, #20)
@@ -812,13 +816,13 @@ export interface Transactions {
   performed_by_email_deprecated: string | null;
   /**
    * UUID del miembro que FÍSICAMENTE ejecutó la transacción (pasó tarjeta, hizo ingreso).
-   *
+   *    
    *    Semántica:
    *    - Gastos comunes: quien pasó la tarjeta (diferente de paid_by = Cuenta Común)
    *    - Ingresos comunes: quien hizo el ingreso (normalmente coincide con paid_by)
    *    - Gastos directos: quien realizó el gasto (coincide con real_payer_id)
    *    - Ingresos compensatorios: NULL (automático del sistema, no hay ejecutor físico)
-   *
+   *    
    *    Complementa a paid_by (origen del dinero) para tracking dual completo.
    */
   performed_by_profile_id: string | null;
