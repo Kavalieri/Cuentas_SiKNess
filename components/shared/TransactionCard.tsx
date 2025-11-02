@@ -113,62 +113,6 @@ export function TransactionCard({
     }
   }
 
-  // Renderizar jerarquía de categoría (solo para vista expandida)
-  const renderCategoryHierarchy = () => {
-    const parts = [];
-
-    // Grupo (nivel 1)
-    if (tx.parent_category_name) {
-      parts.push(
-        <span key="group" className="text-muted-foreground">
-          {tx.parent_category_name}
-        </span>,
-      );
-    }
-
-    // Categoría (nivel 2)
-    if (tx.category_name) {
-      if (parts.length > 0) {
-        parts.push(
-          <span key="arrow1" className="text-muted-foreground">
-            {' '}
-            →{' '}
-          </span>,
-        );
-      }
-      parts.push(
-        <span key="category" className="flex items-center gap-1">
-          {tx.category_icon && <span className="text-sm">{tx.category_icon}</span>}
-          <span className="font-medium">{tx.category_name}</span>
-        </span>,
-      );
-    }
-
-    // Subcategoría (nivel 3)
-    if (tx.subcategory_name) {
-      parts.push(
-        <span key="arrow2" className="text-muted-foreground">
-          {' '}
-          →{' '}
-        </span>,
-      );
-      parts.push(
-        <span key="subcategory" className="flex items-center gap-1">
-          {tx.subcategory_icon && tx.subcategory_icon !== tx.category_icon && (
-            <span className="text-sm">{tx.subcategory_icon}</span>
-          )}
-          <span className="font-medium">{tx.subcategory_name}</span>
-        </span>,
-      );
-    }
-
-    if (parts.length === 0) {
-      return <span className="text-muted-foreground text-xs">Sin categoría</span>;
-    }
-
-    return <div className="flex items-center gap-0 text-sm flex-wrap">{parts}</div>;
-  };
-
   // Obtener icono y texto para título colapsado
   const getTitleIcon = () => {
     // Priorizar icono de subcategoría si existe, si no categoría
