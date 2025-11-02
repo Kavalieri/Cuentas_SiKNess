@@ -416,7 +416,7 @@ export async function editCommonMovement(formData: FormData): Promise<Result> {
          occurred_at = $4,
          performed_at = $5,
          period_id = $6,
-         performed_by_profile_id = $7, 
+         performed_by_profile_id = $7,
          paid_by = $8,
          updated_at = now(),
          updated_by_profile_id = $9
