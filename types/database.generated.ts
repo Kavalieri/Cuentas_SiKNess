@@ -766,7 +766,10 @@ export interface Transactions {
    */
   created_by_member_id: string | null;
   /**
-   * ID del usuario que REGISTRÓ esta transacción en el sistema. Diferente de paid_by (quien pagó).
+   * ⚠️ DEPRECATED (Issue #31): Duplica 100% profile_id.
+   *    Usar profile_id en su lugar para auditoría.
+   *    Este campo será eliminado físicamente en una migración futura.
+   *    Deprecado: 02 November 2025
    */
   created_by_profile_id: string | null;
   currency: string | null;

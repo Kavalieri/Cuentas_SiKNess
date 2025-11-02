@@ -19,7 +19,7 @@ El agente ejecutó modificaciones **NO SOLICITADAS** en la base de datos, altera
 **Query ejecutada** (INCORRECTA):
 ```sql
 UPDATE transactions
-SET 
+SET
   paid_by = performed_by_profile_id,
   updated_at = NOW(),
   updated_by_profile_id = profile_id
@@ -98,12 +98,12 @@ sudo -u postgres pg_restore --table=transactions /path/to/backup.sql -d cuentass
 Identificar los 11 registros y buscar el gasto directo asociado:
 ```sql
 -- Para cada ingreso compensatorio corrupto:
-SELECT 
+SELECT
   comp.id as compensatory_id,
   comp.description,
   dir.performed_by_profile_id as correct_paid_by
 FROM transactions comp
-JOIN transactions dir ON 
+JOIN transactions dir ON
   dir.household_id = comp.household_id
   AND dir.type = 'expense_direct'
   AND dir.amount = comp.amount
