@@ -217,9 +217,9 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         return;
       }
 
-      // ✨ NUEVO: Validación de subcategoría en flujo común
-      if (flow_type === 'common' && !selectedSubcategoryId) {
-        setError('Selecciona una subcategoría completa (grupo → categoría → subcategoría)');
+      // ✅ Issue #38: Validar categoría obligatoria (subcategoría es opcional)
+      if (!selectedCategoryId) {
+        setError('Selecciona una categoría completa (grupo → categoría)');
         setLoading(false);
         return;
       }
@@ -232,8 +232,9 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
       }
 
       const result = await createUnifiedTransaction({
-        // ✨ NUEVO: Enviar subcategory_id en lugar de category_id
+        // ✅ Issue #38: Enviar subcategory_id si existe, sino category_id
         subcategory_id: selectedSubcategoryId || null,
+        category_id: selectedSubcategoryId ? null : (selectedCategoryId || null),
         type: payloadType,
         amount: normalizedAmount,
         currency: 'EUR',
