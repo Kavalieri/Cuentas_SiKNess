@@ -43,8 +43,8 @@ export async function GET(request: Request) {
     }
 
     if (memberId) {
-      // Filtra por profile_id (miembro creador o asignado a la transacción)
-      text += ` AND (profile_id = $${paramIndex} OR real_payer_id = $${paramIndex})`;
+      // Filtra por profile_id (quien registró) o performed_by_profile_id (quien ejecutó)
+      text += ` AND (profile_id = $${paramIndex} OR performed_by_profile_id = $${paramIndex})`;
       params.push(memberId);
       paramIndex++;
     }

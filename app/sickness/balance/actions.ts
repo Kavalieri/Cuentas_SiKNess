@@ -88,8 +88,8 @@ async function deleteDirectExpenseInternal(movementId: string, householdId: stri
   if (!profileId) return fail('No autenticado');
 
   // Verificar permisos antes de eliminar
-  const txRes = await query<{ real_payer_id: string | null; profile_id: string | null }>(
-    `SELECT real_payer_id, profile_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
+  const txRes = await query<{ performed_by_profile_id: string | null; profile_id: string | null }>(
+    `SELECT performed_by_profile_id, profile_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
     [movementId, householdId]
   );
 
@@ -99,10 +99,10 @@ async function deleteDirectExpenseInternal(movementId: string, householdId: stri
 
   // Verificar permisos: owner O propietario del gasto directo
   const isOwner = await isHouseholdOwner(profileId, householdId);
-  const isRealPayer = tx.real_payer_id === profileId;
+  const isPerformedBy = tx.performed_by_profile_id === profileId;
   const isProfileOwner = tx.profile_id === profileId;
 
-  if (!isOwner && !isRealPayer && !isProfileOwner) {
+  if (!isOwner && !isPerformedBy && !isProfileOwner) {
     return fail('No autorizado: solo puedes eliminar tus propios gastos directos');
   }
 
@@ -205,8 +205,8 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     return fail('El período está cerrado; no se permiten modificaciones.');
   }
 
-  const txRes = await query<{ real_payer_id: string | null; profile_id: string | null }>(
-    `SELECT real_payer_id, profile_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
+  const txRes = await query<{ performed_by_profile_id: string | null; profile_id: string | null }>(
+    `SELECT performed_by_profile_id, profile_id FROM transactions WHERE id = $1 AND household_id = $2 AND flow_type = 'direct'`,
     [movementId, householdId]
   );
 
@@ -217,12 +217,12 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
 
   // Verificar permisos: owner O propietario del gasto directo
   const isOwner = await isHouseholdOwner(profileId, householdId);
-  const isRealPayer = tx.real_payer_id === profileId;
+  const isPerformedBy = tx.performed_by_profile_id === profileId;
   const isProfileOwner = tx.profile_id === profileId;
 
-  console.log('[editDirectExpenseWithCompensatory] Permissions check:', { isOwner, isRealPayer, isProfileOwner, real_payer_id: tx.real_payer_id, profile_id: tx.profile_id });
+  console.log('[editDirectExpenseWithCompensatory] Permissions check:', { isOwner, isPerformedBy, isProfileOwner, performed_by_profile_id: tx.performed_by_profile_id, profile_id: tx.profile_id });
 
-  if (!isOwner && !isRealPayer && !isProfileOwner) {
+  if (!isOwner && !isPerformedBy && !isProfileOwner) {
     console.log('[editDirectExpenseWithCompensatory] Permission denied');
     return fail('No autorizado: solo puedes editar tus propios gastos directos');
   }
@@ -269,10 +269,8 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
          period_id = $6,
          updated_at = now(),
          updated_by_profile_id = $7,
-         real_payer_id = $8,
-         paid_by = $9,
-         performed_by_profile_id = COALESCE($10, $11, real_payer_id)
-     WHERE id = $12 AND household_id = $13 AND flow_type = 'direct'`,
+         performed_by_profile_id = COALESCE($8, $9, performed_by_profile_id)
+     WHERE id = $10 AND household_id = $11 AND flow_type = 'direct'`,
     [
       amount,
       description || null,
@@ -281,8 +279,6 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
       performed_at_ts,
       newPeriodId,
       profileId ?? null,
-      realPayerId || tx.real_payer_id,
-      jointAccountId, // NUEVO CRITERIO: paid_by = joint_account (Issue #18)
       existingPerformedBy, // Preservar performed_by existente
       realPayerId, // Fallback a realPayerId si no existe performed_by
       movementId,
@@ -291,7 +287,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
   );
   console.log('[editDirectExpenseWithCompensatory] Update result:', { rowCount: updateResult.rowCount });
 
-  // Actualizar ingreso compensatorio si existe (preservando paid_by = member)
+  // Actualizar ingreso compensatorio si existe
   if (pairId) {
     console.log('[editDirectExpenseWithCompensatory] Updating compensatory income');
     await query(
@@ -303,13 +299,11 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
            period_id = $5,
            updated_at = now(),
            updated_by_profile_id = $6,
-           real_payer_id = $7,
-           paid_by = $8,
-           performed_by_profile_id = NULL
-       WHERE transaction_pair_id = $9
+           performed_by_profile_id = $7
+       WHERE transaction_pair_id = $8
          AND flow_type = 'direct'
          AND type IN ('income','income_direct')
-         AND household_id = $10`,
+         AND household_id = $9`,
       [
         amount,
         `Equilibrio: ${description || 'Gasto directo'}`,
@@ -317,8 +311,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
         performed_at_ts,
         newPeriodId,
         profileId ?? null,
-        realPayerId || tx.real_payer_id,
-        realPayerId || tx.real_payer_id, // paid_by = member (beneficiario)
+        realPayerId || tx.performed_by_profile_id, // Quien pagó de su bolsillo
         pairId,
         householdId
       ]

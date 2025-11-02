@@ -843,7 +843,19 @@ export interface Transactions {
   period_id: string | null;
   profile_id: string | null;
   /**
-   * ID del miembro que realmente pagó en gastos directos (de su bolsillo)
+   * ⚠️ DEPRECATED (Issue #30): Campo redundante con performed_by_profile_id.
+   *
+   *    USAR EN SU LUGAR: performed_by_profile_id
+   *
+   *    REGLA DE NEGOCIO (transacciones directas):
+   *    - performed_by_profile_id = quien pagó de su bolsillo (CAMPO ÚNICO DE VERDAD)
+   *    - real_payer_id = MISMO VALOR (redundante, mantenido por compatibilidad)
+   *    - profile_id = quien registró en el sistema (auditoría)
+   *
+   *    NOTA: Para transacciones no directas (common), real_payer_id = NULL siempre.
+   *
+   *    Deprecado: 02 November 2025
+   *    Eliminar en: v3.0.0 (tras periodo de gracia de 6 meses)
    */
   real_payer_id: string | null;
   /**

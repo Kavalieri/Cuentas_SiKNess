@@ -249,8 +249,7 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
         description: description || undefined,
         occurred_at: occurredAt,
         flow_type,
-        real_payer_id: flow_type === 'direct' ? realPayerId : undefined,
-        performed_by_profile_id: performedBy, // ✨ NUEVO: ejecutor físico (dual-field)
+        performed_by_profile_id: flow_type === 'direct' ? (realPayerId || performedBy) : (performedBy || undefined), // Issue #30: campo único
         creates_balance_pair: flow_type === 'direct' ? true : undefined,
         period_id: periodId,
       });

@@ -86,7 +86,6 @@ export interface UnifiedTransactionData {
   performed_by_profile_id?: string; // UUID del miembro que realizó la transacción
 
   // Para flujo directo
-  real_payer_id?: string; // Quien pagó realmente de su bolsillo (legacy)
   creates_balance_pair?: boolean; // Si debe crear transacción de equilibrio
 }
 
@@ -124,8 +123,7 @@ const CommonFlowSchema = BaseTransactionSchema.extend({
 const DirectFlowSchema = BaseTransactionSchema.extend({
   type: z.enum(['income_direct', 'expense_direct']),
   flow_type: z.literal('direct'),
-  real_payer_id: z.string().uuid(), // Obligatorio: quien pagó de su bolsillo
-  performed_by_profile_id: z.string().uuid().optional(), // Ejecutor físico (nuevo)
+  performed_by_profile_id: z.string().uuid(), // Obligatorio: quien pagó de su bolsillo (Issue #30)
   creates_balance_pair: z.boolean().default(true),
 });
 
@@ -411,17 +409,17 @@ async function createDirectFlowTransaction(
 
   // Permitir direct en validation, active y closing
 
-  // Obtener email del real_payer_id para auditoría correcta
-  const { data: realPayerProfile } = await supabase
+  // Obtener email del performed_by_profile_id para auditoría
+  const { data: performedByProfile } = await supabase
     .from('profiles')
     .select('email')
-    .eq('id', data.real_payer_id)
+    .eq('id', data.performed_by_profile_id)
     .single();
 
-  const realPayerEmail = realPayerProfile?.email || userEmail;
+  const performedByEmail = performedByProfile?.email || userEmail;
 
   // ❌ Issue #33: paid_by DEPRECADO - Ya no se escribe
-  // REGLA: Gastos directos → paid_by se calcula como joint_account_id
+  // ❌ Issue #30: real_payer_id DEPRECADO - Ya no se escribe
 
   // Generar UUID para emparejar las transacciones
   const pairId = crypto.randomUUID();
@@ -439,16 +437,12 @@ async function createDirectFlowTransaction(
     occurred_at: occurred_at_date,
     performed_at: performed_at_ts,
     period_id: periodId,
-    // paid_by: jointAccountId, // ❌ Issue #33: DEPRECADO - Se calcula dinámicamente
-    performed_by_profile_id: data.performed_by_profile_id || data.real_payer_id, // ✅ Campo único de verdad
-    // Legacy
-    real_payer_id: data.real_payer_id, // Legacy: quien pagó de bolsillo
-    performed_by_email: realPayerEmail, // Legacy (deprecated)
+    performed_by_profile_id: data.performed_by_profile_id, // ✅ Campo único de verdad - quien pagó
+    performed_by_email: performedByEmail, // Legacy (deprecated)
     // Metadata
     flow_type: 'direct',
     transaction_pair_id: pairId,
     created_by_member_id: profileId,
-    // created_by_profile_id: profileId, // ❌ DEPRECADO (Issue #31): Duplica profile_id
     updated_by_profile_id: profileId,
   };
 
@@ -498,17 +492,13 @@ async function createDirectFlowTransaction(
         occurred_at: occurred_at_date,
         performed_at: performed_at_ts,
         period_id: periodId,
-        // paid_by: data.real_payer_id, // ❌ Issue #33: DEPRECADO - Se calcula dinámicamente
-        performed_by_profile_id: data.real_payer_id, // ✅ Campo único de verdad
-        // Legacy
-        real_payer_id: data.real_payer_id, // Mismo pagador real
-        performed_by_email: realPayerEmail, // Legacy (deprecated)
+        performed_by_profile_id: data.performed_by_profile_id, // ✅ Campo único de verdad - quien pagó
+        performed_by_email: performedByEmail, // Legacy (deprecated)
         // Metadata
         flow_type: 'direct',
         transaction_pair_id: pairId,
         is_compensatory_income: true, // ✨ Issue #26: Marcar como ingreso compensatorio automático
         created_by_member_id: profileId,
-        // created_by_profile_id: profileId, // ❌ DEPRECADO (Issue #31): Duplica profile_id
         updated_by_profile_id: profileId,
       })
       .select('id')

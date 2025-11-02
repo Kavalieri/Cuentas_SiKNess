@@ -106,9 +106,9 @@ export async function GET(req: NextRequest) {
         ? `${period.year + 1}-01-01`
         : `${period.year}-${String(period.month + 1).padStart(2, '0')}-01`;
 
-    const directRes = await query<{ real_payer_id: string | null; total: string }>(
+    const directRes = await query<{ performed_by_profile_id: string | null; total: string }>(
       `
-        SELECT real_payer_id, SUM(amount)::numeric::text AS total
+        SELECT performed_by_profile_id, SUM(amount)::numeric::text AS total
         FROM transactions
         WHERE household_id = $1
           AND flow_type = 'direct'
@@ -117,13 +117,13 @@ export async function GET(req: NextRequest) {
             period_id = $2
             OR (period_id IS NULL AND occurred_at >= $3 AND occurred_at < $4)
           )
-        GROUP BY real_payer_id
+        GROUP BY performed_by_profile_id
       `,
       [householdId, period.id, startDate, endDate],
     );
     const directMap = new Map<string, number>();
     for (const r of directRes.rows) {
-      if (r.real_payer_id) directMap.set(r.real_payer_id, Number(r.total));
+      if (r.performed_by_profile_id) directMap.set(r.performed_by_profile_id, Number(r.total));
     }
 
     // Obtener contribuciones guardadas (si existen)

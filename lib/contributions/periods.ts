@@ -235,7 +235,7 @@ export async function calculateContributionsWithDirectExpenses(
 
   const { data: directExpenses, error: expensesError } = await supabase
     .from('transactions')
-    .select('real_payer_id, amount')
+    .select('performed_by_profile_id, amount')
     .eq('household_id', householdId)
     .in('type', ['expense', 'expense_direct'])
     .eq('flow_type', 'direct')
@@ -247,10 +247,10 @@ export async function calculateContributionsWithDirectExpenses(
   }
 
   // 4. Agrupar gastos directos por miembro
-  type DirectExpenseRow = { real_payer_id: string | null; amount: number };
+  type DirectExpenseRow = { performed_by_profile_id: string | null; amount: number };
   const directExpensesByMember = ((directExpenses || []) as unknown as DirectExpenseRow[]).reduce(
     (acc: Record<string, number>, expense) => {
-      const payerId = expense.real_payer_id;
+      const payerId = expense.performed_by_profile_id;
       if (payerId) {
         acc[payerId] = (acc[payerId] || 0) + Number(expense.amount);
       }

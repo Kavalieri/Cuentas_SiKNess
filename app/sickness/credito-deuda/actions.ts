@@ -181,7 +181,7 @@ export async function getMemberBalanceStatus(
            WHERE household_id = $1
              AND type IN ('expense', 'expense_direct')
              AND flow_type = 'direct'
-             AND real_payer_id = $2
+             AND performed_by_profile_id = $2
              AND (
                period_id = $3
                OR (period_id IS NULL AND occurred_at >= $4 AND occurred_at < $5)
@@ -426,7 +426,7 @@ export async function getHouseholdBalancesOverview(
              WHERE household_id = $1
                AND type IN ('expense', 'expense_direct')
                AND flow_type = 'direct'
-               AND real_payer_id = $2
+               AND performed_by_profile_id = $2
                AND (
                  period_id = $3
                  OR (period_id IS NULL AND occurred_at >= $4 AND occurred_at < $5)

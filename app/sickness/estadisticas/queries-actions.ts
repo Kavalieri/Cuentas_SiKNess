@@ -1068,7 +1068,7 @@ async function queryGastosPorMiembro(pool: Pool, householdId: string, year?: num
       COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) AS gastos_comunes,
       COALESCE(SUM(t.amount), 0) AS total_gastado
     FROM transactions t
-    INNER JOIN profiles p ON t.real_payer_id = p.id OR t.profile_id = p.id
+    INNER JOIN profiles p ON t.performed_by_profile_id = p.id OR t.profile_id = p.id
     WHERE t.household_id = $1
       AND t.type IN ('expense', 'expense_direct')
       ${periodFilter}
@@ -1174,7 +1174,7 @@ async function queryDetalleMiembro(pool: Pool, householdId: string, memberId: st
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
     WHERE t.household_id = $1
-      AND (t.profile_id = $2 OR t.real_payer_id = $2)
+      AND (t.profile_id = $2 OR t.performed_by_profile_id = $2)
       ${periodFilter}
     ORDER BY t.occurred_at DESC
   `, params);

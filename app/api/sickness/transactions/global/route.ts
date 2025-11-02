@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (memberId) {
-      conditions.push(`(t.profile_id = $${paramIndex} OR t.real_payer_id = $${paramIndex})`);
+      conditions.push(`(t.profile_id = $${paramIndex} OR t.performed_by_profile_id = $${paramIndex})`);
       params.push(memberId);
       paramIndex++;
     }
@@ -76,7 +76,6 @@ export async function GET(req: NextRequest) {
         t.performed_at,
         t.flow_type,
         t.profile_id,
-        t.real_payer_id,
         t.paid_by,
         t.category_id,
         t.subcategory_id,
@@ -97,8 +96,6 @@ export async function GET(req: NextRequest) {
         -- Información de perfiles
         p.email as profile_email,
         p.display_name as profile_display_name,
-        rp.email as real_payer_email,
-        rp.display_name as real_payer_display_name,
         -- paid_by: puede ser miembro O Cuenta Común
         CASE
           WHEN ja.id IS NOT NULL THEN ja.display_name
@@ -120,7 +117,6 @@ export async function GET(req: NextRequest) {
       LEFT JOIN category_parents cp ON cat.parent_id = cp.id
       -- Perfiles
       LEFT JOIN profiles p ON t.profile_id = p.id
-      LEFT JOIN profiles rp ON t.real_payer_id = rp.id
       LEFT JOIN profiles pb ON t.paid_by = pb.id
       -- Ejecutor físico (NUEVO - Issue #20)
       LEFT JOIN profiles p_performer ON t.performed_by_profile_id = p_performer.id

@@ -8,7 +8,7 @@ type Transaction = {
   performed_at?: string | null;
   flow_type: string;
   type: string;
-  real_payer_id?: string | null;
+  performed_by_profile_id?: string | null;
 };
 
 interface TransactionPairItemProps {
@@ -38,7 +38,7 @@ export function TransactionPairItem({ expense, income }: TransactionPairItemProp
         </div>
       </div>
       <div className="flex justify-between text-xs text-muted-foreground mt-1">
-        <span>Miembro: {expense.real_payer_id ?? 'N/A'}</span>
+        <span>Miembro: {expense.performed_by_profile_id ?? 'N/A'}</span>
         {(() => {
           const src = expense.performed_at || expense.occurred_at;
           const d = new Date(src as string);
