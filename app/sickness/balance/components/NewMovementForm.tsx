@@ -433,8 +433,8 @@ export function NewMovementForm({ open, onClose, members, phase, user, isOwner, 
           {/* ✅ Campo unificado para TODOS los tipos (Issue #29, #30) */}
           <div>
             <Label>
-              {type === 'income' 
-                ? '¿Quién ingresó el dinero?' 
+              {type === 'income'
+                ? '¿Quién ingresó el dinero?'
                 : type === 'direct_expense'
                 ? '¿Quién pagó de su bolsillo?'
                 : '¿Quién realizó esta transacción?'}

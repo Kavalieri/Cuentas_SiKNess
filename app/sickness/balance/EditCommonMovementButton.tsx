@@ -232,42 +232,10 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
               </Select>
             </div>
 
-            {/* Importe y Descripción después de la jerarquía (orden consistente) */}
-            <div>
-              <label className="block text-sm font-medium">Importe (€)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min={0.01}
-                {...register('amount', { required: true, min: 0.01 })}
-                className="border rounded px-2 py-1 w-full"
-              />
-              {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Descripción</label>
-              <input
-                type="text"
-                {...register('description')}
-                className="border rounded px-2 py-1 w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium">Fecha y hora</label>
-              <input
-                type="datetime-local"
-                {...register('occurredAt', { required: true })}
-                className="border rounded px-2 py-1 w-full"
-              />
-              {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
-            </div>
-
-            {/* ✅ Issue #29: Ejecutado por / Ingresado por */}
+            {/* ✅ Orden consistente con NewMovementForm: ¿Quién realizó? → Importe → Fecha → Descripción */}
             <div>
               <label className="block text-sm font-medium">
-                {tx.type === 'income' ? 'Ingresado por' : 'Gastado por'}
+                {tx.type === 'income' ? '¿Quién ingresó el dinero?' : '¿Quién realizó esta transacción?'}
               </label>
               <select
                 {...register('performedBy', { required: 'Selecciona un miembro' })}
@@ -283,6 +251,38 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
               {errors.performedBy && (
                 <span className="text-xs text-red-500">{errors.performedBy.message}</span>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Cantidad (€)</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0.01}
+                {...register('amount', { required: true, min: 0.01 })}
+                className="border rounded px-2 py-1 w-full"
+              />
+              {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Fecha y hora</label>
+              <input
+                type="datetime-local"
+                {...register('occurredAt', { required: true })}
+                className="border rounded px-2 py-1 w-full"
+              />
+              {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Descripción</label>
+              <input
+                type="text"
+                {...register('description')}
+                className="border rounded px-2 py-1 w-full"
+              />
             </div>
 
             <DialogFooter>

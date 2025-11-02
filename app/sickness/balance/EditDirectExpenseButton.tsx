@@ -47,11 +47,11 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
       occurredAt: tx.performed_at
         ? tx.performed_at.slice(0, 16)
         : (tx.occurred_at ? (tx.occurred_at.length > 10 ? tx.occurred_at.slice(0, 16) : `${tx.occurred_at}T00:00`) : ''),
-      realPayerId: tx.real_payer_id || '', // ✨ NUEVO: pagador actual
+      performedBy: tx.real_payer_id || '', // ✅ Unificado: performed_by_profile_id
     },
   });
 
-  const realPayerId = watch('realPayerId');
+  const performedBy = watch('performedBy');
 
   // ✨ Resolver valores iniciales al abrir (usando jerarquía pre-cargada)
   useEffect(() => {
@@ -105,7 +105,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
     return selectedCategory?.subcategories || [];
   }, [selectedCategory]);
 
-  const onSubmit = async (data: { amount: number; description: string; occurredAt: string; realPayerId: string }) => {
+  const onSubmit = async (data: { amount: number; description: string; occurredAt: string; performedBy: string }) => {
     try {
       const formData = new FormData();
       formData.append('movementId', tx.id);
@@ -115,7 +115,7 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
       // ✨ Enviar subcategory_id en lugar de categoryId
       formData.append('subcategoryId', selectedSubcategoryId || '');
       formData.append('occurredAt', data.occurredAt);
-      formData.append('realPayerId', data.realPayerId); // ✨ NUEVO: pagador
+      formData.append('performedBy', data.performedBy); // ✅ Unificado: performed_by_profile_id
 
       const result = await editDirectExpenseWithCompensatory(formData);
 
@@ -227,34 +227,12 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
               </Select>
             </div>
 
-            {/* Importe y Descripción después de la jerarquía (orden consistente) */}
+            {/* ✅ Orden consistente con NewMovementForm: ¿Quién pagó? → Importe → Fecha → Descripción */}
             <div>
-              <label className="block text-sm font-medium">Importe (€)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min={0.01}
-                {...register('amount', { required: true, min: 0.01 })}
-                className="border rounded px-2 py-1 w-full"
-              />
-              {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Descripción</label>
-              <input
-                type="text"
-                {...register('description')}
-                className="border rounded px-2 py-1 w-full"
-              />
-            </div>
-
-            {/* ✨ NUEVO: Selector de pagador */}
-            <div>
-              <Label className="block text-sm font-medium mb-1">Pagador</Label>
+              <Label className="block text-sm font-medium mb-1">¿Quién pagó de su bolsillo?</Label>
               <Select
-                value={realPayerId}
-                onValueChange={(value) => setValue('realPayerId', value)}
+                value={performedBy}
+                onValueChange={(value) => setValue('performedBy', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona pagador" />
@@ -267,7 +245,20 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
                   ))}
                 </SelectContent>
               </Select>
-              {errors.realPayerId && <span className="text-xs text-red-500">Selecciona un pagador</span>}
+              {errors.performedBy && <span className="text-xs text-red-500">Selecciona quién pagó</span>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Cantidad (€)</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0.01}
+                {...register('amount', { required: true, min: 0.01 })}
+                className="border rounded px-2 py-1 w-full"
+              />
+              {errors.amount && <span className="text-xs text-red-500">Importe obligatorio y mayor que 0</span>}
             </div>
 
             <div>
@@ -278,6 +269,15 @@ export function EditDirectExpenseButton({ tx, householdId, onSuccess, members = 
                 className="border rounded px-2 py-1 w-full"
               />
               {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Descripción</label>
+              <input
+                type="text"
+                {...register('description')}
+                className="border rounded px-2 py-1 w-full"
+              />
             </div>
             <DialogFooter>
               <button
