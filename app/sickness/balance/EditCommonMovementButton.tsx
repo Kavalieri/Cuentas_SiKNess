@@ -263,16 +263,6 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
               {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
             </div>
 
-            {/* Pagador (para ingresos es obligatorio) */}
-            <div>
-              <input
-                type="datetime-local"
-                {...register('occurredAt', { required: true })}
-                className="border rounded px-2 py-1 w-full"
-              />
-              {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
-            </div>
-
             {/* ✅ Issue #29: Ejecutado por / Ingresado por */}
             <div>
               <label className="block text-sm font-medium">

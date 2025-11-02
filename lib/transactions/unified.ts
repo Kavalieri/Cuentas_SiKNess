@@ -320,8 +320,10 @@ async function createCommonFlowTransaction(
     .insert({
       household_id: householdId,
       profile_id: profileId, // Quien registró la transacción
-      // Priorizar subcategory_id si está disponible, sino usar category_id (legacy)
-      category_id: data.subcategory_id || data.category_id || null,
+      // ✅ Guardar en subcategory_id (3er nivel) si está disponible
+      subcategory_id: data.subcategory_id || null,
+      // category_id solo para legacy (2do nivel directo)
+      category_id: data.subcategory_id ? null : (data.category_id || null),
       type: data.type,
       amount: data.amount,
       currency: data.currency,
@@ -420,8 +422,10 @@ async function createDirectFlowTransaction(
   const insertData = {
     household_id: householdId,
     profile_id: profileId, // Quien registró
-    // Priorizar subcategory_id si está disponible, sino usar category_id (legacy)
-    category_id: data.subcategory_id || data.category_id || null,
+    // ✅ Guardar en subcategory_id (3er nivel) si está disponible
+    subcategory_id: data.subcategory_id || null,
+    // category_id solo para legacy (2do nivel directo)
+    category_id: data.subcategory_id ? null : (data.category_id || null),
     type: 'expense_direct',
     amount: data.amount,
     currency: data.currency,
