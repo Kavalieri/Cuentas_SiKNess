@@ -1,15 +1,15 @@
 'use client';
 
 import { editCommonMovement } from '@/app/sickness/balance/actions';
-import {
-    getCategoryHierarchy,
-    type CategoryHierarchy,
-    type CategoryWithSubcategories,
-    type Subcategory
+import type {
+    CategoryHierarchy,
+    CategoryWithSubcategories,
+    Subcategory
 } from '@/app/sickness/configuracion/categorias/hierarchy-actions';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCategoryHierarchy } from '@/contexts/CategoryHierarchyContext';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -35,8 +35,10 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✨ Estados para jerarquía de 3 niveles
-  const [hierarchy, setHierarchy] = useState<CategoryHierarchy[]>([]);
+  // ✨ Usar jerarquía pre-cargada del Context (Issue #22)
+  const { hierarchy } = useCategoryHierarchy();
+
+  // ✨ Estados para selección de 3 niveles
   const [selectedParentId, setSelectedParentId] = useState<string>('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
@@ -55,46 +57,35 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
 
   const paidBy = watch('paidBy');
 
-  // ✨ Cargar jerarquía y resolver valores iniciales al abrir
+  // ✨ Resolver valores iniciales al abrir (usando jerarquía pre-cargada)
   useEffect(() => {
-    if (open && householdId) {
-      const loadHierarchyAndResolve = async () => {
-        // Cargar jerarquía
-        const result = await getCategoryHierarchy(householdId);
-        if (result.ok && result.data) {
-          setHierarchy(result.data);
-
-          // ✅ Priorizar subcategory_id sobre category_id
-          const targetId = tx.subcategory_id || tx.category_id;
-          if (targetId) {
-            // ✅ Buscar en toda la jerarquía (parent → category → subcategory)
-            for (const parent of result.data) {
-              for (const category of parent.categories) {
-                // ✅ Primero buscar en subcategorías
-                const subcategory = category.subcategories?.find(s => s.id === targetId);
-                if (subcategory) {
-                  setSelectedParentId(parent.id);
-                  setSelectedCategoryId(category.id);
-                  setSelectedSubcategoryId(subcategory.id);
-                  return; // Salir completamente
-                }
-                // ✅ Fallback: verificar si targetId es la categoría (legacy)
-                if (category.id === targetId) {
-                  setSelectedParentId(parent.id);
-                  setSelectedCategoryId(category.id);
-                  setSelectedSubcategoryId('');
-                  return;
-                }
-              }
+    if (open && hierarchy.length > 0) {
+      // ✅ Priorizar subcategory_id sobre category_id
+      const targetId = tx.subcategory_id || tx.category_id;
+      if (targetId) {
+        // ✅ Buscar en toda la jerarquía (parent → category → subcategory)
+        for (const parent of hierarchy) {
+          for (const category of parent.categories) {
+            // ✅ Primero buscar en subcategorías
+            const subcategory = category.subcategories?.find(s => s.id === targetId);
+            if (subcategory) {
+              setSelectedParentId(parent.id);
+              setSelectedCategoryId(category.id);
+              setSelectedSubcategoryId(subcategory.id);
+              return; // Salir completamente
+            }
+            // ✅ Fallback: verificar si targetId es la categoría (legacy)
+            if (category.id === targetId) {
+              setSelectedParentId(parent.id);
+              setSelectedCategoryId(category.id);
+              setSelectedSubcategoryId('');
+              return;
             }
           }
-        } else {
-          toast.error('No se pudo cargar la jerarquía de categorías');
         }
-      };
-      loadHierarchyAndResolve();
+      }
     }
-  }, [open, householdId, tx.category_id, tx.subcategory_id]);
+  }, [open, hierarchy, tx.category_id, tx.subcategory_id]);
 
   // ✨ Filtros cascada (ingresos o gastos según el tipo de transacción)
   const filteredParents = useMemo(() => {

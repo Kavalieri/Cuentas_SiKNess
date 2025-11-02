@@ -3,6 +3,7 @@
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CategoryHierarchyProvider } from '@/contexts/CategoryHierarchyContext';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import { parseLocalDate } from '@/lib/format';
 import type { MonthlyPeriodPhase } from '@/lib/periods';
@@ -69,7 +70,7 @@ interface PeriodSummary {
   total_expenses: number;
 }
 
-export default function BalancePage() {
+function BalancePageContent() {
   // Declarar primero los datos de contexto para que estén disponibles en todo el scope
   const { activePeriod, selectedPeriod, periods, privacyMode, householdId, user, isOwner } = useSiKness();
   const [showNewMovement, setShowNewMovement] = useState(false);
@@ -603,5 +604,20 @@ export default function BalancePage() {
 
       {/* Título duplicado eliminado */}
     </div>
+  );
+}
+
+// ✨ Wrapper con CategoryHierarchyProvider (Issue #22)
+export default function BalancePage() {
+  const { householdId } = useSiKness();
+  
+  if (!householdId) {
+    return <div>Cargando...</div>;
+  }
+
+  return (
+    <CategoryHierarchyProvider householdId={householdId}>
+      <BalancePageContent />
+    </CategoryHierarchyProvider>
   );
 }
