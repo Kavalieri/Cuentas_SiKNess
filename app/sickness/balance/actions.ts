@@ -251,13 +251,6 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     return fail('No se pudo determinar el período de la nueva fecha');
   }
 
-  // Obtener Cuenta Común para asegurar que gastos directos usen paid_by correcto (Issue #18)
-  const jointResult = await getJointAccountId(householdId);
-  if (!jointResult.ok) {
-    return fail('No se pudo obtener la Cuenta Común del hogar');
-  }
-  const jointAccountId = jointResult.data!;
-
   // Actualizar gasto directo (con auditoría, nuevo period_id y dual-field preservado)
   const updateResult = await query(
     `UPDATE transactions

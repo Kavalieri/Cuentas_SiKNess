@@ -43,7 +43,7 @@ export function EditCommonMovementButton({ tx, householdId, onSuccess, members }
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       amount: tx.amount,
       description: tx.description || '',
