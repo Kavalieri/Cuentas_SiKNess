@@ -9,6 +9,8 @@ const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'ut
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Separar directorios de build para evitar que DEV sobrescriba PROD
+  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
   eslint: {
     dirs: ['app', 'components', 'lib'],
   },
