@@ -1,13 +1,14 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { AlertCircle, BarChart3, TrendingDown, Wallet } from 'lucide-react';
+import { AlertCircle, ArrowRight, BarChart3, TrendingDown, Wallet } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import type { ExpenseByCategory, HierarchicalExpense, IncomeVsExpense, PeriodOption } from './actions';
 import { getExpensesByCategory, getExpensesByCategoryLevel2, getExpensesByHierarchy, getIncomeVsExpenses } from './actions';
-import { AdvancedQueries } from './AdvancedQueries';
 import { CategoryTreemap, ParetoChart } from './components';
 import { CategorySunburst } from './components/CategorySunburst';
 import { IngresosVsGastosNivo } from './components/IngresosVsGastosNivo';
@@ -402,24 +403,26 @@ export default function EstadisticasPage() {
         </div>
       </section>
 
-      {/* BLOQUE 3: Análisis y Consultas Avanzadas */}
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
+      {/* CTA a Análisis Avanzado */}
+      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 border-purple-200 dark:border-purple-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-purple-900 dark:text-purple-100">
             <BarChart3 className="h-6 w-6" />
-            Análisis y Consultas Avanzadas
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Ejecuta consultas personalizadas y exporta resultados en múltiples formatos
+            ¿Necesitas consultas más avanzadas?
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-purple-800 dark:text-purple-200">
+            Accede a la sección de <strong>Análisis Avanzado</strong> para ejecutar consultas SQL personalizadas y exportar datos en múltiples formatos (CSV, JSON, Excel).
           </p>
-        </div>
-
-        <AdvancedQueries
-          householdId={householdId}
-          periods={periods}
-          selectedPeriod={selectedPeriod}
-        />
-      </section>
+          <Link href="/sickness/analytics">
+            <Button className="w-full sm:w-auto" size="lg">
+              Ir a Análisis Avanzado
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
 
       {/* Info Card */}
       <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
