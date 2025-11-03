@@ -111,12 +111,7 @@ export function IngresosVsGastosNivo({
               legendOffset: -60,
               format: (value) => `€${value}`,
             }}
-            labelSkipWidth={12}
-            labelSkipHeight={12}
-            labelTextColor={{
-              from: 'color',
-              modifiers: [['darker', 2.5]],
-            }}
+            enableLabel={false}
             legends={[
               {
                 dataFrom: 'keys',
@@ -154,31 +149,35 @@ export function IngresosVsGastosNivo({
                 ],
               },
             ]}
-            tooltip={({ id, value, indexValue, data: barData }) => (
-              <div className="bg-background border border-border rounded-lg shadow-lg p-3">
-                <div className="font-semibold text-foreground mb-2">{indexValue}</div>
-                <div className="text-sm space-y-1">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-muted-foreground">
-                      {id === 'income' ? 'Ingresos:' : 'Gastos:'}
-                    </span>
-                    <span className="font-medium text-foreground">{formatCurrency(value)}</span>
-                  </div>
-                  <div className="flex justify-between gap-4 pt-1 border-t border-border">
-                    <span className="text-muted-foreground">Balance:</span>
-                    <span
-                      className={`font-medium ${
-                        (barData as { balance: number }).balance >= 0
-                          ? 'text-emerald-500'
-                          : 'text-red-500'
-                      }`}
-                    >
-                      {formatCurrency((barData as { balance: number }).balance)}
-                    </span>
+            tooltip={({ id, value, indexValue, data: barData }) => {
+              // Calcular balance del mes actual
+              const currentData = barData as IncomeVsExpense;
+              const balance = (currentData.income || 0) - (currentData.expense || 0);
+              
+              return (
+                <div className="bg-background border border-border rounded-lg shadow-lg p-3">
+                  <div className="font-semibold text-foreground mb-2">{indexValue}</div>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">
+                        {id === 'income' ? 'Ingresos:' : 'Gastos:'}
+                      </span>
+                      <span className="font-medium text-foreground">{formatCurrency(value)}</span>
+                    </div>
+                    <div className="flex justify-between gap-4 pt-1 border-t border-border">
+                      <span className="text-muted-foreground">Balance:</span>
+                      <span
+                        className={`font-medium ${
+                          balance >= 0 ? 'text-emerald-500' : 'text-red-500'
+                        }`}
+                      >
+                        {formatCurrency(balance)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            }}
             animate={true}
             motionConfig="gentle"
             role="application"

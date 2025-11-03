@@ -116,12 +116,13 @@ export async function GET(req: NextRequest) {
           category_icon,
           CASE
             WHEN COUNT(subcategory_id) > 0 THEN
-              -- Categoría con subcategorías: crear array de hijos
+              -- Categoría con subcategorías: crear array de hijos CON parentName
               json_agg(
                 json_build_object(
                   'name', subcategory_name,
                   'value', total_amount,
-                  'icon', subcategory_icon
+                  'icon', subcategory_icon,
+                  'parentName', parent_name
                 ) ORDER BY total_amount DESC
               )
             ELSE
@@ -146,7 +147,8 @@ export async function GET(req: NextRequest) {
             'name', category_name,
             'icon', category_icon,
             'children', subcategories,
-            'value', category_direct_value
+            'value', category_direct_value,
+            'parentName', parent_name
           ) ORDER BY category_name
         ) as categories
       FROM category_level

@@ -101,28 +101,44 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por Categor�
           borderWidth={2}
           borderColor={{ theme: 'background' }}
           colors={(node: any) => {
-            // Obtener el grupo desde los ancestros
-            const ancestors = node.path || [];
-            const depth = ancestors.length;
-
             // El root no tiene color
-            if (depth === 0) return '#333333';
+            if (node.depth === 0) return '#1a1a1a';
 
-            // Nivel 1: Grupos (usar color base)
-            if (depth === 1) {
-              const groupName = node.data.groupName || node.data.label;
+            // Obtener el groupName del nodo o de sus ancestros
+            let groupName = node.data.groupName;
+            
+            // Si no tiene groupName, buscar en el path
+            if (!groupName && node.path) {
+              // El nivel 1 (primer hijo de root) es el grupo
+              const groupNode = node.path[1];
+              if (groupNode && groupNode.data) {
+                groupName = groupNode.data.groupName || groupNode.data.label;
+              }
+            }
+
+            // Si aún no tenemos groupName, usar el label del nodo en nivel 1
+            if (!groupName && node.depth === 1) {
+              groupName = node.data.label;
+            }
+
+            // Fallback a color genérico si no hay groupName
+            if (!groupName) {
+              console.warn('No groupName found for node:', node);
+              return '#666666';
+            }
+
+            // Nivel 1: Grupos (usar color base más saturado)
+            if (node.depth === 1) {
               return getGroupColor(groupName, 'base');
             }
 
-            // Nivel 2: Categorías (usar color light)
-            if (depth === 2) {
-              const groupName = node.data.groupName;
+            // Nivel 2: Categorías (usar color medium)
+            if (node.depth === 2) {
               return getGroupColor(groupName, 'light');
             }
 
             // Nivel 3+: Subcategorías (usar color light)
-            const groupName = node.data.groupName;
-            return getGroupColor(groupName, 'light');
+            return getGroupColor(groupName, 'dark');
           }}
           childColor={{
             from: 'color',
