@@ -8,7 +8,7 @@ import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions
 import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
 import { AdvancedQueries } from './AdvancedQueries';
 import { CategoryTreemap, GastosPorCategoria, IngresosVsGastos, ParetoChart } from './components';
-import TrendChartTV from './components/TrendChartTV';
+import TrendChartPro from './components/TrendChartPro';
 
 interface GlobalBalance {
   balance: {
@@ -225,7 +225,7 @@ export default function EstadisticasPage() {
 
         {/* Tendencia Global con TradingView (histórico cerrado + mes activo) */}
         {householdId && (
-          <TrendChartTV
+          <TrendChartPro
             householdId={householdId}
             type="expense"
             title="Tendencia Histórica de Gastos"
@@ -319,12 +319,12 @@ export default function EstadisticasPage() {
 
         {/* Tendencia del Período con TradingView (granularidad diaria) */}
         {householdId && selectedPeriodFull && (
-          <TrendChartTV
+          <TrendChartPro
             householdId={householdId}
             type="expense"
             periodId={selectedPeriodFull.id}
             title={`Gastos Diarios - ${periodName}`}
-            showTimeframeSelector={false}
+            showTimeframeSelector={true}
           />
         )}
       </section>

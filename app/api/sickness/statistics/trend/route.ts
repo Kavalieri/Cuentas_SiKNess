@@ -5,18 +5,18 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 interface TrendDataPoint {
-  date: string;
-  amount: number;
+  time: string; // Timestamp en formato ISO o YYYY-MM-DD
+  value: number;
 }
 
-type Timeframe = 'daily' | 'weekly' | 'monthly';
+type Timeframe = 'hourly' | 'daily' | 'weekly' | 'monthly';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const householdId = searchParams.get('householdId');
     const type = searchParams.get('type') || 'expense';
-    const timeframe = (searchParams.get('timeframe') || 'monthly') as Timeframe;
+    const timeframe = (searchParams.get('timeframe') || 'daily') as Timeframe;
     const periodId = searchParams.get('periodId'); // Para periodo específico (opcional)
 
     if (!householdId) {
@@ -25,92 +25,148 @@ export async function GET(req: NextRequest) {
 
     let result;
 
-    // Si hay periodId, mostrar solo ese periodo con granularidad diaria
+    // Si hay periodId, filtrar solo transacciones de ese periodo
     if (periodId) {
-      result = await query(
-        `
-        WITH period_dates AS (
-          SELECT
-            DATE(mp.year || '-' || LPAD(mp.month::text, 2, '0') || '-01') as start_date,
-            (DATE(mp.year || '-' || LPAD(mp.month::text, 2, '0') || '-01') + INTERVAL '1 month' - INTERVAL '1 day')::date as end_date
-          FROM monthly_periods mp
-          WHERE mp.id = $1
-        )
-        SELECT
-          TO_CHAR(DATE(t.occurred_at), 'YYYY-MM-DD') as date,
-          SUM(t.amount) as amount
-        FROM transactions t, period_dates pd
-        WHERE t.household_id = $2
-          AND t.type = $3
-          AND DATE(t.occurred_at) >= pd.start_date
-          AND DATE(t.occurred_at) <= pd.end_date
-        GROUP BY DATE(t.occurred_at)
-        ORDER BY date ASC
-      `,
-        [periodId, householdId, type],
+      const periodInfoResult = await query(
+        `SELECT year, month FROM monthly_periods WHERE id = $1`,
+        [periodId],
       );
-    } else {
-      // Vista global: histórico cerrado + mes activo
-      if (timeframe === 'monthly') {
-        // Periodos cerrados (snapshots) + mes activo agregado
+
+      if (periodInfoResult.rows.length === 0) {
+        return NextResponse.json({ error: 'Periodo no encontrado' }, { status: 404 });
+      }
+
+      const periodInfo = periodInfoResult.rows[0] as { year: number; month: number };
+      const startDate = `${periodInfo.year}-${String(periodInfo.month).padStart(2, '0')}-01`;
+      const endDate = new Date(periodInfo.year, periodInfo.month, 0).toISOString().split('T')[0]; // Último día del mes
+
+      // Consultar TODAS las transacciones del periodo según timeframe
+      if (timeframe === 'hourly') {
         result = await query(
           `
-          -- Periodos cerrados (snapshots)
           SELECT
-            TO_CHAR(DATE(mp.year || '-' || LPAD(mp.month::text, 2, '0') || '-01'), 'YYYY-MM-DD') as date,
-            CASE
-              WHEN $2 = 'expense' THEN COALESCE(mp.total_expenses, 0)
-              WHEN $2 = 'income' THEN COALESCE(mp.total_income, 0)
-              ELSE 0
-            END as amount
-          FROM monthly_periods mp
-          WHERE mp.household_id = $1
-            AND mp.phase = 'closed'
-
-          UNION ALL
-
-          -- Mes activo (transacciones agregadas)
-          SELECT
-            TO_CHAR(DATE_TRUNC('month', CURRENT_DATE), 'YYYY-MM-DD') as date,
-            COALESCE(SUM(t.amount), 0) as amount
+            TO_CHAR(DATE_TRUNC('hour', t.occurred_at), 'YYYY-MM-DD HH24:00:00') as time,
+            SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
             AND t.type = $2
-            AND t.occurred_at >= DATE_TRUNC('month', CURRENT_DATE)
-
-          ORDER BY date ASC
+            AND DATE(t.occurred_at) >= $3::date
+            AND DATE(t.occurred_at) <= $4::date
+          GROUP BY DATE_TRUNC('hour', t.occurred_at)
+          ORDER BY time ASC
+        `,
+          [householdId, type, startDate, endDate],
+        );
+      } else if (timeframe === 'daily') {
+        result = await query(
+          `
+          SELECT
+            TO_CHAR(DATE(t.occurred_at), 'YYYY-MM-DD') as time,
+            SUM(t.amount) as value
+          FROM transactions t
+          WHERE t.household_id = $1
+            AND t.type = $2
+            AND DATE(t.occurred_at) >= $3::date
+            AND DATE(t.occurred_at) <= $4::date
+          GROUP BY DATE(t.occurred_at)
+          ORDER BY time ASC
+        `,
+          [householdId, type, startDate, endDate],
+        );
+      } else if (timeframe === 'weekly') {
+        result = await query(
+          `
+          SELECT
+            TO_CHAR(DATE_TRUNC('week', t.occurred_at), 'YYYY-MM-DD') as time,
+            SUM(t.amount) as value
+          FROM transactions t
+          WHERE t.household_id = $1
+            AND t.type = $2
+            AND DATE(t.occurred_at) >= $3::date
+            AND DATE(t.occurred_at) <= $4::date
+          GROUP BY DATE_TRUNC('week', t.occurred_at)
+          ORDER BY time ASC
+        `,
+          [householdId, type, startDate, endDate],
+        );
+      } else {
+        // monthly
+        result = await query(
+          `
+          SELECT
+            TO_CHAR(DATE_TRUNC('month', t.occurred_at), 'YYYY-MM-DD') as time,
+            SUM(t.amount) as value
+          FROM transactions t
+          WHERE t.household_id = $1
+            AND t.type = $2
+            AND DATE(t.occurred_at) >= $3::date
+            AND DATE(t.occurred_at) <= $4::date
+          GROUP BY DATE_TRUNC('month', t.occurred_at)
+          ORDER BY time ASC
+        `,
+          [householdId, type, startDate, endDate],
+        );
+      }
+    } else {
+      // Vista global: TODAS las transacciones históricas
+      if (timeframe === 'hourly') {
+        // Últimas 48 horas
+        result = await query(
+          `
+          SELECT
+            TO_CHAR(DATE_TRUNC('hour', t.occurred_at), 'YYYY-MM-DD HH24:00:00') as time,
+            SUM(t.amount) as value
+          FROM transactions t
+          WHERE t.household_id = $1
+            AND t.type = $2
+            AND t.occurred_at >= NOW() - INTERVAL '48 hours'
+          GROUP BY DATE_TRUNC('hour', t.occurred_at)
+          ORDER BY time ASC
+        `,
+          [householdId, type],
+        );
+      } else if (timeframe === 'daily') {
+        // TODAS las transacciones agrupadas por día
+        result = await query(
+          `
+          SELECT
+            TO_CHAR(DATE(t.occurred_at), 'YYYY-MM-DD') as time,
+            SUM(t.amount) as value
+          FROM transactions t
+          WHERE t.household_id = $1
+            AND t.type = $2
+          GROUP BY DATE(t.occurred_at)
+          ORDER BY time ASC
         `,
           [householdId, type],
         );
       } else if (timeframe === 'weekly') {
-        // Últimas 12 semanas
+        // TODAS las transacciones agrupadas por semana
         result = await query(
           `
           SELECT
-            TO_CHAR(DATE_TRUNC('week', t.occurred_at), 'YYYY-MM-DD') as date,
-            SUM(t.amount) as amount
+            TO_CHAR(DATE_TRUNC('week', t.occurred_at), 'YYYY-MM-DD') as time,
+            SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
             AND t.type = $2
-            AND t.occurred_at >= CURRENT_DATE - INTERVAL '12 weeks'
           GROUP BY DATE_TRUNC('week', t.occurred_at)
-          ORDER BY date ASC
+          ORDER BY time ASC
         `,
           [householdId, type],
         );
       } else {
-        // daily: Últimos 30 días
+        // monthly: TODAS las transacciones agrupadas por mes
         result = await query(
           `
           SELECT
-            TO_CHAR(DATE(t.occurred_at), 'YYYY-MM-DD') as date,
-            SUM(t.amount) as amount
+            TO_CHAR(DATE_TRUNC('month', t.occurred_at), 'YYYY-MM-DD') as time,
+            SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
             AND t.type = $2
-            AND t.occurred_at >= CURRENT_DATE - INTERVAL '30 days'
-          GROUP BY DATE(t.occurred_at)
-          ORDER BY date ASC
+          GROUP BY DATE_TRUNC('month', t.occurred_at)
+          ORDER BY time ASC
         `,
           [householdId, type],
         );
@@ -119,13 +175,13 @@ export async function GET(req: NextRequest) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const trendData: TrendDataPoint[] = result.rows.map((row: any) => ({
-      date: row.date,
-      amount: parseFloat(row.amount) || 0,
+      time: row.time,
+      value: parseFloat(row.value) || 0,
     }));
 
     // Calcular promedio
     const average = trendData.length > 0
-      ? trendData.reduce((sum, d) => sum + d.amount, 0) / trendData.length
+      ? trendData.reduce((sum, d) => sum + d.value, 0) / trendData.length
       : 0;
 
     // Calcular tendencia (comparar primera mitad vs segunda mitad)
@@ -135,8 +191,8 @@ export async function GET(req: NextRequest) {
       const firstHalf = trendData.slice(0, midpoint);
       const secondHalf = trendData.slice(midpoint);
 
-      const avgFirst = firstHalf.reduce((sum, d) => sum + d.amount, 0) / firstHalf.length;
-      const avgSecond = secondHalf.reduce((sum, d) => sum + d.amount, 0) / secondHalf.length;
+      const avgFirst = firstHalf.reduce((sum, d) => sum + d.value, 0) / firstHalf.length;
+      const avgSecond = secondHalf.reduce((sum, d) => sum + d.value, 0) / secondHalf.length;
 
       const percentChange = ((avgSecond - avgFirst) / avgFirst) * 100;
 
