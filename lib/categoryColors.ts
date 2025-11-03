@@ -151,5 +151,5 @@ function interpolateColor(color1: string, color2: string, ratio: number): string
  * Obtiene un color legacy por índice (para compatibilidad con sistema antiguo)
  */
 export function getLegacyColor(index: number): string {
-  return LEGACY_COLORS[index % LEGACY_COLORS.length];
+  return LEGACY_COLORS[index % LEGACY_COLORS.length]!;
 }
