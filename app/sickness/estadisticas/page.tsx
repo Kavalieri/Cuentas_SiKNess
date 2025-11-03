@@ -259,25 +259,27 @@ export default function EstadisticasPage() {
         <ParetoChart data={globalExpensesForPareto} isLoading={loading} title="Análisis de Pareto (80/20) - Global" />
 
         {/* TreeMap Global */}
-        <div className="h-[450px]">
+        <div className="h-[500px]">
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
             🗺️ Mapa de Categorías (Global)
             <span className="text-sm font-normal text-muted-foreground">• Haz clic para explorar subcategorías</span>
           </h3>
-          {householdId ? (
-            <CategoryTreemap
-              householdId={householdId}
-              type="expense"
-            />
-          ) : (
-            <Card>
-              <CardContent className="py-8">
-                <p className="text-center text-muted-foreground">
-                  Selecciona un hogar para ver el mapa de categorías
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <div className="h-[450px]">
+            {householdId ? (
+              <CategoryTreemap
+                householdId={householdId}
+                type="expense"
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-8">
+                  <p className="text-center text-muted-foreground">
+                    Selecciona un hogar para ver el mapa de categorías
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </section>
 
@@ -379,27 +381,29 @@ export default function EstadisticasPage() {
                 <ParetoChart data={periodExpensesForPareto} isLoading={loading} title={`Análisis de Pareto - ${periodName}`} />
 
         {/* TreeMap del Período */}
-        <div className="h-[450px]">
+        <div className="h-[500px]">
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
             🗺️ Mapa de Categorías ({periodName})
             <span className="text-sm font-normal text-muted-foreground">• Haz clic para explorar subcategorías</span>
           </h3>
-          {householdId && selectedPeriodFull ? (
-            <CategoryTreemap
-              householdId={householdId}
-              type="expense"
-              startDate={`${selectedPeriodFull.year}-${String(selectedPeriodFull.month).padStart(2, '0')}-01`}
-              endDate={`${selectedPeriodFull.year}-${String(selectedPeriodFull.month).padStart(2, '0')}-${new Date(selectedPeriodFull.year, selectedPeriodFull.month, 0).getDate()}`}
-            />
-          ) : (
-            <Card>
-              <CardContent className="py-8">
-                <p className="text-center text-muted-foreground">
-                  Selecciona un período para ver el mapa de categorías
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <div className="h-[450px]">
+            {householdId && selectedPeriodFull ? (
+              <CategoryTreemap
+                householdId={householdId}
+                type="expense"
+                startDate={`${selectedPeriodFull.year}-${String(selectedPeriodFull.month).padStart(2, '0')}-01`}
+                endDate={`${selectedPeriodFull.year}-${String(selectedPeriodFull.month).padStart(2, '0')}-${new Date(selectedPeriodFull.year, selectedPeriodFull.month, 0).getDate()}`}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-8">
+                  <p className="text-center text-muted-foreground">
+                    Selecciona un período para ver el mapa de categorías
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </section>
 

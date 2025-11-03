@@ -116,7 +116,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
   }
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle>Distribución por Categorías</CardTitle>
         <CardDescription>
@@ -125,7 +125,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
+        <div className="h-[350px]">
           <ResponsiveTreeMap
             data={data}
             identity="name"
