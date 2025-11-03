@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getCategoryColor, getGroupColor } from '@/lib/categoryColors';
 import { formatCurrency } from '@/lib/format';
 import { ResponsiveTreeMap } from '@nivo/treemap';
 import { useCallback, useEffect, useState } from 'react';
@@ -146,22 +147,45 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               modifiers: [['darker', 0.3]],
             }}
             colors={(node) => {
-              // Usar el color del nodo si está definido
+              // Usar el color del nodo si está definido explícitamente
               if (node.data.color) return node.data.color;
 
               // Determinar el nivel basado en el path del nodo
               const pathParts = node.pathComponents || [];
               const depth = pathParts.length;
 
-              // Color por tipo y profundidad
-              if (type === 'expense') {
-                return depth === 0 ? '#ef4444' : depth === 1 ? '#f87171' : '#fca5a5';
-              } else if (type === 'income') {
-                return depth === 0 ? '#10b981' : depth === 1 ? '#34d399' : '#6ee7b7';
+              // Nivel 0: Raíz (no se muestra)
+              // Nivel 1: Grupos (category_parents) - Color base del grupo
+              // Nivel 2: Categorías - Variación del color del grupo
+              // Nivel 3: Subcategorías - Tonos claros del grupo
+
+              if (depth === 0) {
+                // Raíz - no debería verse
+                return type === 'expense' ? '#ef4444' : '#10b981';
               }
 
-              // Default neutral
-              return depth === 0 ? '#6366f1' : depth === 1 ? '#818cf8' : '#a5b4fc';
+              if (depth === 1) {
+                // Grupos: usar color base específico de cada grupo
+                const groupName = node.id as string;
+                return getGroupColor(groupName, 'base');
+              }
+
+              if (depth === 2) {
+                // Categorías: obtener el grupo padre y usar color intermedio
+                const groupName = pathParts[0] as string;
+
+                // Calcular índice de la categoría basándose en la posición en el árbol
+                // Usamos un hash simple del nombre para distribuir colores consistentemente
+                const hash = groupName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const categoryIndex = (node.id as string).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const totalCategories = 5; // Estimado para distribución
+
+                return getCategoryColor(groupName, categoryIndex % totalCategories, totalCategories);
+              }
+
+              // Nivel 3+: Subcategorías - tonos claros
+              const groupName = pathParts[0] as string;
+              return getGroupColor(groupName, 'light');
             }}
             nodeOpacity={0.9}
             borderWidth={2}

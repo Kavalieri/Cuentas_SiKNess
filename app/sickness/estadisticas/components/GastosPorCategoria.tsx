@@ -1,13 +1,16 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getGroupColor } from '@/lib/categoryColors';
+import { formatCurrency } from '@/lib/format';
+import { ResponsivePie } from '@nivo/pie';
 import { PieChart as PieIcon } from 'lucide-react';
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface ExpenseByCategory {
   category: string;
   amount: number;
   icon: string;
+  groupName?: string; // Nombre del grupo para colores consistentes
 }
 
 interface GastosPorCategoriaProps {
@@ -15,38 +18,6 @@ interface GastosPorCategoriaProps {
   data: ExpenseByCategory[];
   isLoading?: boolean;
 }
-
-const COLORS = [
-  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
-  '#06b6d4', '#14b8a6', '#6366f1', '#f97316', '#84cc16', '#0ea5e9',
-];
-
-// Función para renderizar leyenda personalizada con porcentajes
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const renderCustomLegend = (props: any) => {
-  const { payload } = props;
-
-  if (!payload) return null;
-
-  return (
-    <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
-      {payload.map((entry: { value: string; color: string; payload: { percent: string } }, index: number) => (
-        <li key={`legend-${index}`} className="flex items-center gap-1.5">
-          <span
-            className="inline-block w-3 h-3 rounded-sm"
-            style={{ backgroundColor: entry.color }}
-          />
-          <span className="text-gray-700 dark:text-gray-300">
-            {entry.value}
-          </span>
-          <span className="text-gray-500 dark:text-gray-400 font-medium">
-            ({entry.payload.percent}%)
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-};
 
 export function GastosPorCategoria({
   title = 'Gastos por Categoría',
@@ -63,7 +34,7 @@ export function GastosPorCategoria({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
+          <div className="h-[400px] flex items-center justify-center text-muted-foreground">
             Cargando...
           </div>
         </CardContent>
@@ -81,7 +52,7 @@ export function GastosPorCategoria({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
+          <div className="h-[400px] flex items-center justify-center text-muted-foreground">
             Sin datos de gastos
           </div>
         </CardContent>
@@ -89,14 +60,15 @@ export function GastosPorCategoria({
     );
   }
 
-  // Calcular total para los porcentajes
-  const total = data.reduce((sum, item) => sum + item.amount, 0);
-
-  // Preparar datos con porcentajes para la leyenda
-  const dataWithPercentages = data.map((item, index) => ({
-    ...item,
-    percent: ((item.amount / total) * 100).toFixed(1),
-    color: COLORS[index % COLORS.length],
+  // Preparar datos para Nivo Pie
+  const pieData = data.map((item, index) => ({
+    id: item.category,
+    label: item.category,
+    value: item.amount,
+    icon: item.icon,
+    groupName: item.groupName || 'otros',
+    // Usar color del grupo si está disponible, sino fallback por índice
+    color: item.groupName ? getGroupColor(item.groupName, 'base') : `hsl(${(index * 360) / data.length}, 70%, 50%)`,
   }));
 
   return (
@@ -108,40 +80,78 @@ export function GastosPorCategoria({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={dataWithPercentages}
-              dataKey="amount"
-              nameKey="category"
-              cx="50%"
-              cy="50%"
-              outerRadius={100}
-            >
-              {dataWithPercentages.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(value: number, name: string, item: any) => {
-                const percent = item?.payload?.percent || '0.0';
-                return [`${value.toFixed(2)} € (${percent}%)`, name];
-              }}
-              contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                padding: '8px',
-              }}
-            />
-            <Legend
-              content={renderCustomLegend}
-              verticalAlign="bottom"
-              height={60}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        <div className="h-[400px]">
+          <ResponsivePie
+            data={pieData}
+            margin={{ top: 20, right: 20, bottom: 80, left: 20 }}
+            innerRadius={0.5}
+            padAngle={0.7}
+            cornerRadius={3}
+            activeOuterRadiusOffset={8}
+            colors={(d: { data: { color: string } }) => d.data.color}
+            borderWidth={2}
+            borderColor={{
+              from: 'color',
+              modifiers: [['darker', 0.2]],
+            }}
+            arcLinkLabelsSkipAngle={10}
+            arcLinkLabelsTextColor="hsl(var(--foreground))"
+            arcLinkLabelsThickness={2}
+            arcLinkLabelsColor={{ from: 'color' }}
+            arcLabelsSkipAngle={10}
+            arcLabelsTextColor={{
+              from: 'color',
+              modifiers: [['darker', 2.5]],
+            }}
+            arcLabel={(d: { data: { icon: string } }) => `${d.data.icon}`}
+            tooltip={({ datum }: { datum: { id: string; value: number; formattedValue: string; data: { icon: string } } }) => (
+              <div className="bg-background border border-border rounded-lg shadow-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">{datum.data.icon}</span>
+                  <span className="font-semibold text-foreground">{datum.id}</span>
+                </div>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Monto:</span>
+                    <span className="font-medium text-foreground">{formatCurrency(datum.value)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Porcentaje:</span>
+                    <span className="font-medium text-foreground">{datum.formattedValue}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            legends={[
+              {
+                anchor: 'bottom',
+                direction: 'row',
+                justify: false,
+                translateX: 0,
+                translateY: 70,
+                itemsSpacing: 8,
+                itemWidth: 100,
+                itemHeight: 18,
+                itemTextColor: 'hsl(var(--foreground))',
+                itemDirection: 'left-to-right',
+                itemOpacity: 1,
+                symbolSize: 14,
+                symbolShape: 'circle',
+                effects: [
+                  {
+                    on: 'hover',
+                    style: {
+                      itemTextColor: 'hsl(var(--foreground))',
+                      itemOpacity: 0.8,
+                    },
+                  },
+                ],
+              },
+            ]}
+            animate={true}
+            motionConfig="gentle"
+          />
+        </div>
       </CardContent>
     </Card>
   );

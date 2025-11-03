@@ -6,6 +6,7 @@ export interface ExpenseByCategory {
   category: string;
   amount: number;
   icon: string;
+  groupName?: string; // Grupo padre (category_parent) para colores consistentes
 }
 
 export interface IncomeVsExpense {
@@ -26,8 +27,9 @@ export interface PeriodOption {
 }
 
 /**
- * Obtiene gastos por categoría para un período específico
+ * Obtiene gastos por GRUPO (category_parents) para un período específico
  * Si no se proporciona período, devuelve datos globales
+ * NOTA: Agrupa por grupos (nivel 1) en lugar de categorías individuales
  * NOTA: Se incluyen TODOS los gastos (comunes + directos + legacy)
  */
 export async function getExpensesByCategory(
@@ -38,11 +40,25 @@ export async function getExpensesByCategory(
   try {
     let sql = `
       SELECT
-        c.name as category,
-        c.icon,
+        cp.name as category,
+        cp.icon,
+        cp.name as group_name,
         COALESCE(SUM(t.amount), 0) as amount
       FROM transactions t
-      LEFT JOIN categories c ON t.category_id = c.id
+      -- Intentar obtener grupo desde subcategoría
+      LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+      LEFT JOIN categories c_from_sub ON sc.category_id = c_from_sub.id
+      LEFT JOIN category_parents cp_from_sub ON c_from_sub.parent_id = cp_from_sub.id
+      -- Intentar obtener grupo desde categoría directa
+      LEFT JOIN categories c_direct ON t.category_id = c_direct.id
+      LEFT JOIN category_parents cp_direct ON c_direct.parent_id = cp_direct.id
+      -- Obtener el grupo disponible (prioridad: subcategoría > categoría directa)
+      LEFT JOIN LATERAL (
+        SELECT 
+          COALESCE(cp_from_sub.id, cp_direct.id) as id,
+          COALESCE(cp_from_sub.name, cp_direct.name) as name,
+          COALESCE(cp_from_sub.icon, cp_direct.icon) as icon
+      ) cp ON true
       WHERE t.household_id = $1
         AND t.type IN ('expense', 'expense_direct')
     `;
@@ -56,7 +72,8 @@ export async function getExpensesByCategory(
     }
 
     sql += `
-      GROUP BY c.id, c.name, c.icon
+      GROUP BY cp.id, cp.name, cp.icon
+      HAVING COALESCE(SUM(t.amount), 0) > 0
       ORDER BY amount DESC
     `;
 
@@ -65,7 +82,8 @@ export async function getExpensesByCategory(
     return result.rows.map((row: Record<string, unknown>) => ({
       category: (row.category as string) || 'Sin categoría',
       amount: parseFloat(row.amount as string) || 0,
-      icon: (row.icon as string) || '➕',
+      icon: (row.icon as string) || '❓',
+      groupName: (row.group_name as string) || 'otros',
     }));
   } catch (error) {
     console.error('Error fetching expenses by category:', error);
