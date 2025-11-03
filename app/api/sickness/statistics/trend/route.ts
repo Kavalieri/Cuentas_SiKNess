@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
             SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
-            AND t.type = $2
+            AND t.type LIKE $2 || '%'
             AND DATE(t.occurred_at) >= $3::date
             AND DATE(t.occurred_at) <= $4::date
           GROUP BY DATE_TRUNC('hour', t.occurred_at)
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
             SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
-            AND t.type = $2
+            AND t.type LIKE $2 || '%'
             AND DATE(t.occurred_at) >= $3::date
             AND DATE(t.occurred_at) <= $4::date
           GROUP BY DATE(t.occurred_at)
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
             SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
-            AND t.type = $2
+            AND t.type LIKE $2 || '%'
             AND DATE(t.occurred_at) >= $3::date
             AND DATE(t.occurred_at) <= $4::date
           GROUP BY DATE_TRUNC('week', t.occurred_at)
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
             SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
-            AND t.type = $2
+            AND t.type LIKE $2 || '%'
             AND DATE(t.occurred_at) >= $3::date
             AND DATE(t.occurred_at) <= $4::date
           GROUP BY DATE_TRUNC('month', t.occurred_at)
@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
             SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
-            AND t.type = $2
+            AND t.type LIKE $2 || '%'
             AND t.occurred_at >= NOW() - INTERVAL '48 hours'
           GROUP BY DATE_TRUNC('hour', t.occurred_at)
           ORDER BY time ASC
@@ -134,7 +134,7 @@ export async function GET(req: NextRequest) {
             SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
-            AND t.type = $2
+            AND t.type LIKE $2 || '%'
           GROUP BY DATE(t.occurred_at)
           ORDER BY time ASC
         `,
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
             SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
-            AND t.type = $2
+            AND t.type LIKE $2 || '%'
           GROUP BY DATE_TRUNC('week', t.occurred_at)
           ORDER BY time ASC
         `,
@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
             SUM(t.amount) as value
           FROM transactions t
           WHERE t.household_id = $1
-            AND t.type = $2
+            AND t.type LIKE $2 || '%'
           GROUP BY DATE_TRUNC('month', t.occurred_at)
           ORDER BY time ASC
         `,
