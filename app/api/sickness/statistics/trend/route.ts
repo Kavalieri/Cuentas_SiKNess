@@ -9,35 +9,113 @@ interface TrendDataPoint {
   amount: number;
 }
 
+type Timeframe = 'daily' | 'weekly' | 'monthly';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const householdId = searchParams.get('householdId');
     const type = searchParams.get('type') || 'expense';
-    const months = parseInt(searchParams.get('months') || '6', 10);
+    const timeframe = (searchParams.get('timeframe') || 'monthly') as Timeframe;
+    const periodId = searchParams.get('periodId'); // Para periodo específico (opcional)
 
     if (!householdId) {
       return NextResponse.json({ error: 'householdId es requerido' }, { status: 400 });
     }
 
-    // Query para obtener los montos mensuales de períodos cerrados desde los snapshots guardados
-    const result = await query(
-      `
-      SELECT
-        TO_CHAR(DATE(mp.year || '-' || LPAD(mp.month::text, 2, '0') || '-01'), 'Mon YYYY') as date,
-        CASE 
-          WHEN $2 = 'expense' THEN COALESCE(mp.total_expenses, 0)
-          WHEN $2 = 'income' THEN COALESCE(mp.total_income, 0)
-          ELSE 0
-        END as amount
-      FROM monthly_periods mp
-      WHERE mp.household_id = $1
-        AND mp.phase = 'closed'
-      ORDER BY mp.year ASC, mp.month ASC
-      LIMIT $3
-    `,
-      [householdId, type, months],
-    );
+    let result;
+
+    // Si hay periodId, mostrar solo ese periodo con granularidad diaria
+    if (periodId) {
+      result = await query(
+        `
+        WITH period_dates AS (
+          SELECT
+            DATE(mp.year || '-' || LPAD(mp.month::text, 2, '0') || '-01') as start_date,
+            (DATE(mp.year || '-' || LPAD(mp.month::text, 2, '0') || '-01') + INTERVAL '1 month' - INTERVAL '1 day')::date as end_date
+          FROM monthly_periods mp
+          WHERE mp.id = $1
+        )
+        SELECT
+          TO_CHAR(DATE(t.occurred_at), 'YYYY-MM-DD') as date,
+          SUM(t.amount) as amount
+        FROM transactions t, period_dates pd
+        WHERE t.household_id = $2
+          AND t.type = $3
+          AND DATE(t.occurred_at) >= pd.start_date
+          AND DATE(t.occurred_at) <= pd.end_date
+        GROUP BY DATE(t.occurred_at)
+        ORDER BY date ASC
+      `,
+        [periodId, householdId, type],
+      );
+    } else {
+      // Vista global: histórico cerrado + mes activo
+      if (timeframe === 'monthly') {
+        // Periodos cerrados (snapshots) + mes activo agregado
+        result = await query(
+          `
+          -- Periodos cerrados (snapshots)
+          SELECT
+            TO_CHAR(DATE(mp.year || '-' || LPAD(mp.month::text, 2, '0') || '-01'), 'YYYY-MM-DD') as date,
+            CASE
+              WHEN $2 = 'expense' THEN COALESCE(mp.total_expenses, 0)
+              WHEN $2 = 'income' THEN COALESCE(mp.total_income, 0)
+              ELSE 0
+            END as amount
+          FROM monthly_periods mp
+          WHERE mp.household_id = $1
+            AND mp.phase = 'closed'
+
+          UNION ALL
+
+          -- Mes activo (transacciones agregadas)
+          SELECT
+            TO_CHAR(DATE_TRUNC('month', CURRENT_DATE), 'YYYY-MM-DD') as date,
+            COALESCE(SUM(t.amount), 0) as amount
+          FROM transactions t
+          WHERE t.household_id = $1
+            AND t.type = $2
+            AND t.occurred_at >= DATE_TRUNC('month', CURRENT_DATE)
+
+          ORDER BY date ASC
+        `,
+          [householdId, type],
+        );
+      } else if (timeframe === 'weekly') {
+        // Últimas 12 semanas
+        result = await query(
+          `
+          SELECT
+            TO_CHAR(DATE_TRUNC('week', t.occurred_at), 'YYYY-MM-DD') as date,
+            SUM(t.amount) as amount
+          FROM transactions t
+          WHERE t.household_id = $1
+            AND t.type = $2
+            AND t.occurred_at >= CURRENT_DATE - INTERVAL '12 weeks'
+          GROUP BY DATE_TRUNC('week', t.occurred_at)
+          ORDER BY date ASC
+        `,
+          [householdId, type],
+        );
+      } else {
+        // daily: Últimos 30 días
+        result = await query(
+          `
+          SELECT
+            TO_CHAR(DATE(t.occurred_at), 'YYYY-MM-DD') as date,
+            SUM(t.amount) as amount
+          FROM transactions t
+          WHERE t.household_id = $1
+            AND t.type = $2
+            AND t.occurred_at >= CURRENT_DATE - INTERVAL '30 days'
+          GROUP BY DATE(t.occurred_at)
+          ORDER BY date ASC
+        `,
+          [householdId, type],
+        );
+      }
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const trendData: TrendDataPoint[] = result.rows.map((row: any) => ({

@@ -7,8 +7,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions';
 import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
 import { AdvancedQueries } from './AdvancedQueries';
-import { CategoryTreemap, GastosPorCategoria, IngresosVsGastos, ParetoChart, TrendLineChart } from './components';
-import { TrendChartComparator } from './components/TrendChartComparator';
+import { CategoryTreemap, GastosPorCategoria, IngresosVsGastos, ParetoChart } from './components';
+import TrendChartTV from './components/TrendChartTV';
 
 interface GlobalBalance {
   balance: {
@@ -222,6 +222,16 @@ export default function EstadisticasPage() {
             )}
           </div>
         </div>
+
+        {/* Tendencia Global con TradingView (histórico cerrado + mes activo) */}
+        {householdId && (
+          <TrendChartTV
+            householdId={householdId}
+            type="expense"
+            title="Tendencia Histórica de Gastos"
+            showTimeframeSelector={true}
+          />
+        )}
       </section>
 
       {/* BLOQUE 2: Período Seleccionado */}
@@ -306,6 +316,17 @@ export default function EstadisticasPage() {
             )}
           </div>
         </div>
+
+        {/* Tendencia del Período con TradingView (granularidad diaria) */}
+        {householdId && selectedPeriodFull && (
+          <TrendChartTV
+            householdId={householdId}
+            type="expense"
+            periodId={selectedPeriodFull.id}
+            title={`Gastos Diarios - ${periodName}`}
+            showTimeframeSelector={false}
+          />
+        )}
       </section>
 
       {/* BLOQUE 3: Visualizaciones Avanzadas de Jerarquía */}
@@ -321,7 +342,7 @@ export default function EstadisticasPage() {
 
         {householdId ? (
           <>
-            {/* Fila 1: Treemap y Pareto */}
+            {/* TreeMap (Nivo) y Pareto (Recharts) */}
             <div className="grid gap-6 md:grid-cols-2">
               <CategoryTreemap
                 householdId={householdId}
@@ -330,24 +351,6 @@ export default function EstadisticasPage() {
               <ParetoChart
                 householdId={householdId}
                 type="expense"
-              />
-            </div>
-
-            {/* Fila 2: Gráfico de Tendencias (full width) */}
-            <div className="grid gap-6">
-              <TrendLineChart
-                householdId={householdId}
-                type="expense"
-                defaultMonths={6}
-              />
-            </div>
-
-            {/* Fila 3: Comparador A/B Testing (POC Issue #43) */}
-            <div className="grid gap-6">
-              <TrendChartComparator
-                householdId={householdId}
-                type="expense"
-                months={6}
               />
             </div>
           </>
