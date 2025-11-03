@@ -38,6 +38,19 @@ export interface PeriodOption {
   isCurrent: boolean;
 }
 
+interface HierarchyRow {
+  parent_id: string;
+  parent_name: string;
+  parent_icon: string;
+  category_id: string;
+  category_name: string;
+  category_icon: string;
+  subcategory_id: string | null;
+  subcategory_name: string | null;
+  subcategory_icon: string | null;
+  total_amount: string;
+}
+
 /**
  * Obtiene gastos por GRUPO (category_parents) para un período específico
  * Si no se proporciona período, devuelve datos globales
@@ -273,7 +286,7 @@ export async function getExpensesByHierarchy(
     // Construir estructura jerárquica
     const groupsMap = new Map<string, HierarchicalExpense>();
 
-    result.rows.forEach((row: any) => {
+    result.rows.forEach((row: HierarchyRow) => {
       const groupId = row.parent_id;
       const groupName = row.parent_name || 'Sin grupo';
       const categoryId = row.category_id;
@@ -369,8 +382,8 @@ export async function getIncomeVsExpenses(
                AND EXTRACT(MONTH FROM t.occurred_at) = $${params.length + 2}`;
       params.push(year, month);
     } else {
-      // Si no, mostrar últimos 6 meses
-      sql += ` AND t.occurred_at >= CURRENT_DATE - INTERVAL '6 months'`;
+      // Si no, mostrar últimos 12 meses con datos
+      sql += ` AND t.occurred_at >= CURRENT_DATE - INTERVAL '12 months'`;
     }
 
     sql += `

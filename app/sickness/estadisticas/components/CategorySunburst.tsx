@@ -1,9 +1,9 @@
 'use client';
 
+import type { HierarchicalExpense } from '@/app/sickness/estadisticas/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getGroupColor } from '@/lib/categoryColors';
 import { ResponsiveSunburst } from '@/node_modules/@nivo/sunburst';
-import type { HierarchicalExpense } from '../actions';
 
 interface CategorySunburstProps {
   data: HierarchicalExpense[];
@@ -44,20 +44,29 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por CategorÃ
     );
   }
 
+  interface TransformedNode {
+    id: string;
+    label: string;
+    icon: string;
+    groupName: string;
+    value?: number;
+    children?: TransformedNode[];
+  }
+
   // Transformar datos al formato que Nivo espera
   // REGLA: Solo las HOJAS tienen 'value', los contenedores NO
   // Nivo calcula automÃ¡ticamente el valor de los padres sumando sus hijos
-  const transformNode = (node: HierarchicalExpense): any => {
+  const transformNode = (node: HierarchicalExpense): TransformedNode | null => {
     // Filtrar y transformar hijos vÃ¡lidos recursivamente
     const transformedChildren = node.children
       ?.map(child => transformNode(child))
-      .filter(child => child !== null); // Eliminar nulos
+      .filter((child): child is TransformedNode => child !== null); // Eliminar nulos
 
     const hasChildren = transformedChildren && transformedChildren.length > 0;
 
     // Si tiene hijos, NO poner value (Nivo lo calcula)
     // Si NO tiene hijos (es hoja), poner el value
-    const result: any = {
+    const result: TransformedNode = {
       id: node.id,
       label: node.label,
       icon: node.icon,
@@ -82,7 +91,9 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por CategorÃ
   const sunburstData = {
     id: 'root',
     label: 'Todos los Gastos',
-    children: data.map(group => transformNode(group)).filter(g => g !== null),
+    icon: 'ðŸ“Š',
+    groupName: 'root',
+    children: data.map(group => transformNode(group)).filter((g): g is TransformedNode => g !== null),
   };
 
   // Debug: verificar estructura de datos
@@ -110,40 +121,41 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por CategorÃ
           cornerRadius={2}
           borderWidth={2}
           borderColor={{ theme: 'background' }}
-          colors={(node: any) => {
+          colors={(node: unknown) => {
+            const typedNode = node as { depth: number; data: TransformedNode; path?: { data: TransformedNode }[] };
             // El root no tiene color
-            if (node.depth === 0) return '#1a1a1a';
+            if (typedNode.depth === 0) return '#1a1a1a';
 
             // Obtener el groupName del nodo o de sus ancestros
-            let groupName = node.data.groupName;
+            let groupName = typedNode.data.groupName;
 
             // Si no tiene groupName, buscar en el path
-            if (!groupName && node.path) {
+            if (!groupName && typedNode.path) {
               // El nivel 1 (primer hijo de root) es el grupo
-              const groupNode = node.path[1];
+              const groupNode = typedNode.path[1];
               if (groupNode && groupNode.data) {
                 groupName = groupNode.data.groupName || groupNode.data.label;
               }
             }
 
             // Si aÃºn no tenemos groupName, usar el label del nodo en nivel 1
-            if (!groupName && node.depth === 1) {
-              groupName = node.data.label;
+            if (!groupName && typedNode.depth === 1) {
+              groupName = typedNode.data.label;
             }
 
             // Fallback a color genÃ©rico si no hay groupName
             if (!groupName) {
-              console.warn('No groupName found for node:', node);
+              console.warn('No groupName found for node:', typedNode);
               return '#666666';
             }
 
             // Nivel 1: Grupos (usar color base mÃ¡s saturado)
-            if (node.depth === 1) {
+            if (typedNode.depth === 1) {
               return getGroupColor(groupName, 'base');
             }
 
             // Nivel 2: CategorÃ­as (usar color medium)
-            if (node.depth === 2) {
+            if (typedNode.depth === 2) {
               return getGroupColor(groupName, 'light');
             }
 
@@ -155,7 +167,7 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por CategorÃ
             modifiers: [['brighter', 0.1]],
           }}
           enableArcLabels
-          arcLabel={(d: any) => {
+          arcLabel={(d: { percentage: number; data: TransformedNode }) => {
             // Solo mostrar label si el arco es suficientemente grande
             if (d.percentage < 5) return '';
             return `${d.data.icon || ''} ${d.data.label}`;
@@ -165,7 +177,7 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por CategorÃ
             from: 'color',
             modifiers: [['darker', 2]],
           }}
-          tooltip={(node: any) => (
+          tooltip={(node: { data: TransformedNode; value: number; percentage: number; color: string }) => (
             <div className="bg-background border border-border rounded-lg shadow-lg p-3">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">{node.data.icon}</span>

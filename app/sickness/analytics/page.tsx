@@ -1,7 +1,12 @@
+'use client';
+
+import { useSiKness } from '@/contexts/SiKnessContext';
 import { Suspense } from 'react';
 import { AdvancedQueries } from './AdvancedQueries';
 
 export default function AnalyticsPage() {
+  const { householdId, periods, selectedPeriod } = useSiKness();
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -23,7 +28,11 @@ export default function AnalyticsPage() {
           </div>
         }
       >
-        <AdvancedQueries />
+        <AdvancedQueries
+          householdId={householdId || ''}
+          periods={periods}
+          selectedPeriod={selectedPeriod || null}
+        />
       </Suspense>
     </div>
   );

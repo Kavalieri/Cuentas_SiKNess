@@ -42,13 +42,13 @@ export default function EstadisticasPage() {
   const { activePeriod, selectedPeriod, periods, householdId } = useSiKness();
 
   // Datos globales
-  const [globalExpenses, setGlobalExpenses] = useState<ExpenseByCategory[]>([]);
+  const [_globalExpenses, setGlobalExpenses] = useState<ExpenseByCategory[]>([]);
   const [globalExpensesHierarchy, setGlobalExpensesHierarchy] = useState<HierarchicalExpense[]>([]);
   const [globalIncomeVsExpenses, setGlobalIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
   const [globalExpensesForPareto, setGlobalExpensesForPareto] = useState<ExpenseByCategory[]>([]);
 
   // Datos del período seleccionado
-  const [periodExpenses, setPeriodExpenses] = useState<ExpenseByCategory[]>([]);
+  const [_periodExpenses, setPeriodExpenses] = useState<ExpenseByCategory[]>([]);
   const [periodExpensesHierarchy, setPeriodExpensesHierarchy] = useState<HierarchicalExpense[]>([]);
   const [periodIncomeVsExpenses, setPeriodIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
   const [periodExpensesForPareto, setPeriodExpensesForPareto] = useState<ExpenseByCategory[]>([]);

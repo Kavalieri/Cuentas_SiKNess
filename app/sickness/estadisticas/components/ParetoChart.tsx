@@ -1,9 +1,9 @@
 'use client';
 
+import type { ExpenseByCategory } from '@/app/sickness/estadisticas/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getGroupColor } from '@/lib/categoryColors';
 import { ResponsiveBar } from '@nivo/bar';
-import type { ExpenseByCategory } from '../actions';
 
 interface ParetoChartProps {
   data: ExpenseByCategory[];
@@ -161,7 +161,11 @@ export function ParetoChart({ data, isLoading, title = 'Análisis de Pareto (80/
             'markers',
             'legends',
             (props) => {
-              const { xScale, yScale, innerHeight } = props as any;
+              const { xScale, yScale, innerHeight } = props as {
+                xScale: { (val: string): number; bandwidth(): number; range(): number[] };
+                yScale: { (val: number): number; range(): number[] };
+                innerHeight: number
+              };
 
               if (!xScale || !yScale) return null;
 
@@ -172,13 +176,15 @@ export function ParetoChart({ data, isLoading, title = 'Análisis de Pareto (80/
               });
 
               const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`).join(' ');
+              const xRange = xScale.range();
+              const maxX = xRange[1] || 0;
 
               return (
                 <g>
                   <line
                     x1={0}
                     y1={innerHeight * 0.2}
-                    x2={xScale.range()[1]}
+                    x2={maxX}
                     y2={innerHeight * 0.2}
                     stroke="#f97316"
                     strokeWidth={2}
@@ -186,7 +192,7 @@ export function ParetoChart({ data, isLoading, title = 'Análisis de Pareto (80/
                     opacity={0.7}
                   />
                   <text
-                    x={xScale.range()[1] - 10}
+                    x={maxX - 10}
                     y={innerHeight * 0.2 - 5}
                     textAnchor="end"
                     style={{ fontSize: 12, fill: '#f97316', fontWeight: 600 }}
