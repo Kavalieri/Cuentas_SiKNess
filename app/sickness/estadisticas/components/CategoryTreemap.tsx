@@ -162,7 +162,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               // Para niveles 2+: extraer el nombre del grupo
               // Nivel 2 es el grupo mismo, niveles 3+ son hijos del grupo
               let groupName: string;
-              
+
               if (depth === 2) {
                 // Nivel 2: Este ES el grupo (pathParts[1])
                 groupName = pathParts[1] as string;
@@ -170,16 +170,16 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               } else {
                 // Nivel 3+: Categorías y subcategorías - usar parentName del dato
                 groupName = node.data.parentName || pathParts[1] as string;
-                
+
                 if (!groupName) {
                   return type === 'expense' ? '#ef4444' : '#10b981';
                 }
-                
+
                 // Nivel 3: Categorías - Color medium
                 if (depth === 3) {
                   return getGroupColor(groupName, 'light');
                 }
-                
+
                 // Nivel 4+: Subcategorías - Color light
                 return getGroupColor(groupName, 'dark');
               }

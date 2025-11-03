@@ -44,41 +44,51 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por Categor√
     );
   }
 
-  // Funci√≥n recursiva para calcular el valor total de un nodo sumando sus hijos
-  const calculateNodeValue = (node: HierarchicalExpense): number => {
-    if (!node.children || node.children.length === 0) {
-      return node.value;
-    }
-    // El valor del padre es la SUMA de los valores de sus hijos
-    return node.children.reduce((sum, child) => sum + calculateNodeValue(child), 0);
-  };
-
-  // Transformar datos al formato que Nivo espera con valores correctos
+  // Transformar datos al formato que Nivo espera
+  // REGLA: Solo las HOJAS tienen 'value', los contenedores NO
+  // Nivo calcula autom√°ticamente el valor de los padres sumando sus hijos
   const transformNode = (node: HierarchicalExpense): any => {
+    // Filtrar y transformar hijos v√°lidos recursivamente
     const transformedChildren = node.children
-      ?.filter(child => child.value > 0 || (child.children && child.children.length > 0))
-      .map(child => transformNode(child));
+      ?.map(child => transformNode(child))
+      .filter(child => child !== null); // Eliminar nulos
 
-    // Calcular el valor correcto (suma de hijos si los hay)
-    const correctValue = transformedChildren && transformedChildren.length > 0
-      ? transformedChildren.reduce((sum: number, child: any) => sum + child.value, 0)
-      : node.value;
+    const hasChildren = transformedChildren && transformedChildren.length > 0;
 
-    return {
+    // Si tiene hijos, NO poner value (Nivo lo calcula)
+    // Si NO tiene hijos (es hoja), poner el value
+    const result: any = {
       id: node.id,
       label: node.label,
-      value: correctValue,
       icon: node.icon,
       groupName: node.groupName,
-      children: transformedChildren,
     };
+
+    if (hasChildren) {
+      // Contenedor: tiene children, NO tiene value
+      result.children = transformedChildren;
+    } else {
+      // Hoja: tiene value, NO tiene children
+      if (node.value > 0) {
+        result.value = node.value;
+      } else {
+        return null; // Hoja sin valor, eliminar
+      }
+    }
+
+    return result;
   };
 
   const sunburstData = {
     id: 'root',
     label: 'Todos los Gastos',
-    children: data.map(group => transformNode(group)),
+    children: data.map(group => transformNode(group)).filter(g => g !== null),
   };
+
+  // Debug: verificar estructura de datos
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Sunburst data:', JSON.stringify(sunburstData, null, 2));
+  }
 
   return (
     <Card className="h-[600px]">
@@ -106,7 +116,7 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por Categor√
 
             // Obtener el groupName del nodo o de sus ancestros
             let groupName = node.data.groupName;
-            
+
             // Si no tiene groupName, buscar en el path
             if (!groupName && node.path) {
               // El nivel 1 (primer hijo de root) es el grupo
