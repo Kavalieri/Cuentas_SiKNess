@@ -54,35 +54,35 @@ export async function GET(req: NextRequest) {
         FROM transactions t
         ${whereClause}
       ),
-      subcategory_totals AS (
-        -- Montos por subcategoría
+      category_totals AS (
+        -- Montos agregados POR CATEGORÍA (no subcategoría)
+        -- Sumamos todas las transacciones de cada categoría, tengan o no subcategoría
         SELECT
-          COALESCE(sc.name, c.name, cp.name, 'Sin categoría') as category_name,
-          COALESCE(sc.icon, c.icon, cp.icon, '📦') as category_icon,
+          c.name as category_name,
+          c.icon as category_icon,
           SUM(t.amount) as total_amount
         FROM transactions t
+        -- Primero intentamos obtener categoría desde subcategoría
         LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
-        LEFT JOIN categories c ON c.id = sc.category_id
-        LEFT JOIN category_parents cp ON cp.id = c.parent_id
+        LEFT JOIN categories c ON c.id = COALESCE(sc.category_id, t.category_id)
         ${whereClause}
-        GROUP BY COALESCE(sc.name, c.name, cp.name, 'Sin categoría'),
-                 COALESCE(sc.icon, c.icon, cp.icon, '📦')
+        GROUP BY c.id, c.name, c.icon
         HAVING SUM(t.amount) > 0
         ORDER BY total_amount DESC
         LIMIT $${paramIndex}
       )
       SELECT
-        st.category_name,
-        st.category_icon,
-        st.total_amount,
-        ROUND((st.total_amount / at.grand_total * 100)::numeric, 2) as percentage,
+        ct.category_name,
+        ct.category_icon,
+        ct.total_amount,
+        ROUND((ct.total_amount / at.grand_total * 100)::numeric, 2) as percentage,
         ROUND(
-          (SUM(st.total_amount) OVER (ORDER BY st.total_amount DESC) / at.grand_total * 100)::numeric,
+          (SUM(ct.total_amount) OVER (ORDER BY ct.total_amount DESC) / at.grand_total * 100)::numeric,
           2
         ) as cumulative_percentage
-      FROM subcategory_totals st
+      FROM category_totals ct
       CROSS JOIN all_totals at
-      ORDER BY st.total_amount DESC
+      ORDER BY ct.total_amount DESC
     `,
       [...params, limit],
     );

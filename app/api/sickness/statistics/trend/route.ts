@@ -20,25 +20,46 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'householdId es requerido' }, { status: 400 });
     }
 
-    // Query para obtener los montos mensuales con formato consistente
+    // Query para obtener los montos mensuales de períodos cerrados
+    // Si no hay suficientes períodos cerrados, complementa con el mes actual
     const result = await query(
       `
-      WITH monthly_amounts AS (
+      WITH closed_periods AS (
+        -- Obtener períodos cerrados del hogar
         SELECT
-          TO_CHAR(t.occurred_at, 'YYYY-MM') as month_key,
-          TO_CHAR(t.occurred_at, 'TMMonth YYYY') as month_display,
-          SUM(t.amount) as total_amount
-        FROM transactions t
-        WHERE t.household_id = $1
+          mp.id,
+          TO_CHAR(mp.start_date, 'YYYY-MM') as month_key,
+          TO_CHAR(mp.start_date, 'Mon YYYY') as month_display,
+          mp.start_date,
+          mp.end_date
+        FROM monthly_periods mp
+        WHERE mp.household_id = $1
+          AND mp.phase = 'closed'
+        ORDER BY mp.start_date DESC
+        LIMIT $3
+      ),
+      period_amounts AS (
+        -- Sumar transacciones por período
+        SELECT
+          cp.month_key,
+          cp.month_display,
+          cp.start_date,
+          COALESCE(SUM(t.amount), 0) as total_amount
+        FROM closed_periods cp
+        LEFT JOIN transactions t ON
+          t.household_id = $1
           AND t.type = $2
-          AND t.occurred_at >= CURRENT_DATE - INTERVAL '1 month' * $3
-        GROUP BY month_key, month_display
-        ORDER BY month_key ASC
+          AND t.occurred_at >= cp.start_date
+          AND t.occurred_at <= cp.end_date
+        GROUP BY cp.month_key, cp.month_display, cp.start_date
+        ORDER BY cp.start_date ASC
       )
       SELECT
         month_display as date,
         total_amount as amount
-      FROM monthly_amounts
+      FROM period_amounts
+      WHERE total_amount > 0 OR 1=1  -- Incluir meses con 0 también
+      ORDER BY month_key ASC
     `,
       [householdId, type, months],
     );
