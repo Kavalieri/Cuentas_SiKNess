@@ -125,9 +125,13 @@ export function ParetoChart({ householdId, startDate, endDate, type = 'expense',
       <CardHeader>
         <CardTitle>Análisis de Pareto (80/20)</CardTitle>
         <CardDescription>
-          Las primeras {threshold80 !== null ? threshold80 + 1 : '?'} categorías representan el 80% del total
-          {' • '}
-          Principio de Pareto aplicado
+          El Principio de Pareto (regla 80/20) muestra que aproximadamente el 80% de tus {type === 'expense' ? 'gastos' : 'ingresos'}{' '}
+          provienen del 20% de las categorías. Este gráfico te ayuda a identificar dónde concentrar tus esfuerzos de optimización.
+          {threshold80 !== null && (
+            <span className="block mt-1 font-medium">
+              En tu caso: las primeras {threshold80 + 1} categorías representan el 80% del total
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -247,13 +251,21 @@ export function ParetoChart({ householdId, startDate, endDate, type = 'expense',
           </ResponsiveContainer>
         </div>
         {threshold80 !== null && (
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              💡 <strong>Principio de Pareto:</strong> Las primeras{' '}
-              <span className="font-semibold text-foreground">{threshold80 + 1}</span> categorías (
-              {((threshold80 + 1) / data.length * 100).toFixed(0)}% del total) representan el 80% de tus{' '}
-              {type === 'expense' ? 'gastos' : 'ingresos'}. Enfócate en estas para optimizar tu presupuesto.
-            </p>
+          <div className="mt-4 space-y-2">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                💡 <strong>Interpretación:</strong> Las primeras{' '}
+                <span className="font-semibold text-foreground">{threshold80 + 1}</span> categorías (
+                {((threshold80 + 1) / data.length * 100).toFixed(0)}% del total) representan el 80% de tus{' '}
+                {type === 'expense' ? 'gastos' : 'ingresos'}.
+              </p>
+            </div>
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-900 dark:text-blue-100">
+                📊 <strong>Consejo práctico:</strong> Enfócate en optimizar estas {threshold80 + 1} categorías principales
+                para tener el mayor impacto en tu presupuesto. Pequeños cambios aquí generan grandes resultados.
+              </p>
+            </div>
           </div>
         )}
       </CardContent>

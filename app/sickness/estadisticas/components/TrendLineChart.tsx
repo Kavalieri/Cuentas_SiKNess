@@ -1,8 +1,10 @@
 'use client';
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/format';
+import { Info } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -139,7 +141,9 @@ export function TrendLineChart({ householdId, type = 'expense', defaultMonths = 
           <div>
             <CardTitle>Tendencia Temporal</CardTitle>
             <CardDescription>
-              Evolución mensual {getTrendIcon()} {getTrendText()}
+              Visualiza la evolución de tus {type === 'expense' ? 'gastos' : 'ingresos'} mes a mes.
+              La línea naranja punteada muestra el promedio del período, ayudándote a identificar meses
+              atípicos y patrones estacionales en tu presupuesto.
             </CardDescription>
           </div>
           <Select value={months.toString()} onValueChange={(value) => setMonths(parseInt(value, 10))}>
@@ -256,6 +260,31 @@ export function TrendLineChart({ householdId, type = 'expense', defaultMonths = 
             </LineChart>
           </ResponsiveContainer>
         </div>
+        
+        {/* Guía de interpretación */}
+        <Alert className="mt-4">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Cómo interpretar este gráfico</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc list-inside space-y-1 mt-2 text-sm">
+              <li>
+                <strong>Línea {type === 'expense' ? 'roja' : 'verde'}:</strong> Muestra el total mensual de {type === 'expense' ? 'gastos' : 'ingresos'}
+              </li>
+              <li>
+                <strong>Línea naranja punteada:</strong> Representa el promedio del período seleccionado
+              </li>
+              <li>
+                <strong>Tendencia {getTrendIcon()}:</strong> {getTrendText()}
+              </li>
+              <li>
+                {type === 'expense' 
+                  ? 'Meses por encima del promedio requieren atención para identificar gastos extraordinarios'
+                  : 'Meses por debajo del promedio pueden indicar necesidad de diversificar fuentes de ingreso'}
+              </li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+
         <div className="mt-4 p-3 bg-muted rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
