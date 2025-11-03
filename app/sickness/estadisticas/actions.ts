@@ -109,6 +109,76 @@ export async function getExpensesByCategory(
 }
 
 /**
+ * Obtiene gastos por CATEGORÍA (nivel 2) para análisis de Pareto
+ * Más granular que grupos pero menos que subcategorías
+ * NOTA: Se incluyen TODOS los gastos (comunes + directos + legacy)
+ */
+export async function getExpensesByCategoryLevel2(
+  householdId: string,
+  year?: number,
+  month?: number,
+): Promise<ExpenseByCategory[]> {
+  try {
+    let sql = `
+      SELECT
+        c.name as category,
+        c.icon,
+        cp.name as group_name,
+        COALESCE(SUM(t.amount), 0) as amount
+      FROM transactions t
+      -- Intentar obtener categoría desde subcategoría
+      LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+      LEFT JOIN categories c_from_sub ON sc.category_id = c_from_sub.id
+      -- Intentar obtener categoría directa
+      LEFT JOIN categories c_direct ON t.category_id = c_direct.id
+      -- Obtener la categoría disponible (prioridad: desde subcategoría > directa)
+      LEFT JOIN LATERAL (
+        SELECT
+          COALESCE(c_from_sub.id, c_direct.id) as id,
+          COALESCE(c_from_sub.name, c_direct.name) as name,
+          COALESCE(c_from_sub.icon, c_direct.icon) as icon,
+          COALESCE(c_from_sub.parent_id, c_direct.parent_id) as parent_id
+      ) c ON true
+      -- Obtener grupo padre para colores consistentes
+      LEFT JOIN category_parents cp ON c.parent_id = cp.id
+      WHERE t.household_id = $1
+        AND t.type IN ('expense', 'expense_direct')
+    `;
+
+    const params: (string | number)[] = [householdId];
+
+    if (year && month) {
+      sql += ` AND EXTRACT(YEAR FROM t.occurred_at) = $${params.length + 1}
+               AND EXTRACT(MONTH FROM t.occurred_at) = $${params.length + 2}`;
+      params.push(year, month);
+    }
+
+    sql += `
+      GROUP BY c.id, c.name, c.icon, cp.name
+      HAVING COALESCE(SUM(t.amount), 0) > 0
+      ORDER BY amount DESC
+    `;
+
+    const result = await getPool().query(sql, params);
+
+    const total = result.rows.length;
+
+    return result.rows.map((row: Record<string, unknown>, index: number) => ({
+      category: (row.category as string) || 'Sin categoría',
+      amount: parseFloat(row.amount as string) || 0,
+      icon: (row.icon as string) || '📄',
+      groupName: (row.group_name as string) || 'otros',
+      level: 'category' as const, // Los resultados son categorías (nivel 2)
+      index, // Índice en el array para gradientes
+      total, // Total de categorías para gradientes
+    }));
+  } catch (error) {
+    console.error('Error fetching expenses by category level 2:', error);
+    return [];
+  }
+}
+
+/**
  * Obtiene gastos en estructura JERÁRQUICA para visualizaciones tipo sunburst/treemap
  * Grupos → Categorías → Subcategorías
  */
@@ -255,7 +325,7 @@ export async function getExpensesByHierarchy(
         // Si no hay subcategoría, el monto va directo a la categoría
         category.value += amount;
       }
-      
+
       // NO sumar aquí, Nivo Sunburst calcula automáticamente el total del padre
       // sumando los valores de los hijos
     });

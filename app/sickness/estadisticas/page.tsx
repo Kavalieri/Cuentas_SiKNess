@@ -6,7 +6,7 @@ import { AlertCircle, BarChart3, TrendingDown, Wallet } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import type { ExpenseByCategory, HierarchicalExpense, IncomeVsExpense, PeriodOption } from './actions';
-import { getExpensesByCategory, getExpensesByHierarchy, getIncomeVsExpenses } from './actions';
+import { getExpensesByCategory, getExpensesByCategoryLevel2, getExpensesByHierarchy, getIncomeVsExpenses } from './actions';
 import { AdvancedQueries } from './AdvancedQueries';
 import { CategoryTreemap, ParetoChart } from './components';
 import { CategorySunburst } from './components/CategorySunburst';
@@ -44,11 +44,13 @@ export default function EstadisticasPage() {
   const [globalExpenses, setGlobalExpenses] = useState<ExpenseByCategory[]>([]);
   const [globalExpensesHierarchy, setGlobalExpensesHierarchy] = useState<HierarchicalExpense[]>([]);
   const [globalIncomeVsExpenses, setGlobalIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
+  const [globalExpensesForPareto, setGlobalExpensesForPareto] = useState<ExpenseByCategory[]>([]);
 
   // Datos del período seleccionado
   const [periodExpenses, setPeriodExpenses] = useState<ExpenseByCategory[]>([]);
   const [periodExpensesHierarchy, setPeriodExpensesHierarchy] = useState<HierarchicalExpense[]>([]);
   const [periodIncomeVsExpenses, setPeriodIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
+  const [periodExpensesForPareto, setPeriodExpensesForPareto] = useState<ExpenseByCategory[]>([]);
 
   // Balance actual
   const [_globalBalance, setGlobalBalance] = useState<GlobalBalance | null>(null);
@@ -149,10 +151,12 @@ export default function EstadisticasPage() {
         const globalExp = await getExpensesByCategory(householdId);
         const globalExpHier = await getExpensesByHierarchy(householdId);
         const globalIncome = await getIncomeVsExpenses(householdId);
+        const globalExpForPareto = await getExpensesByCategoryLevel2(householdId);
 
         setGlobalExpenses(globalExp);
         setGlobalExpensesHierarchy(globalExpHier);
         setGlobalIncomeVsExpenses(globalIncome);
+        setGlobalExpensesForPareto(globalExpForPareto);
 
         // Cargar balance global
         const balanceRes = await fetch(`/api/sickness/balance/global?householdId=${householdId}`);
@@ -166,10 +170,12 @@ export default function EstadisticasPage() {
           const periodExp = await getExpensesByCategory(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
           const periodExpHier = await getExpensesByHierarchy(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
           const periodIncome = await getIncomeVsExpenses(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
+          const periodExpForPareto = await getExpensesByCategoryLevel2(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
 
           setPeriodExpenses(periodExp);
           setPeriodExpensesHierarchy(periodExpHier);
           setPeriodIncomeVsExpenses(periodIncome);
+          setPeriodExpensesForPareto(periodExpForPareto);
 
           // Cargar resumen del período
           const summaryRes = await fetch(`/api/sickness/balance/period-summary?householdId=${householdId}&periodId=${selectedPeriodFull.id}`);
@@ -249,7 +255,7 @@ export default function EstadisticasPage() {
         )}
 
         {/* Análisis de Pareto Global */}
-        <ParetoChart data={globalExpenses} isLoading={loading} title="Análisis de Pareto (80/20) - Global" />
+        <ParetoChart data={globalExpensesForPareto} isLoading={loading} title="Análisis de Pareto (80/20) - Global" />
       </section>
 
       {/* BLOQUE 2: Período Seleccionado */}
@@ -347,7 +353,7 @@ export default function EstadisticasPage() {
         )}
 
         {/* Análisis de Pareto del Período */}
-                <ParetoChart data={periodExpenses} isLoading={loading} title={`Análisis de Pareto - ${periodName}`} />
+                <ParetoChart data={periodExpensesForPareto} isLoading={loading} title={`Análisis de Pareto - ${periodName}`} />
       </section>
 
       {/* BLOQUE 3: TreeMap Jerárquico (Global y Período) */}
