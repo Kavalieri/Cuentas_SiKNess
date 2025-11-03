@@ -55,11 +55,14 @@ export async function GET(req: NextRequest) {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Query principal: obtener la jerarquía con montos agregados
-    // subcategory_id -> subcategories.category_id -> categories.parent_id -> category_parents
+    // Query principal: obtener la jerarquía completa de 3 niveles con montos agregados
+    // Nivel 1: category_parents (ej: "Hogar", "Transporte")
+    // Nivel 2: categories (ej: "Alimentación", "Mantenimiento")
+    // Nivel 3: subcategories (ej: "Supermercado", "Restaurantes")
     const result = await query(
       `
-      WITH transaction_amounts AS (
+      WITH subcategory_totals AS (
+        -- Nivel 3: Subcategorías con sus montos
         SELECT
           cp.id as parent_id,
           cp.name as parent_name,
@@ -72,26 +75,48 @@ export async function GET(req: NextRequest) {
           sc.icon as subcategory_icon,
           SUM(t.amount) as total_amount
         FROM transactions t
-        LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
-        LEFT JOIN categories c ON c.id = sc.category_id
-        LEFT JOIN category_parents cp ON cp.id = c.parent_id
+        INNER JOIN subcategories sc ON sc.id = t.subcategory_id
+        INNER JOIN categories c ON c.id = sc.category_id
+        INNER JOIN category_parents cp ON cp.id = c.parent_id
         ${whereClause}
         GROUP BY cp.id, cp.name, cp.icon, c.id, c.name, c.icon, sc.id, sc.name, sc.icon
+      ),
+      category_level AS (
+        -- Nivel 2: Categorías con sus subcategorías como hijos
+        SELECT
+          parent_id,
+          parent_name,
+          parent_icon,
+          category_id,
+          category_name,
+          category_icon,
+          json_agg(
+            json_build_object(
+              'name', subcategory_name,
+              'value', total_amount,
+              'icon', subcategory_icon,
+              'parentName', category_name
+            ) ORDER BY total_amount DESC
+          ) as subcategories,
+          SUM(total_amount) as category_total
+        FROM subcategory_totals
+        GROUP BY parent_id, parent_name, parent_icon, category_id, category_name, category_icon
       )
+      -- Nivel 1: Padres con categorías (que contienen subcategorías)
       SELECT
         parent_id,
         parent_name,
         parent_icon,
         json_agg(
           json_build_object(
-            'name', COALESCE(subcategory_name, category_name, 'Sin categoría'),
-            'value', total_amount,
-            'icon', COALESCE(subcategory_icon, category_icon, '📦'),
-            'parentName', parent_name
-          ) ORDER BY total_amount DESC
+            'name', category_name,
+            'value', category_total,
+            'icon', category_icon,
+            'parentName', parent_name,
+            'children', subcategories
+          ) ORDER BY category_total DESC
         ) as categories
-      FROM transaction_amounts
-      WHERE parent_name IS NOT NULL
+      FROM category_level
       GROUP BY parent_id, parent_name, parent_icon
       ORDER BY parent_name
     `,
