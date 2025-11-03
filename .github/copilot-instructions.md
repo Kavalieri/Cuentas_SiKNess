@@ -149,6 +149,50 @@ npm run types:generate:prod
 
 ---
 
+## 🔄 Migración Gradual database.ts → database.generated.ts (Issue #11)
+
+**REGLA OBLIGATORIA AL EDITAR CÓDIGO**:
+
+Si tocas un archivo que importa `@/types/database`, debes migrarlo a `@/types/database.generated` en el mismo commit.
+
+### Por Qué:
+- ✅ `database.generated.ts`: Auto-generado desde PostgreSQL, siempre sincronizado
+- ❌ `database.ts`: Manual, formato Supabase legacy, puede quedar obsoleto
+
+### Cómo Migrar:
+
+```typescript
+// ❌ ANTES (database.ts):
+import type { Database } from '@/types/database';
+type Transaction = Database['public']['Tables']['transactions']['Row'];
+
+// ✅ DESPUÉS (database.generated.ts):
+import type { Transactions } from '@/types/database.generated';
+```
+
+**Cambios típicos:**
+1. Import: `database` → `database.generated`
+2. Type: `Database['public']['Tables']['X']['Row']` → `X` (tabla en PascalCase)
+3. Eliminar tipos Insert/Update si no se usan
+
+### Workflow:
+1. Abres archivo para editar (ej: `lib/periods.ts`)
+2. Detectas: `import type { Database } from '@/types/database'`
+3. **PRIMERO**: Migrar tipos (commit independiente)
+4. **DESPUÉS**: Hacer cambios solicitados
+
+### Validación:
+```bash
+npm run typecheck  # Debe pasar sin errores
+npm run lint       # Debe pasar sin warnings
+```
+
+**Tracking**: Ver `docs/MIGRATION_TYPES_PROGRESS.md` para lista completa.
+
+📚 **Documentación completa**: Issue #11
+
+---
+
 ## 🏗️ Stack vigente
 
 - Next.js 14+ (App Router, Server Actions/Client Components, React 18+)
