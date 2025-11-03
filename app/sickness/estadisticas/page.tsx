@@ -5,10 +5,12 @@ import { useSiKness } from '@/contexts/SiKnessContext';
 import { AlertCircle, BarChart3, TrendingDown, Wallet } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
-import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions';
-import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
+import type { ExpenseByCategory, HierarchicalExpense, IncomeVsExpense, PeriodOption } from './actions';
+import { getExpensesByCategory, getExpensesByHierarchy, getIncomeVsExpenses } from './actions';
 import { AdvancedQueries } from './AdvancedQueries';
-import { CategoryTreemap, GastosPorCategoria, IngresosVsGastos, ParetoChart } from './components';
+import { CategoryTreemap, ParetoChart } from './components';
+import { CategorySunburst } from './components/CategorySunburst';
+import { IngresosVsGastosNivo } from './components/IngresosVsGastosNivo';
 
 // Importar TrendChartPro dinámicamente (solo client-side)
 const TrendChartPro = dynamic(() => import('./components/TrendChartPro'), {
@@ -40,10 +42,12 @@ export default function EstadisticasPage() {
 
   // Datos globales
   const [globalExpenses, setGlobalExpenses] = useState<ExpenseByCategory[]>([]);
+  const [globalExpensesHierarchy, setGlobalExpensesHierarchy] = useState<HierarchicalExpense[]>([]);
   const [globalIncomeVsExpenses, setGlobalIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
 
   // Datos del período seleccionado
   const [periodExpenses, setPeriodExpenses] = useState<ExpenseByCategory[]>([]);
+  const [periodExpensesHierarchy, setPeriodExpensesHierarchy] = useState<HierarchicalExpense[]>([]);
   const [periodIncomeVsExpenses, setPeriodIncomeVsExpenses] = useState<IncomeVsExpense[]>([]);
 
   // Balance actual
@@ -143,9 +147,11 @@ export default function EstadisticasPage() {
       try {
         // Cargar datos globales
         const globalExp = await getExpensesByCategory(householdId);
+        const globalExpHier = await getExpensesByHierarchy(householdId);
         const globalIncome = await getIncomeVsExpenses(householdId);
 
         setGlobalExpenses(globalExp);
+        setGlobalExpensesHierarchy(globalExpHier);
         setGlobalIncomeVsExpenses(globalIncome);
 
         // Cargar balance global
@@ -158,9 +164,11 @@ export default function EstadisticasPage() {
         // Cargar datos del período seleccionado
         if (selectedPeriodFull) {
           const periodExp = await getExpensesByCategory(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
+          const periodExpHier = await getExpensesByHierarchy(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
           const periodIncome = await getIncomeVsExpenses(householdId, selectedPeriodFull.year, selectedPeriodFull.month);
 
           setPeriodExpenses(periodExp);
+          setPeriodExpensesHierarchy(periodExpHier);
           setPeriodIncomeVsExpenses(periodIncome);
 
           // Cargar resumen del período
@@ -204,9 +212,9 @@ export default function EstadisticasPage() {
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          <GastosPorCategoria data={globalExpenses} isLoading={loading} title="Gastos por Categoría" />
+          <CategorySunburst data={globalExpensesHierarchy} isLoading={loading} title="Distribución Jerárquica Global" />
           <div className="space-y-4">
-            <IngresosVsGastos data={globalIncomeVsExpenses} isLoading={loading} title="Ingresos vs Gastos" />
+            <IngresosVsGastosNivo data={globalIncomeVsExpenses} isLoading={loading} />
             {/* Gasto medio diario global */}
             {globalIncomeVsExpenses.length > 0 && (
               <Card className="bg-muted/30">
@@ -239,6 +247,9 @@ export default function EstadisticasPage() {
             showTimeframeSelector={true}
           />
         )}
+
+        {/* Análisis de Pareto Global */}
+        <ParetoChart data={globalExpenses} isLoading={loading} title="Análisis de Pareto (80/20) - Global" />
       </section>
 
       {/* BLOQUE 2: Período Seleccionado */}
@@ -254,10 +265,10 @@ export default function EstadisticasPage() {
         <div className="grid gap-6 md:grid-cols-2">
           {/* Columna 1: Gastos por Categoría + Presupuesto diario */}
           <div className="space-y-4">
-            <GastosPorCategoria
-              data={periodExpenses}
+            <CategorySunburst
+              data={periodExpensesHierarchy}
               isLoading={loading}
-              title="Gastos por Categoría"
+              title="Distribución Jerárquica del Período"
             />
 
             {/* Presupuesto diario (solo en períodos activos) */}
@@ -294,10 +305,9 @@ export default function EstadisticasPage() {
 
           {/* Columna 2: Ingresos vs Gastos + Gasto medio diario */}
           <div className="space-y-4">
-            <IngresosVsGastos
+            <IngresosVsGastosNivo
               data={periodIncomeVsExpenses}
               isLoading={loading}
-              title="Ingresos vs Gastos"
             />
 
             {/* Gasto medio diario del período */}
@@ -335,38 +345,32 @@ export default function EstadisticasPage() {
             showTimeframeSelector={true}
           />
         )}
+
+        {/* Análisis de Pareto del Período */}
+                <ParetoChart data={periodExpenses} isLoading={loading} title={`Análisis de Pareto - ${periodName}`} />
       </section>
 
-      {/* BLOQUE 3: Visualizaciones Avanzadas de Jerarquía */}
+      {/* BLOQUE 3: TreeMap Jerárquico */}
       <section className="space-y-4">
         <div>
           <h2 className="text-2xl font-semibold flex items-center gap-2">
-            🎯 Visualizaciones Avanzadas
+            🗺️ Mapa de Categorías
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Análisis jerárquico de categorías con insights profundos
+            Visualización jerárquica de grupos → categorías → subcategorías
           </p>
         </div>
 
         {householdId ? (
-          <>
-            {/* TreeMap (Nivo) y Pareto (Recharts) */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <CategoryTreemap
-                householdId={householdId}
-                type="expense"
-              />
-              <ParetoChart
-                householdId={householdId}
-                type="expense"
-              />
-            </div>
-          </>
+          <CategoryTreemap
+            householdId={householdId}
+            type="expense"
+          />
         ) : (
           <Card>
             <CardContent className="py-8">
               <p className="text-center text-muted-foreground">
-                Selecciona un hogar para ver las visualizaciones avanzadas
+                Selecciona un hogar para ver el mapa de categorías
               </p>
             </CardContent>
           </Card>

@@ -1,8 +1,8 @@
 'use client';
 
 import type {
-  CategoryWithSubcategories,
-  Subcategory
+    CategoryWithSubcategories,
+    Subcategory
 } from '@/app/sickness/configuracion/categorias/hierarchy-actions';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCategoryHierarchy } from '@/contexts/CategoryHierarchyContext';
 import { useDatePeriodValidation } from '@/lib/hooks/useDatePeriodValidation';
-import { Pencil, Loader2, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, Pencil } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -100,13 +100,13 @@ export function EditMovementForm({
   const canEdit = useMemo(() => {
     // No se puede editar si periodo original está cerrado/bloqueado
     if (!canModifyOriginal) return false;
-    
+
     // No se puede guardar si periodo nuevo no permite creación
     if (!canCreateInNew) return false;
-    
+
     // No se puede guardar si tipo no es permitido en periodo nuevo
     if (!isTypeAllowedInNew) return false;
-    
+
     return true;
   }, [canModifyOriginal, canCreateInNew, isTypeAllowedInNew]);
 
@@ -175,7 +175,7 @@ export function EditMovementForm({
       formData.append('householdId', householdId || '');
       formData.append('amount', String(data.amount));
       formData.append('description', data.description);
-      
+
       // ✅ Campos según tipo de movimiento
       if (movementType === 'common') {
         // Common: enviar subcategoryId Y categoryId (Issue #38)
@@ -185,7 +185,7 @@ export function EditMovementForm({
         // Direct: solo subcategoryId
         formData.append('subcategoryId', selectedSubcategoryId || '');
       }
-      
+
       formData.append('occurredAt', data.occurredAt);
       formData.append('performedBy', data.performedBy);
 
@@ -415,7 +415,7 @@ export function EditMovementForm({
                 {...register('occurredAt', { required: true })}
               />
               {errors.occurredAt && <span className="text-xs text-red-500">Fecha obligatoria</span>}
-              
+
               {/* ✅ Feedback visual */}
               {(isLoadingOriginal || isLoadingNew) && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">

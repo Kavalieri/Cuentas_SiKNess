@@ -1,16 +1,16 @@
 # Migración database.ts → database.generated.ts
 
-**Inicio**: 3 Noviembre 2025  
-**Estado**: 1/5 archivos migrados (20%)  
-**Issue**: #11  
+**Inicio**: 3 Noviembre 2025
+**Estado**: 1/5 archivos migrados (20%)
+**Issue**: #11
 
 ---
 
 ## 📊 Progreso
 
-**Archivos activos totales**: 5  
-**Migrados**: 1 ✅  
-**Pendientes**: 4 ⏳  
+**Archivos activos totales**: 5
+**Migrados**: 1 ✅
+**Pendientes**: 4 ⏳
 
 ---
 

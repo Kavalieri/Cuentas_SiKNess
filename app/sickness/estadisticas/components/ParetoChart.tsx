@@ -1,102 +1,28 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/format';
-import { useCallback, useEffect, useState } from 'react';
-import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-
-interface ParetoDataPoint {
-  name: string;
-  amount: number;
-  cumulative: number;
-  percentage: number;
-  icon?: string;
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getGroupColor } from '@/lib/categoryColors';
+import { ResponsiveBar } from '@nivo/bar';
+import type { ExpenseByCategory } from '../actions';
 
 interface ParetoChartProps {
-  householdId: string;
-  startDate?: string;
-  endDate?: string;
-  type?: 'expense' | 'income';
-  limit?: number;
+  data: ExpenseByCategory[];
+  isLoading?: boolean;
+  title?: string;
 }
 
-export function ParetoChart({ householdId, startDate, endDate, type = 'expense', limit = 10 }: ParetoChartProps) {
-  const [data, setData] = useState<ParetoDataPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [threshold80, setThreshold80] = useState<number | null>(null);
-
-  const loadParetoData = useCallback(async () => {
-    if (!householdId) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
-        householdId,
-        type,
-        limit: limit.toString(),
-      });
-
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
-
-      const response = await fetch(`/api/sickness/statistics/pareto?${params}`);
-      if (!response.ok) throw new Error('Error al cargar datos del Pareto');
-
-      const result = await response.json();
-      setData(result.data);
-
-      // Encontrar el punto donde se cruza el 80%
-      const threshold = result.data.find((d: ParetoDataPoint) => d.cumulative >= 80);
-      if (threshold) {
-        setThreshold80(result.data.indexOf(threshold));
-      }
-    } catch (err) {
-      console.error('Error loading Pareto data:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
-      setLoading(false);
-    }
-  }, [householdId, startDate, endDate, type, limit]);
-
-  useEffect(() => {
-    loadParetoData();
-  }, [loadParetoData]);
-
-  if (loading) {
+export function ParetoChart({ data, isLoading, title = 'Análisis de Pareto (80/20)' }: ParetoChartProps) {
+  if (isLoading) {
     return (
-      <Card>
+      <Card className="h-[500px]">
         <CardHeader>
-          <CardTitle>Análisis de Pareto (80/20)</CardTitle>
-          <CardDescription>
-            Identifica las categorías que representan el 80% de tus {type === 'expense' ? 'gastos' : 'ingresos'}
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-2xl">📊</span>
+            {title}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[400px] flex items-center justify-center">
-            <p className="text-muted-foreground">Cargando datos...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Análisis de Pareto (80/20)</CardTitle>
-          <CardDescription>
-            Identifica las categorías que representan el 80% de tus {type === 'expense' ? 'gastos' : 'ingresos'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[400px] flex items-center justify-center">
-            <p className="text-red-500">{error}</p>
-          </div>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="text-muted-foreground">Cargando análisis de Pareto...</div>
         </CardContent>
       </Card>
     );
@@ -104,170 +30,215 @@ export function ParetoChart({ householdId, startDate, endDate, type = 'expense',
 
   if (!data || data.length === 0) {
     return (
-      <Card>
+      <Card className="h-[500px]">
         <CardHeader>
-          <CardTitle>Análisis de Pareto (80/20)</CardTitle>
-          <CardDescription>
-            Identifica las categorías que representan el 80% de tus {type === 'expense' ? 'gastos' : 'ingresos'}
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-2xl">📊</span>
+            {title}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[400px] flex items-center justify-center">
-            <p className="text-muted-foreground">No hay datos disponibles para el período seleccionado</p>
-          </div>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="text-muted-foreground">No hay datos disponibles</div>
         </CardContent>
       </Card>
     );
   }
 
+  // Ordenar por monto descendente
+  const sortedData = [...data].sort((a, b) => b.amount - a.amount);
+
+  // Calcular total y porcentajes acumulativos
+  const total = sortedData.reduce((sum, item) => sum + item.amount, 0);
+  let cumulative = 0;
+
+  const paretoData = sortedData.map((item) => {
+    cumulative += item.amount;
+    const percentage = (item.amount / total) * 100;
+    const cumulativePercentage = (cumulative / total) * 100;
+
+    return {
+      category: item.icon ? `${item.icon} ${item.category}` : item.category,
+      categoryName: item.category,
+      groupName: item.groupName || 'otros',
+      amount: item.amount,
+      percentage: parseFloat(percentage.toFixed(1)),
+      cumulative: parseFloat(cumulativePercentage.toFixed(1)),
+    };
+  });
+
   return (
-    <Card>
+    <Card className="h-[600px]">
       <CardHeader>
-        <CardTitle>Análisis de Pareto (80/20)</CardTitle>
-        <CardDescription>
-          El Principio de Pareto (regla 80/20) muestra que aproximadamente el 80% de tus {type === 'expense' ? 'gastos' : 'ingresos'}{' '}
-          provienen del 20% de las categorías. Este gráfico te ayuda a identificar dónde concentrar tus esfuerzos de optimización.
-          {threshold80 !== null && (
-            <span className="block mt-1 font-medium">
-              En tu caso: las primeras {threshold80 + 1} categorías representan el 80% del total
-            </span>
-          )}
-        </CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <span className="text-2xl">📊</span>
+          {title}
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Principio de Pareto: ~80% del gasto proviene del ~20% de las categorías
+        </p>
       </CardHeader>
-      <CardContent>
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={data}
-              margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 60,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="name"
-                angle={-45}
-                textAnchor="end"
-                height={100}
-                tick={{ fontSize: 12 }}
-                label={{
-                  value: 'Categorías',
-                  position: 'insideBottom',
-                  offset: -50,
-                }}
-              />
-              <YAxis
-                yAxisId="left"
-                label={{
-                  value: 'Monto (€)',
-                  angle: -90,
-                  position: 'insideLeft',
-                }}
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                domain={[0, 100]}
-                label={{
-                  value: '% Acumulado',
-                  angle: 90,
-                  position: 'insideRight',
-                }}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length && payload[0]) {
-                    const data = payload[0].payload as ParetoDataPoint;
-                    return (
-                      <div className="bg-background border border-border rounded-lg shadow-lg p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          {data.icon && <span className="text-xl">{data.icon}</span>}
-                          <span className="font-semibold">{data.name}</span>
-                        </div>
-                        <div className="text-sm space-y-1">
-                          <div className="flex justify-between gap-4">
-                            <span className="text-muted-foreground">Monto:</span>
-                            <span className="font-medium">{formatCurrency(data.amount)}</span>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <span className="text-muted-foreground">% del total:</span>
-                            <span className="font-medium">{data.percentage.toFixed(1)}%</span>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <span className="text-muted-foreground">% Acumulado:</span>
-                            <span className="font-medium">{data.cumulative.toFixed(1)}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Legend
-                wrapperStyle={{ paddingTop: '20px' }}
-                iconType="circle"
-              />
-              <Bar
-                yAxisId="left"
-                dataKey="amount"
-                fill={type === 'expense' ? '#ef4444' : '#10b981'}
-                name="Monto"
-                radius={[8, 8, 0, 0]}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="cumulative"
-                stroke="#f59e0b"
-                strokeWidth={2}
-                name="% Acumulado"
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-              {/* Línea de referencia en 80% */}
-              {threshold80 !== null && (
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  data={data.map((d, i) => ({
-                    ...d,
-                    threshold: i === threshold80 ? 80 : null,
-                  }))}
-                  dataKey="threshold"
-                  stroke="#6366f1"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={false}
-                  name="Umbral 80%"
-                />
-              )}
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-        {threshold80 !== null && (
-          <div className="mt-4 space-y-2">
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                💡 <strong>Interpretación:</strong> Las primeras{' '}
-                <span className="font-semibold text-foreground">{threshold80 + 1}</span> categorías (
-                {((threshold80 + 1) / data.length * 100).toFixed(0)}% del total) representan el 80% de tus{' '}
-                {type === 'expense' ? 'gastos' : 'ingresos'}.
-              </p>
+      <CardContent className="h-[500px]">
+        <ResponsiveBar
+          data={paretoData}
+          keys={['amount']}
+          indexBy="category"
+          margin={{ top: 20, right: 80, bottom: 100, left: 80 }}
+          padding={0.3}
+          valueScale={{ type: 'linear' }}
+          indexScale={{ type: 'band', round: true }}
+          colors={(bar) => {
+            const groupName = bar.data.groupName as string;
+            return getGroupColor(groupName, 'base');
+          }}
+          borderRadius={4}
+          borderWidth={1}
+          borderColor={{
+            from: 'color',
+            modifiers: [['darker', 0.3]],
+          }}
+          axisTop={null}
+          axisRight={{
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: 0,
+            legend: 'Acumulado (%)',
+            legendPosition: 'middle',
+            legendOffset: 60,
+            format: (v) => `${v}%`,
+          }}
+          axisBottom={{
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: -45,
+            legend: '',
+            legendPosition: 'middle',
+            legendOffset: 80,
+          }}
+          axisLeft={{
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: 0,
+            legend: 'Monto (€)',
+            legendPosition: 'middle',
+            legendOffset: -60,
+            format: (v) => `${v.toLocaleString()}€`,
+          }}
+          labelSkipWidth={12}
+          labelSkipHeight={12}
+          labelTextColor={{
+            from: 'color',
+            modifiers: [['darker', 2]],
+          }}
+          label={(d) => `${(d.value || 0).toLocaleString()}€`}
+          tooltip={({ indexValue, value, data }) => (
+            <div className="bg-background border border-border rounded-lg shadow-lg p-3">
+              <div className="font-semibold mb-2">{indexValue}</div>
+              <div className="text-sm space-y-1">
+                <div>
+                  <span className="text-muted-foreground">Monto: </span>
+                  <span className="font-mono">
+                    {new Intl.NumberFormat('es-ES', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    }).format(value)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">% Individual: </span>
+                  <span className="font-semibold">{data.percentage}%</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">% Acumulado: </span>
+                  <span className="font-semibold text-orange-500">{data.cumulative}%</span>
+                </div>
+              </div>
             </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-              <p className="text-sm text-blue-900 dark:text-blue-100">
-                📊 <strong>Consejo práctico:</strong> Enfócate en optimizar estas {threshold80 + 1} categorías principales
-                para tener el mayor impacto en tu presupuesto. Pequeños cambios aquí generan grandes resultados.
-              </p>
-            </div>
-          </div>
-        )}
+          )}
+          layers={[
+            'grid',
+            'axes',
+            'bars',
+            'markers',
+            'legends',
+            (props) => {
+              const { xScale, yScale, innerHeight } = props as any;
+
+              if (!xScale || !yScale) return null;
+
+              const points = paretoData.map((d) => {
+                const x = xScale(d.category) + xScale.bandwidth() / 2;
+                const y = innerHeight - (innerHeight * d.cumulative) / 100;
+                return { x, y, cumulative: d.cumulative };
+              });
+
+              const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`).join(' ');
+
+              return (
+                <g>
+                  <line
+                    x1={0}
+                    y1={innerHeight * 0.2}
+                    x2={xScale.range()[1]}
+                    y2={innerHeight * 0.2}
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    strokeDasharray="5,5"
+                    opacity={0.7}
+                  />
+                  <text
+                    x={xScale.range()[1] - 10}
+                    y={innerHeight * 0.2 - 5}
+                    textAnchor="end"
+                    style={{ fontSize: 12, fill: '#f97316', fontWeight: 600 }}
+                  >
+                    80% Acumulado
+                  </text>
+                  <path
+                    d={pathData}
+                    fill="none"
+                    stroke="#f97316"
+                    strokeWidth={3}
+                    opacity={0.8}
+                  />
+                  {points.map((p, i) => (
+                    <circle
+                      key={i}
+                      cx={p.x}
+                      cy={p.y}
+                      r={4}
+                      fill="#f97316"
+                      stroke="white"
+                      strokeWidth={2}
+                    />
+                  ))}
+                </g>
+              );
+            },
+          ]}
+          theme={{
+            axis: {
+              ticks: {
+                text: {
+                  fontSize: 11,
+                },
+              },
+              legend: {
+                text: {
+                  fontSize: 12,
+                  fontWeight: 600,
+                },
+              },
+            },
+            labels: {
+              text: {
+                fontSize: 11,
+                fontWeight: 600,
+              },
+            },
+          }}
+          animate={true}
+          motionConfig="gentle"
+        />
       </CardContent>
     </Card>
   );

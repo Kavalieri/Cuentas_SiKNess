@@ -82,9 +82,9 @@ export async function GET(req: NextRequest) {
         ${whereClause}
         GROUP BY cp.id, cp.name, cp.icon, c.id, c.name, c.icon, sc.id, sc.name, sc.icon
         HAVING SUM(t.amount) > 0
-        
+
         UNION ALL
-        
+
         -- CASO 2: Transacciones sin subcategoría (categoría directa - hoja)
         SELECT
           cp.id as parent_id,
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
           category_id,
           category_name,
           category_icon,
-          CASE 
+          CASE
             WHEN COUNT(subcategory_id) > 0 THEN
               -- Categoría con subcategorías: crear array de hijos
               json_agg(
@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
               NULL
           END as subcategories,
           -- Si no hay subcategorías, la categoría tiene valor directo
-          CASE 
+          CASE
             WHEN COUNT(subcategory_id) = 0 THEN MAX(total_amount)
             ELSE NULL
           END as category_direct_value

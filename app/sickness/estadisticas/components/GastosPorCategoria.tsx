@@ -69,7 +69,7 @@ export function GastosPorCategoria({
     const level = item.level || 'category'; // Por defecto categorías
     const itemIndex = item.index !== undefined ? item.index : index;
     const total = item.total || data.length;
-    
+
     return {
       id: item.category,
       label: item.category,

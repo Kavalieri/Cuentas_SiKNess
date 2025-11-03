@@ -179,19 +179,19 @@ export function getCategoryColorByLevel(
  */
 export function getGroupColorScale(groupName: string, categoryCount: number): string[] {
   const palette = getGroupColorPalette(groupName);
-  
+
   if (categoryCount === 0) return [palette.base];
   if (categoryCount === 1) return [palette.base];
   if (categoryCount === 2) return [palette.base, palette.light];
   if (categoryCount === 3) return [palette.base, palette.light, palette.lighter];
-  
+
   // Para más categorías, interpolar entre darker → base → light → lighter
   const colors: string[] = [];
   const steps = categoryCount;
-  
+
   for (let i = 0; i < steps; i++) {
     const ratio = i / (steps - 1);
-    
+
     if (ratio < 0.33) {
       // darker → base
       const localRatio = ratio / 0.33;
@@ -206,7 +206,7 @@ export function getGroupColorScale(groupName: string, categoryCount: number): st
       colors.push(interpolateColor(palette.light, palette.lighter, localRatio));
     }
   }
-  
+
   return colors;
 }
 

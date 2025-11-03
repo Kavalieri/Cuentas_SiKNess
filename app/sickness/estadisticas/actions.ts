@@ -12,6 +12,15 @@ export interface ExpenseByCategory {
   total?: number; // Total de elementos en el nivel (para gradientes)
 }
 
+export interface HierarchicalExpense {
+  id: string;
+  label: string;
+  value: number;
+  icon: string;
+  groupName: string;
+  children?: HierarchicalExpense[];
+}
+
 export interface IncomeVsExpense {
   month: string;
   income: number;
@@ -95,6 +104,164 @@ export async function getExpensesByCategory(
     }));
   } catch (error) {
     console.error('Error fetching expenses by category:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtiene gastos en estructura JERÁRQUICA para visualizaciones tipo sunburst/treemap
+ * Grupos → Categorías → Subcategorías
+ */
+export async function getExpensesByHierarchy(
+  householdId: string,
+  year?: number,
+  month?: number,
+): Promise<HierarchicalExpense[]> {
+  try {
+    let sql = `
+      WITH transaction_data AS (
+        -- Transacciones con subcategoría
+        SELECT
+          cp.id as parent_id,
+          cp.name as parent_name,
+          cp.icon as parent_icon,
+          c.id as category_id,
+          c.name as category_name,
+          c.icon as category_icon,
+          sc.id as subcategory_id,
+          sc.name as subcategory_name,
+          sc.icon as subcategory_icon,
+          t.amount
+        FROM transactions t
+        INNER JOIN subcategories sc ON sc.id = t.subcategory_id
+        INNER JOIN categories c ON c.id = sc.category_id
+        INNER JOIN category_parents cp ON cp.id = c.parent_id
+        WHERE t.household_id = $1
+          AND t.type IN ('expense', 'expense_direct')
+    `;
+
+    const params: (string | number)[] = [householdId];
+
+    if (year && month) {
+      sql += ` AND EXTRACT(YEAR FROM t.occurred_at) = $${params.length + 1}
+               AND EXTRACT(MONTH FROM t.occurred_at) = $${params.length + 2}`;
+      params.push(year, month);
+    }
+
+    sql += `
+        UNION ALL
+
+        -- Transacciones sin subcategoría (categoría directa)
+        SELECT
+          cp.id as parent_id,
+          cp.name as parent_name,
+          cp.icon as parent_icon,
+          c.id as category_id,
+          c.name as category_name,
+          c.icon as category_icon,
+          NULL as subcategory_id,
+          NULL as subcategory_name,
+          NULL as subcategory_icon,
+          t.amount
+        FROM transactions t
+        INNER JOIN categories c ON c.id = t.category_id
+        INNER JOIN category_parents cp ON cp.id = c.parent_id
+        WHERE t.household_id = $1
+          AND t.subcategory_id IS NULL
+          AND t.type IN ('expense', 'expense_direct')
+    `;
+
+    if (year && month) {
+      sql += ` AND EXTRACT(YEAR FROM t.occurred_at) = $${params.length - 1}
+               AND EXTRACT(MONTH FROM t.occurred_at) = $${params.length}`;
+    }
+
+    sql += `
+      )
+      SELECT
+        parent_id,
+        parent_name,
+        parent_icon,
+        category_id,
+        category_name,
+        category_icon,
+        subcategory_id,
+        subcategory_name,
+        subcategory_icon,
+        SUM(amount) as total_amount
+      FROM transaction_data
+      GROUP BY
+        parent_id, parent_name, parent_icon,
+        category_id, category_name, category_icon,
+        subcategory_id, subcategory_name, subcategory_icon
+      HAVING SUM(amount) > 0
+      ORDER BY parent_name, category_name, subcategory_name
+    `;
+
+    const result = await getPool().query(sql, params);
+
+    // Construir estructura jerárquica
+    const groupsMap = new Map<string, HierarchicalExpense>();
+
+    result.rows.forEach((row: any) => {
+      const groupId = row.parent_id;
+      const groupName = row.parent_name || 'Sin grupo';
+      const categoryId = row.category_id;
+      const categoryName = row.category_name || 'Sin categoría';
+      const subcategoryId = row.subcategory_id;
+      const subcategoryName = row.subcategory_name;
+      const amount = parseFloat(row.total_amount) || 0;
+
+      // Asegurar que el grupo existe
+      if (!groupsMap.has(groupId)) {
+        groupsMap.set(groupId, {
+          id: groupId,
+          label: groupName,
+          value: 0,
+          icon: row.parent_icon || '📁',
+          groupName: groupName,
+          children: [],
+        });
+      }
+
+      const group = groupsMap.get(groupId)!;
+
+      // Buscar o crear categoría
+      let category = group.children?.find(c => c.id === categoryId);
+      if (!category) {
+        category = {
+          id: categoryId,
+          label: categoryName,
+          value: 0,
+          icon: row.category_icon || '📄',
+          groupName: groupName,
+          children: [],
+        };
+        group.children?.push(category);
+      }
+
+      // Si hay subcategoría, agregarla
+      if (subcategoryId && subcategoryName) {
+        const subcategory: HierarchicalExpense = {
+          id: subcategoryId,
+          label: subcategoryName,
+          value: amount,
+          icon: row.subcategory_icon || '📌',
+          groupName: groupName,
+        };
+        category.children?.push(subcategory);
+        category.value += amount;
+      } else {
+        // Si no hay subcategoría, el monto va directo a la categoría
+        category.value += amount;
+      }
+
+      group.value += amount;
+    });
+
+    return Array.from(groupsMap.values());
+  } catch (error) {
+    console.error('Error fetching hierarchical expenses:', error);
     return [];
   }
 }

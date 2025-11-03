@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getCategoryColorByLevel, getGroupColor } from '@/lib/categoryColors';
+import { getGroupColor } from '@/lib/categoryColors';
 import { formatCurrency } from '@/lib/format';
 import { ResponsiveTreeMap } from '@nivo/treemap';
 import { useCallback, useEffect, useState } from 'react';
@@ -154,43 +154,29 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               const pathParts = node.pathComponents || [];
               const depth = pathParts.length;
 
-              // Nivel 0: Raíz (no se muestra)
-              // Nivel 1: Grupos (category_parents) - Color base del grupo
-              // Nivel 2: Categorías - Gradiente del color del grupo
-              // Nivel 3: Subcategorías - Tonos claros del grupo
+              // Debug: Log para ver qué está pasando
+              // console.log('Node:', node.id, 'Depth:', depth, 'Path:', pathParts);
 
+              // Nivel 0: Raíz (no se muestra)
               if (depth === 0) {
-                // Raíz - no debería verse
                 return type === 'expense' ? '#ef4444' : '#10b981';
               }
 
+              // Nivel 1: Grupos (category_parents) - Color base del grupo
               if (depth === 1) {
-                // Grupos: usar color base específico de cada grupo
-                const groupName = node.id as string;
-                return getCategoryColorByLevel(groupName, 0, 1, 'group');
+                const groupName = (node.data.name || node.id) as string;
+                return getGroupColor(groupName, 'base');
               }
 
+              // Nivel 2: Categorías - Color light del grupo
               if (depth === 2) {
-                // Categorías: obtener el grupo padre y usar colores graduales
                 const groupName = pathParts[0] as string;
-                
-                // Generar índice basado en hash del nombre para consistencia
-                const nodeId = String(node.id);
-                const index = nodeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 5;
-                const total = 5; // Estimado de categorías por grupo
-
-                return getCategoryColorByLevel(groupName, index, total, 'category');
+                return getGroupColor(groupName, 'light');
               }
 
-              // Nivel 3+: Subcategorías - tonos muy claros
+              // Nivel 3+: Subcategorías - Color muy claro del grupo
               const groupName = pathParts[0] as string;
-              
-              // Generar índice para subcategorías
-              const nodeId = String(node.id);
-              const index = nodeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 3;
-              const total = 3;
-              
-              return getCategoryColorByLevel(groupName, index, total, 'subcategory');
+              return getGroupColor(groupName, 'dark');
             }}
             nodeOpacity={0.9}
             borderWidth={2}
