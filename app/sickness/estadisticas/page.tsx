@@ -8,6 +8,7 @@ import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions
 import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
 import { AdvancedQueries } from './AdvancedQueries';
 import { CategoryTreemap, GastosPorCategoria, IngresosVsGastos, ParetoChart, TrendLineChart } from './components';
+import { TrendChartComparator } from './components/TrendChartComparator';
 
 interface GlobalBalance {
   balance: {
@@ -338,6 +339,15 @@ export default function EstadisticasPage() {
                 householdId={householdId}
                 type="expense"
                 defaultMonths={6}
+              />
+            </div>
+
+            {/* Fila 3: Comparador A/B Testing (POC Issue #43) */}
+            <div className="grid gap-6">
+              <TrendChartComparator
+                householdId={householdId}
+                type="expense"
+                months={6}
               />
             </div>
           </>
