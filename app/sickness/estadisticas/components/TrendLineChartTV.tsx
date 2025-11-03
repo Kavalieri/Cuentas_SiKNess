@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { createChart, ColorType, LineStyle, LineSeries } from 'lightweight-charts';
-import type { IChartApi, Time } from 'lightweight-charts';
-import { useTheme } from 'next-themes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import type { IChartApi, Time } from 'lightweight-charts';
+import { ColorType, createChart, LineSeries, LineStyle } from 'lightweight-charts';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useEffect, useRef, useState } from 'react';
 
 interface TrendDataPoint {
   date: string;
@@ -68,9 +68,10 @@ export function TrendLineChartTV({ householdId, type, months = 6 }: TrendLineCha
   useEffect(() => {
     if (!chartContainerRef.current || !mounted || data.length === 0) return;
 
-    // Crear chart solo una vez
+    // Limpiar chart anterior si existe
     if (chartRef.current) {
       chartRef.current.remove();
+      chartRef.current = null;
     }
 
     const chart = createChart(chartContainerRef.current, {
@@ -165,10 +166,15 @@ export function TrendLineChartTV({ householdId, type, months = 6 }: TrendLineCha
 
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
+    // Guardar referencia y cleanup
+    chartRef.current = chart;
+    
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
     };
   }, [data, average, type, isDark, mounted]);
 
