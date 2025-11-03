@@ -250,13 +250,14 @@ export async function getExpensesByHierarchy(
           groupName: groupName,
         };
         category.children?.push(subcategory);
-        category.value += amount;
+        // NO sumar aquí, solo en la hoja (subcategory.value ya tiene el monto)
       } else {
         // Si no hay subcategoría, el monto va directo a la categoría
         category.value += amount;
       }
-
-      group.value += amount;
+      
+      // NO sumar aquí, Nivo Sunburst calcula automáticamente el total del padre
+      // sumando los valores de los hijos
     });
 
     return Array.from(groupsMap.values());

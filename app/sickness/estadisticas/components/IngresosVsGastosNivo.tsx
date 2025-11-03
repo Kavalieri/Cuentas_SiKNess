@@ -80,6 +80,7 @@ export function IngresosVsGastosNivo({
             indexBy="month"
             margin={{ top: 20, right: 130, bottom: 60, left: 80 }}
             padding={0.3}
+            groupMode="grouped"
             valueScale={{ type: 'linear' }}
             indexScale={{ type: 'band', round: true }}
             colors={(bar) => {

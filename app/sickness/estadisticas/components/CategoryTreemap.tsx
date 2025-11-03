@@ -154,29 +154,32 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               const pathParts = node.pathComponents || [];
               const depth = pathParts.length;
 
-              // Debug: Log para ver qué está pasando
-              // console.log('Node:', node.id, 'Depth:', depth, 'Path:', pathParts);
-
-              // Nivel 0: Raíz (no se muestra)
-              if (depth === 0) {
+              // Nivel 0: Raíz (no se muestra normalmente)
+              if (depth === 0 || depth === 1) {
                 return type === 'expense' ? '#ef4444' : '#10b981';
               }
 
-              // Nivel 1: Grupos (category_parents) - Color base del grupo
-              if (depth === 1) {
-                const groupName = (node.data.name || node.id) as string;
+              // Para niveles 2+ (grupos y sus hijos), extraer el nombre del grupo
+              // El grupo es siempre el segundo elemento del path (índice 1)
+              const groupName = pathParts[1] as string;
+
+              // Si no hay groupName válido, usar color por defecto
+              if (!groupName) {
+                return type === 'expense' ? '#ef4444' : '#10b981';
+              }
+
+              // Nivel 2: Grupos (category_parents) - Color base
+              if (depth === 2) {
                 return getGroupColor(groupName, 'base');
               }
 
-              // Nivel 2: Categorías - Color light del grupo
-              if (depth === 2) {
-                const groupName = pathParts[0] as string;
+              // Nivel 3: Categorías - Color light
+              if (depth === 3) {
                 return getGroupColor(groupName, 'light');
               }
 
-              // Nivel 3+: Subcategorías - Color muy claro del grupo
-              const groupName = pathParts[0] as string;
-              return getGroupColor(groupName, 'dark');
+              // Nivel 4+: Subcategorías - Color light también
+              return getGroupColor(groupName, 'light');
             }}
             nodeOpacity={0.9}
             borderWidth={2}

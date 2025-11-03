@@ -44,32 +44,40 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por CategorÃ
     );
   }
 
-  // Transformar datos al formato que Nivo espera
+  // FunciÃ³n recursiva para calcular el valor total de un nodo sumando sus hijos
+  const calculateNodeValue = (node: HierarchicalExpense): number => {
+    if (!node.children || node.children.length === 0) {
+      return node.value;
+    }
+    // El valor del padre es la SUMA de los valores de sus hijos
+    return node.children.reduce((sum, child) => sum + calculateNodeValue(child), 0);
+  };
+
+  // Transformar datos al formato que Nivo espera con valores correctos
+  const transformNode = (node: HierarchicalExpense): any => {
+    const transformedChildren = node.children
+      ?.filter(child => child.value > 0 || (child.children && child.children.length > 0))
+      .map(child => transformNode(child));
+
+    // Calcular el valor correcto (suma de hijos si los hay)
+    const correctValue = transformedChildren && transformedChildren.length > 0
+      ? transformedChildren.reduce((sum: number, child: any) => sum + child.value, 0)
+      : node.value;
+
+    return {
+      id: node.id,
+      label: node.label,
+      value: correctValue,
+      icon: node.icon,
+      groupName: node.groupName,
+      children: transformedChildren,
+    };
+  };
+
   const sunburstData = {
     id: 'root',
     label: 'Todos los Gastos',
-    value: 0,
-    children: data.map(group => ({
-      id: group.id,
-      label: group.label,
-      value: group.value,
-      icon: group.icon,
-      groupName: group.groupName,
-      children: group.children?.map(category => ({
-        id: category.id,
-        label: category.label,
-        value: category.value,
-        icon: category.icon,
-        groupName: category.groupName,
-        children: category.children?.filter(sub => sub.value > 0).map(subcategory => ({
-          id: subcategory.id,
-          label: subcategory.label,
-          value: subcategory.value,
-          icon: subcategory.icon,
-          groupName: subcategory.groupName,
-        })),
-      })),
-    })),
+    children: data.map(group => transformNode(group)),
   };
 
   return (
