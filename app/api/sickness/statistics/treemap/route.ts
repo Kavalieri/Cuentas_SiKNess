@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 interface TreemapNode {
   name: string;
-  value: number;
+  value?: number; // Opcional: solo las hojas (subcategorías) tienen valor
   children?: TreemapNode[];
   color?: string;
   icon?: string;
@@ -59,10 +59,11 @@ export async function GET(req: NextRequest) {
     // Nivel 1: category_parents (ej: "Hogar", "Transporte")
     // Nivel 2: categories (ej: "Alimentación", "Mantenimiento")
     // Nivel 3: subcategories (ej: "Supermercado", "Restaurantes")
+    // IMPORTANTE: Solo las subcategorías (nivel 3) tienen valores. Los niveles superiores son contenedores.
     const result = await query(
       `
       WITH subcategory_totals AS (
-        -- Nivel 3: Subcategorías con sus montos
+        -- Nivel 3: Subcategorías con sus montos (SOLO HOJAS CON VALORES)
         SELECT
           cp.id as parent_id,
           cp.name as parent_name,
@@ -80,9 +81,10 @@ export async function GET(req: NextRequest) {
         INNER JOIN category_parents cp ON cp.id = c.parent_id
         ${whereClause}
         GROUP BY cp.id, cp.name, cp.icon, c.id, c.name, c.icon, sc.id, sc.name, sc.icon
+        HAVING SUM(t.amount) > 0
       ),
       category_level AS (
-        -- Nivel 2: Categorías con sus subcategorías como hijos
+        -- Nivel 2: Categorías con sus subcategorías como hijos (SIN VALOR PROPIO)
         SELECT
           parent_id,
           parent_name,
@@ -94,15 +96,13 @@ export async function GET(req: NextRequest) {
             json_build_object(
               'name', subcategory_name,
               'value', total_amount,
-              'icon', subcategory_icon,
-              'parentName', category_name
+              'icon', subcategory_icon
             ) ORDER BY total_amount DESC
-          ) as subcategories,
-          SUM(total_amount) as category_total
+          ) as subcategories
         FROM subcategory_totals
         GROUP BY parent_id, parent_name, parent_icon, category_id, category_name, category_icon
       )
-      -- Nivel 1: Padres con categorías (que contienen subcategorías)
+      -- Nivel 1: Padres con categorías (SIN VALOR PROPIO)
       SELECT
         parent_id,
         parent_name,
@@ -110,11 +110,9 @@ export async function GET(req: NextRequest) {
         json_agg(
           json_build_object(
             'name', category_name,
-            'value', category_total,
             'icon', category_icon,
-            'parentName', parent_name,
             'children', subcategories
-          ) ORDER BY category_total DESC
+          ) ORDER BY category_name
         ) as categories
       FROM category_level
       GROUP BY parent_id, parent_name, parent_icon
@@ -124,6 +122,9 @@ export async function GET(req: NextRequest) {
     );
 
     // Transformar los datos al formato de Nivo TreeMap
+    // IMPORTANTE: Solo las hojas (subcategorías) tienen 'value'.
+    // Los contenedores (parents y categories) NO deben tener 'value',
+    // Nivo TreeMap calcula automáticamente sumando sus hijos.
     const treemapData: TreemapData = {
       name: type === 'expense' ? 'Gastos' : type === 'income' ? 'Ingresos' : 'Transacciones',
       children: [],
@@ -134,16 +135,8 @@ export async function GET(req: NextRequest) {
       treemapData.children = result.rows.map((row: any) => ({
         name: row.parent_name,
         icon: row.parent_icon,
-        value: 0, // Se calculará sumando los hijos
         children: row.categories,
       }));
-
-      // Calcular el valor total de cada padre sumando sus hijos
-      treemapData.children.forEach((parent) => {
-        if (parent.children) {
-          parent.value = parent.children.reduce((sum, child) => sum + (child.value || 0), 0);
-        }
-      });
     }
 
     return NextResponse.json({

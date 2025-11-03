@@ -44,44 +44,45 @@ export async function GET(req: NextRequest) {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Query para obtener las categorías ordenadas por monto (para Pareto)
-    // subcategory_id -> subcategories.category_id -> categories.parent_id -> category_parents
+    // Query para análisis de Pareto por subcategorías
+    // Calcula porcentajes sobre el TOTAL de todas las transacciones, no solo el TOP N
     const result = await query(
       `
-      WITH category_totals AS (
+      WITH all_totals AS (
+        -- Total general de todas las transacciones (sin límite)
+        SELECT SUM(t.amount) as grand_total
+        FROM transactions t
+        ${whereClause}
+      ),
+      subcategory_totals AS (
+        -- Montos por subcategoría
         SELECT
-          cp.name as parent_name,
-          cp.icon as parent_icon,
-          c.name as category_name,
-          c.icon as category_icon,
-          sc.name as subcategory_name,
-          sc.icon as subcategory_icon,
+          COALESCE(sc.name, c.name, cp.name, 'Sin categoría') as category_name,
+          COALESCE(sc.icon, c.icon, cp.icon, '📦') as category_icon,
           SUM(t.amount) as total_amount
         FROM transactions t
         LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
         LEFT JOIN categories c ON c.id = sc.category_id
         LEFT JOIN category_parents cp ON cp.id = c.parent_id
         ${whereClause}
-        GROUP BY cp.name, cp.icon, c.name, c.icon, sc.name, sc.icon
+        GROUP BY COALESCE(sc.name, c.name, cp.name, 'Sin categoría'),
+                 COALESCE(sc.icon, c.icon, cp.icon, '📦')
+        HAVING SUM(t.amount) > 0
         ORDER BY total_amount DESC
         LIMIT $${paramIndex}
-      ),
-      total_sum AS (
-        SELECT SUM(total_amount) as grand_total
-        FROM category_totals
       )
       SELECT
-        COALESCE(ct.subcategory_name, ct.category_name, ct.parent_name, 'Sin categoría') as category_name,
-        COALESCE(ct.subcategory_icon, ct.category_icon, ct.parent_icon, '📦') as category_icon,
-        ct.total_amount,
-        ROUND((ct.total_amount / ts.grand_total * 100)::numeric, 2) as percentage,
+        st.category_name,
+        st.category_icon,
+        st.total_amount,
+        ROUND((st.total_amount / at.grand_total * 100)::numeric, 2) as percentage,
         ROUND(
-          (SUM(ct.total_amount) OVER (ORDER BY ct.total_amount DESC) / ts.grand_total * 100)::numeric,
+          (SUM(st.total_amount) OVER (ORDER BY st.total_amount DESC) / at.grand_total * 100)::numeric,
           2
         ) as cumulative_percentage
-      FROM category_totals ct
-      CROSS JOIN total_sum ts
-      ORDER BY ct.total_amount DESC
+      FROM subcategory_totals st
+      CROSS JOIN all_totals at
+      ORDER BY st.total_amount DESC
     `,
       [...params, limit],
     );

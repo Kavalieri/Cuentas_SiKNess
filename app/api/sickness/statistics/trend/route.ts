@@ -20,26 +20,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'householdId es requerido' }, { status: 400 });
     }
 
-    // Query para obtener los montos mensuales
+    // Query para obtener los montos mensuales con formato consistente
     const result = await query(
       `
       WITH monthly_amounts AS (
         SELECT
           TO_CHAR(t.occurred_at, 'YYYY-MM') as month_key,
-          TO_CHAR(t.occurred_at, 'Mon YYYY') as month_display,
+          TO_CHAR(t.occurred_at, 'TMMonth YYYY') as month_display,
           SUM(t.amount) as total_amount
         FROM transactions t
         WHERE t.household_id = $1
           AND t.type = $2
           AND t.occurred_at >= CURRENT_DATE - INTERVAL '1 month' * $3
         GROUP BY month_key, month_display
-        ORDER BY month_key DESC
+        ORDER BY month_key ASC
       )
       SELECT
         month_display as date,
         total_amount as amount
       FROM monthly_amounts
-      ORDER BY month_key ASC
     `,
       [householdId, type, months],
     );
