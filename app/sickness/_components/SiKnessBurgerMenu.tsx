@@ -10,7 +10,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { BarChart3, Calendar, LogOut, Menu, Shield, Tag, User, Users, Wallet } from 'lucide-react';
+import { BarChart3, Calendar, Database, LogOut, Menu, Shield, Tag, User, Users, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -72,6 +72,11 @@ export function SiKnessBurgerMenu() {
               icon: BarChart3,
               label: 'Estadísticas',
               href: '/sickness/estadisticas',
+            },
+            {
+              icon: Database,
+              label: 'Análisis Avanzado',
+              href: '/sickness/analytics',
             },
           ],
         },
