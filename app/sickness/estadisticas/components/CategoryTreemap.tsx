@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getCategoryColor, getGroupColor } from '@/lib/categoryColors';
+import { getCategoryColorByLevel, getGroupColor } from '@/lib/categoryColors';
 import { formatCurrency } from '@/lib/format';
 import { ResponsiveTreeMap } from '@nivo/treemap';
 import { useCallback, useEffect, useState } from 'react';
@@ -156,7 +156,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
 
               // Nivel 0: Raíz (no se muestra)
               // Nivel 1: Grupos (category_parents) - Color base del grupo
-              // Nivel 2: Categorías - Variación del color del grupo
+              // Nivel 2: Categorías - Gradiente del color del grupo
               // Nivel 3: Subcategorías - Tonos claros del grupo
 
               if (depth === 0) {
@@ -167,25 +167,30 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               if (depth === 1) {
                 // Grupos: usar color base específico de cada grupo
                 const groupName = node.id as string;
-                return getGroupColor(groupName, 'base');
+                return getCategoryColorByLevel(groupName, 0, 1, 'group');
               }
 
               if (depth === 2) {
-                // Categorías: obtener el grupo padre y usar color intermedio
+                // Categorías: obtener el grupo padre y usar colores graduales
                 const groupName = pathParts[0] as string;
+                
+                // Generar índice basado en hash del nombre para consistencia
+                const nodeId = String(node.id);
+                const index = nodeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 5;
+                const total = 5; // Estimado de categorías por grupo
 
-                // Calcular índice de la categoría basándose en la posición en el árbol
-                // Usamos un hash simple del nombre para distribuir colores consistentemente
-                const hash = groupName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const categoryIndex = (node.id as string).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const totalCategories = 5; // Estimado para distribución
-
-                return getCategoryColor(groupName, categoryIndex % totalCategories, totalCategories);
+                return getCategoryColorByLevel(groupName, index, total, 'category');
               }
 
-              // Nivel 3+: Subcategorías - tonos claros
+              // Nivel 3+: Subcategorías - tonos muy claros
               const groupName = pathParts[0] as string;
-              return getGroupColor(groupName, 'light');
+              
+              // Generar índice para subcategorías
+              const nodeId = String(node.id);
+              const index = nodeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 3;
+              const total = 3;
+              
+              return getCategoryColorByLevel(groupName, index, total, 'subcategory');
             }}
             nodeOpacity={0.9}
             borderWidth={2}

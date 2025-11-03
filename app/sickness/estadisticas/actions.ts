@@ -7,6 +7,9 @@ export interface ExpenseByCategory {
   amount: number;
   icon: string;
   groupName?: string; // Grupo padre (category_parent) para colores consistentes
+  level?: 'group' | 'category' | 'subcategory'; // Nivel jerárquico
+  index?: number; // Índice dentro del grupo (para gradientes)
+  total?: number; // Total de elementos en el nivel (para gradientes)
 }
 
 export interface IncomeVsExpense {
@@ -54,7 +57,7 @@ export async function getExpensesByCategory(
       LEFT JOIN category_parents cp_direct ON c_direct.parent_id = cp_direct.id
       -- Obtener el grupo disponible (prioridad: subcategoría > categoría directa)
       LEFT JOIN LATERAL (
-        SELECT 
+        SELECT
           COALESCE(cp_from_sub.id, cp_direct.id) as id,
           COALESCE(cp_from_sub.name, cp_direct.name) as name,
           COALESCE(cp_from_sub.icon, cp_direct.icon) as icon
@@ -79,11 +82,16 @@ export async function getExpensesByCategory(
 
     const result = await getPool().query(sql, params);
 
-    return result.rows.map((row: Record<string, unknown>) => ({
+    const total = result.rows.length;
+
+    return result.rows.map((row: Record<string, unknown>, index: number) => ({
       category: (row.category as string) || 'Sin categoría',
       amount: parseFloat(row.amount as string) || 0,
       icon: (row.icon as string) || '❓',
       groupName: (row.group_name as string) || 'otros',
+      level: 'group' as const, // Los resultados son grupos (category_parents)
+      index, // Índice en el array para gradientes
+      total, // Total de grupos para gradientes
     }));
   } catch (error) {
     console.error('Error fetching expenses by category:', error);

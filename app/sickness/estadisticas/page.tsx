@@ -3,12 +3,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSiKness } from '@/contexts/SiKnessContext';
 import { AlertCircle, BarChart3, TrendingDown, Wallet } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import type { ExpenseByCategory, IncomeVsExpense, PeriodOption } from './actions';
 import { getExpensesByCategory, getIncomeVsExpenses } from './actions';
 import { AdvancedQueries } from './AdvancedQueries';
 import { CategoryTreemap, GastosPorCategoria, IngresosVsGastos, ParetoChart } from './components';
-import TrendChartPro from './components/TrendChartPro';
+
+// Importar TrendChartPro dinámicamente (solo client-side)
+const TrendChartPro = dynamic(() => import('./components/TrendChartPro'), {
+  ssr: false,
+  loading: () => <div className="h-[500px] flex items-center justify-center text-muted-foreground">Cargando gráfico...</div>
+});
 
 interface GlobalBalance {
   balance: {
@@ -226,6 +232,7 @@ export default function EstadisticasPage() {
         {/* Tendencia Global con TradingView (histórico cerrado + mes activo) */}
         {householdId && (
           <TrendChartPro
+            key={`trend-global-${householdId}`}
             householdId={householdId}
             type="expense"
             title="Tendencia Histórica de Gastos"
@@ -320,6 +327,7 @@ export default function EstadisticasPage() {
         {/* Tendencia del Período con TradingView (granularidad diaria) */}
         {householdId && selectedPeriodFull && (
           <TrendChartPro
+            key={`trend-period-${householdId}-${selectedPeriodFull.id}`}
             householdId={householdId}
             type="expense"
             periodId={selectedPeriodFull.id}
