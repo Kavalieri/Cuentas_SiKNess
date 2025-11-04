@@ -142,7 +142,7 @@ const EditMovementSchema = z.object({
     .preprocess((v) => (v === '' || v == null ? null : v), z.string().uuid().nullable())
     .optional(),
   occurredAt: z.string().min(1, 'Fecha/hora requerida'),
-  realPayerId: z.string().uuid().optional(), // ✨ NUEVO: pagador para gastos directos
+  performedBy: z.string().uuid().optional(), // ✨ Quién realizó el gasto (performed_by_profile_id en DB)
 });
 
 // Edita movimiento directo y su compensatorio si existe
@@ -154,9 +154,9 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     console.error('[editDirectExpenseWithCompensatory] Validation failed:', parsed.error);
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
-  const { movementId, householdId, amount, description, subcategoryId, occurredAt, realPayerId } = parsed.data;
+  const { movementId, householdId, amount, description, subcategoryId, occurredAt, performedBy } = parsed.data;
 
-  console.log('[editDirectExpenseWithCompensatory] Parsed data:', { movementId, householdId, amount, description, subcategoryId, occurredAt, realPayerId });
+  console.log('[editDirectExpenseWithCompensatory] Parsed data:', { movementId, householdId, amount, description, subcategoryId, occurredAt, performedBy });
 
   const { occurred_at_date, performed_at_ts } = parseDateTimeInput(occurredAt);
 
@@ -251,7 +251,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
     return fail('No se pudo determinar el período de la nueva fecha');
   }
 
-  // Actualizar gasto directo (con auditoría, nuevo period_id y dual-field preservado)
+  // Actualizar gasto directo (con auditoría, nuevo period_id y dual-field)
   const updateResult = await query(
     `UPDATE transactions
      SET amount = $1,
@@ -262,8 +262,8 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
          period_id = $6,
          updated_at = now(),
          updated_by_profile_id = $7,
-         performed_by_profile_id = COALESCE($8, $9, performed_by_profile_id)
-     WHERE id = $10 AND household_id = $11 AND flow_type = 'direct'`,
+         performed_by_profile_id = COALESCE($8, performed_by_profile_id)
+     WHERE id = $9 AND household_id = $10 AND flow_type = 'direct'`,
     [
       amount,
       description || null,
@@ -272,8 +272,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
       performed_at_ts,
       newPeriodId,
       profileId ?? null,
-      existingPerformedBy, // Preservar performed_by existente
-      realPayerId, // Fallback a realPayerId si no existe performed_by
+      performedBy, // Nuevo valor del formulario (quién realizó el gasto)
       movementId,
       householdId
     ]
@@ -304,7 +303,7 @@ export async function editDirectExpenseWithCompensatory(formData: FormData): Pro
         performed_at_ts,
         newPeriodId,
         profileId ?? null,
-        realPayerId || tx.performed_by_profile_id, // Quien pagó de su bolsillo
+        performedBy || tx.performed_by_profile_id, // Quien pagó de su bolsillo
         pairId,
         householdId
       ]
