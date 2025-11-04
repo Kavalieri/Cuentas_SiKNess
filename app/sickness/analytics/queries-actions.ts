@@ -238,10 +238,10 @@ async function queryTopGastos(
       COALESCE(c.icon, '❓') AS icon,
       t.amount AS importe,
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
-      COALESCE(p.display_name, t.performed_by_email, 'No especificado') AS realizado_por
+      COALESCE(p.display_name, p.email, 'No especificado') AS realizado_por
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
-    LEFT JOIN profiles p ON p.email = t.performed_by_email
+    LEFT JOIN profiles p ON p.id = t.performed_by_profile_id
     WHERE t.household_id = $1
       AND t.type IN ('expense', 'expense_direct')
       ${periodFilter}
@@ -344,9 +344,9 @@ async function queryGastosPorCategoriaDetallado(pool: Pool, householdId: string,
       t.amount AS importe,
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
       t.flow_type AS tipo_flujo,
-      COALESCE(p.display_name, t.performed_by_email, 'No especificado') AS realizado_por
+      COALESCE(p.display_name, p.email, 'No especificado') AS realizado_por
     FROM transactions t
-    LEFT JOIN profiles p ON p.email = t.performed_by_email
+    LEFT JOIN profiles p ON p.id = t.performed_by_profile_id
     WHERE t.household_id = $1
       AND t.category_id = $2
       AND t.type IN ('expense', 'expense_direct')
@@ -484,10 +484,10 @@ async function queryDetalleIngresosPeriodo(pool: Pool, householdId: string, year
       TO_CHAR(t.occurred_at, 'DD/MM/YYYY') AS fecha,
       COALESCE(c.name, 'Sin categoría') AS categoria,
       COALESCE(c.icon, '❓') AS icon,
-      COALESCE(p.display_name, t.performed_by_email, 'No especificado') AS realizado_por
+      COALESCE(p.display_name, p.email, 'No especificado') AS realizado_por
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
-    LEFT JOIN profiles p ON p.email = t.performed_by_email
+    LEFT JOIN profiles p ON p.id = t.performed_by_profile_id
     WHERE t.household_id = $1
       AND t.type IN ('income', 'income_direct')
       ${periodFilter}
@@ -1068,11 +1068,17 @@ async function queryGastosPorMiembro(pool: Pool, householdId: string, year?: num
       COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) AS gastos_comunes,
       COALESCE(SUM(t.amount), 0) AS total_gastado
     FROM transactions t
-    INNER JOIN profiles p ON t.performed_by_profile_id = p.id OR t.profile_id = p.id
+    INNER JOIN profiles p ON
+      CASE
+        WHEN t.flow_type = 'direct' AND t.real_payer_id IS NOT NULL THEN p.id = t.real_payer_id
+        WHEN t.performed_by_profile_id IS NOT NULL THEN p.id = t.performed_by_profile_id
+        WHEN t.created_by_profile_id IS NOT NULL THEN p.id = t.created_by_profile_id
+        ELSE FALSE
+      END
     WHERE t.household_id = $1
       AND t.type IN ('expense', 'expense_direct')
       ${periodFilter}
-    GROUP BY p.email, p.display_name
+    GROUP BY p.id, p.email, p.display_name
     ORDER BY total_gastado DESC
   `, params);
 
@@ -1174,7 +1180,11 @@ async function queryDetalleMiembro(pool: Pool, householdId: string, memberId: st
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
     WHERE t.household_id = $1
-      AND (t.profile_id = $2 OR t.performed_by_profile_id = $2)
+      AND (
+        (t.flow_type = 'direct' AND t.real_payer_id = $2)
+        OR (t.flow_type = 'common' AND t.performed_by_profile_id = $2)
+        OR (t.performed_by_profile_id IS NULL AND t.created_by_profile_id = $2)
+      )
       ${periodFilter}
     ORDER BY t.occurred_at DESC
   `, params);
