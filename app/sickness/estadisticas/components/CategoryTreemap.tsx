@@ -79,11 +79,6 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
         children: result.data.children?.map((child: TreemapNode) => generateUniqueIds(child)) || [],
       };
 
-      // Debug: contar grupos recibidos
-      if (process.env.NODE_ENV === 'development' && dataWithIds.children) {
-        console.log(`[TreeMap] Grupos recibidos: ${dataWithIds.children.length}`, dataWithIds.children.map((g: TreemapNode) => g.name));
-      }
-
       setData(dataWithIds);
     } catch (err) {
       console.error('Error loading treemap data:', err);
@@ -180,20 +175,19 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               const pathParts = node.pathComponents || [];
               const depth = pathParts.length;
 
-              // Solo establecer color en el nivel de GRUPO (depth=1)
-              // Los niveles inferiores usan la misma lógica pero con variación manual
+              // Si es el nodo raíz (root), usar color por defecto
+              if (node.id === 'root') {
+                return '#1e293b'; // slate-800 para el fondo
+              }
+
+              // Nivel 1 = grupos
               if (depth === 1) {
-                // Este es un grupo raíz, usar su nombre directamente
                 return getHierarchicalColor(node.id as string, 1);
               }
 
-              // Para niveles superiores, extraer el grupo del path
-              let groupName: string | undefined;
-              if (depth >= 2 && pathParts[1]) {
-                groupName = pathParts[1] as string;
-              }
-
-              // Usar depth relativo para crear gradiente
+              // Nivel 2+ = categorías/subcategorías
+              // Extraer nombre del grupo del path
+              const groupName = pathParts[1] ? String(pathParts[1]) : undefined;
               return getHierarchicalColor(groupName, depth);
             }}
             nodeOpacity={0.95}

@@ -96,11 +96,6 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por CategorÃ
     children: data.map(group => transformNode(group)).filter((g): g is TransformedNode => g !== null),
   };
 
-  // Debug: verificar estructura de datos
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Sunburst data:', JSON.stringify(sunburstData, null, 2));
-  }
-
   return (
     <Card className="h-[600px]">
       <CardHeader>
