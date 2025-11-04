@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 interface TreemapNode {
   name: string;
+  id?: string; // ID único generado
   value?: number;
   children?: TreemapNode[];
   color?: string;
@@ -17,6 +18,7 @@ interface TreemapNode {
 
 interface TreemapData {
   name: string;
+  id?: string; // ID único generado
   color?: string;
   icon?: string;
   parentName?: string;
@@ -34,6 +36,21 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
   const [data, setData] = useState<TreemapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Generar IDs únicos recursivamente para evitar colisiones con nombres duplicados
+  const generateUniqueIds = (node: TreemapNode, parentPath = ''): TreemapNode => {
+    const currentPath = parentPath ? `${parentPath}/${node.name}` : node.name;
+    const nodeWithId: TreemapNode = {
+      ...node,
+      id: currentPath,
+    };
+
+    if (node.children) {
+      nodeWithId.children = node.children.map(child => generateUniqueIds(child, currentPath));
+    }
+
+    return nodeWithId;
+  };
 
   const loadTreemapData = useCallback(async () => {
     if (!householdId) return;
@@ -54,13 +71,20 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
       if (!response.ok) throw new Error('Error al cargar datos del treemap');
 
       const result = await response.json();
-      
+
+      // Generar IDs únicos para todos los nodos
+      const dataWithIds: TreemapData = {
+        ...result.data,
+        id: 'root',
+        children: result.data.children?.map((child: TreemapNode) => generateUniqueIds(child)) || [],
+      };
+
       // Debug: contar grupos recibidos
-      if (process.env.NODE_ENV === 'development' && result.data?.children) {
-        console.log(`[TreeMap] Grupos recibidos: ${result.data.children.length}`, result.data.children.map((g: TreemapNode) => g.name));
+      if (process.env.NODE_ENV === 'development' && dataWithIds.children) {
+        console.log(`[TreeMap] Grupos recibidos: ${dataWithIds.children.length}`, dataWithIds.children.map((g: TreemapNode) => g.name));
       }
-      
-      setData(result.data);
+
+      setData(dataWithIds);
     } catch (err) {
       console.error('Error loading treemap data:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -134,7 +158,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
         <div className="h-[350px]">
           <ResponsiveTreeMap
             data={data}
-            identity="name"
+            identity="id"
             value="value"
             valueFormat={(value) => formatCurrency(value)}
             margin={{ top: 10, right: 10, bottom: 10, left: 10 }}

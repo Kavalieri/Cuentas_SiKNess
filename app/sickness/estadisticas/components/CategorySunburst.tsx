@@ -116,7 +116,7 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por Categor√
         <ResponsiveSunburst
           data={sunburstData}
           margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
-          id="label"
+          id="id"
           value="value"
           cornerRadius={2}
           borderWidth={3}
