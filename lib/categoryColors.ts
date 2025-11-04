@@ -12,73 +12,108 @@ export interface ColorPalette {
 }
 
 /**
+ * Mapeo explícito grupo → color conceptual
+ * Define la asociación visual de cada grupo
+ */
+export const GROUP_COLOR_MAP = {
+  hogar: 'rojo',
+  alimentación: 'verde',
+  transporte: 'amarillo',
+  ocio: 'púrpura',
+  salud: 'rosa',
+  educación: 'cyan',
+  finanzas: 'naranja',
+  suministros: 'azul',
+  otros: 'gris',
+} as const;
+
+/**
  * Paletas de colores por grupo de categorías
  * Con 5 tonalidades por grupo para jerarquía visual
+ * 
+ * ACTUALIZADO (Issue #48): Paleta consistente y distintiva
+ * - Hogar: ROJO (categoría de mayor importancia)
+ * - Alimentación: VERDE (naturaleza, salud)
+ * - Transporte: AMARILLO (señales de tráfico, visibilidad)
+ * - Ocio: PÚRPURA (creatividad, entretenimiento)
+ * - Salud: ROSA (cuidado, bienestar)
+ * - Educación: CYAN (conocimiento, claridad)
+ * - Finanzas: NARANJA (energía, inversión)
+ * - Suministros: AZUL (frecuente, confiable)
+ * - Otros: GRIS (neutral, miscelánea)
  */
 const GROUP_COLOR_PALETTES: Record<string, ColorPalette> = {
-  // Hogar - Azul
-  'hogar': {
-    base: '#3b82f6', // blue-500 - Grupo
-    light: '#60a5fa', // blue-400 - Categorías
-    lighter: '#93c5fd', // blue-300 - Subcategorías
-    dark: '#2563eb', // blue-600 - Hover
-    darker: '#1e40af', // blue-700 - Bordes
+  // Hogar - ROJO (Categoría principal)
+  hogar: {
+    base: '#dc2626', // red-600 - Grupo
+    light: '#ef4444', // red-500 - Categorías
+    lighter: '#f87171', // red-400 - Subcategorías
+    dark: '#b91c1c', // red-700 - Hover
+    darker: '#991b1b', // red-800 - Bordes
   },
-  // Transporte - Verde
-  'transporte': {
-    base: '#10b981', // emerald-500
-    light: '#34d399', // emerald-400
-    lighter: '#6ee7b7', // emerald-300
-    dark: '#059669', // emerald-600
-    darker: '#047857', // emerald-700
+  // Alimentación - VERDE (Naturaleza, salud)
+  alimentación: {
+    base: '#16a34a', // green-600
+    light: '#22c55e', // green-500
+    lighter: '#4ade80', // green-400
+    dark: '#15803d', // green-700
+    darker: '#166534', // green-800
   },
-  // Ocio - Púrpura
-  'ocio': {
-    base: '#8b5cf6', // violet-500
-    light: '#a78bfa', // violet-400
-    lighter: '#c4b5fd', // violet-300
-    dark: '#7c3aed', // violet-600
-    darker: '#6d28d9', // violet-700
+  // Transporte - AMARILLO (Señales de tráfico)
+  transporte: {
+    base: '#ca8a04', // yellow-600
+    light: '#eab308', // yellow-500
+    lighter: '#facc15', // yellow-400
+    dark: '#a16207', // yellow-700
+    darker: '#854d0e', // yellow-800
   },
-  // Salud - Rosa
-  'salud': {
-    base: '#ec4899', // pink-500
-    light: '#f472b6', // pink-400
-    lighter: '#f9a8d4', // pink-300
-    dark: '#db2777', // pink-600
-    darker: '#be185d', // pink-700
+  // Ocio - PÚRPURA (Creatividad)
+  ocio: {
+    base: '#7c3aed', // violet-600
+    light: '#8b5cf6', // violet-500
+    lighter: '#a78bfa', // violet-400
+    dark: '#6d28d9', // violet-700
+    darker: '#5b21b6', // violet-800
   },
-  // Educación - Cyan
-  'educación': {
-    base: '#06b6d4', // cyan-500
-    light: '#22d3ee', // cyan-400
-    lighter: '#67e8f9', // cyan-300
-    dark: '#0891b2', // cyan-600
-    darker: '#0e7490', // cyan-700
+  // Salud - ROSA (Cuidado)
+  salud: {
+    base: '#db2777', // pink-600
+    light: '#ec4899', // pink-500
+    lighter: '#f472b6', // pink-400
+    dark: '#be185d', // pink-700
+    darker: '#9f1239', // pink-800
   },
-  // Finanzas - Naranja
-  'finanzas': {
-    base: '#f97316', // orange-500
-    light: '#fb923c', // orange-400
-    lighter: '#fdba74', // orange-300
-    dark: '#ea580c', // orange-600
-    darker: '#c2410c', // orange-700
+  // Educación - CYAN (Conocimiento)
+  educación: {
+    base: '#0891b2', // cyan-600
+    light: '#06b6d4', // cyan-500
+    lighter: '#22d3ee', // cyan-400
+    dark: '#0e7490', // cyan-700
+    darker: '#155e75', // cyan-800
   },
-  // Alimentación - Amarillo
-  'alimentación': {
-    base: '#eab308', // yellow-500
-    light: '#facc15', // yellow-400
-    lighter: '#fde047', // yellow-300
-    dark: '#ca8a04', // yellow-600
-    darker: '#a16207', // yellow-700
+  // Finanzas - NARANJA (Energía)
+  finanzas: {
+    base: '#ea580c', // orange-600
+    light: '#f97316', // orange-500
+    lighter: '#fb923c', // orange-400
+    dark: '#c2410c', // orange-700
+    darker: '#9a3412', // orange-800
   },
-  // Otros - Gris
-  'otros': {
-    base: '#6b7280', // gray-500
-    light: '#9ca3af', // gray-400
-    lighter: '#d1d5db', // gray-300
-    dark: '#4b5563', // gray-600
-    darker: '#374151', // gray-700
+  // Suministros - AZUL (Frecuente, confiable)
+  suministros: {
+    base: '#2563eb', // blue-600
+    light: '#3b82f6', // blue-500
+    lighter: '#60a5fa', // blue-400
+    dark: '#1d4ed8', // blue-700
+    darker: '#1e40af', // blue-800
+  },
+  // Otros - GRIS (Neutral)
+  otros: {
+    base: '#4b5563', // gray-600
+    light: '#6b7280', // gray-500
+    lighter: '#9ca3af', // gray-400
+    dark: '#374151', // gray-700
+    darker: '#1f2937', // gray-800
   },
 };
 
@@ -238,4 +273,75 @@ function interpolateColor(color1: string, color2: string, ratio: number): string
  */
 export function getLegacyColor(index: number): string {
   return LEGACY_COLORS[index % LEGACY_COLORS.length]!;
+}
+
+/**
+ * Obtiene el color para un nodo jerárquico con validación robusta
+ * Esta es la función PRINCIPAL para obtener colores en gráficos
+ * 
+ * @param groupName - Nombre del grupo (requerido, se normaliza automáticamente)
+ * @param depth - Profundidad del nodo en el árbol:
+ *   - 0: Root (invisible/oscuro)
+ *   - 1: Grupo (color base saturado)
+ *   - 2: Categoría (color light)
+ *   - 3+: Subcategoría (color lighter)
+ * @param fallback - Color de respaldo si falla (default: gris)
+ * @returns Color hexadecimal (#xxxxxx)
+ * 
+ * @example
+ * // Grupo "Hogar" en nivel 1 (grupo)
+ * getHierarchicalColor('Hogar', 1) // => '#dc2626' (rojo base)
+ * 
+ * // Categoría dentro de "Hogar" en nivel 2
+ * getHierarchicalColor('Hogar', 2) // => '#ef4444' (rojo light)
+ * 
+ * // Subcategoría dentro de "Hogar" en nivel 3
+ * getHierarchicalColor('Hogar', 3) // => '#f87171' (rojo lighter)
+ */
+export function getHierarchicalColor(
+  groupName: string | undefined | null,
+  depth: number,
+  fallback: string = '#6b7280' // gray-500
+): string {
+  // Validación estricta de entrada
+  if (!groupName || typeof groupName !== 'string' || groupName.trim() === '') {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[categoryColors] Invalid groupName: "${groupName}", depth: ${depth}, using fallback`);
+    }
+    return fallback;
+  }
+
+  // Normalizar nombre del grupo (lowercase, sin acentos)
+  const normalized = groupName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const palette = GROUP_COLOR_PALETTES[normalized];
+
+  if (!palette) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        `[categoryColors] No palette found for group: "${groupName}" (normalized: "${normalized}"), using fallback`
+      );
+    }
+    return fallback;
+  }
+
+  // Mapeo estricto por profundidad
+  // Garantiza consistencia visual en toda la aplicación
+  switch (depth) {
+    case 0:
+      return '#1a1a1a'; // Root (oscuro, casi invisible)
+    case 1:
+      return palette.base; // Grupo (color saturado)
+    case 2:
+      return palette.light; // Categoría (color medio)
+    case 3:
+    case 4:
+    case 5:
+      return palette.lighter; // Subcategoría (color claro, todos los niveles)
+    default:
+      return palette.lighter; // Profundidad mayor: usar lighter
+  }
 }
