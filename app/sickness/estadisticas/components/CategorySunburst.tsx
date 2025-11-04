@@ -135,13 +135,20 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por Categor�
               groupName = typedNode.path[1].data.groupName || typedNode.path[1].data.label;
             }
 
-            // Usar función robusta que maneja todos los casos edge
+            // Solo aplicar color en el nivel de GRUPO (depth=1)
+            // Los niveles inferiores heredan y varían automáticamente
+            if (typedNode.depth === 1) {
+              return getHierarchicalColor(groupName, 1);
+            }
+
+            // Para otros niveles, dejar que Nivo maneje la herencia
             return getHierarchicalColor(groupName, typedNode.depth);
           }}
           childColor={{
             from: 'color',
-            modifiers: [['brighter', 0.1]],
+            modifiers: [['brighter', 0.13]],
           }}
+          inheritColorFromParent
           enableArcLabels
           arcLabel={(d: { percentage: number; data: TransformedNode }) => {
             // Solo mostrar label si el arco es suficientemente grande

@@ -88,8 +88,51 @@ export function ParetoChart({ data, isLoading, title = 'Análisis de Pareto (80/
           indexScale={{ type: 'band', round: true }}
           colors={(bar) => {
             const groupName = bar.data.groupName as string | undefined;
-            // Todas las barras son nivel "grupo" (depth=1) para consistencia
+            
+            // Si el groupName es "otros" pero realmente debería heredar del padre
+            // (ej: "Otros" subcategoría bajo "Hogar"), extraer el grupo real
+            // Por ahora, usar groupName tal cual viene del backend
+            // TODO: Backend debe enviar el grupo real, no "otros" para subcategorías "Otros"
+            
             return getHierarchicalColor(groupName, 1);
+          }}
+          theme={{
+            text: {
+              fill: 'hsl(var(--foreground))',
+            },
+            axis: {
+              ticks: {
+                text: {
+                  fill: 'hsl(var(--foreground))',
+                  fontSize: 11,
+                },
+              },
+              legend: {
+                text: {
+                  fill: 'hsl(var(--foreground))',
+                  fontSize: 12,
+                  fontWeight: 600,
+                },
+              },
+            },
+            legends: {
+              text: {
+                fill: 'hsl(var(--foreground))',
+              },
+            },
+            labels: {
+              text: {
+                fontSize: 11,
+                fontWeight: 600,
+              },
+            },
+            tooltip: {
+              container: {
+                background: 'hsl(var(--background))',
+                color: 'hsl(var(--foreground))',
+                border: '1px solid hsl(var(--border))',
+              },
+            },
           }}
           borderRadius={4}
           borderWidth={2}
@@ -222,27 +265,6 @@ export function ParetoChart({ data, isLoading, title = 'Análisis de Pareto (80/
               );
             },
           ]}
-          theme={{
-            axis: {
-              ticks: {
-                text: {
-                  fontSize: 11,
-                },
-              },
-              legend: {
-                text: {
-                  fontSize: 12,
-                  fontWeight: 600,
-                },
-              },
-            },
-            labels: {
-              text: {
-                fontSize: 11,
-                fontWeight: 600,
-              },
-            },
-          }}
           animate={true}
           motionConfig="gentle"
         />

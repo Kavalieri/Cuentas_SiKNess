@@ -54,6 +54,12 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
       if (!response.ok) throw new Error('Error al cargar datos del treemap');
 
       const result = await response.json();
+      
+      // Debug: contar grupos recibidos
+      if (process.env.NODE_ENV === 'development' && result.data?.children) {
+        console.log(`[TreeMap] Grupos recibidos: ${result.data.children.length}`, result.data.children.map((g: TreemapNode) => g.name));
+      }
+      
       setData(result.data);
     } catch (err) {
       console.error('Error loading treemap data:', err);
@@ -147,22 +153,23 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
               modifiers: [['darker', 1.5]],
             }}
             colors={(node) => {
-              // NO usar node.data.color (puede ser legacy del backend)
-              // Forzar uso del sistema de paletas consistente
-
               const pathParts = node.pathComponents || [];
               const depth = pathParts.length;
 
-              let groupName: string | undefined;
-
-              if (depth === 2) {
-                // Este ES el grupo
-                groupName = pathParts[1] as string;
-              } else if (depth >= 3) {
-                // Categoría/subcategoría: buscar groupName en data o path
-                groupName = node.data.parentName || (pathParts[1] as string);
+              // Solo establecer color en el nivel de GRUPO (depth=1)
+              // Los niveles inferiores usan la misma lógica pero con variación manual
+              if (depth === 1) {
+                // Este es un grupo raíz, usar su nombre directamente
+                return getHierarchicalColor(node.id as string, 1);
               }
 
+              // Para niveles superiores, extraer el grupo del path
+              let groupName: string | undefined;
+              if (depth >= 2 && pathParts[1]) {
+                groupName = pathParts[1] as string;
+              }
+
+              // Usar depth relativo para crear gradiente
               return getHierarchicalColor(groupName, depth);
             }}
             nodeOpacity={0.95}

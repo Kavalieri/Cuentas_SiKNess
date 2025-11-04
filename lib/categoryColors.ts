@@ -30,7 +30,7 @@ export const GROUP_COLOR_MAP = {
 /**
  * Paletas de colores por grupo de categorías
  * Con 5 tonalidades por grupo para jerarquía visual
- * 
+ *
  * ACTUALIZADO (Issue #48): Paleta consistente y distintiva
  * - Hogar: ROJO (categoría de mayor importancia)
  * - Alimentación: VERDE (naturaleza, salud)
@@ -157,6 +157,12 @@ export function getGroupColorPalette(groupName: string): ColorPalette {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, ''); // Eliminar acentos
 
+  // Debug en desarrollo
+  if (process.env.NODE_ENV === 'development' && !GROUP_COLOR_PALETTES[normalized]) {
+    console.warn(`[categoryColors] Grupo no encontrado: "${groupName}" (normalizado: "${normalized}")`);
+    console.warn(`[categoryColors] Grupos disponibles:`, Object.keys(GROUP_COLOR_PALETTES));
+  }
+
   return GROUP_COLOR_PALETTES[normalized] || DEFAULT_PALETTE;
 }
 
@@ -278,7 +284,7 @@ export function getLegacyColor(index: number): string {
 /**
  * Obtiene el color para un nodo jerárquico con validación robusta
  * Esta es la función PRINCIPAL para obtener colores en gráficos
- * 
+ *
  * @param groupName - Nombre del grupo (requerido, se normaliza automáticamente)
  * @param depth - Profundidad del nodo en el árbol:
  *   - 0: Root (invisible/oscuro)
@@ -287,14 +293,14 @@ export function getLegacyColor(index: number): string {
  *   - 3+: Subcategoría (color lighter)
  * @param fallback - Color de respaldo si falla (default: gris)
  * @returns Color hexadecimal (#xxxxxx)
- * 
+ *
  * @example
  * // Grupo "Hogar" en nivel 1 (grupo)
  * getHierarchicalColor('Hogar', 1) // => '#dc2626' (rojo base)
- * 
+ *
  * // Categoría dentro de "Hogar" en nivel 2
  * getHierarchicalColor('Hogar', 2) // => '#ef4444' (rojo light)
- * 
+ *
  * // Subcategoría dentro de "Hogar" en nivel 3
  * getHierarchicalColor('Hogar', 3) // => '#f87171' (rojo lighter)
  */
