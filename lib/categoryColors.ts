@@ -52,7 +52,7 @@ const GROUP_COLOR_PALETTES: Record<string, ColorPalette> = {
     darker: '#991b1b', // red-800 - Bordes
   },
   // Alimentación - VERDE (Naturaleza, salud)
-  alimentación: {
+  alimentacion: {
     base: '#16a34a', // green-600
     light: '#22c55e', // green-500
     lighter: '#4ade80', // green-400
@@ -84,12 +84,20 @@ const GROUP_COLOR_PALETTES: Record<string, ColorPalette> = {
     darker: '#9f1239', // pink-800
   },
   // Educación - CYAN (Conocimiento)
-  educación: {
+  educacion: {
     base: '#0891b2', // cyan-600
     light: '#06b6d4', // cyan-500
     lighter: '#22d3ee', // cyan-400
     dark: '#0e7490', // cyan-700
     darker: '#155e75', // cyan-800
+  },
+  // Personal - TEAL (Individual, cuidado personal)
+  personal: {
+    base: '#0d9488', // teal-600
+    light: '#14b8a6', // teal-500
+    lighter: '#2dd4bf', // teal-400
+    dark: '#0f766e', // teal-700
+    darker: '#115e59', // teal-800
   },
   // Finanzas - NARANJA (Energía)
   finanzas: {
