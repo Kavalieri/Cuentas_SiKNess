@@ -2,7 +2,7 @@
 
 import type { ExpenseByCategory } from '@/app/sickness/estadisticas/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getGroupColor } from '@/lib/categoryColors';
+import { getHierarchicalColor } from '@/lib/categoryColors';
 import { ResponsiveBar } from '@nivo/bar';
 
 interface ParetoChartProps {
@@ -87,14 +87,15 @@ export function ParetoChart({ data, isLoading, title = 'Análisis de Pareto (80/
           valueScale={{ type: 'linear' }}
           indexScale={{ type: 'band', round: true }}
           colors={(bar) => {
-            const groupName = bar.data.groupName as string;
-            return getGroupColor(groupName, 'base');
+            const groupName = bar.data.groupName as string | undefined;
+            // Todas las barras son nivel "grupo" (depth=1) para consistencia
+            return getHierarchicalColor(groupName, 1);
           }}
           borderRadius={4}
-          borderWidth={1}
+          borderWidth={2}
           borderColor={{
             from: 'color',
-            modifiers: [['darker', 0.3]],
+            modifiers: [['darker', 1.2]],
           }}
           axisTop={null}
           axisRight={{
