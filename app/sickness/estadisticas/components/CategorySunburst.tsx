@@ -2,7 +2,7 @@
 
 import type { HierarchicalExpense } from '@/app/sickness/estadisticas/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getGroupColor } from '@/lib/categoryColors';
+import { getHierarchicalColor } from '@/lib/categoryColors';
 import { ResponsiveSunburst } from '@/node_modules/@nivo/sunburst';
 
 interface CategorySunburstProps {
@@ -119,48 +119,24 @@ export function CategorySunburst({ data, isLoading, title = 'Gastos por Categor�
           id="label"
           value="value"
           cornerRadius={2}
-          borderWidth={2}
-          borderColor={{ theme: 'background' }}
+          borderWidth={3}
+          borderColor={{
+            from: 'color',
+            modifiers: [['darker', 1.2]],
+          }}
           colors={(node: unknown) => {
             const typedNode = node as { depth: number; data: TransformedNode; path?: { data: TransformedNode }[] };
-            // El root no tiene color
-            if (typedNode.depth === 0) return '#1a1a1a';
 
-            // Obtener el groupName del nodo o de sus ancestros
+            // Obtener groupName del nodo o de sus ancestros
             let groupName = typedNode.data.groupName;
 
-            // Si no tiene groupName, buscar en el path
-            if (!groupName && typedNode.path) {
-              // El nivel 1 (primer hijo de root) es el grupo
-              const groupNode = typedNode.path[1];
-              if (groupNode && groupNode.data) {
-                groupName = groupNode.data.groupName || groupNode.data.label;
-              }
+            // Si no tiene groupName, buscar en el path (nivel 1 = grupo)
+            if (!groupName && typedNode.path && typedNode.path[1]) {
+              groupName = typedNode.path[1].data.groupName || typedNode.path[1].data.label;
             }
 
-            // Si aún no tenemos groupName, usar el label del nodo en nivel 1
-            if (!groupName && typedNode.depth === 1) {
-              groupName = typedNode.data.label;
-            }
-
-            // Fallback a color genérico si no hay groupName
-            if (!groupName) {
-              console.warn('No groupName found for node:', typedNode);
-              return '#666666';
-            }
-
-            // Nivel 1: Grupos (usar color base más saturado)
-            if (typedNode.depth === 1) {
-              return getGroupColor(groupName, 'base');
-            }
-
-            // Nivel 2: Categorías (usar color medium)
-            if (typedNode.depth === 2) {
-              return getGroupColor(groupName, 'light');
-            }
-
-            // Nivel 3+: Subcategorías (usar color light)
-            return getGroupColor(groupName, 'dark');
+            // Usar función robusta que maneja todos los casos edge
+            return getHierarchicalColor(groupName, typedNode.depth);
           }}
           childColor={{
             from: 'color',
