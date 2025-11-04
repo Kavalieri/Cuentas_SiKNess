@@ -25,8 +25,8 @@ DECLARE
   v_added_count INT := 0;
 BEGIN
   RAISE NOTICE '🔍 Buscando categorías sin subcategorías...';
-  
-  FOR v_category IN 
+
+  FOR v_category IN
     SELECT DISTINCT c.id, c.name, c.icon
     FROM categories c
     WHERE NOT EXISTS (
@@ -38,11 +38,11 @@ BEGIN
     INSERT INTO subcategories (category_id, name, icon, display_order)
     VALUES (v_category.id, 'Otros', '📦', 99)
     ON CONFLICT DO NOTHING;
-    
+
     v_added_count := v_added_count + 1;
     RAISE NOTICE '  ✅ Añadida "Otros" a: % (%)', v_category.name, v_category.icon;
   END LOOP;
-  
+
   RAISE NOTICE '';
   RAISE NOTICE '📊 Resumen:';
   RAISE NOTICE '  - Subcategorías "Otros" añadidas: %', v_added_count;
@@ -58,29 +58,29 @@ DECLARE
 BEGIN
   RAISE NOTICE '';
   RAISE NOTICE '🔄 Migrando transacciones huérfanas...';
-  
+
   -- Update transactions that have category_id but no subcategory_id
   WITH migration AS (
     UPDATE transactions t
-    SET 
+    SET
       subcategory_id = (
-        SELECT s.id 
+        SELECT s.id
         FROM subcategories s
-        WHERE s.category_id = t.category_id 
+        WHERE s.category_id = t.category_id
           AND s.name = 'Otros'
         LIMIT 1
       ),
       updated_at = NOW()
-    WHERE t.category_id IS NOT NULL 
+    WHERE t.category_id IS NOT NULL
       AND t.subcategory_id IS NULL
       AND EXISTS (
-        SELECT 1 FROM subcategories s 
+        SELECT 1 FROM subcategories s
         WHERE s.category_id = t.category_id AND s.name = 'Otros'
       )
     RETURNING t.id
   )
   SELECT COUNT(*) INTO v_updated_count FROM migration;
-  
+
   RAISE NOTICE '  ✅ Transacciones migradas: %', v_updated_count;
 END $$;
 
@@ -97,25 +97,25 @@ BEGIN
   RAISE NOTICE '';
   RAISE NOTICE '📊 Verificación Final:';
   RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-  
+
   -- Count categories without subcategories
   SELECT COUNT(*) INTO v_categories_without_subs
   FROM categories c
   WHERE NOT EXISTS (SELECT 1 FROM subcategories s WHERE s.category_id = c.id);
-  
+
   -- Count orphan transactions
   SELECT COUNT(*) INTO v_orphan_transactions
   FROM transactions
   WHERE category_id IS NOT NULL AND subcategory_id IS NULL;
-  
+
   -- Count total subcategories
   SELECT COUNT(*) INTO v_total_subcategories FROM subcategories;
-  
+
   RAISE NOTICE 'Categorías sin subcategorías: % (esperado: 0)', v_categories_without_subs;
   RAISE NOTICE 'Transacciones huérfanas: % (esperado: 0)', v_orphan_transactions;
   RAISE NOTICE 'Total subcategorías: %', v_total_subcategories;
   RAISE NOTICE '';
-  
+
   IF v_categories_without_subs = 0 AND v_orphan_transactions = 0 THEN
     RAISE NOTICE '✅ ¡Migración completada exitosamente!';
   ELSE

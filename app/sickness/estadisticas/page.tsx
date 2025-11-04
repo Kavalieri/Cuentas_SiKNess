@@ -19,6 +19,12 @@ const TrendChartPro = dynamic(() => import('./components/TrendChartPro'), {
   loading: () => <div className="h-[500px] flex items-center justify-center text-muted-foreground">Cargando gráfico...</div>
 });
 
+// Importar BalanceEvolutionChart dinámicamente (solo client-side)
+const BalanceEvolutionChart = dynamic(() => import('./components/BalanceEvolutionChart'), {
+  ssr: false,
+  loading: () => <div className="h-[500px] flex items-center justify-center text-muted-foreground">Cargando gráfico de balance...</div>
+});
+
 interface GlobalBalance {
   balance: {
     opening: number;
@@ -281,6 +287,15 @@ export default function EstadisticasPage() {
             )}
           </div>
         </div>
+
+        {/* NUEVO: Gráfico de Evolución del Balance */}
+        {householdId && (
+          <BalanceEvolutionChart
+            key={`balance-evolution-global-${householdId}`}
+            householdId={householdId}
+            title="Evolución del Balance Histórico"
+          />
+        )}
       </section>
 
       {/* BLOQUE 2: Período Seleccionado */}

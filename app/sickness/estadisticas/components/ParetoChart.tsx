@@ -88,12 +88,12 @@ export function ParetoChart({ data, isLoading, title = 'Análisis de Pareto (80/
           indexScale={{ type: 'band', round: true }}
           colors={(bar) => {
             const groupName = bar.data.groupName as string | undefined;
-            
+
             // Si el groupName es "otros" pero realmente debería heredar del padre
             // (ej: "Otros" subcategoría bajo "Hogar"), extraer el grupo real
             // Por ahora, usar groupName tal cual viene del backend
             // TODO: Backend debe enviar el grupo real, no "otros" para subcategorías "Otros"
-            
+
             return getHierarchicalColor(groupName, 1);
           }}
           theme={{

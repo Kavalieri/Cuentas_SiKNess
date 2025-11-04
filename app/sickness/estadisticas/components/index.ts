@@ -1,3 +1,4 @@
+export { default as BalanceEvolutionChart } from './BalanceEvolutionChart';
 export { CategoryTreemap } from './CategoryTreemap';
 export { GastosPorCategoria } from './GastosPorCategoria';
 export { IngresosVsGastos } from './IngresosVsGastos';
