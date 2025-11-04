@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getGroupColor } from '@/lib/categoryColors';
+import { getHierarchicalColor } from '@/lib/categoryColors';
 import { formatCurrency } from '@/lib/format';
 import { ResponsiveTreeMap } from '@nivo/treemap';
 import { useCallback, useEffect, useState } from 'react';
@@ -144,48 +144,29 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
             }}
             borderColor={{
               from: 'color',
-              modifiers: [['darker', 0.3]],
+              modifiers: [['darker', 1.5]],
             }}
             colors={(node) => {
-              // Usar el color del nodo si está definido explícitamente
-              if (node.data.color) return node.data.color;
+              // NO usar node.data.color (puede ser legacy del backend)
+              // Forzar uso del sistema de paletas consistente
 
-              // Determinar el nivel basado en el path del nodo
               const pathParts = node.pathComponents || [];
               const depth = pathParts.length;
 
-              // Nivel 0: Raíz (no se muestra normalmente)
-              if (depth === 0 || depth === 1) {
-                return type === 'expense' ? '#ef4444' : '#10b981';
-              }
-
-              // Para niveles 2+: extraer el nombre del grupo
-              // Nivel 2 es el grupo mismo, niveles 3+ son hijos del grupo
-              let groupName: string;
+              let groupName: string | undefined;
 
               if (depth === 2) {
-                // Nivel 2: Este ES el grupo (pathParts[1])
+                // Este ES el grupo
                 groupName = pathParts[1] as string;
-                return getGroupColor(groupName, 'base');
-              } else {
-                // Nivel 3+: Categorías y subcategorías - usar parentName del dato
-                groupName = node.data.parentName || pathParts[1] as string;
-
-                if (!groupName) {
-                  return type === 'expense' ? '#ef4444' : '#10b981';
-                }
-
-                // Nivel 3: Categorías - Color medium
-                if (depth === 3) {
-                  return getGroupColor(groupName, 'light');
-                }
-
-                // Nivel 4+: Subcategorías - Color light
-                return getGroupColor(groupName, 'dark');
+              } else if (depth >= 3) {
+                // Categoría/subcategoría: buscar groupName en data o path
+                groupName = node.data.parentName || (pathParts[1] as string);
               }
+
+              return getHierarchicalColor(groupName, depth);
             }}
-            nodeOpacity={0.9}
-            borderWidth={2}
+            nodeOpacity={0.95}
+            borderWidth={3}
             enableParentLabel={true}
             parentLabelSize={16}
             label={(node) => {
