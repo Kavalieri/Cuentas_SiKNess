@@ -27,6 +27,7 @@ Thumbs.db
 # Datos privados / temporales
 /private/
 /_archive/
+/.archive/
 /tmp/
 /DOCUMENTOS/
 *.xlsx
