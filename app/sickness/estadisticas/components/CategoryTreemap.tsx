@@ -195,9 +195,10 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
             enableParentLabel={true}
             parentLabelSize={16}
             label={(node) => {
-              // Mostrar icono + nombre si está disponible
+              // Mostrar icono + solo el nombre (no el path completo)
               const icon = node.data.icon || '';
-              return `${icon} ${node.id}`.trim();
+              const name = node.data.name || node.id?.split('/').pop() || node.id;
+              return `${icon} ${name}`.trim();
             }}
             tooltip={({ node }) => {
               // Calcular profundidad del nodo
