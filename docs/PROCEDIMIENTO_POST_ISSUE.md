@@ -71,7 +71,7 @@ git push
 **Si el issue generó documentación nueva:**
 
 - [ ] Mover documentos de resumen a `docs/releases/` (si es un release)
-- [ ] O a `docs/TO-DO/DONE/` (si es un documento de trabajo)
+- [ ] O mantener en `docs/` (si es documento de análisis/implementación)
 - [ ] Actualizar índices o TOC si existen
 
 **Si el issue generó scripts:**

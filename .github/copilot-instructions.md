@@ -18,8 +18,8 @@
 
 📚 **Migraciones**: [../database/README.md](../database/README.md)
 
-📚 **Gestor de los entornos**: [../docs/PM2_SISTEMA_COMPLETO.md](../docs/TO-DO/DONE/PM2_SISTEMA_COMPLETO.md)
-📚 **Gestión de la base de datos**: [../docs/POSTGRESQL_SISTEMA_COMPLETO.md](../docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md)
+📚 **Gestor de los entornos**: [../docs/PM2_SISTEMA_COMPLETO.md](../docs/PM2_SISTEMA_COMPLETO.md)
+📚 **Gestión de la base de datos**: [../docs/POSTGRESQL_SISTEMA_COMPLETO.md](../docs/POSTGRESQL_SISTEMA_COMPLETO.md)
 📚 **DB Seed**: [../database/migrations/applied/20251014_150000_seed.sql](../database/migrations/applied/20251014_150000_seed.sql)
 
 📚 **Tareas VS Code**: [../.vscode/tasks.json](../.vscode/tasks.json) - **25 tareas disponibles**

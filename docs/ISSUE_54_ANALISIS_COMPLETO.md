@@ -2,7 +2,8 @@
 
 **Fecha**: 5 Noviembre 2025  
 **Versión**: v2.1.0 (post-Issue #53)  
-**Auditor**: AI Assistant
+**Auditor**: AI Assistant  
+**Actualización**: ✅ docs/TO-DO/ archivado (5 Nov 2025)
 
 ---
 
@@ -13,12 +14,14 @@
 - ⚠️ **Directorios legacy en /app**: `dual-flow`, `credits`, `exports`, `/configuracion` (parcialmente obsoletos)
 - ⚠️ **Archivos obsoletos en /lib**: `pgAdmin.ts`, `pgBrowser.ts`, `dualFlow.ts.backup`, `categoryColors.ts`
 - ⚠️ **APIs en desuso**: `/api/dev` (vacío), `/api/admin` (no usado actualmente)
+- ✅ **docs/TO-DO/ ARCHIVADO**: Sistema legacy de gestión de tareas (migrado a GitHub Issues)
 - 🗑️ **Múltiples archives**: 2 ubicaciones diferentes → **consolidar en `.archive/` raíz**
 - ⚠️ **Nombres confusos**: "dual-flow" es nombre legacy del sistema v1.0
 
 **Impacto**:
 - ~30% del código en `/app` es legacy/sin uso activo
 - ~20% de archivos en `/lib` son wrappers obsoletos (pgAdmin, pgBrowser)
+- ✅ docs/TO-DO/ eliminado (sistema obsoleto de gestión)
 - Estructura confusa para nuevos desarrolladores
 - Riesgo de mantener código sin testing
 
@@ -604,6 +607,7 @@ contexts/
 # Crear directorio .archive con estructura
 mkdir -p .archive/2025-11-05_app_dual-flow
 mkdir -p .archive/2025-11-05_lib_wrappers
+mkdir -p .archive/2025-11-05_docs_TO-DO  # ✅ YA CREADO
 mkdir -p .archive/legacy_pre_2025
 
 # Crear INDEX.md
@@ -612,7 +616,17 @@ touch .archive/INDEX.md
 
 **Tareas Seguras**:
 
-**2.1. Archivar dual-flow completo**
+**2.1. ✅ COMPLETADO: Archivar docs/TO-DO/ (sistema legacy gestión tareas)**
+```bash
+# ✅ HECHO (5 Nov 2025):
+# - Movidos PM2_SISTEMA_COMPLETO.md y POSTGRESQL_SISTEMA_COMPLETO.md a docs/
+# - Archivado docs/TO-DO/ completo a .archive/2025-11-05_docs_TO-DO/
+# - Actualizadas 6 referencias en código
+# - Removida regla docs/TO-DO/ de .gitignore
+# - Creado INDEX.md completo
+```
+
+**2.2. Archivar dual-flow completo**
 ```bash
 # Mover preservando estructura
 mv app/dual-flow .archive/2025-11-05_app_dual-flow/
@@ -621,7 +635,7 @@ mv app/dual-flow .archive/2025-11-05_app_dual-flow/
 npm run typecheck  # Debe pasar sin errores
 ```
 
-**2.2. Archivar wrappers PostgreSQL obsoletos**
+**2.3. Archivar wrappers PostgreSQL obsoletos**
 ```bash
 mv lib/pgAdmin.ts .archive/2025-11-05_lib_wrappers/
 mv lib/pgBrowser.ts .archive/2025-11-05_lib_wrappers/
@@ -630,19 +644,19 @@ mv lib/pgBrowser.ts .archive/2025-11-05_lib_wrappers/
 npm run typecheck
 ```
 
-**2.3. Eliminar backup manual**
+**2.4. Eliminar backup manual**
 ```bash
 rm lib/dualFlow.ts.backup
 # Git ya mantiene historial, no necesario backup en repo
 ```
 
-**2.4. Archivar /api/dev (vacío)**
+**2.5. Archivar /api/dev (vacío)**
 ```bash
 rmdir app/api/dev
 # Directorio vacío, sin riesgo
 ```
 
-**2.5. Consolidar archive legacy antiguo**
+**2.6. Consolidar archive legacy antiguo**
 ```bash
 mv archive/legacy/* .archive/legacy_pre_2025/
 rmdir archive/legacy

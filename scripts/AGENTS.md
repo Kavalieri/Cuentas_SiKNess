@@ -192,8 +192,8 @@ scripts/
 - **Documentación Issue #53**: `docs/ISSUE_53_PLAN_IMPLEMENTACION.md`
 - **Database README**: `database/README.md` (sección migraciones)
 - **Tareas VS Code**: `.vscode/tasks.json` (25 tareas disponibles)
-- **Sistema PM2**: `docs/TO-DO/DONE/PM2_SISTEMA_COMPLETO.md`
-- **Sistema PostgreSQL**: `docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md`
+- **Sistema PM2**: `docs/PM2_SISTEMA_COMPLETO.md`
+- **Sistema PostgreSQL**: `docs/POSTGRESQL_SISTEMA_COMPLETO.md`
 
 ---
 

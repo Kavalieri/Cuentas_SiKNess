@@ -853,7 +853,7 @@ echo "📊 Total archivadas: $(ls -1 "$ARCHIVE_DIR" | wc -l)"
 - [ ] Actualizar permisos de ejecución (chmod +x)
 
 ### Fase 11: Actualizar Documentación
-- [ ] Reescribir `docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md`
+- [ ] Reescribir `docs/POSTGRESQL_SISTEMA_COMPLETO.md`
   - [ ] Actualizar roles (eliminar dev_owner/prod_owner)
   - [ ] Documentar cuentassik_owner
   - [ ] Actualizar comandos de restauración
@@ -1052,8 +1052,8 @@ Fases Completadas:       12/12
 
 - **README Database**: `database/README.md`
 - **Resumen Completo**: `docs/releases/v2.1.0_OWNERSHIP_UNIFICATION.md`
-- **PostgreSQL Sistema**: `docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md`
-- **PM2 Sistema**: `docs/TO-DO/DONE/PM2_SISTEMA_COMPLETO.md`
+- **PostgreSQL Sistema**: `docs/POSTGRESQL_SISTEMA_COMPLETO.md`
+- **PM2 Sistema**: `docs/PM2_SISTEMA_COMPLETO.md`
 
 ---
 

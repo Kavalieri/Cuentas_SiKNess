@@ -6,8 +6,8 @@
 
 ## 📚 Documentación Relacionada
 
-- **Sistema completo PostgreSQL**: `docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md`
-- **Sistema completo PM2**: `docs/TO-DO/DONE/PM2_SISTEMA_COMPLETO.md`
+- **Sistema completo PostgreSQL**: `docs/POSTGRESQL_SISTEMA_COMPLETO.md`
+- **Sistema completo PM2**: `docs/PM2_SISTEMA_COMPLETO.md`
 - **Issue #6 - Unificación**: Ver detalles de implementación
 
 ---
