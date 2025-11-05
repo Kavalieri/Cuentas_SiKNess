@@ -22,12 +22,16 @@
 📚 **Gestión de la base de datos**: [../docs/POSTGRESQL_SISTEMA_COMPLETO.md](../docs/TO-DO/DONE/POSTGRESQL_SISTEMA_COMPLETO.md)
 📚 **DB Seed**: [../database/migrations/applied/20251014_150000_seed.sql](../database/migrations/applied/20251014_150000_seed.sql)
 
-📚 **Tareas VS Code**: [../.vscode/tasks.json](../.vscode/tasks.json)
-- 🎮 **PM2**: Iniciar/Detener/Reiniciar DEV y PROD (con archivado logs)
-- 📊 **Monitoreo**: Ver logs, estado general
-- 🗄️ **Migraciones**: Crear, aplicar, promover, ver estado
-- 🔄 **Types**: Regenerar automáticamente o manual
-- 🗄️ **Database**: Sincronización, auditoría, verificación
+📚 **Tareas VS Code**: [../.vscode/tasks.json](../.vscode/tasks.json) - **25 tareas disponibles**
+- 🎮 **PM2** (8 tareas): Iniciar/Detener/Reiniciar DEV y PROD (con archivado logs)
+- 📊 **Monitoreo** (4 tareas): Ver logs (50 líneas o tiempo real), estado general
+- 🗄️ **Migraciones** (7 tareas): Crear, estado, comparar, aplicar (DEV/PROD/TEST), rollback
+- 🔄 **Types** (2 tareas): Regenerar automáticamente o manual (DEV/PROD)
+- 🗄️ **Database** (1 tarea): Verificación estado
+
+📚 **Sistema de Scripts v3.0.0** (Issue #53):
+- `scripts/PM2_build_and_deploy_and_dev/` - 8 scripts PM2 + build
+- `scripts/migrations/` - 7 scripts migraciones (create, apply, status, diff, rollback, baseline, generate-types)
 
 ---
 
@@ -117,7 +121,7 @@ Los types de base de datos se generan **automáticamente** desde el schema Postg
 Cuando aplicas una migración, **los types se regeneran automáticamente**:
 
 ```bash
-./scripts/apply_migration.sh dev mi_migracion.sql
+./scripts/migrations/apply_migration.sh dev mi_migracion.sql
 
 # Output:
 ✅ Migración aplicada exitosamente (125ms)

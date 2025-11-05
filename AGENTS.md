@@ -180,7 +180,7 @@ Los types de base de datos se generan **automáticamente** desde el schema Postg
 Cuando aplicas una migración, **los types se regeneran automáticamente**:
 
 ```bash
-./scripts/apply_migration.sh dev mi_migracion.sql
+./scripts/migrations/apply_migration.sh dev mi_migracion.sql
 
 # Output:
 ✅ Migración aplicada exitosamente (125ms)

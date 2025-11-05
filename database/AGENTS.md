@@ -532,7 +532,7 @@ Los TypeScript types se generan **automáticamente** desde el schema PostgreSQL 
 **Al aplicar cualquier migración**, los types se regeneran automáticamente:
 
 ```bash
-./scripts/apply_migration.sh dev 20251101_add_new_column.sql
+./scripts/migrations/apply_migration.sh dev 20251101_add_new_column.sql
 
 # Output automático:
 ✅ Migración aplicada exitosamente en DEV (125ms)

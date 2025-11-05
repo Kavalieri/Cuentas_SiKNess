@@ -147,19 +147,23 @@ SELECT tablename, tableowner FROM pg_tables WHERE schemaname='public' LIMIT 5;
 
 ---
 
-## 🔄 Sistema de Migraciones v2.1.0
+## 🔄 Sistema de Migraciones v3.0.0 (Issue #53)
 
 ### Estructura de Directorios
 
 ```
 database/
-├── migrations/
-│   ├── development/        # 📝 Trabajo activo (WIP)
-│   ├── tested/            # ✅ Probadas en DEV, listas para PROD
-│   ├── applied/           # 📦 Baseline actual (v2.1.0)
-│   └── archive/           # 🗄️ Migraciones históricas pre-v2.1.0
+├── migrations/                # 📝 Directorio único de migraciones
+│   ├── 20251014_150000_seed.sql
+│   ├── 20251101_000000_baseline_v2.1.0.sql
+│   ├── 20251102_120000_add_feature.sql
+│   └── ... (todas las migraciones activas)
 └── README.md
 ```
+
+**Cambio v3.0.0**: Directorio único `migrations/` reemplaza estructura anterior:
+- ❌ `development/`, `tested/`, `applied/`, `archive/` (obsoletos)
+- ✅ `migrations/` (único source of truth)
 
 ### Tabla de Control `_migrations`
 
@@ -178,28 +182,139 @@ CREATE TABLE _migrations (
 );
 ```
 
+**Source of truth**: La tabla `_migrations` en cada entorno (DEV/PROD/TEST)
+
 ---
 
-## 🛠️ Scripts Disponibles
+## 🛠️ Scripts Disponibles (v3.0.0)
 
 ### Gestión de Migraciones
 
 | Script | Función | Uso |
 |--------|---------|-----|
-| `create_migration.sh` | Crear nueva migración | `./scripts/create_migration.sh "descripcion"` |
-| `apply_migration.sh` | Aplicar migración | `./scripts/apply_migration.sh dev archivo.sql` |
-| `migration_status.sh` | Ver estado | `./scripts/migration_status.sh` |
+| `create_migration.sh` | Crear nueva migración | `./scripts/migrations/create_migration.sh "descripcion"` |
+| `apply_migration.sh` | Aplicar migración | `./scripts/migrations/apply_migration.sh <env> archivo.sql` |
+| `migration_status.sh` ⭐ | Ver estado completo | `./scripts/migrations/migration_status.sh` |
+| `diff_migrations.sh` ⭐ | Comparar entornos | `./scripts/migrations/diff_migrations.sh` |
+| `rollback_migration.sh` ⭐ | Marcar revertida | `./scripts/migrations/rollback_migration.sh <env> archivo.sql` |
+| `apply_baseline.sh` | Aplicar baseline | `./scripts/migrations/apply_baseline.sh <env>` |
+| `generate-types.js` | Regenerar types | `npm run types:generate:dev` |
 
-### Auditoría y Mantenimiento
+⭐ **Nuevos en v3.0.0** (Issue #53)
 
-| Script | Función | Uso |
-|--------|---------|-----|
-| `audit_unified_ownership.sh` | Auditoría completa | `./scripts/audit_unified_ownership.sh` |
-| `archive_old_migrations.sh` | Archivar obsoletas | `./scripts/archive_old_migrations.sh` |
+### Ubicación de Scripts
+
+**Todos los scripts de migraciones**: `scripts/migrations/`
+**Scripts PM2**: `scripts/PM2_build_and_deploy_and_dev/`
 
 ---
 
-## � Auto-generación de Types TypeScript
+## 📝 Workflow de Desarrollo v3.0.0
+
+### 1. Crear Nueva Migración
+
+```bash
+# Usando tarea VS Code (recomendado)
+Ctrl+Shift+P → "➕ Crear Nueva Migración"
+
+# O manualmente
+./scripts/migrations/create_migration.sh "add refund system tables"
+
+# Output: database/migrations/20251105_143000_add_refund_system_tables.sql
+```
+
+### 2. Editar Migración
+
+```sql
+-- Archivo: 20251105_143000_add_refund_system_tables.sql
+
+-- ============================================
+-- Descripción: Add refund system tables
+-- Fecha: 2025-11-05
+-- Autor: Tu Nombre
+-- ============================================
+
+-- CREAR TABLAS
+CREATE TABLE refund_claims (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id UUID NOT NULL REFERENCES households(id),
+  -- ... más columnas
+);
+
+-- OWNERSHIP (obligatorio)
+ALTER TABLE refund_claims OWNER TO cuentassik_owner;
+
+-- PERMISOS (obligatorio)
+GRANT SELECT, INSERT, UPDATE, DELETE ON refund_claims TO cuentassik_user;
+
+-- VERIFICACIÓN
+SELECT 'refund_claims' as table_name, COUNT(*) as count FROM refund_claims;
+```
+
+### 3. Probar en TEST (Recomendado)
+
+```bash
+# Aplicar a test_baseline_v3
+./scripts/migrations/apply_migration.sh test 20251105_143000_add_refund_system_tables.sql
+
+# Verificar estado
+./scripts/migrations/migration_status.sh
+# Debe mostrar la migración en TEST
+```
+
+### 4. Aplicar a DEV
+
+```bash
+# Usando tarea VS Code (recomendado)
+Ctrl+Shift+P → "🔧 DEV: Aplicar Migración Específica"
+
+# O manualmente
+./scripts/migrations/apply_migration.sh dev 20251105_143000_add_refund_system_tables.sql
+
+# Output:
+# ✅ Migración aplicada exitosamente en DEV (125ms)
+# 🔄 Regenerando types TypeScript...
+# ✅ Types regenerados exitosamente
+```
+
+### 5. Verificar Estado
+
+```bash
+# Ver estado completo
+./scripts/migrations/migration_status.sh
+
+# Comparar entornos
+./scripts/migrations/diff_migrations.sh
+# Muestra: migraciones solo en DEV (listas para PROD)
+```
+
+### 6. Aplicar a PROD
+
+```bash
+# CON BACKUP PREVIO OBLIGATORIO
+sudo -u postgres pg_dump -d cuentassik_prod > ~/backups/prod_$(date +%Y%m%d_%H%M%S).sql
+
+# Aplicar usando tarea VS Code (recomendado)
+Ctrl+Shift+P → "🚀 PROD: Aplicar Migración Específica"
+# Requiere confirmación explícita
+
+# O manualmente
+./scripts/migrations/apply_migration.sh prod 20251105_143000_add_refund_system_tables.sql
+```
+
+### 7. Rollback (Si es necesario)
+
+```bash
+# Marcar como revertida (NO ejecuta SQL automáticamente)
+./scripts/migrations/rollback_migration.sh dev 20251105_143000_add_refund_system_tables.sql
+
+# El script actualiza status en _migrations a 'rolled_back'
+# Debes escribir y ejecutar SQL de rollback manualmente si es necesario
+```
+
+---
+
+## 🔄 Auto-generación de Types TypeScript (Issue #8)
 
 **Sistema implementado**: Issue #8 (kysely-codegen)
 
@@ -209,7 +324,7 @@ Los TypeScript types se regeneran **automáticamente** tras aplicar migraciones.
 
 ```bash
 # 1. Aplicar migración
-./scripts/apply_migration.sh dev 20251101_120000_add_refunds.sql
+./scripts/migrations/apply_migration.sh dev 20251101_120000_add_refunds.sql
 
 # 2. Types se regeneran automáticamente ✨
 # Output:
@@ -248,6 +363,11 @@ npm run types:generate:prod
 ### Beneficios
 
 - ✅ **Sincronización automática**: Types siempre actualizados con schema
+- ✅ **Cero mantenimiento manual**: Eliminación de 1,951 líneas manuales
+- ✅ **Compilación limpia**: Sin errores tras migraciones
+- ✅ **JSDoc completo**: Comentarios SQL como documentación
+
+**Documentación completa**: `docs/ISSUE_8_AUTO_GENERACION_TYPES.md`
 - ✅ **Cero mantenimiento manual**: Eliminación de 1,951 líneas manuales
 - ✅ **Compilación limpia**: Sin errores tras migraciones
 - ✅ **JSDoc completo**: Comentarios SQL como documentación
