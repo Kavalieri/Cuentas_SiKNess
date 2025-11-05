@@ -1,23 +1,23 @@
 'use client';
 
 import {
-    ColorType,
-    createChart,
-    CrosshairMode,
-    LineSeries,
-    LineStyle,
-    type IChartApi,
-    type ISeriesApi,
-    type LineData,
+  ColorType,
+  createChart,
+  CrosshairMode,
+  LineSeries,
+  LineStyle,
+  type IChartApi,
+  type ISeriesApi,
+  type LineData,
 } from 'lightweight-charts';
 import {
-    Activity,
-    BarChart3,
-    Download,
-    LineChart,
-    Maximize2,
-    Minimize2,
-    TrendingUp,
+  Activity,
+  BarChart3,
+  Download,
+  LineChart,
+  Maximize2,
+  Minimize2,
+  TrendingUp,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useRef, useState } from 'react';
