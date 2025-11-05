@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict UjiI4FcKBE1FhwogRP4LpKSflA4HbtHmDFTcvXog2EpypiMcj29SFWBHQ4Z5uKL
+\restrict q7fMzLCELvUjtFGhj6gbNFvJgOflseAlpKfwe4tfVEq46YEgD2g7SQejp4amb8x
 
 -- Dumped from database version 15.14 (Ubuntu 15.14-1.pgdg22.04+1)
 -- Dumped by pg_dump version 15.14 (Ubuntu 15.14-1.pgdg22.04+1)
@@ -19,21 +19,23 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
+-- Name: public; Type: SCHEMA; Schema: -; Owner: cuentassik_owner
 --
 
 -- *not* creating schema, since initdb creates it
 
 
+ALTER SCHEMA public OWNER TO cuentassik_owner;
+
 --
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: cuentassik_owner
 --
 
 COMMENT ON SCHEMA public IS '';
 
 
 --
--- Name: dual_flow_status; Type: TYPE; Schema: public; Owner: -
+-- Name: dual_flow_status; Type: TYPE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TYPE public.dual_flow_status AS ENUM (
@@ -45,15 +47,17 @@ CREATE TYPE public.dual_flow_status AS ENUM (
 );
 
 
+ALTER TYPE public.dual_flow_status OWNER TO cuentassik_owner;
+
 --
--- Name: TYPE dual_flow_status; Type: COMMENT; Schema: public; Owner: -
+-- Name: TYPE dual_flow_status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TYPE public.dual_flow_status IS 'Estados del workflow: pending_review, approved, auto_paired, rejected, completed';
 
 
 --
--- Name: dual_flow_type; Type: TYPE; Schema: public; Owner: -
+-- Name: dual_flow_type; Type: TYPE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TYPE public.dual_flow_type AS ENUM (
@@ -63,15 +67,17 @@ CREATE TYPE public.dual_flow_type AS ENUM (
 );
 
 
+ALTER TYPE public.dual_flow_type OWNER TO cuentassik_owner;
+
 --
--- Name: TYPE dual_flow_type; Type: COMMENT; Schema: public; Owner: -
+-- Name: TYPE dual_flow_type; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TYPE public.dual_flow_type IS 'Tipos de flujo: personal_to_common, common_to_personal, common_fund';
 
 
 --
--- Name: flow_type_enum; Type: TYPE; Schema: public; Owner: -
+-- Name: flow_type_enum; Type: TYPE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TYPE public.flow_type_enum AS ENUM (
@@ -80,15 +86,17 @@ CREATE TYPE public.flow_type_enum AS ENUM (
 );
 
 
+ALTER TYPE public.flow_type_enum OWNER TO cuentassik_owner;
+
 --
--- Name: TYPE flow_type_enum; Type: COMMENT; Schema: public; Owner: -
+-- Name: TYPE flow_type_enum; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TYPE public.flow_type_enum IS 'Tipo de flujo: common (cuenta común) o direct (gastos directos de miembros)';
 
 
 --
--- Name: household_role_enum; Type: TYPE; Schema: public; Owner: -
+-- Name: household_role_enum; Type: TYPE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TYPE public.household_role_enum AS ENUM (
@@ -97,8 +105,10 @@ CREATE TYPE public.household_role_enum AS ENUM (
 );
 
 
+ALTER TYPE public.household_role_enum OWNER TO cuentassik_owner;
+
 --
--- Name: invitation_status_enum; Type: TYPE; Schema: public; Owner: -
+-- Name: invitation_status_enum; Type: TYPE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TYPE public.invitation_status_enum AS ENUM (
@@ -109,8 +119,10 @@ CREATE TYPE public.invitation_status_enum AS ENUM (
 );
 
 
+ALTER TYPE public.invitation_status_enum OWNER TO cuentassik_owner;
+
 --
--- Name: period_phase_enum; Type: TYPE; Schema: public; Owner: -
+-- Name: period_phase_enum; Type: TYPE; Schema: public; Owner: postgres
 --
 
 CREATE TYPE public.period_phase_enum AS ENUM (
@@ -122,15 +134,17 @@ CREATE TYPE public.period_phase_enum AS ENUM (
 );
 
 
+ALTER TYPE public.period_phase_enum OWNER TO postgres;
+
 --
--- Name: TYPE period_phase_enum; Type: COMMENT; Schema: public; Owner: -
+-- Name: TYPE period_phase_enum; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON TYPE public.period_phase_enum IS 'Fases del workflow mensual: preparing, validation, active, closing y closed';
 
 
 --
--- Name: period_status_enum; Type: TYPE; Schema: public; Owner: -
+-- Name: period_status_enum; Type: TYPE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TYPE public.period_status_enum AS ENUM (
@@ -140,15 +154,17 @@ CREATE TYPE public.period_status_enum AS ENUM (
 );
 
 
+ALTER TYPE public.period_status_enum OWNER TO cuentassik_owner;
+
 --
--- Name: TYPE period_status_enum; Type: COMMENT; Schema: public; Owner: -
+-- Name: TYPE period_status_enum; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TYPE public.period_status_enum IS 'Estado del período de contribución: SETUP, LOCKED, CLOSED';
 
 
 --
--- Name: transaction_type_dual_flow; Type: TYPE; Schema: public; Owner: -
+-- Name: transaction_type_dual_flow; Type: TYPE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TYPE public.transaction_type_dual_flow AS ENUM (
@@ -159,15 +175,17 @@ CREATE TYPE public.transaction_type_dual_flow AS ENUM (
 );
 
 
+ALTER TYPE public.transaction_type_dual_flow OWNER TO cuentassik_owner;
+
 --
--- Name: TYPE transaction_type_dual_flow; Type: COMMENT; Schema: public; Owner: -
+-- Name: TYPE transaction_type_dual_flow; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TYPE public.transaction_type_dual_flow IS 'Tipos de transacción: gasto (común), gasto_directo (out-of-pocket), ingreso (común), ingreso_directo (reembolso)';
 
 
 --
--- Name: transaction_type_enum; Type: TYPE; Schema: public; Owner: -
+-- Name: transaction_type_enum; Type: TYPE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TYPE public.transaction_type_enum AS ENUM (
@@ -176,15 +194,17 @@ CREATE TYPE public.transaction_type_enum AS ENUM (
 );
 
 
+ALTER TYPE public.transaction_type_enum OWNER TO cuentassik_owner;
+
 --
--- Name: TYPE transaction_type_enum; Type: COMMENT; Schema: public; Owner: -
+-- Name: TYPE transaction_type_enum; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TYPE public.transaction_type_enum IS 'Tipo de transacción: income (ingreso) o expense (gasto)';
 
 
 --
--- Name: _phase_to_status(text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: _phase_to_status(text); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public._phase_to_status(p_phase text) RETURNS text
@@ -203,8 +223,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public._phase_to_status(p_phase text) OWNER TO cuentassik_owner;
+
 --
--- Name: assign_transaction_number(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: assign_transaction_number(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.assign_transaction_number() RETURNS trigger
@@ -223,15 +245,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.assign_transaction_number() OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION assign_transaction_number(); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION assign_transaction_number(); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.assign_transaction_number() IS 'Trigger function: Asigna automáticamente el siguiente transaction_number para el household_id de la transacción insertada. Solo asigna si NEW.transaction_number es NULL.';
 
 
 --
--- Name: calculate_member_net_contribution(uuid, uuid, integer, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: calculate_member_net_contribution(uuid, uuid, integer, integer); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.calculate_member_net_contribution(p_household_id uuid, p_profile_id uuid, p_year integer, p_month integer) RETURNS numeric
@@ -280,15 +304,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.calculate_member_net_contribution(p_household_id uuid, p_profile_id uuid, p_year integer, p_month integer) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION calculate_member_net_contribution(p_household_id uuid, p_profile_id uuid, p_year integer, p_month integer); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION calculate_member_net_contribution(p_household_id uuid, p_profile_id uuid, p_year integer, p_month integer); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.calculate_member_net_contribution(p_household_id uuid, p_profile_id uuid, p_year integer, p_month integer) IS 'Calcula contribución neta pendiente considerando gastos directos';
 
 
 --
--- Name: close_monthly_period(uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: close_monthly_period(uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.close_monthly_period(p_household_id uuid, p_period_id uuid, p_closed_by uuid, p_reason text DEFAULT NULL::text) RETURNS uuid
@@ -377,8 +403,10 @@ CREATE FUNCTION public.close_monthly_period(p_household_id uuid, p_period_id uui
     $$;
 
 
+ALTER FUNCTION public.close_monthly_period(p_household_id uuid, p_period_id uuid, p_closed_by uuid, p_reason text) OWNER TO cuentassik_owner;
+
 --
--- Name: create_default_dual_flow_config(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: create_default_dual_flow_config(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.create_default_dual_flow_config() RETURNS trigger
@@ -393,591 +421,650 @@ END;
 $$;
 
 
+ALTER FUNCTION public.create_default_dual_flow_config() OWNER TO cuentassik_owner;
+
 --
--- Name: create_default_household_categories(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: create_default_household_categories(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.create_default_household_categories() RETURNS trigger
-    LANGUAGE plpgsql
+    LANGUAGE plpgsql SECURITY DEFINER
     AS $$
 DECLARE
-  v_parent_ingresos_laborales UUID;
-  v_parent_otros_ingresos UUID;
-  v_parent_hogar UUID;
-  v_parent_suministros UUID;
-  v_parent_alimentaci_n UUID;
-  v_parent_transporte UUID;
-  v_parent_personal UUID;
-  v_parent_estilo_de_vida UUID;
-  v_parent_finanzas UUID;
-  v_cat_ingresos_laborales_n_mina UUID;
-  v_cat_ingresos_laborales_freelance UUID;
-  v_cat_ingresos_laborales_bonus UUID;
-  v_cat_otros_ingresos_inversiones UUID;
-  v_cat_otros_ingresos_ventas UUID;
-  v_cat_otros_ingresos_devoluciones UUID;
-  v_cat_otros_ingresos_aportaci_n_cuenta_conjunta UUID;
-  v_cat_otros_ingresos_pago_pr_stamo UUID;
-  v_cat_otros_ingresos_varios UUID;
-  v_cat_hogar_vivienda UUID;
-  v_cat_hogar_menaje UUID;
-  v_cat_hogar_limpieza UUID;
-  v_cat_hogar_lavander_a UUID;
-  v_cat_hogar_mantenimiento UUID;
-  v_cat_hogar_comunidad UUID;
-  v_cat_suministros_luz UUID;
-  v_cat_suministros_agua UUID;
-  v_cat_suministros_gas_butano UUID;
-  v_cat_suministros_internet UUID;
-  v_cat_suministros_tel_fono UUID;
-  v_cat_suministros_seguros UUID;
-  v_cat_suministros_impuestos UUID;
-  v_cat_alimentaci_n_supermercado UUID;
-  v_cat_alimentaci_n_carnicer_a UUID;
-  v_cat_alimentaci_n_restaurantes UUID;
-  v_cat_alimentaci_n_pescader_a UUID;
-  v_cat_alimentaci_n_fruter_a UUID;
-  v_cat_alimentaci_n_panader_a UUID;
-  v_cat_alimentaci_n_otros_alimentos UUID;
-  v_cat_transporte_transporte UUID;
-  v_cat_transporte_combustible UUID;
-  v_cat_transporte_parking UUID;
-  v_cat_transporte_peajes UUID;
-  v_cat_personal_ropa UUID;
-  v_cat_personal_farmacia UUID;
-  v_cat_personal_belleza UUID;
-  v_cat_personal_gimnasio UUID;
-  v_cat_personal_salud UUID;
-  v_cat_personal_mascotas UUID;
-  v_cat_personal_calzado UUID;
-  v_cat_estilo_de_vida_ocio UUID;
-  v_cat_estilo_de_vida_deportes UUID;
-  v_cat_estilo_de_vida_educaci_n UUID;
-  v_cat_estilo_de_vida_suscripciones UUID;
-  v_cat_estilo_de_vida_regalos UUID;
-  v_cat_finanzas_seguros UUID;
-  v_cat_finanzas_impuestos UUID;
-  v_cat_finanzas_pr_stamo_personal UUID;
-  v_cat_finanzas_reembolso_saldo_a_favor UUID;
-  v_cat_finanzas_varios UUID;
+  -- IDs de parents (9 grupos)
+  v_parent_ingresos_laborales uuid;
+  v_parent_hogar uuid;
+  v_parent_suministros uuid;
+  v_parent_otros_ingresos uuid;
+  v_parent_alimentacion uuid;
+  v_parent_transporte uuid;
+  v_parent_personal uuid;
+  v_parent_estilo_vida uuid;
+  v_parent_finanzas uuid;
+
+  -- IDs de categorías (50 categorías organizadas por padre)
+  -- Hogar (6 categorías)
+  v_cat_vivienda uuid;
+  v_cat_menaje uuid;
+  v_cat_limpieza uuid;
+  v_cat_lavanderia uuid;
+  v_cat_mantenimiento uuid;
+  v_cat_comunidad uuid;
+
+  -- Ingresos Laborales (3 categorías)
+  v_cat_nomina uuid;
+  v_cat_freelance uuid;
+  v_cat_bonus uuid;
+
+  -- Suministros (7 categorías)
+  v_cat_luz uuid;
+  v_cat_agua uuid;
+  v_cat_gas_butano uuid;
+  v_cat_internet uuid;
+  v_cat_telefono uuid;
+  v_cat_seguros_suministros uuid;
+  v_cat_impuestos_suministros uuid;
+
+  -- Otros Ingresos (6 categorías)
+  v_cat_inversiones uuid;
+  v_cat_ventas uuid;
+  v_cat_devoluciones uuid;
+  v_cat_aportacion_cuenta_conjunta uuid;
+  v_cat_pago_prestamo uuid;
+  v_cat_varios_otros_ingresos uuid;
+
+  -- Alimentación (7 categorías)
+  v_cat_supermercado uuid;
+  v_cat_carniceria uuid;
+  v_cat_restaurantes uuid;
+  v_cat_pescaderia uuid;
+  v_cat_fruteria uuid;
+  v_cat_panaderia uuid;
+  v_cat_otros_alimentos uuid;
+
+  -- Transporte (4 categorías)
+  v_cat_transporte uuid;
+  v_cat_combustible uuid;
+  v_cat_parking uuid;
+  v_cat_peajes uuid;
+
+  -- Personal (7 categorías)
+  v_cat_ropa uuid;
+  v_cat_farmacia uuid;
+  v_cat_belleza uuid;
+  v_cat_gimnasio uuid;
+  v_cat_salud uuid;
+  v_cat_mascotas uuid;
+  v_cat_calzado uuid;
+
+  -- Estilo de Vida (5 categorías)
+  v_cat_ocio uuid;
+  v_cat_deportes uuid;
+  v_cat_educacion uuid;
+  v_cat_suscripciones uuid;
+  v_cat_regalos uuid;
+
+  -- Finanzas (5 categorías)
+  v_cat_seguros_finanzas uuid;
+  v_cat_impuestos_finanzas uuid;
+  v_cat_prestamo_personal uuid;
+  v_cat_reembolso_saldo uuid;
+  v_cat_varios_finanzas uuid;
+
 BEGIN
+  -- ========================================================================
+  -- PASO 1: CREAR CATEGORY_PARENTS (9 padres)
+  -- ========================================================================
 
-  -- CREAR GRUPOS (9)
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Ingresos Laborales', '💰', 'income', 1) RETURNING id INTO v_parent_ingresos_laborales;
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Otros Ingresos', '💸', 'income', 2) RETURNING id INTO v_parent_otros_ingresos;
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Hogar', '🏠', 'expense', 1) RETURNING id INTO v_parent_hogar;
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Suministros', '⚡', 'expense', 2) RETURNING id INTO v_parent_suministros;
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Alimentación', '🛒', 'expense', 3) RETURNING id INTO v_parent_alimentaci_n;
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Transporte', '🚗', 'expense', 4) RETURNING id INTO v_parent_transporte;
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Personal', '👤', 'expense', 5) RETURNING id INTO v_parent_personal;
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Estilo de Vida', '🎯', 'expense', 6) RETURNING id INTO v_parent_estilo_de_vida;
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) VALUES (NEW.id, 'Finanzas', '💼', 'expense', 7) RETURNING id INTO v_parent_finanzas;
+  -- 1. Ingresos Laborales (income, order 1)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Ingresos Laborales', '💰', 'income', 1)
+  RETURNING id INTO v_parent_ingresos_laborales;
 
-  -- CREAR CATEGORÍAS (50)
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_ingresos_laborales, 'Nómina', '💰', 'income', 1) RETURNING id INTO v_cat_ingresos_laborales_n_mina;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_ingresos_laborales, 'Freelance', '💼', 'income', 2) RETURNING id INTO v_cat_ingresos_laborales_freelance;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_ingresos_laborales, 'Bonus', '🎉', 'income', 3) RETURNING id INTO v_cat_ingresos_laborales_bonus;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_otros_ingresos, 'Inversiones', '📈', 'income', 1) RETURNING id INTO v_cat_otros_ingresos_inversiones;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_otros_ingresos, 'Ventas', '🏷️', 'income', 2) RETURNING id INTO v_cat_otros_ingresos_ventas;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_otros_ingresos, 'Devoluciones', '↩️', 'income', 3) RETURNING id INTO v_cat_otros_ingresos_devoluciones;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_otros_ingresos, 'Aportación Cuenta Conjunta', '🏦', 'income', 4) RETURNING id INTO v_cat_otros_ingresos_aportaci_n_cuenta_conjunta;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_otros_ingresos, 'Pago Préstamo', '💳', 'income', 5) RETURNING id INTO v_cat_otros_ingresos_pago_pr_stamo;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_otros_ingresos, 'Varios', '➕', 'income', 99) RETURNING id INTO v_cat_otros_ingresos_varios;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_hogar, 'Vivienda', '🏠', 'expense', 1) RETURNING id INTO v_cat_hogar_vivienda;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_hogar, 'Menaje', '🪑', 'expense', 2) RETURNING id INTO v_cat_hogar_menaje;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_hogar, 'Limpieza', '🧹', 'expense', 3) RETURNING id INTO v_cat_hogar_limpieza;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_hogar, 'Lavandería', '🧺', 'expense', 4) RETURNING id INTO v_cat_hogar_lavander_a;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_hogar, 'Mantenimiento', '🔧', 'expense', 5) RETURNING id INTO v_cat_hogar_mantenimiento;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_hogar, 'Comunidad', '🏢', 'expense', 6) RETURNING id INTO v_cat_hogar_comunidad;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_suministros, 'Luz', '💡', 'expense', 1) RETURNING id INTO v_cat_suministros_luz;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_suministros, 'Agua', '💧', 'expense', 2) RETURNING id INTO v_cat_suministros_agua;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_suministros, 'Gas/Butano', '🔥', 'expense', 3) RETURNING id INTO v_cat_suministros_gas_butano;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_suministros, 'Internet', '📡', 'expense', 4) RETURNING id INTO v_cat_suministros_internet;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_suministros, 'Teléfono', '📞', 'expense', 5) RETURNING id INTO v_cat_suministros_tel_fono;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_suministros, 'Seguros', '🛡️', 'expense', 6) RETURNING id INTO v_cat_suministros_seguros;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_suministros, 'Impuestos', '📋', 'expense', 7) RETURNING id INTO v_cat_suministros_impuestos;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_alimentaci_n, 'Supermercado', '🛒', 'expense', 1) RETURNING id INTO v_cat_alimentaci_n_supermercado;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_alimentaci_n, 'Carnicería', '🥩', 'expense', 2) RETURNING id INTO v_cat_alimentaci_n_carnicer_a;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_alimentaci_n, 'Restaurantes', '🍽️', 'expense', 2) RETURNING id INTO v_cat_alimentaci_n_restaurantes;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_alimentaci_n, 'Pescadería', '🐟', 'expense', 3) RETURNING id INTO v_cat_alimentaci_n_pescader_a;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_alimentaci_n, 'Frutería', '🍎', 'expense', 4) RETURNING id INTO v_cat_alimentaci_n_fruter_a;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_alimentaci_n, 'Panadería', '🥖', 'expense', 5) RETURNING id INTO v_cat_alimentaci_n_panader_a;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_alimentaci_n, 'Otros Alimentos', '🍱', 'expense', 6) RETURNING id INTO v_cat_alimentaci_n_otros_alimentos;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_transporte, 'Transporte', '🚗', 'expense', 1) RETURNING id INTO v_cat_transporte_transporte;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_transporte, 'Combustible', '⛽', 'expense', 2) RETURNING id INTO v_cat_transporte_combustible;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_transporte, 'Parking', '🅿️', 'expense', 3) RETURNING id INTO v_cat_transporte_parking;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_transporte, 'Peajes', '🛣️', 'expense', 4) RETURNING id INTO v_cat_transporte_peajes;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_personal, 'Ropa', '👕', 'expense', 1) RETURNING id INTO v_cat_personal_ropa;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_personal, 'Farmacia', '💊', 'expense', 2) RETURNING id INTO v_cat_personal_farmacia;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_personal, 'Belleza', '💄', 'expense', 2) RETURNING id INTO v_cat_personal_belleza;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_personal, 'Gimnasio', '🏋️', 'expense', 3) RETURNING id INTO v_cat_personal_gimnasio;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_personal, 'Salud', '🏥', 'expense', 3) RETURNING id INTO v_cat_personal_salud;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_personal, 'Mascotas', '🐶', 'expense', 4) RETURNING id INTO v_cat_personal_mascotas;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_personal, 'Calzado', '👟', 'expense', 5) RETURNING id INTO v_cat_personal_calzado;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_estilo_de_vida, 'Ocio', '🎭', 'expense', 1) RETURNING id INTO v_cat_estilo_de_vida_ocio;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_estilo_de_vida, 'Deportes', '⚽', 'expense', 2) RETURNING id INTO v_cat_estilo_de_vida_deportes;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_estilo_de_vida, 'Educación', '📚', 'expense', 3) RETURNING id INTO v_cat_estilo_de_vida_educaci_n;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_estilo_de_vida, 'Suscripciones', '📱', 'expense', 4) RETURNING id INTO v_cat_estilo_de_vida_suscripciones;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_estilo_de_vida, 'Regalos', '🎁', 'expense', 5) RETURNING id INTO v_cat_estilo_de_vida_regalos;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_finanzas, 'Seguros', '🛡️', 'expense', 1) RETURNING id INTO v_cat_finanzas_seguros;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_finanzas, 'Impuestos', '📋', 'expense', 2) RETURNING id INTO v_cat_finanzas_impuestos;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_finanzas, 'Préstamo Personal', '💰', 'expense', 3) RETURNING id INTO v_cat_finanzas_pr_stamo_personal;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_finanzas, 'Reembolso Saldo a Favor', '↩️', 'expense', 4) RETURNING id INTO v_cat_finanzas_reembolso_saldo_a_favor;
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) VALUES (NEW.id, v_parent_finanzas, 'Varios', '➕', 'expense', 99) RETURNING id INTO v_cat_finanzas_varios;
+  -- 2. Hogar (expense, order 1)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Hogar', '🏠', 'expense', 1)
+  RETURNING id INTO v_parent_hogar;
 
-  -- CREAR SUBCATEGORÍAS (55)
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_restaurantes, 'Fast Food', '🍟', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_restaurantes, 'Cafetería', '☕', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_restaurantes, 'Restaurante Medio', '🍽️', 3, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_restaurantes, 'Restaurante Alto', '👨‍🍳', 4, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_restaurantes, 'Delivery', '📦', 5, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_restaurantes, 'Otros', '🍴', 99, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Mercadona', '🛒', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Día', '🏪', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Jamón', '🍖', 3, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Lidl', '🏪', 4, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Carrefour', '🛒', 5, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Alcampo', '🛒', 6, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Ahorramas', '🛒', 7, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Eroski', '🛒', 8, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_alimentaci_n_supermercado, 'Otros', '🛍️', 9, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_hogar_lavander_a, 'Lavandería', '🧺', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_hogar_lavander_a, 'Tintorería', '👔', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_hogar_lavander_a, 'Planchado', '👕', 3, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_hogar_vivienda, 'Alquiler', '🏠', 0, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_hogar_vivienda, 'Comunidad', '🏢', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_hogar_vivienda, 'Alquiler + Comunidad', '🏠', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_agua, 'Canal Isabel II', '💧', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_agua, 'Agbar', '💧', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_agua, 'Otros', '💧', 99, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_gas_butano, 'Butano', '⛽', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_gas_butano, 'Gas Natural', '🔥', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_gas_butano, 'Otros', '⛽', 99, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_internet, 'Vodafone', '📡', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_internet, 'Movistar', '📡', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_internet, 'Orange', '📡', 3, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_internet, 'Yoigo', '📡', 4, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_internet, 'MásMóvil', '📡', 5, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_internet, 'Otros', '📡', 99, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_luz, 'Iberdrola', '⚡', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_luz, 'Endesa', '⚡', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_luz, 'Naturgy', '⚡', 3, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_luz, 'Repsol', '⚡', 4, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_luz, 'Otros', '⚡', 99, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_tel_fono, 'Vodafone', '📱', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_tel_fono, 'Movistar', '📱', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_tel_fono, 'Orange', '📱', 3, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_tel_fono, 'Yoigo', '📱', 4, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_suministros_tel_fono, 'Otros', '📱', 99, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Gasolina', '⛽', 1, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Diesel', '⛽', 2, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Eléctrico', '🔌', 3, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Metro', '🚇', 4, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Bus', '🚌', 5, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Taxi/VTC', '🚕', 6, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Parking', '🅿️', 7, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Peajes', '🛣️', 8, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Mantenimiento Vehículo', '🔧', 9, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'ITV', '🔍', 10, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Seguro Coche', '🛡️', 11, NOW());
-  INSERT INTO subcategories (category_id, name, icon, display_order, created_at) VALUES (v_cat_transporte_transporte, 'Otros', '🚗', 99, NOW());
+  -- 3. Suministros (expense, order 2)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Suministros', '⚡', 'expense', 2)
+  RETURNING id INTO v_parent_suministros;
 
+  -- 4. Otros Ingresos (income, order 2)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Otros Ingresos', '💸', 'income', 2)
+  RETURNING id INTO v_parent_otros_ingresos;
+
+  -- 5. Alimentación (expense, order 3)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Alimentación', '🛒', 'expense', 3)
+  RETURNING id INTO v_parent_alimentacion;
+
+  -- 6. Transporte (expense, order 4)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Transporte', '🚗', 'expense', 4)
+  RETURNING id INTO v_parent_transporte;
+
+  -- 7. Personal (expense, order 5)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Personal', '👤', 'expense', 5)
+  RETURNING id INTO v_parent_personal;
+
+  -- 8. Estilo de Vida (expense, order 6)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Estilo de Vida', '🎯', 'expense', 6)
+  RETURNING id INTO v_parent_estilo_vida;
+
+  -- 9. Finanzas (expense, order 7)
+  INSERT INTO category_parents (household_id, name, icon, type, display_order)
+  VALUES (NEW.id, 'Finanzas', '💼', 'expense', 7)
+  RETURNING id INTO v_parent_finanzas;
+
+  -- ========================================================================
+  -- PASO 2: CREAR CATEGORIES (50 categorías)
+  -- ========================================================================
+
+  -- ========== HOGAR (6 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_hogar, 'Vivienda', '🏠', 1)
+  RETURNING id INTO v_cat_vivienda;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_hogar, 'Menaje', '🪑', 2)
+  RETURNING id INTO v_cat_menaje;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_hogar, 'Limpieza', '🧹', 3)
+  RETURNING id INTO v_cat_limpieza;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_hogar, 'Lavandería', '🧺', 4)
+  RETURNING id INTO v_cat_lavanderia;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_hogar, 'Mantenimiento', '🔧', 5)
+  RETURNING id INTO v_cat_mantenimiento;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_hogar, 'Comunidad', '🏢', 6)
+  RETURNING id INTO v_cat_comunidad;
+
+  -- ========== INGRESOS LABORALES (3 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_ingresos_laborales, 'Nómina', '💰', 1)
+  RETURNING id INTO v_cat_nomina;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_ingresos_laborales, 'Freelance', '💼', 2)
+  RETURNING id INTO v_cat_freelance;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_ingresos_laborales, 'Bonus', '🎉', 3)
+  RETURNING id INTO v_cat_bonus;
+
+  -- ========== SUMINISTROS (7 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_suministros, 'Luz', '💡', 1)
+  RETURNING id INTO v_cat_luz;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_suministros, 'Agua', '💧', 2)
+  RETURNING id INTO v_cat_agua;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_suministros, 'Gas/Butano', '🔥', 3)
+  RETURNING id INTO v_cat_gas_butano;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_suministros, 'Internet', '📡', 4)
+  RETURNING id INTO v_cat_internet;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_suministros, 'Teléfono', '📞', 5)
+  RETURNING id INTO v_cat_telefono;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_suministros, 'Seguros', '🛡️', 6)
+  RETURNING id INTO v_cat_seguros_suministros;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_suministros, 'Impuestos', '📋', 7)
+  RETURNING id INTO v_cat_impuestos_suministros;
+
+  -- ========== OTROS INGRESOS (6 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_otros_ingresos, 'Inversiones', '📈', 1)
+  RETURNING id INTO v_cat_inversiones;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_otros_ingresos, 'Ventas', '🏷️', 2)
+  RETURNING id INTO v_cat_ventas;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_otros_ingresos, 'Devoluciones', '↩️', 3)
+  RETURNING id INTO v_cat_devoluciones;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_otros_ingresos, 'Aportación Cuenta Conjunta', '🏦', 4)
+  RETURNING id INTO v_cat_aportacion_cuenta_conjunta;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_otros_ingresos, 'Pago Préstamo', '💳', 5)
+  RETURNING id INTO v_cat_pago_prestamo;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_otros_ingresos, 'Varios', '➕', 99)
+  RETURNING id INTO v_cat_varios_otros_ingresos;
+
+  -- ========== ALIMENTACIÓN (7 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_alimentacion, 'Supermercado', '🛒', 1)
+  RETURNING id INTO v_cat_supermercado;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_alimentacion, 'Carnicería', '🥩', 2)
+  RETURNING id INTO v_cat_carniceria;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_alimentacion, 'Restaurantes', '🍽️', 2)
+  RETURNING id INTO v_cat_restaurantes;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_alimentacion, 'Pescadería', '🐟', 3)
+  RETURNING id INTO v_cat_pescaderia;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_alimentacion, 'Frutería', '🍎', 4)
+  RETURNING id INTO v_cat_fruteria;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_alimentacion, 'Panadería', '🥖', 5)
+  RETURNING id INTO v_cat_panaderia;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_alimentacion, 'Otros Alimentos', '🍱', 6)
+  RETURNING id INTO v_cat_otros_alimentos;
+
+  -- ========== TRANSPORTE (4 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_transporte, 'Transporte', '🚗', 1)
+  RETURNING id INTO v_cat_transporte;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_transporte, 'Combustible', '⛽', 2)
+  RETURNING id INTO v_cat_combustible;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_transporte, 'Parking', '🅿️', 3)
+  RETURNING id INTO v_cat_parking;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_transporte, 'Peajes', '🛣️', 4)
+  RETURNING id INTO v_cat_peajes;
+
+  -- ========== PERSONAL (7 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_personal, 'Ropa', '👕', 1)
+  RETURNING id INTO v_cat_ropa;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_personal, 'Farmacia', '💊', 2)
+  RETURNING id INTO v_cat_farmacia;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_personal, 'Belleza', '💄', 2)
+  RETURNING id INTO v_cat_belleza;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_personal, 'Gimnasio', '🏋️', 3)
+  RETURNING id INTO v_cat_gimnasio;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_personal, 'Salud', '🏥', 3)
+  RETURNING id INTO v_cat_salud;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_personal, 'Mascotas', '🐶', 4)
+  RETURNING id INTO v_cat_mascotas;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_personal, 'Calzado', '👟', 5)
+  RETURNING id INTO v_cat_calzado;
+
+  -- ========== ESTILO DE VIDA (5 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_estilo_vida, 'Ocio', '🎭', 1)
+  RETURNING id INTO v_cat_ocio;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_estilo_vida, 'Deportes', '⚽', 2)
+  RETURNING id INTO v_cat_deportes;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_estilo_vida, 'Educación', '📚', 3)
+  RETURNING id INTO v_cat_educacion;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_estilo_vida, 'Suscripciones', '📱', 4)
+  RETURNING id INTO v_cat_suscripciones;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_estilo_vida, 'Regalos', '🎁', 5)
+  RETURNING id INTO v_cat_regalos;
+
+  -- ========== FINANZAS (5 categorías) ==========
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_finanzas, 'Seguros', '🛡️', 1)
+  RETURNING id INTO v_cat_seguros_finanzas;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_finanzas, 'Impuestos', '📋', 2)
+  RETURNING id INTO v_cat_impuestos_finanzas;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_finanzas, 'Préstamo Personal', '💰', 3)
+  RETURNING id INTO v_cat_prestamo_personal;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_finanzas, 'Reembolso Saldo a Favor', '↩️', 4)
+  RETURNING id INTO v_cat_reembolso_saldo;
+
+  INSERT INTO categories (household_id, parent_id, name, icon, display_order)
+  VALUES (NEW.id, v_parent_finanzas, 'Varios', '➕', 99)
+  RETURNING id INTO v_cat_varios_finanzas;
+
+  -- ========================================================================
+  -- PASO 3: CREAR SUBCATEGORIES (95 subcategorías)
+  -- ========================================================================
+  -- Estructura completa extraída de PROD el 5 Nov 2025
+
+  -- ========== HOGAR ==========
+  -- Vivienda (3 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_vivienda, 'Alquiler', 1),
+    (v_cat_vivienda, 'Hipoteca', 2),
+    (v_cat_vivienda, 'Varios', 99);
+
+  -- Menaje (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_menaje, 'Varios', 99);
+
+  -- Limpieza (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_limpieza, 'Varios', 99);
+
+  -- Lavandería (3 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_lavanderia, 'Tintorería', 1),
+    (v_cat_lavanderia, 'Lavandería', 2),
+    (v_cat_lavanderia, 'Varios', 99);
+
+  -- Mantenimiento (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_mantenimiento, 'Varios', 99);
+
+  -- Comunidad (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_comunidad, 'Varios', 99);
+
+  -- ========== INGRESOS LABORALES ==========
+  -- Nómina (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_nomina, 'Varios', 99);
+
+  -- Freelance (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_freelance, 'Varios', 99);
+
+  -- Bonus (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_bonus, 'Varios', 99);
+
+  -- ========== SUMINISTROS ==========
+  -- Luz (5 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_luz, 'Luz Hogar', 1),
+    (v_cat_luz, 'Luz Otro', 2),
+    (v_cat_luz, 'Luz Vacaciones', 3),
+    (v_cat_luz, 'Luz Varios', 4),
+    (v_cat_luz, 'Varios', 99);
+
+  -- Agua (3 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_agua, 'Agua Hogar', 1),
+    (v_cat_agua, 'Agua Vacaciones', 2),
+    (v_cat_agua, 'Varios', 99);
+
+  -- Gas/Butano (3 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_gas_butano, 'Gas Hogar', 1),
+    (v_cat_gas_butano, 'Gas Vacaciones', 2),
+    (v_cat_gas_butano, 'Varios', 99);
+
+  -- Internet (6 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_internet, 'Internet Hogar', 1),
+    (v_cat_internet, 'Internet Fibra', 2),
+    (v_cat_internet, 'Internet Vacaciones', 3),
+    (v_cat_internet, 'Internet Móvil', 4),
+    (v_cat_internet, 'Internet Varios', 5),
+    (v_cat_internet, 'Varios', 99);
+
+  -- Teléfono (5 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_telefono, 'Teléfono Hogar', 1),
+    (v_cat_telefono, 'Teléfono Móvil', 2),
+    (v_cat_telefono, 'Teléfono Vacaciones', 3),
+    (v_cat_telefono, 'Teléfono Varios', 4),
+    (v_cat_telefono, 'Varios', 99);
+
+  -- Seguros Suministros (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_seguros_suministros, 'Varios', 99);
+
+  -- Impuestos Suministros (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_impuestos_suministros, 'Varios', 99);
+
+  -- ========== OTROS INGRESOS ==========
+  -- Inversiones (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_inversiones, 'Varios', 99);
+
+  -- Ventas (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_ventas, 'Varios', 99);
+
+  -- Devoluciones (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_devoluciones, 'Varios', 99);
+
+  -- Aportación Cuenta Conjunta (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_aportacion_cuenta_conjunta, 'Varios', 99);
+
+  -- Pago Préstamo (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_pago_prestamo, 'Varios', 99);
+
+  -- Varios Otros Ingresos (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_varios_otros_ingresos, 'Varios', 99);
+
+  -- ========== ALIMENTACIÓN ==========
+  -- Supermercado (9 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_supermercado, 'Supermercado Hogar', 1),
+    (v_cat_supermercado, 'Supermercado DIA', 2),
+    (v_cat_supermercado, 'Supermercado Mercadona', 3),
+    (v_cat_supermercado, 'Supermercado Lidl', 4),
+    (v_cat_supermercado, 'Supermercado Consum', 5),
+    (v_cat_supermercado, 'Supermercado Carrefour', 6),
+    (v_cat_supermercado, 'Supermercado Varios', 7),
+    (v_cat_supermercado, 'Supermercado Limpieza', 8),
+    (v_cat_supermercado, 'Varios', 99);
+
+  -- Carnicería (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_carniceria, 'Varios', 99);
+
+  -- Restaurantes (6 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_restaurantes, 'Restaurante', 1),
+    (v_cat_restaurantes, 'Bar/Cafetería', 2),
+    (v_cat_restaurantes, 'Comida a Domicilio', 3),
+    (v_cat_restaurantes, 'Pizzería', 4),
+    (v_cat_restaurantes, 'Comida Rápida', 5),
+    (v_cat_restaurantes, 'Varios', 99);
+
+  -- Pescadería (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_pescaderia, 'Varios', 99);
+
+  -- Frutería (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_fruteria, 'Varios', 99);
+
+  -- Panadería (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_panaderia, 'Varios', 99);
+
+  -- Otros Alimentos (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_otros_alimentos, 'Varios', 99);
+
+  -- ========== TRANSPORTE ==========
+  -- Transporte (12 subcats)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES 
+    (v_cat_transporte, 'Coche', 1),
+    (v_cat_transporte, 'Moto', 2),
+    (v_cat_transporte, 'Autobús', 3),
+    (v_cat_transporte, 'Metro', 4),
+    (v_cat_transporte, 'Tren', 5),
+    (v_cat_transporte, 'Tranvía', 6),
+    (v_cat_transporte, 'Avión', 7),
+    (v_cat_transporte, 'Taxi', 8),
+    (v_cat_transporte, 'VTC', 9),
+    (v_cat_transporte, 'Bici', 10),
+    (v_cat_transporte, 'Patinete', 11),
+    (v_cat_transporte, 'Varios', 99);
+
+  -- Combustible (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_combustible, 'Varios', 99);
+
+  -- Parking (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_parking, 'Varios', 99);
+
+  -- Peajes (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_peajes, 'Varios', 99);
+
+  -- ========== PERSONAL ==========
+  -- Ropa (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_ropa, 'Varios', 99);
+
+  -- Farmacia (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_farmacia, 'Varios', 99);
+
+  -- Belleza (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_belleza, 'Varios', 99);
+
+  -- Gimnasio (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_gimnasio, 'Varios', 99);
+
+  -- Salud (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_salud, 'Varios', 99);
+
+  -- Mascotas (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_mascotas, 'Varios', 99);
+
+  -- Calzado (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_calzado, 'Varios', 99);
+
+  -- ========== ESTILO DE VIDA ==========
+  -- Ocio (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_ocio, 'Varios', 99);
+
+  -- Deportes (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_deportes, 'Varios', 99);
+
+  -- Educación (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_educacion, 'Varios', 99);
+
+  -- Suscripciones (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_suscripciones, 'Varios', 99);
+
+  -- Regalos (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_regalos, 'Varios', 99);
+
+  -- ========== FINANZAS ==========
+  -- Seguros Finanzas (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_seguros_finanzas, 'Varios', 99);
+
+  -- Impuestos Finanzas (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_impuestos_finanzas, 'Varios', 99);
+
+  -- Préstamo Personal (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_prestamo_personal, 'Varios', 99);
+
+  -- Reembolso Saldo a Favor (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_reembolso_saldo, 'Varios', 99);
+
+  -- Varios Finanzas (1 subcat)
+  INSERT INTO subcategories (category_id, name, display_order)
+  VALUES (v_cat_varios_finanzas, 'Varios', 99);
+
+  -- ========================================================================
+  -- FIN: Función completada
+  -- ========================================================================
   RETURN NEW;
 END;
 $$;
 
 
+ALTER FUNCTION public.create_default_household_categories() OWNER TO cuentassik_owner;
+
 --
--- Name: create_default_household_categories(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: FUNCTION create_default_household_categories(); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
-CREATE FUNCTION public.create_default_household_categories(p_household_id uuid) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-DECLARE 
-  v_grupo_hogar UUID; 
-  v_grupo_suministros UUID; 
-  v_grupo_alimentacion UUID; 
-  v_grupo_transporte UUID; 
-  v_grupo_ocio UUID; 
-  v_grupo_salud UUID; 
-  v_grupo_educacion UUID; 
-  v_grupo_ropa UUID; 
-  v_grupo_otros UUID; 
-  
-  v_categoria_vivienda UUID; 
-  v_categoria_lavanderia UUID; 
-  v_categoria_luz UUID; 
-  v_categoria_agua UUID; 
-  v_categoria_gas UUID; 
-  v_categoria_internet UUID; 
-  v_categoria_telefono UUID; 
-  v_categoria_supermercado UUID; 
-  v_categoria_restaurantes UUID; 
-  v_categoria_transporte UUID;
-  
-  -- NEW: Variables for categories without subcategories
-  v_categoria_comunidad UUID;
-  v_categoria_seguros UUID;
-  v_categoria_impuestos UUID;
-  v_categoria_menaje UUID;
-  v_categoria_limpieza UUID;
-  v_categoria_mantenimiento UUID;
-  v_categoria_ocio UUID;
-  v_categoria_deportes UUID;
-  v_categoria_suscripciones UUID;
-  v_categoria_belleza UUID;
-  v_categoria_mascotas UUID;
-  v_categoria_regalos UUID;
-  v_categoria_varios_ocio UUID;
-  v_categoria_salud UUID;
-  v_categoria_educacion UUID;
-  v_categoria_ropa UUID;
-  v_categoria_calzado UUID;
-  v_categoria_varios_otros UUID;
-  
-  -- Variables for income categories
-  v_categoria_nomina UUID;
-  v_categoria_freelance UUID;
-  v_categoria_inversiones UUID;
-  v_categoria_ventas UUID;
-  v_categoria_devoluciones UUID;
-  v_categoria_aportacion UUID;
-  v_categoria_bonus UUID;
-  v_categoria_varios_income UUID;
-
-BEGIN
-  -- 1. Insert category_parents (grupos)
-  INSERT INTO category_parents (household_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, 'Hogar', '🏠', 'expense', 1), 
-    (p_household_id, 'Suministros', '💡', 'expense', 2), 
-    (p_household_id, 'Alimentación', '🍽️', 'expense', 3), 
-    (p_household_id, 'Transporte', '🚗', 'expense', 4), 
-    (p_household_id, 'Ocio', '🎭', 'expense', 5), 
-    (p_household_id, 'Salud', '🏥', 'expense', 6), 
-    (p_household_id, 'Educación', '📚', 'expense', 7), 
-    (p_household_id, 'Ropa', '👕', 'expense', 8), 
-    (p_household_id, 'Otros', '➕', 'expense', 9);
-  
-  -- Get parent IDs
-  SELECT id INTO v_grupo_hogar FROM category_parents WHERE household_id = p_household_id AND display_order = 1;
-  SELECT id INTO v_grupo_suministros FROM category_parents WHERE household_id = p_household_id AND display_order = 2;
-  SELECT id INTO v_grupo_alimentacion FROM category_parents WHERE household_id = p_household_id AND display_order = 3;
-  SELECT id INTO v_grupo_transporte FROM category_parents WHERE household_id = p_household_id AND display_order = 4;
-  SELECT id INTO v_grupo_ocio FROM category_parents WHERE household_id = p_household_id AND display_order = 5;
-  SELECT id INTO v_grupo_salud FROM category_parents WHERE household_id = p_household_id AND display_order = 6;
-  SELECT id INTO v_grupo_educacion FROM category_parents WHERE household_id = p_household_id AND display_order = 7;
-  SELECT id INTO v_grupo_ropa FROM category_parents WHERE household_id = p_household_id AND display_order = 8;
-  SELECT id INTO v_grupo_otros FROM category_parents WHERE household_id = p_household_id AND display_order = 9;
-  
-  -- 2. Insert categories with RETURNING to capture IDs
-  
-  -- HOGAR categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_hogar, 'Vivienda', '🏠', 'expense', 1), 
-    (p_household_id, v_grupo_hogar, 'Lavandería', '🧺', 'expense', 4) 
-  RETURNING id INTO v_categoria_vivienda, v_categoria_lavanderia;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_hogar, 'Comunidad', '🏢', 'expense', 2)
-  RETURNING id INTO v_categoria_comunidad;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_hogar, 'Seguros', '🛡️', 'expense', 3)
-  RETURNING id INTO v_categoria_seguros;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_hogar, 'Impuestos', '📋', 'expense', 5)
-  RETURNING id INTO v_categoria_impuestos;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_hogar, 'Menaje', '🪑', 'expense', 6)
-  RETURNING id INTO v_categoria_menaje;
-  
-  -- SUMINISTROS categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_suministros, 'Luz', '💡', 'expense', 1), 
-    (p_household_id, v_grupo_suministros, 'Agua', '��', 'expense', 2), 
-    (p_household_id, v_grupo_suministros, 'Gas/Butano', '🔥', 'expense', 3), 
-    (p_household_id, v_grupo_suministros, 'Internet', '📡', 'expense', 4), 
-    (p_household_id, v_grupo_suministros, 'Teléfono', '📞', 'expense', 5) 
-  RETURNING id INTO v_categoria_luz, v_categoria_agua, v_categoria_gas, v_categoria_internet, v_categoria_telefono;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_suministros, 'Limpieza', '🧹', 'expense', 6)
-  RETURNING id INTO v_categoria_limpieza;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_suministros, 'Mantenimiento', '🔧', 'expense', 7)
-  RETURNING id INTO v_categoria_mantenimiento;
-  
-  -- ALIMENTACIÓN categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_alimentacion, 'Supermercado', '🛒', 'expense', 1), 
-    (p_household_id, v_grupo_alimentacion, 'Restaurantes', '🍽️', 'expense', 2) 
-  RETURNING id INTO v_categoria_supermercado, v_categoria_restaurantes;
-  
-  -- TRANSPORTE categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_transporte, 'Transporte', '🚗', 'expense', 1) 
-  RETURNING id INTO v_categoria_transporte;
-  
-  -- OCIO categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ocio, 'Ocio', '🎭', 'expense', 1)
-  RETURNING id INTO v_categoria_ocio;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ocio, 'Deportes', '⚽', 'expense', 2)
-  RETURNING id INTO v_categoria_deportes;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ocio, 'Suscripciones', '📱', 'expense', 3)
-  RETURNING id INTO v_categoria_suscripciones;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ocio, 'Belleza', '💄', 'expense', 4)
-  RETURNING id INTO v_categoria_belleza;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ocio, 'Mascotas', '🐶', 'expense', 5)
-  RETURNING id INTO v_categoria_mascotas;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ocio, 'Regalos', '🎁', 'expense', 6)
-  RETURNING id INTO v_categoria_regalos;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ocio, 'Varios', '➕', 'expense', 99)
-  RETURNING id INTO v_categoria_varios_ocio;
-  
-  -- SALUD categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_salud, 'Salud', '🏥', 'expense', 1)
-  RETURNING id INTO v_categoria_salud;
-  
-  -- EDUCACIÓN categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_educacion, 'Educación', '📚', 'expense', 1)
-  RETURNING id INTO v_categoria_educacion;
-  
-  -- ROPA categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ropa, 'Ropa', '👕', 'expense', 1)
-  RETURNING id INTO v_categoria_ropa;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_ropa, 'Calzado', '👟', 'expense', 2)
-  RETURNING id INTO v_categoria_calzado;
-  
-  -- OTROS categories
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, v_grupo_otros, 'Varios', '➕', 'expense', 99)
-  RETURNING id INTO v_categoria_varios_otros;
-  
-  -- INCOME categories (no parent_id)
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, NULL, 'Nómina', '💰', 'income', 1)
-  RETURNING id INTO v_categoria_nomina;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, NULL, 'Freelance', '💼', 'income', 2)
-  RETURNING id INTO v_categoria_freelance;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, NULL, 'Inversiones', '📈', 'income', 3)
-  RETURNING id INTO v_categoria_inversiones;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, NULL, 'Ventas', '🏷️', 'income', 4)
-  RETURNING id INTO v_categoria_ventas;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, NULL, 'Devoluciones', '↩️', 'income', 5)
-  RETURNING id INTO v_categoria_devoluciones;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, NULL, 'Aportación Cuenta Conjunta', '🏦', 'income', 6)
-  RETURNING id INTO v_categoria_aportacion;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, NULL, 'Bonus', '🎉', 'income', 7)
-  RETURNING id INTO v_categoria_bonus;
-  
-  INSERT INTO categories (household_id, parent_id, name, icon, type, display_order) 
-  VALUES 
-    (p_household_id, NULL, 'Varios', '➕', 'income', 99)
-  RETURNING id INTO v_categoria_varios_income;
-  
-  -- 3. Insert subcategories (EXISTING + NEW "Otros" for all)
-  
-  -- Vivienda subcategories (existing + Otros)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_vivienda, 'Alquiler', '🏠', 0), 
-    (v_categoria_vivienda, 'Comunidad', '🏢', 1), 
-    (v_categoria_vivienda, 'Alquiler + Comunidad', '🏠', 2),
-    (v_categoria_vivienda, 'Otros', '📦', 99);
-  
-  -- Lavandería subcategories (existing + Otros)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_lavanderia, 'Lavandería', '🧺', 1), 
-    (v_categoria_lavanderia, 'Tintorería', '👔', 2), 
-    (v_categoria_lavanderia, 'Planchado', '👕', 3),
-    (v_categoria_lavanderia, 'Otros', '📦', 99);
-  
-  -- Luz subcategories (existing)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_luz, 'Iberdrola', '⚡', 1), 
-    (v_categoria_luz, 'Endesa', '⚡', 2), 
-    (v_categoria_luz, 'Naturgy', '⚡', 3), 
-    (v_categoria_luz, 'Repsol', '⚡', 4), 
-    (v_categoria_luz, 'Otros', '⚡', 99);
-  
-  -- Agua subcategories (existing)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_agua, 'Canal Isabel II', '💧', 1), 
-    (v_categoria_agua, 'Agbar', '💧', 2), 
-    (v_categoria_agua, 'Otros', '💧', 99);
-  
-  -- Gas subcategories (existing)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_gas, 'Butano', '⛽', 1), 
-    (v_categoria_gas, 'Gas Natural', '🔥', 2), 
-    (v_categoria_gas, 'Otros', '⛽', 99);
-  
-  -- Internet subcategories (existing)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_internet, 'Vodafone', '📡', 1), 
-    (v_categoria_internet, 'Movistar', '📡', 2), 
-    (v_categoria_internet, 'Orange', '📡', 3), 
-    (v_categoria_internet, 'Yoigo', '📡', 4), 
-    (v_categoria_internet, 'MásMóvil', '📡', 5), 
-    (v_categoria_internet, 'Otros', '📡', 99);
-  
-  -- Teléfono subcategories (existing)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_telefono, 'Vodafone', '📱', 1), 
-    (v_categoria_telefono, 'Movistar', '📱', 2), 
-    (v_categoria_telefono, 'Orange', '📱', 3), 
-    (v_categoria_telefono, 'Yoigo', '📱', 4), 
-    (v_categoria_telefono, 'Otros', '📱', 99);
-  
-  -- Supermercado subcategories (existing + Otros)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_supermercado, 'Mercadona', '🛒', 1), 
-    (v_categoria_supermercado, 'Día', '🏪', 2), 
-    (v_categoria_supermercado, 'Jamón', '🍖', 3), 
-    (v_categoria_supermercado, 'Lidl', '🏪', 4), 
-    (v_categoria_supermercado, 'Carrefour', '🛒', 5), 
-    (v_categoria_supermercado, 'Alcampo', '🛒', 6), 
-    (v_categoria_supermercado, 'Ahorramas', '🛒', 7), 
-    (v_categoria_supermercado, 'Eroski', '🛒', 8), 
-    (v_categoria_supermercado, 'Otros', '��️', 9);
-  
-  -- Restaurantes subcategories (existing)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_restaurantes, 'Fast Food', '🍟', 1), 
-    (v_categoria_restaurantes, 'Cafetería', '☕', 2), 
-    (v_categoria_restaurantes, 'Restaurante Medio', '🍽️', 3), 
-    (v_categoria_restaurantes, 'Restaurante Alto', '👨‍🍳', 4), 
-    (v_categoria_restaurantes, 'Delivery', '📦', 5), 
-    (v_categoria_restaurantes, 'Otros', '🍴', 99);
-  
-  -- Transporte subcategories (existing)
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_transporte, 'Gasolina', '⛽', 1), 
-    (v_categoria_transporte, 'Diesel', '⛽', 2), 
-    (v_categoria_transporte, 'Eléctrico', '🔌', 3), 
-    (v_categoria_transporte, 'Metro', '🚇', 4), 
-    (v_categoria_transporte, 'Bus', '🚌', 5), 
-    (v_categoria_transporte, 'Taxi/VTC', '🚕', 6), 
-    (v_categoria_transporte, 'Parking', '🅿️', 7), 
-    (v_categoria_transporte, 'Peajes', '🛣️', 8), 
-    (v_categoria_transporte, 'Mantenimiento Vehículo', '🔧', 9), 
-    (v_categoria_transporte, 'ITV', '🔍', 10), 
-    (v_categoria_transporte, 'Seguro Coche', '🛡️', 11), 
-    (v_categoria_transporte, 'Otros', '🚗', 99);
-  
-  -- ============================================================
-  -- NEW: Add "Otros" subcategory to ALL categories without any
-  -- ============================================================
-  
-  INSERT INTO subcategories (category_id, name, icon, display_order) 
-  VALUES 
-    (v_categoria_comunidad, 'Otros', '📦', 99),
-    (v_categoria_seguros, 'Otros', '📦', 99),
-    (v_categoria_impuestos, 'Otros', '📦', 99),
-    (v_categoria_menaje, 'Otros', '📦', 99),
-    (v_categoria_limpieza, 'Otros', '📦', 99),
-    (v_categoria_mantenimiento, 'Otros', '📦', 99),
-    (v_categoria_ocio, 'Otros', '📦', 99),
-    (v_categoria_deportes, 'Otros', '📦', 99),
-    (v_categoria_suscripciones, 'Otros', '📦', 99),
-    (v_categoria_belleza, 'Otros', '📦', 99),
-    (v_categoria_mascotas, 'Otros', '📦', 99),
-    (v_categoria_regalos, 'Otros', '📦', 99),
-    (v_categoria_varios_ocio, 'Otros', '📦', 99),
-    (v_categoria_salud, 'Otros', '📦', 99),
-    (v_categoria_educacion, 'Otros', '📦', 99),
-    (v_categoria_ropa, 'Otros', '📦', 99),
-    (v_categoria_calzado, 'Otros', '📦', 99),
-    (v_categoria_varios_otros, 'Otros', '📦', 99),
-    (v_categoria_nomina, 'Otros', '📦', 99),
-    (v_categoria_freelance, 'Otros', '📦', 99),
-    (v_categoria_inversiones, 'Otros', '📦', 99),
-    (v_categoria_ventas, 'Otros', '📦', 99),
-    (v_categoria_devoluciones, 'Otros', '📦', 99),
-    (v_categoria_aportacion, 'Otros', '📦', 99),
-    (v_categoria_bonus, 'Otros', '📦', 99),
-    (v_categoria_varios_income, 'Otros', '📦', 99);
-  
-  RAISE NOTICE '✅ 9 grupos | 50 categorías | 79 subcategorías (55 existing + 24 new Otros)';
-END;
-$$;
+COMMENT ON FUNCTION public.create_default_household_categories() IS 'Función trigger que crea automáticamente la estructura completa de categorías 
+para nuevos hogares. Genera 9 category_parents, 50 categories y 95 subcategories.
+Versión única consolidada (5 Nov 2025) que reemplaza las 2 versiones duplicadas anteriores.
+Estructura extraída de producción real (8 meses de uso).';
 
 
 --
--- Name: create_direct_expense_pair(uuid, uuid, numeric, text, uuid, date, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: create_direct_expense_pair(uuid, uuid, numeric, text, uuid, date, text); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.create_direct_expense_pair(p_household_id uuid, p_category_id uuid, p_amount numeric, p_description text, p_real_payer_id uuid, p_occurred_at date, p_created_by_email text) RETURNS uuid
@@ -1032,15 +1119,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.create_direct_expense_pair(p_household_id uuid, p_category_id uuid, p_amount numeric, p_description text, p_real_payer_id uuid, p_occurred_at date, p_created_by_email text) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION create_direct_expense_pair(p_household_id uuid, p_category_id uuid, p_amount numeric, p_description text, p_real_payer_id uuid, p_occurred_at date, p_created_by_email text); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION create_direct_expense_pair(p_household_id uuid, p_category_id uuid, p_amount numeric, p_description text, p_real_payer_id uuid, p_occurred_at date, p_created_by_email text); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.create_direct_expense_pair(p_household_id uuid, p_category_id uuid, p_amount numeric, p_description text, p_real_payer_id uuid, p_occurred_at date, p_created_by_email text) IS 'Crea automáticamente el par gasto directo + ingreso compensatorio con descripción estandarizada "Equilibrio:"';
 
 
 --
--- Name: create_household_with_owner(text, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: create_household_with_owner(text, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.create_household_with_owner(p_name text, p_profile_id uuid) RETURNS uuid
@@ -1079,8 +1168,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.create_household_with_owner(p_name text, p_profile_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: create_joint_account_for_household(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: create_joint_account_for_household(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.create_joint_account_for_household() RETURNS trigger
@@ -1095,8 +1186,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.create_joint_account_for_household() OWNER TO cuentassik_owner;
+
 --
--- Name: ensure_household_owner(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: ensure_household_owner(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.ensure_household_owner() RETURNS trigger
@@ -1132,8 +1225,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.ensure_household_owner() OWNER TO cuentassik_owner;
+
 --
--- Name: ensure_last_member_is_owner(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: ensure_last_member_is_owner(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.ensure_last_member_is_owner() RETURNS trigger
@@ -1185,15 +1280,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.ensure_last_member_is_owner() OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION ensure_last_member_is_owner(); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION ensure_last_member_is_owner(); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.ensure_last_member_is_owner() IS 'Función de trigger que garantiza Regla #1: Siempre hay al menos un owner. Si el último owner abandona, promociona automáticamente al miembro más antiguo.';
 
 
 --
--- Name: ensure_monthly_period(uuid, integer, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: ensure_monthly_period(uuid, integer, integer); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.ensure_monthly_period(p_household_id uuid, p_year integer, p_month integer) RETURNS uuid
@@ -1280,15 +1377,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.ensure_monthly_period(p_household_id uuid, p_year integer, p_month integer) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION ensure_monthly_period(p_household_id uuid, p_year integer, p_month integer); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION ensure_monthly_period(p_household_id uuid, p_year integer, p_month integer); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.ensure_monthly_period(p_household_id uuid, p_year integer, p_month integer) IS 'Obtiene/crea período mensual usando solo year, month (sin start_date/end_date)';
 
 
 --
--- Name: ensure_single_primary_email(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: ensure_single_primary_email(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.ensure_single_primary_email() RETURNS trigger
@@ -1310,8 +1409,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.ensure_single_primary_email() OWNER TO cuentassik_owner;
+
 --
--- Name: execute_auto_pairing(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: execute_auto_pairing(uuid, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.execute_auto_pairing(p_transaction_id uuid, p_candidate_id uuid) RETURNS boolean
@@ -1378,8 +1479,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.execute_auto_pairing(p_transaction_id uuid, p_candidate_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: find_pairing_candidates(uuid, uuid, numeric); Type: FUNCTION; Schema: public; Owner: -
+-- Name: find_pairing_candidates(uuid, uuid, numeric); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.find_pairing_candidates(p_household_id uuid, p_transaction_id uuid, p_umbral numeric DEFAULT 5.00) RETURNS TABLE(candidate_id uuid, diferencia_importe numeric, diferencia_dias integer, score numeric)
@@ -1424,8 +1527,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.find_pairing_candidates(p_household_id uuid, p_transaction_id uuid, p_umbral numeric) OWNER TO cuentassik_owner;
+
 --
--- Name: generate_contributions_for_period(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: generate_contributions_for_period(uuid, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.generate_contributions_for_period(p_household_id uuid, p_period_id uuid) RETURNS void
@@ -1485,15 +1590,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.generate_contributions_for_period(p_household_id uuid, p_period_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION generate_contributions_for_period(p_household_id uuid, p_period_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION generate_contributions_for_period(p_household_id uuid, p_period_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.generate_contributions_for_period(p_household_id uuid, p_period_id uuid) IS 'Genera o actualiza registros de contribución para todos los miembros activos de un hogar en un período específico, basándose en el método de cálculo configurado (equal, proportional, custom).';
 
 
 --
--- Name: generate_pair_reference(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: generate_pair_reference(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.generate_pair_reference(p_household_id uuid) RETURNS text
@@ -1520,8 +1627,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.generate_pair_reference(p_household_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: get_approved_refunds(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_approved_refunds(uuid, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_approved_refunds(p_household_id uuid, p_profile_id uuid) RETURNS numeric
@@ -1535,8 +1644,10 @@ CREATE FUNCTION public.get_approved_refunds(p_household_id uuid, p_profile_id uu
 $$;
 
 
+ALTER FUNCTION public.get_approved_refunds(p_household_id uuid, p_profile_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_approved_refunds(p_household_id uuid, p_profile_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_approved_refunds(p_household_id uuid, p_profile_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_approved_refunds(p_household_id uuid, p_profile_id uuid) IS 'Suma de reembolsos aprobados para un miembro en un hogar.
@@ -1544,7 +1655,7 @@ COMMENT ON FUNCTION public.get_approved_refunds(p_household_id uuid, p_profile_i
 
 
 --
--- Name: get_household_balances_overview(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_household_balances_overview(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_household_balances_overview(p_household_id uuid) RETURNS jsonb
@@ -1602,15 +1713,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_household_balances_overview(p_household_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_household_balances_overview(p_household_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_household_balances_overview(p_household_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_household_balances_overview(p_household_id uuid) IS 'Vista consolidada de balances de todos los miembros del hogar (para owner).';
 
 
 --
--- Name: get_household_members(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_household_members(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_household_members(p_household_id uuid) RETURNS TABLE(id uuid, profile_id uuid, email text, role text, household_id uuid)
@@ -1631,8 +1744,10 @@ CREATE FUNCTION public.get_household_members(p_household_id uuid) RETURNS TABLE(
 $$;
 
 
+ALTER FUNCTION public.get_household_members(p_household_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: get_household_members_optimized(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_household_members_optimized(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_household_members_optimized(p_household_id uuid) RETURNS TABLE(profile_id uuid, email text, display_name text, role text, joined_at timestamp with time zone, current_income numeric)
@@ -1661,15 +1776,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_household_members_optimized(p_household_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_household_members_optimized(p_household_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_household_members_optimized(p_household_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_household_members_optimized(p_household_id uuid) IS 'RPC optimizada que devuelve todos los miembros de un hogar con su email, display_name, rol e ingreso actual. Ordena owners primero, luego por antigüedad.';
 
 
 --
--- Name: get_joint_account_id(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_joint_account_id(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_joint_account_id(p_household_id uuid) RETURNS uuid
@@ -1691,15 +1808,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_joint_account_id(p_household_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_joint_account_id(p_household_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_joint_account_id(p_household_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_joint_account_id(p_household_id uuid) IS 'Obtiene el UUID de la Cuenta Común de un hogar. Lanza excepción si no existe.';
 
 
 --
--- Name: get_member_balance_status(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_member_balance_status(uuid, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_member_balance_status(p_household_id uuid, p_profile_id uuid) RETURNS jsonb
@@ -1767,15 +1886,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_member_balance_status(p_household_id uuid, p_profile_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_member_balance_status(p_household_id uuid, p_profile_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_member_balance_status(p_household_id uuid, p_profile_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_member_balance_status(p_household_id uuid, p_profile_id uuid) IS 'Retorna estado completo de crédito/deuda de un miembro en formato JSON.';
 
 
 --
--- Name: get_member_balance_status_v2(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_member_balance_status_v2(uuid, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid) RETURNS jsonb
@@ -1897,8 +2018,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid) IS 'Calcula balance EN VIVO (incluyendo períodos abiertos) sin esperar cierre del período. 
@@ -1907,7 +2030,7 @@ COMMENT ON FUNCTION public.get_member_balance_status_v2(p_household_id uuid, p_p
 
 
 --
--- Name: get_member_income(uuid, uuid, date); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_member_income(uuid, uuid, date); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_member_income(p_household_id uuid, p_profile_id uuid, p_date date DEFAULT CURRENT_DATE) RETURNS numeric
@@ -1947,8 +2070,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_member_income(p_household_id uuid, p_profile_id uuid, p_date date) OWNER TO cuentassik_owner;
+
 --
--- Name: get_profile_emails(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_profile_emails(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_profile_emails(p_profile_id uuid) RETURNS TABLE(email text, is_primary boolean, verified boolean, added_at timestamp with time zone)
@@ -1968,15 +2093,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_profile_emails(p_profile_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_profile_emails(p_profile_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_profile_emails(p_profile_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_profile_emails(p_profile_id uuid) IS 'Retorna todos los emails de un perfil, ordenados por primario primero y luego por antigüedad.';
 
 
 --
--- Name: get_user_active_household(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_user_active_household(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_user_active_household(p_profile_id uuid) RETURNS uuid
@@ -2006,15 +2133,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_user_active_household(p_profile_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_user_active_household(p_profile_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_user_active_household(p_profile_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_user_active_household(p_profile_id uuid) IS 'Obtiene el household_id activo del usuario. Si no tiene uno configurado, retorna el primer hogar al que pertenece.';
 
 
 --
--- Name: get_user_households_optimized(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: get_user_households_optimized(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.get_user_households_optimized(p_profile_id uuid) RETURNS TABLE(household_id uuid, household_name text, user_role text, household_created_at timestamp with time zone, is_active boolean, member_count integer, owner_count integer)
@@ -2044,15 +2173,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.get_user_households_optimized(p_profile_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION get_user_households_optimized(p_profile_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION get_user_households_optimized(p_profile_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.get_user_households_optimized(p_profile_id uuid) IS 'RPC optimizada que devuelve TODOS los hogares de un usuario con stats pre-calculadas. Evita múltiples queries y JOINs complejos en aplicación.';
 
 
 --
--- Name: is_user_household_owner(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: is_user_household_owner(uuid, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.is_user_household_owner(p_profile_id uuid, p_household_id uuid) RETURNS boolean
@@ -2070,15 +2201,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.is_user_household_owner(p_profile_id uuid, p_household_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION is_user_household_owner(p_profile_id uuid, p_household_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION is_user_household_owner(p_profile_id uuid, p_household_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.is_user_household_owner(p_profile_id uuid, p_household_id uuid) IS 'Validación rápida de permisos: devuelve TRUE si el usuario es owner del hogar especificado.';
 
 
 --
--- Name: lock_contributions_period(uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: lock_contributions_period(uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.lock_contributions_period(p_household_id uuid, p_period_id uuid, p_locked_by uuid) RETURNS uuid
@@ -2135,8 +2268,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.lock_contributions_period(p_household_id uuid, p_period_id uuid, p_locked_by uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: log_dual_flow_event(uuid, uuid, text, jsonb, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: log_dual_flow_event(uuid, uuid, text, jsonb, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.log_dual_flow_event(p_household_id uuid, p_period_id uuid, p_event_type text, p_payload jsonb DEFAULT '{}'::jsonb, p_created_by uuid DEFAULT NULL::uuid) RETURNS uuid
@@ -2165,8 +2300,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.log_dual_flow_event(p_household_id uuid, p_period_id uuid, p_event_type text, p_payload jsonb, p_created_by uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: log_transaction_journal(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: log_transaction_journal(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.log_transaction_journal() RETURNS trigger
@@ -2191,8 +2328,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.log_transaction_journal() OWNER TO cuentassik_owner;
+
 --
--- Name: open_monthly_period(uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: open_monthly_period(uuid, uuid, uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.open_monthly_period(p_household_id uuid, p_period_id uuid, p_opened_by uuid) RETURNS uuid
@@ -2244,8 +2383,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.open_monthly_period(p_household_id uuid, p_period_id uuid, p_opened_by uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: reconcile_contribution_balance(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: reconcile_contribution_balance(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.reconcile_contribution_balance(p_contribution_id uuid) RETURNS jsonb
@@ -2335,15 +2476,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.reconcile_contribution_balance(p_contribution_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION reconcile_contribution_balance(p_contribution_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION reconcile_contribution_balance(p_contribution_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.reconcile_contribution_balance(p_contribution_id uuid) IS 'Idempotent reconciliation for contribution → member_balances with tracking table.';
 
 
 --
--- Name: refresh_critical_matviews(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: refresh_critical_matviews(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.refresh_critical_matviews() RETURNS void
@@ -2358,15 +2501,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.refresh_critical_matviews() OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION refresh_critical_matviews(); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION refresh_critical_matviews(); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.refresh_critical_matviews() IS 'Refresca todas las vistas materializadas críticas (SECURITY DEFINER para permisos)';
 
 
 --
--- Name: refresh_household_stats(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: refresh_household_stats(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.refresh_household_stats() RETURNS trigger
@@ -2381,8 +2526,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.refresh_household_stats() OWNER TO cuentassik_owner;
+
 --
--- Name: reopen_monthly_period(uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: reopen_monthly_period(uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.reopen_monthly_period(p_period_id uuid, p_reopened_by uuid, p_reason text DEFAULT NULL::text) RETURNS uuid
@@ -2400,8 +2547,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.reopen_monthly_period(p_period_id uuid, p_reopened_by uuid, p_reason text) OWNER TO cuentassik_owner;
+
 --
--- Name: reopen_monthly_period(uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: reopen_monthly_period(uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.reopen_monthly_period(p_household_id uuid, p_period_id uuid, p_reopened_by uuid, p_reason text DEFAULT NULL::text) RETURNS uuid
@@ -2475,8 +2624,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.reopen_monthly_period(p_household_id uuid, p_period_id uuid, p_reopened_by uuid, p_reason text) OWNER TO cuentassik_owner;
+
 --
--- Name: start_monthly_closing(uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: start_monthly_closing(uuid, uuid, uuid, text); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.start_monthly_closing(p_household_id uuid, p_period_id uuid, p_started_by uuid, p_reason text DEFAULT NULL::text) RETURNS uuid
@@ -2529,8 +2680,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.start_monthly_closing(p_household_id uuid, p_period_id uuid, p_started_by uuid, p_reason text) OWNER TO cuentassik_owner;
+
 --
--- Name: trigger_auto_pairing(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: trigger_auto_pairing(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.trigger_auto_pairing() RETURNS trigger
@@ -2565,8 +2718,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.trigger_auto_pairing() OWNER TO cuentassik_owner;
+
 --
--- Name: trigger_refresh_transaction_matviews(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: trigger_refresh_transaction_matviews(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.trigger_refresh_transaction_matviews() RETURNS trigger
@@ -2581,15 +2736,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.trigger_refresh_transaction_matviews() OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION trigger_refresh_transaction_matviews(); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION trigger_refresh_transaction_matviews(); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.trigger_refresh_transaction_matviews() IS 'Trigger para refrescar vistas materializadas tras cambios en transacciones';
 
 
 --
--- Name: update_category_audit(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_category_audit(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_category_audit() RETURNS trigger
@@ -2607,8 +2764,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_category_audit() OWNER TO cuentassik_owner;
+
 --
--- Name: update_category_parent_timestamp(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_category_parent_timestamp(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_category_parent_timestamp() RETURNS trigger
@@ -2621,8 +2780,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_category_parent_timestamp() OWNER TO cuentassik_owner;
+
 --
--- Name: update_contribution_adjustments_total(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_contribution_adjustments_total(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_contribution_adjustments_total() RETURNS trigger
@@ -2673,15 +2834,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_contribution_adjustments_total() OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION update_contribution_adjustments_total(); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION update_contribution_adjustments_total(); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.update_contribution_adjustments_total() IS 'Actualiza adjustments_total, adjustments_paid_amount y recalcula expected_amount';
 
 
 --
--- Name: update_contribution_audit(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_contribution_audit(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_contribution_audit() RETURNS trigger
@@ -2699,8 +2862,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_contribution_audit() OWNER TO cuentassik_owner;
+
 --
--- Name: update_household_audit(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_household_audit(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_household_audit() RETURNS trigger
@@ -2718,8 +2883,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_household_audit() OWNER TO cuentassik_owner;
+
 --
--- Name: update_member_balance(uuid, uuid, numeric, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_member_balance(uuid, uuid, numeric, text); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_member_balance(p_household_id uuid, p_profile_id uuid, p_delta_amount numeric, p_notes text DEFAULT NULL::text) RETURNS numeric
@@ -2742,15 +2909,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_member_balance(p_household_id uuid, p_profile_id uuid, p_delta_amount numeric, p_notes text) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION update_member_balance(p_household_id uuid, p_profile_id uuid, p_delta_amount numeric, p_notes text); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION update_member_balance(p_household_id uuid, p_profile_id uuid, p_delta_amount numeric, p_notes text); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.update_member_balance(p_household_id uuid, p_profile_id uuid, p_delta_amount numeric, p_notes text) IS 'Actualiza balance de miembro sumando delta. Retorna nuevo balance.';
 
 
 --
--- Name: update_member_credit_audit(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_member_credit_audit(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_member_credit_audit() RETURNS trigger
@@ -2768,8 +2937,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_member_credit_audit() OWNER TO cuentassik_owner;
+
 --
--- Name: update_personal_loans_timestamp(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_personal_loans_timestamp(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_personal_loans_timestamp() RETURNS trigger
@@ -2782,8 +2953,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_personal_loans_timestamp() OWNER TO cuentassik_owner;
+
 --
--- Name: update_profile_emails_updated_at(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_profile_emails_updated_at(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_profile_emails_updated_at() RETURNS trigger
@@ -2796,8 +2969,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_profile_emails_updated_at() OWNER TO cuentassik_owner;
+
 --
--- Name: update_refund_claims_updated_at(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_refund_claims_updated_at(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_refund_claims_updated_at() RETURNS trigger
@@ -2810,8 +2985,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_refund_claims_updated_at() OWNER TO cuentassik_owner;
+
 --
--- Name: update_subcategory_timestamp(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_subcategory_timestamp(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_subcategory_timestamp() RETURNS trigger
@@ -2824,8 +3001,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_subcategory_timestamp() OWNER TO cuentassik_owner;
+
 --
--- Name: update_transaction_audit(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_transaction_audit(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_transaction_audit() RETURNS trigger
@@ -2847,8 +3026,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_transaction_audit() OWNER TO cuentassik_owner;
+
 --
--- Name: update_updated_at(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_updated_at(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_updated_at() RETURNS trigger
@@ -2861,8 +3042,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_updated_at() OWNER TO cuentassik_owner;
+
 --
--- Name: update_user_active_household_timestamp(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_user_active_household_timestamp(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.update_user_active_household_timestamp() RETURNS trigger
@@ -2875,8 +3058,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.update_user_active_household_timestamp() OWNER TO cuentassik_owner;
+
 --
--- Name: validate_household_has_owner(uuid); Type: FUNCTION; Schema: public; Owner: -
+-- Name: validate_household_has_owner(uuid); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.validate_household_has_owner(p_household_id uuid) RETURNS boolean
@@ -2895,15 +3080,17 @@ END;
 $$;
 
 
+ALTER FUNCTION public.validate_household_has_owner(p_household_id uuid) OWNER TO cuentassik_owner;
+
 --
--- Name: FUNCTION validate_household_has_owner(p_household_id uuid); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION validate_household_has_owner(p_household_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON FUNCTION public.validate_household_has_owner(p_household_id uuid) IS 'Valida que un hogar específico tenga al menos un owner. Retorna TRUE si cumple la regla.';
 
 
 --
--- Name: validate_primary_email_exists(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: validate_primary_email_exists(); Type: FUNCTION; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE FUNCTION public.validate_primary_email_exists() RETURNS trigger
@@ -2936,12 +3123,14 @@ END;
 $$;
 
 
+ALTER FUNCTION public.validate_primary_email_exists() OWNER TO cuentassik_owner;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: _migrations; Type: TABLE; Schema: public; Owner: -
+-- Name: _migrations; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public._migrations (
@@ -2959,57 +3148,59 @@ CREATE TABLE public._migrations (
 );
 
 
+ALTER TABLE public._migrations OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE _migrations; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE _migrations; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public._migrations IS 'Tabla de control de migraciones del sistema v2.1.0+';
 
 
 --
--- Name: COLUMN _migrations.migration_name; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN _migrations.migration_name; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public._migrations.migration_name IS 'Nombre del archivo de migración';
 
 
 --
--- Name: COLUMN _migrations.applied_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN _migrations.applied_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public._migrations.applied_at IS 'Timestamp de aplicación';
 
 
 --
--- Name: COLUMN _migrations.applied_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN _migrations.applied_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public._migrations.applied_by IS 'Usuario PostgreSQL que aplicó la migración';
 
 
 --
--- Name: COLUMN _migrations.execution_time_ms; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN _migrations.execution_time_ms; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public._migrations.execution_time_ms IS 'Tiempo de ejecución en milisegundos';
 
 
 --
--- Name: COLUMN _migrations.status; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN _migrations.status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public._migrations.status IS 'Estado: success, failed, rolled_back';
 
 
 --
--- Name: COLUMN _migrations.checksum; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN _migrations.checksum; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public._migrations.checksum IS 'Hash MD5 del contenido del archivo';
 
 
 --
--- Name: _migrations_backup_pre_v2_1_0; Type: TABLE; Schema: public; Owner: -
+-- Name: _migrations_backup_pre_v2_1_0; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public._migrations_backup_pre_v2_1_0 (
@@ -3023,8 +3214,10 @@ CREATE TABLE public._migrations_backup_pre_v2_1_0 (
 );
 
 
+ALTER TABLE public._migrations_backup_pre_v2_1_0 OWNER TO postgres;
+
 --
--- Name: _migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: _migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE SEQUENCE public._migrations_id_seq
@@ -3036,15 +3229,17 @@ CREATE SEQUENCE public._migrations_id_seq
     CACHE 1;
 
 
+ALTER TABLE public._migrations_id_seq OWNER TO cuentassik_owner;
+
 --
--- Name: _migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: _migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER SEQUENCE public._migrations_id_seq OWNED BY public._migrations.id;
 
 
 --
--- Name: categories; Type: TABLE; Schema: public; Owner: -
+-- Name: categories; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.categories (
@@ -3062,50 +3257,52 @@ CREATE TABLE public.categories (
 );
 
 
+ALTER TABLE public.categories OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE categories; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE categories; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.categories IS 'Tabla de categorías de transacciones. Actualizada con categoría Lavandería para gastos domésticos.';
 
 
 --
--- Name: COLUMN categories.created_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN categories.created_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.categories.created_by_profile_id IS 'ID del usuario que CREÓ esta categoría en el hogar.';
 
 
 --
--- Name: COLUMN categories.created_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN categories.created_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.categories.created_at IS 'Fecha de creación de la categoría.';
 
 
 --
--- Name: COLUMN categories.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN categories.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.categories.updated_by_profile_id IS 'ID del usuario que MODIFICÓ esta categoría por última vez.';
 
 
 --
--- Name: COLUMN categories.updated_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN categories.updated_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.categories.updated_at IS 'Fecha de la última modificación de la categoría.';
 
 
 --
--- Name: COLUMN categories.parent_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN categories.parent_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.categories.parent_id IS 'Reference to parent category group (NULL = legacy/ungrouped)';
 
 
 --
--- Name: category_parents; Type: TABLE; Schema: public; Owner: -
+-- Name: category_parents; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.category_parents (
@@ -3121,15 +3318,17 @@ CREATE TABLE public.category_parents (
 );
 
 
+ALTER TABLE public.category_parents OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE category_parents; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE category_parents; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.category_parents IS 'Top-level category groups (e.g., Hogar, Suministros, Alimentación)';
 
 
 --
--- Name: contribution_adjustment_templates; Type: TABLE; Schema: public; Owner: -
+-- Name: contribution_adjustment_templates; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.contribution_adjustment_templates (
@@ -3151,15 +3350,17 @@ CREATE TABLE public.contribution_adjustment_templates (
 );
 
 
+ALTER TABLE public.contribution_adjustment_templates OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE contribution_adjustment_templates; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE contribution_adjustment_templates; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.contribution_adjustment_templates IS 'DEPRECATED: Será reemplazado por sistema de doble flujo (flow_type en transactions)';
 
 
 --
--- Name: contribution_adjustments; Type: TABLE; Schema: public; Owner: -
+-- Name: contribution_adjustments; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.contribution_adjustments (
@@ -3186,15 +3387,17 @@ CREATE TABLE public.contribution_adjustments (
 );
 
 
+ALTER TABLE public.contribution_adjustments OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE contribution_adjustments; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE contribution_adjustments; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.contribution_adjustments IS 'DEPRECATED: Será reemplazado por sistema de doble flujo (flow_type en transactions)';
 
 
 --
--- Name: contribution_periods; Type: TABLE; Schema: public; Owner: -
+-- Name: contribution_periods; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.contribution_periods (
@@ -3213,36 +3416,38 @@ CREATE TABLE public.contribution_periods (
 );
 
 
+ALTER TABLE public.contribution_periods OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE contribution_periods; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE contribution_periods; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.contribution_periods IS 'Períodos de contribución con estados SETUP→LOCKED→CLOSED para controlar flujos de transacciones';
 
 
 --
--- Name: COLUMN contribution_periods.status; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN contribution_periods.status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.contribution_periods.status IS 'SETUP: solo gastos directos, LOCKED: ambos flujos, CLOSED: período cerrado';
 
 
 --
--- Name: COLUMN contribution_periods.locked_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN contribution_periods.locked_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.contribution_periods.locked_by IS 'Owner que bloqueó el período y calculó contribuciones';
 
 
 --
--- Name: COLUMN contribution_periods.closed_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN contribution_periods.closed_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.contribution_periods.closed_by IS 'Owner que cerró el período';
 
 
 --
--- Name: contribution_reconciliations; Type: TABLE; Schema: public; Owner: -
+-- Name: contribution_reconciliations; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.contribution_reconciliations (
@@ -3254,15 +3459,17 @@ CREATE TABLE public.contribution_reconciliations (
 );
 
 
+ALTER TABLE public.contribution_reconciliations OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE contribution_reconciliations; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE contribution_reconciliations; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.contribution_reconciliations IS 'Registro idempotente de reconciliaciones por contribución.';
 
 
 --
--- Name: contributions; Type: TABLE; Schema: public; Owner: -
+-- Name: contributions; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.contributions (
@@ -3285,29 +3492,31 @@ CREATE TABLE public.contributions (
 );
 
 
+ALTER TABLE public.contributions OWNER TO cuentassik_owner;
+
 --
--- Name: COLUMN contributions.created_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN contributions.created_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.contributions.created_by_profile_id IS 'ID del usuario que CALCULÓ/CREÓ este registro de contribución. Puede ser diferente de profile_id (a quien pertenece).';
 
 
 --
--- Name: COLUMN contributions.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN contributions.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.contributions.updated_by_profile_id IS 'ID del usuario que MODIFICÓ esta contribución por última vez.';
 
 
 --
--- Name: COLUMN contributions.adjustments_paid_amount; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN contributions.adjustments_paid_amount; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.contributions.adjustments_paid_amount IS 'Suma absoluta de ajustes que tienen movimiento vinculado (prepagos ya realizados)';
 
 
 --
--- Name: credit_refund_requests; Type: TABLE; Schema: public; Owner: -
+-- Name: credit_refund_requests; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.credit_refund_requests (
@@ -3329,15 +3538,17 @@ CREATE TABLE public.credit_refund_requests (
 );
 
 
+ALTER TABLE public.credit_refund_requests OWNER TO cuentassik_owner;
+
 --
--- Name: COLUMN credit_refund_requests.refund_transaction_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN credit_refund_requests.refund_transaction_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.credit_refund_requests.refund_transaction_id IS 'Si refund_type=transaction: ID de la transacción de gasto vinculada que justifica el reembolso';
 
 
 --
--- Name: COLUMN credit_refund_requests.refund_type; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN credit_refund_requests.refund_type; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.credit_refund_requests.refund_type IS 'Tipo de reembolso: 
@@ -3346,7 +3557,7 @@ COMMENT ON COLUMN public.credit_refund_requests.refund_type IS 'Tipo de reembols
 
 
 --
--- Name: dual_flow_config; Type: TABLE; Schema: public; Owner: -
+-- Name: dual_flow_config; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.dual_flow_config (
@@ -3368,15 +3579,17 @@ CREATE TABLE public.dual_flow_config (
 );
 
 
+ALTER TABLE public.dual_flow_config OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE dual_flow_config; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE dual_flow_config; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.dual_flow_config IS 'Configuración personalizable del sistema dual-flow por hogar';
 
 
 --
--- Name: dual_flow_events; Type: TABLE; Schema: public; Owner: -
+-- Name: dual_flow_events; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.dual_flow_events (
@@ -3390,29 +3603,31 @@ CREATE TABLE public.dual_flow_events (
 );
 
 
+ALTER TABLE public.dual_flow_events OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE dual_flow_events; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE dual_flow_events; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.dual_flow_events IS 'Bitácora de eventos del sistema dual-flow (periodos, contribuciones y transacciones)';
 
 
 --
--- Name: COLUMN dual_flow_events.event_type; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN dual_flow_events.event_type; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.dual_flow_events.event_type IS 'Identificador canónico del evento (ej. period.validated, period.closed)';
 
 
 --
--- Name: COLUMN dual_flow_events.payload; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN dual_flow_events.payload; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.dual_flow_events.payload IS 'Información adicional del evento en formato JSON';
 
 
 --
--- Name: dual_flow_transactions; Type: TABLE; Schema: public; Owner: -
+-- Name: dual_flow_transactions; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.dual_flow_transactions (
@@ -3442,15 +3657,17 @@ CREATE TABLE public.dual_flow_transactions (
 );
 
 
+ALTER TABLE public.dual_flow_transactions OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE dual_flow_transactions; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE dual_flow_transactions; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.dual_flow_transactions IS 'Tabla principal del sistema dual-flow con 4 tipos de transacciones y auto-pairing';
 
 
 --
--- Name: email_invitations; Type: TABLE; Schema: public; Owner: -
+-- Name: email_invitations; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.email_invitations (
@@ -3468,71 +3685,73 @@ CREATE TABLE public.email_invitations (
 );
 
 
+ALTER TABLE public.email_invitations OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE email_invitations; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE email_invitations; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.email_invitations IS 'Invitaciones para compartir acceso a perfil mediante email secundario. Permisos: cuentassik_user tiene SELECT, INSERT, UPDATE, DELETE';
 
 
 --
--- Name: COLUMN email_invitations.profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN email_invitations.profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.email_invitations.profile_id IS 'Perfil que genera la invitación (el que comparte su cuenta)';
 
 
 --
--- Name: COLUMN email_invitations.invited_email; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN email_invitations.invited_email; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.email_invitations.invited_email IS 'Email invitado a ser alias del perfil';
 
 
 --
--- Name: COLUMN email_invitations.token; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN email_invitations.token; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.email_invitations.token IS 'Token único para validar la invitación (UUID)';
 
 
 --
--- Name: COLUMN email_invitations.expires_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN email_invitations.expires_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.email_invitations.expires_at IS 'Fecha de expiración de la invitación (default: 7 días)';
 
 
 --
--- Name: COLUMN email_invitations.accepted_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN email_invitations.accepted_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.email_invitations.accepted_at IS 'Timestamp cuando se aceptó la invitación';
 
 
 --
--- Name: COLUMN email_invitations.accepted_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN email_invitations.accepted_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.email_invitations.accepted_by_profile_id IS 'Perfil temporal que aceptó (antes de merge). NULL si aún no aceptada o si perfil fue eliminado';
 
 
 --
--- Name: COLUMN email_invitations.status; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN email_invitations.status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.email_invitations.status IS 'Estado: pending (activa), accepted (aceptada), expired (vencida), cancelled (cancelada por invitador)';
 
 
 --
--- Name: COLUMN email_invitations.metadata; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN email_invitations.metadata; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.email_invitations.metadata IS 'Datos adicionales: IP, user agent, etc.';
 
 
 --
--- Name: household_members; Type: TABLE; Schema: public; Owner: -
+-- Name: household_members; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.household_members (
@@ -3546,36 +3765,38 @@ CREATE TABLE public.household_members (
 );
 
 
+ALTER TABLE public.household_members OWNER TO cuentassik_owner;
+
 --
--- Name: COLUMN household_members.is_owner; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN household_members.is_owner; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.household_members.is_owner IS 'Indica si el usuario es propietario del hogar. Puede gestionar configuración, invitar miembros, etc.';
 
 
 --
--- Name: COLUMN household_members.invited_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN household_members.invited_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.household_members.invited_by_profile_id IS 'ID del usuario que invitó a este miembro al hogar. NULL si fue el creador del hogar.';
 
 
 --
--- Name: COLUMN household_members.joined_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN household_members.joined_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.household_members.joined_at IS 'Fecha en que el usuario se unió al hogar (aceptó la invitación).';
 
 
 --
--- Name: CONSTRAINT chk_household_member_role ON household_members; Type: COMMENT; Schema: public; Owner: -
+-- Name: CONSTRAINT chk_household_member_role ON household_members; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON CONSTRAINT chk_household_member_role ON public.household_members IS 'Valida que el rol sea exactamente ''owner'' o ''member''. Previene valores incorrectos.';
 
 
 --
--- Name: household_savings; Type: TABLE; Schema: public; Owner: -
+-- Name: household_savings; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.household_savings (
@@ -3591,8 +3812,10 @@ CREATE TABLE public.household_savings (
 );
 
 
+ALTER TABLE public.household_savings OWNER TO cuentassik_owner;
+
 --
--- Name: household_settings; Type: TABLE; Schema: public; Owner: -
+-- Name: household_settings; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.household_settings (
@@ -3605,8 +3828,10 @@ CREATE TABLE public.household_settings (
 );
 
 
+ALTER TABLE public.household_settings OWNER TO cuentassik_owner;
+
 --
--- Name: households; Type: TABLE; Schema: public; Owner: -
+-- Name: households; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.households (
@@ -3622,43 +3847,45 @@ CREATE TABLE public.households (
 );
 
 
+ALTER TABLE public.households OWNER TO cuentassik_owner;
+
 --
--- Name: COLUMN households.settings_archivo; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN households.settings_archivo; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.households.settings_archivo IS 'LEGACY: Campo jsonb de configuración antigua, archivado. No usar en lógica actual.';
 
 
 --
--- Name: COLUMN households.created_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN households.created_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.households.created_by_profile_id IS 'ID del usuario que CREÓ este hogar. Por defecto es owner del mismo.';
 
 
 --
--- Name: COLUMN households.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN households.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.households.updated_by_profile_id IS 'ID del usuario que MODIFICÓ la configuración del hogar por última vez.';
 
 
 --
--- Name: COLUMN households.updated_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN households.updated_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.households.updated_at IS 'Fecha de la última modificación del hogar.';
 
 
 --
--- Name: COLUMN households.deleted_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN households.deleted_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.households.deleted_at IS 'Timestamp de eliminación lógica (soft delete). NULL = hogar activo. Permite auditoría y recuperación.';
 
 
 --
--- Name: household_stats; Type: MATERIALIZED VIEW; Schema: public; Owner: -
+-- Name: household_stats; Type: MATERIALIZED VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE MATERIALIZED VIEW public.household_stats AS
@@ -3677,15 +3904,17 @@ CREATE MATERIALIZED VIEW public.household_stats AS
   WITH NO DATA;
 
 
+ALTER TABLE public.household_stats OWNER TO cuentassik_owner;
+
 --
--- Name: MATERIALIZED VIEW household_stats; Type: COMMENT; Schema: public; Owner: -
+-- Name: MATERIALIZED VIEW household_stats; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON MATERIALIZED VIEW public.household_stats IS 'Vista materializada con estadísticas pre-calculadas de hogares. Optimiza queries de conteo de miembros y roles.';
 
 
 --
--- Name: invitations; Type: TABLE; Schema: public; Owner: -
+-- Name: invitations; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.invitations (
@@ -3711,22 +3940,24 @@ CREATE TABLE public.invitations (
 );
 
 
+ALTER TABLE public.invitations OWNER TO cuentassik_owner;
+
 --
--- Name: COLUMN invitations.created_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN invitations.created_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.invitations.created_at IS 'Fecha en que se creó/envió la invitación.';
 
 
 --
--- Name: COLUMN invitations.invited_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN invitations.invited_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.invitations.invited_by_profile_id IS 'ID del usuario que ENVIÓ esta invitación (owner del hogar).';
 
 
 --
--- Name: joint_accounts; Type: TABLE; Schema: public; Owner: -
+-- Name: joint_accounts; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.joint_accounts (
@@ -3737,29 +3968,31 @@ CREATE TABLE public.joint_accounts (
 );
 
 
+ALTER TABLE public.joint_accounts OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE joint_accounts; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE joint_accounts; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.joint_accounts IS 'Cuenta conjunta/común de cada hogar. Miembro virtual permanente del sistema.';
 
 
 --
--- Name: COLUMN joint_accounts.household_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN joint_accounts.household_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.joint_accounts.household_id IS 'Hogar al que pertenece esta cuenta común (uno por hogar).';
 
 
 --
--- Name: COLUMN joint_accounts.display_name; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN joint_accounts.display_name; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.joint_accounts.display_name IS 'Nombre visible de la cuenta común. Default: "Cuenta Común".';
 
 
 --
--- Name: journal_adjustments; Type: TABLE; Schema: public; Owner: -
+-- Name: journal_adjustments; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.journal_adjustments (
@@ -3774,15 +4007,17 @@ CREATE TABLE public.journal_adjustments (
 );
 
 
+ALTER TABLE public.journal_adjustments OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE journal_adjustments; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE journal_adjustments; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.journal_adjustments IS 'DEPRECATED: Será reemplazado por sistema de doble flujo (flow_type en transactions)';
 
 
 --
--- Name: journal_invitations; Type: TABLE; Schema: public; Owner: -
+-- Name: journal_invitations; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.journal_invitations (
@@ -3797,8 +4032,10 @@ CREATE TABLE public.journal_invitations (
 );
 
 
+ALTER TABLE public.journal_invitations OWNER TO cuentassik_owner;
+
 --
--- Name: journal_roles; Type: TABLE; Schema: public; Owner: -
+-- Name: journal_roles; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.journal_roles (
@@ -3814,8 +4051,10 @@ CREATE TABLE public.journal_roles (
 );
 
 
+ALTER TABLE public.journal_roles OWNER TO cuentassik_owner;
+
 --
--- Name: journal_transactions; Type: TABLE; Schema: public; Owner: -
+-- Name: journal_transactions; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.journal_transactions (
@@ -3830,8 +4069,10 @@ CREATE TABLE public.journal_transactions (
 );
 
 
+ALTER TABLE public.journal_transactions OWNER TO cuentassik_owner;
+
 --
--- Name: member_balances; Type: TABLE; Schema: public; Owner: -
+-- Name: member_balances; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.member_balances (
@@ -3843,22 +4084,24 @@ CREATE TABLE public.member_balances (
 );
 
 
+ALTER TABLE public.member_balances OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE member_balances; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE member_balances; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.member_balances IS 'Balance global de crédito/deuda por miembro. Positivo = hogar debe, negativo = miembro debe.';
 
 
 --
--- Name: COLUMN member_balances.current_balance; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN member_balances.current_balance; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.member_balances.current_balance IS 'Balance actual: (+) hogar debe a miembro, (-) miembro debe al hogar, (0) saldado';
 
 
 --
--- Name: member_credits; Type: TABLE; Schema: public; Owner: -
+-- Name: member_credits; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.member_credits (
@@ -3884,8 +4127,10 @@ CREATE TABLE public.member_credits (
 );
 
 
+ALTER TABLE public.member_credits OWNER TO cuentassik_owner;
+
 --
--- Name: COLUMN member_credits.reserved_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN member_credits.reserved_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.member_credits.reserved_at IS 'Timestamp cuando el crédito fue reservado para aplicar al mes siguiente.
@@ -3897,28 +4142,28 @@ Esto retira el crédito del balance principal disponible inmediatamente.';
 
 
 --
--- Name: COLUMN member_credits.created_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN member_credits.created_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.member_credits.created_by_profile_id IS 'ID del usuario que OTORGÓ este crédito al miembro.';
 
 
 --
--- Name: COLUMN member_credits.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN member_credits.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.member_credits.updated_by_profile_id IS 'ID del usuario que MODIFICÓ este crédito por última vez.';
 
 
 --
--- Name: COLUMN member_credits.updated_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN member_credits.updated_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.member_credits.updated_at IS 'Fecha de la última modificación del crédito.';
 
 
 --
--- Name: member_incomes; Type: TABLE; Schema: public; Owner: -
+-- Name: member_incomes; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.member_incomes (
@@ -3931,8 +4176,10 @@ CREATE TABLE public.member_incomes (
 );
 
 
+ALTER TABLE public.member_incomes OWNER TO cuentassik_owner;
+
 --
--- Name: monthly_periods; Type: TABLE; Schema: public; Owner: -
+-- Name: monthly_periods; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.monthly_periods (
@@ -3968,127 +4215,129 @@ CREATE TABLE public.monthly_periods (
 );
 
 
+ALTER TABLE public.monthly_periods OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE monthly_periods; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE monthly_periods; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.monthly_periods IS 'Períodos mensuales con balance de apertura/cierre para contabilidad profesional';
 
 
 --
--- Name: COLUMN monthly_periods.status; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.status IS 'Estado: open (actual), pending_close (pasado sin cerrar), closed (cerrado)';
 
 
 --
--- Name: COLUMN monthly_periods.opening_balance; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.opening_balance; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.opening_balance IS 'Balance al inicio del mes (heredado del mes anterior)';
 
 
 --
--- Name: COLUMN monthly_periods.closing_balance; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.closing_balance; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.closing_balance IS 'Balance al final del mes (se convierte en opening_balance del siguiente)';
 
 
 --
--- Name: COLUMN monthly_periods.phase; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.phase; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.phase IS 'Fase operativa del período mensual (preparing, validation, active, closing o closed)';
 
 
 --
--- Name: COLUMN monthly_periods.validated_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.validated_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.validated_at IS 'Momento en el que el período fue validado para activar contribuciones';
 
 
 --
--- Name: COLUMN monthly_periods.validated_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.validated_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.validated_by IS 'Perfil que validó el período para activar contribuciones';
 
 
 --
--- Name: COLUMN monthly_periods.locked_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.locked_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.locked_at IS 'Marca temporal de cierre de aportaciones manuales en el período';
 
 
 --
--- Name: COLUMN monthly_periods.locked_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.locked_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.locked_by IS 'Perfil que ejecutó el cierre manual de aportaciones';
 
 
 --
--- Name: COLUMN monthly_periods.opened_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.opened_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.opened_at IS 'Fecha y hora en la que el período pasó a fase activa';
 
 
 --
--- Name: COLUMN monthly_periods.opened_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.opened_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.opened_by IS 'Perfil que activó el período';
 
 
 --
--- Name: COLUMN monthly_periods.closing_started_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.closing_started_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.closing_started_at IS 'Fecha y hora en la que se inició el cierre del período';
 
 
 --
--- Name: COLUMN monthly_periods.closing_started_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.closing_started_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.closing_started_by IS 'Perfil que inició el cierre del período';
 
 
 --
--- Name: COLUMN monthly_periods.updated_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.updated_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.updated_at IS 'Marca de tiempo de la última actualización del período mensual';
 
 
 --
--- Name: COLUMN monthly_periods.reopened_count; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.reopened_count; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.reopened_count IS 'Número de veces que el período ha retrocedido de fase (reaperturas).';
 
 
 --
--- Name: COLUMN monthly_periods.last_reopened_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.last_reopened_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.last_reopened_at IS 'Última fecha/hora de retroceso de fase.';
 
 
 --
--- Name: COLUMN monthly_periods.last_reopened_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.last_reopened_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.last_reopened_by IS 'Perfil que ejecutó el último retroceso de fase.';
 
 
 --
--- Name: COLUMN monthly_periods.contribution_disabled; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.contribution_disabled; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.contribution_disabled IS 'Si TRUE, este período ignora el sistema de contribuciones.
@@ -4097,7 +4346,7 @@ Cuando TRUE, las contribuciones se establecen a 0€ para todos los miembros.';
 
 
 --
--- Name: COLUMN monthly_periods.snapshot_contribution_goal; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN monthly_periods.snapshot_contribution_goal; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.monthly_periods.snapshot_contribution_goal IS 'Snapshot del objetivo de contribución al momento de bloquear el período.
@@ -4107,7 +4356,7 @@ COMMENT ON COLUMN public.monthly_periods.snapshot_contribution_goal IS 'Snapshot
 
 
 --
--- Name: transactions; Type: TABLE; Schema: public; Owner: -
+-- Name: transactions; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.transactions (
@@ -4156,22 +4405,24 @@ CREATE TABLE public.transactions (
 );
 
 
+ALTER TABLE public.transactions OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE transactions; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE transactions; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.transactions IS 'Tabla mejorada con defaults automáticos para id y timestamps';
 
 
 --
--- Name: COLUMN transactions.id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.id IS 'UUID generado automáticamente por PostgreSQL';
 
 
 --
--- Name: COLUMN transactions.paid_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.paid_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.paid_by IS '⚠️ DEPRECATED (Issue #33): Campo calculado dinámicamente.
@@ -4186,7 +4437,7 @@ COMMENT ON COLUMN public.transactions.paid_by IS '⚠️ DEPRECATED (Issue #33):
 
 
 --
--- Name: COLUMN transactions.created_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.created_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.created_by_profile_id IS '⚠️ DEPRECATED (Issue #31): Duplica 100% profile_id.
@@ -4196,35 +4447,35 @@ COMMENT ON COLUMN public.transactions.created_by_profile_id IS '⚠️ DEPRECATE
 
 
 --
--- Name: COLUMN transactions.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.updated_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.updated_by_profile_id IS 'ID del usuario que MODIFICÓ esta transacción por última vez.';
 
 
 --
--- Name: COLUMN transactions.flow_type; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.flow_type; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.flow_type IS 'Tipo de flujo: common (cuenta común) o direct (gastos directos de miembros)';
 
 
 --
--- Name: COLUMN transactions.transaction_pair_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.transaction_pair_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.transaction_pair_id IS 'UUID que vincula gastos directos con sus ingresos automáticos correspondientes';
 
 
 --
--- Name: COLUMN transactions.created_by_member_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.created_by_member_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.created_by_member_id IS 'Miembro que creó la transacción (puede diferir de quien pagó)';
 
 
 --
--- Name: COLUMN transactions.real_payer_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.real_payer_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.real_payer_id IS '⚠️ DEPRECATED (Issue #30): Campo redundante con performed_by_profile_id.
@@ -4243,14 +4494,14 @@ COMMENT ON COLUMN public.transactions.real_payer_id IS '⚠️ DEPRECATED (Issue
 
 
 --
--- Name: COLUMN transactions.created_by_email; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.created_by_email; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.created_by_email IS 'Email del usuario que creó el registro en el sistema';
 
 
 --
--- Name: COLUMN transactions.performed_by_email_deprecated; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.performed_by_email_deprecated; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.performed_by_email_deprecated IS '⚠️ DEPRECADO: Reemplazado por performed_by_profile_id (UUID fuerte).
@@ -4269,63 +4520,63 @@ COMMENT ON COLUMN public.transactions.performed_by_email_deprecated IS '⚠️ D
 
 
 --
--- Name: COLUMN transactions.performed_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.performed_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.performed_at IS 'Fecha/hora real cuando se realizó la transacción (diferente de created_at que es cuando se registró en el sistema)';
 
 
 --
--- Name: COLUMN transactions.dual_flow_status; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.dual_flow_status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.dual_flow_status IS 'Estado operativo dual-flow de la transacción';
 
 
 --
--- Name: COLUMN transactions.requires_approval; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.requires_approval; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.requires_approval IS 'Indica si la transacción necesita aprobación manual';
 
 
 --
--- Name: COLUMN transactions.auto_paired; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.auto_paired; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.auto_paired IS 'Marca si la transacción fue emparejada automáticamente';
 
 
 --
--- Name: COLUMN transactions.review_days; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.review_days; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.review_days IS 'Días límite para revisión antes de la auto-aprobación';
 
 
 --
--- Name: COLUMN transactions.pairing_threshold; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.pairing_threshold; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.pairing_threshold IS 'Umbral de importe para emparejamiento automático (diferencia aceptada)';
 
 
 --
--- Name: COLUMN transactions.approved_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.approved_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.approved_at IS 'Fecha/hora en la que la transacción fue aprobada';
 
 
 --
--- Name: COLUMN transactions.approved_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.approved_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.approved_by IS 'Perfil que aprobó la transacción dual-flow';
 
 
 --
--- Name: COLUMN transactions.refund_claim_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.refund_claim_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.refund_claim_id IS 'UUID que vincula un reembolso DECLARADO a su gasto directo correspondiente. 
@@ -4335,14 +4586,14 @@ COMMENT ON COLUMN public.transactions.refund_claim_id IS 'UUID que vincula un re
 
 
 --
--- Name: COLUMN transactions.subcategory_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.subcategory_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.subcategory_id IS 'Optional detailed subcategory (migrated from description field)';
 
 
 --
--- Name: COLUMN transactions.performed_by_profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.performed_by_profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.performed_by_profile_id IS 'UUID del miembro que FÍSICAMENTE ejecutó la transacción (pasó tarjeta, hizo ingreso).
@@ -4357,21 +4608,21 @@ COMMENT ON COLUMN public.transactions.performed_by_profile_id IS 'UUID del miemb
 
 
 --
--- Name: COLUMN transactions.is_compensatory_income; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.is_compensatory_income; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.is_compensatory_income IS 'TRUE si es un ingreso compensatorio creado automáticamente al registrar un gasto directo. Estos ingresos NO deben editarse directamente, solo desde el gasto asociado.';
 
 
 --
--- Name: COLUMN transactions.transaction_number; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN transactions.transaction_number; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.transactions.transaction_number IS 'Número secuencial único por household. Asignado automáticamente por trigger en nuevas inserciones.';
 
 
 --
--- Name: mv_household_balances; Type: MATERIALIZED VIEW; Schema: public; Owner: -
+-- Name: mv_household_balances; Type: MATERIALIZED VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE MATERIALIZED VIEW public.mv_household_balances AS
@@ -4413,15 +4664,17 @@ CREATE MATERIALIZED VIEW public.mv_household_balances AS
   WITH NO DATA;
 
 
+ALTER TABLE public.mv_household_balances OWNER TO cuentassik_owner;
+
 --
--- Name: MATERIALIZED VIEW mv_household_balances; Type: COMMENT; Schema: public; Owner: -
+-- Name: MATERIALIZED VIEW mv_household_balances; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON MATERIALIZED VIEW public.mv_household_balances IS 'Balance agregado por hogar - REFRESH cada cambio en transacciones';
 
 
 --
--- Name: profiles; Type: TABLE; Schema: public; Owner: -
+-- Name: profiles; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.profiles (
@@ -4438,29 +4691,31 @@ CREATE TABLE public.profiles (
 );
 
 
+ALTER TABLE public.profiles OWNER TO cuentassik_owner;
+
 --
--- Name: COLUMN profiles.id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profiles.id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profiles.id IS 'UUID único del perfil, generado automáticamente';
 
 
 --
--- Name: COLUMN profiles.is_system_admin; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profiles.is_system_admin; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profiles.is_system_admin IS 'Indica si el usuario es administrador de la aplicación (acceso a /admin). Campo global, no depende de hogares.';
 
 
 --
--- Name: COLUMN profiles.deleted_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profiles.deleted_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profiles.deleted_at IS 'Timestamp de borrado lógico. NULL = perfil activo, NOT NULL = perfil eliminado';
 
 
 --
--- Name: mv_member_pending_contributions; Type: MATERIALIZED VIEW; Schema: public; Owner: -
+-- Name: mv_member_pending_contributions; Type: MATERIALIZED VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE MATERIALIZED VIEW public.mv_member_pending_contributions AS
@@ -4490,15 +4745,17 @@ CREATE MATERIALIZED VIEW public.mv_member_pending_contributions AS
   WITH NO DATA;
 
 
+ALTER TABLE public.mv_member_pending_contributions OWNER TO cuentassik_owner;
+
 --
--- Name: MATERIALIZED VIEW mv_member_pending_contributions; Type: COMMENT; Schema: public; Owner: -
+-- Name: MATERIALIZED VIEW mv_member_pending_contributions; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON MATERIALIZED VIEW public.mv_member_pending_contributions IS 'Contribuciones pendientes por miembro considerando gastos directos';
 
 
 --
--- Name: personal_loans; Type: TABLE; Schema: public; Owner: -
+-- Name: personal_loans; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.personal_loans (
@@ -4523,22 +4780,24 @@ CREATE TABLE public.personal_loans (
 );
 
 
+ALTER TABLE public.personal_loans OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE personal_loans; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE personal_loans; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.personal_loans IS 'Préstamos personales solicitados por miembros con aprobación del owner.';
 
 
 --
--- Name: COLUMN personal_loans.status; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN personal_loans.status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.personal_loans.status IS 'Estado: pending (pendiente aprobación), approved (aprobado y retirado), rejected (rechazado), settled (liquidado)';
 
 
 --
--- Name: profile_emails; Type: TABLE; Schema: public; Owner: -
+-- Name: profile_emails; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.profile_emails (
@@ -4555,57 +4814,59 @@ CREATE TABLE public.profile_emails (
 );
 
 
+ALTER TABLE public.profile_emails OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE profile_emails; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE profile_emails; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.profile_emails IS 'Emails aliases para perfiles. Permite múltiples emails por usuario con gestión de email principal.';
 
 
 --
--- Name: COLUMN profile_emails.profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profile_emails.profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profile_emails.profile_id IS 'Referencia al perfil propietario de este email';
 
 
 --
--- Name: COLUMN profile_emails.email; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profile_emails.email; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profile_emails.email IS 'Dirección de email. Debe ser única en todo el sistema.';
 
 
 --
--- Name: COLUMN profile_emails.is_primary; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profile_emails.is_primary; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profile_emails.is_primary IS 'Indica si este es el email principal del usuario. Solo puede haber uno por perfil.';
 
 
 --
--- Name: COLUMN profile_emails.verified; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profile_emails.verified; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profile_emails.verified IS 'Indica si el email ha sido verificado por el usuario';
 
 
 --
--- Name: COLUMN profile_emails.verified_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profile_emails.verified_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profile_emails.verified_at IS 'Timestamp de cuándo se verificó el email';
 
 
 --
--- Name: COLUMN profile_emails.added_by; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN profile_emails.added_by; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.profile_emails.added_by IS 'Referencia al usuario que agregó este email (normalmente el mismo profile_id)';
 
 
 --
--- Name: refund_claims; Type: TABLE; Schema: public; Owner: -
+-- Name: refund_claims; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.refund_claims (
@@ -4628,8 +4889,10 @@ CREATE TABLE public.refund_claims (
 );
 
 
+ALTER TABLE public.refund_claims OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE refund_claims; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE refund_claims; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.refund_claims IS 'Reclamos de reembolso: cuando un gasto directo (expense_direct) incluye un reembolso de la aportación.
@@ -4638,7 +4901,7 @@ COMMENT ON TABLE public.refund_claims IS 'Reclamos de reembolso: cuando un gasto
 
 
 --
--- Name: COLUMN refund_claims.status; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN refund_claims.status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.refund_claims.status IS 'pending: Reclamo en espera de aprobación del owner. 
@@ -4647,7 +4910,7 @@ COMMENT ON COLUMN public.refund_claims.status IS 'pending: Reclamo en espera de 
 
 
 --
--- Name: seq_transaction_pair_ref; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: seq_transaction_pair_ref; Type: SEQUENCE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE SEQUENCE public.seq_transaction_pair_ref
@@ -4658,8 +4921,10 @@ CREATE SEQUENCE public.seq_transaction_pair_ref
     CACHE 1;
 
 
+ALTER TABLE public.seq_transaction_pair_ref OWNER TO cuentassik_owner;
+
 --
--- Name: subcategories; Type: TABLE; Schema: public; Owner: -
+-- Name: subcategories; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.subcategories (
@@ -4673,15 +4938,17 @@ CREATE TABLE public.subcategories (
 );
 
 
+ALTER TABLE public.subcategories OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE subcategories; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE subcategories; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.subcategories IS 'Detailed subcategories (e.g., Mercadona, Vodafone, Iberdrola)';
 
 
 --
--- Name: system_admins; Type: TABLE; Schema: public; Owner: -
+-- Name: system_admins; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.system_admins (
@@ -4693,8 +4960,10 @@ CREATE TABLE public.system_admins (
 );
 
 
+ALTER TABLE public.system_admins OWNER TO cuentassik_owner;
+
 --
--- Name: user_active_household; Type: TABLE; Schema: public; Owner: -
+-- Name: user_active_household; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.user_active_household (
@@ -4704,36 +4973,38 @@ CREATE TABLE public.user_active_household (
 );
 
 
+ALTER TABLE public.user_active_household OWNER TO cuentassik_owner;
+
 --
--- Name: TABLE user_active_household; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE user_active_household; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TABLE public.user_active_household IS 'Tabla de tracking del hogar activo por usuario. Permite multi-hogar con selección rápida del contexto actual.';
 
 
 --
--- Name: COLUMN user_active_household.profile_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN user_active_household.profile_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.user_active_household.profile_id IS 'ID del perfil del usuario (profiles.id).';
 
 
 --
--- Name: COLUMN user_active_household.household_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN user_active_household.household_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.user_active_household.household_id IS 'ID del hogar actualmente activo para este usuario.';
 
 
 --
--- Name: COLUMN user_active_household.updated_at; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN user_active_household.updated_at; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON COLUMN public.user_active_household.updated_at IS 'Última vez que el usuario cambió su hogar activo.';
 
 
 --
--- Name: user_settings; Type: TABLE; Schema: public; Owner: -
+-- Name: user_settings; Type: TABLE; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TABLE public.user_settings (
@@ -4745,8 +5016,10 @@ CREATE TABLE public.user_settings (
 );
 
 
+ALTER TABLE public.user_settings OWNER TO cuentassik_owner;
+
 --
--- Name: v_dual_flow_balance; Type: VIEW; Schema: public; Owner: -
+-- Name: v_dual_flow_balance; Type: VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE VIEW public.v_dual_flow_balance AS
@@ -4785,8 +5058,10 @@ CREATE VIEW public.v_dual_flow_balance AS
   GROUP BY dual_flow_transactions.household_id;
 
 
+ALTER TABLE public.v_dual_flow_balance OWNER TO cuentassik_owner;
+
 --
--- Name: v_dual_flow_metrics; Type: VIEW; Schema: public; Owner: -
+-- Name: v_dual_flow_metrics; Type: VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE VIEW public.v_dual_flow_metrics AS
@@ -4808,8 +5083,10 @@ CREATE VIEW public.v_dual_flow_metrics AS
   WHERE (dual_flow_transactions.fecha >= (CURRENT_DATE - '30 days'::interval));
 
 
+ALTER TABLE public.v_dual_flow_metrics OWNER TO cuentassik_owner;
+
 --
--- Name: v_dual_flow_transactions_unified; Type: VIEW; Schema: public; Owner: -
+-- Name: v_dual_flow_transactions_unified; Type: VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE VIEW public.v_dual_flow_transactions_unified AS
@@ -4846,15 +5123,17 @@ CREATE VIEW public.v_dual_flow_transactions_unified AS
      LEFT JOIN public.categories cat ON ((cat.id = t.category_id)));
 
 
+ALTER TABLE public.v_dual_flow_transactions_unified OWNER TO cuentassik_owner;
+
 --
--- Name: VIEW v_dual_flow_transactions_unified; Type: COMMENT; Schema: public; Owner: -
+-- Name: VIEW v_dual_flow_transactions_unified; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON VIEW public.v_dual_flow_transactions_unified IS 'Proyección de transactions con metadatos dual-flow equivalentes a la tabla dual_flow_transactions.';
 
 
 --
--- Name: v_dual_flow_workflow; Type: VIEW; Schema: public; Owner: -
+-- Name: v_dual_flow_workflow; Type: VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE VIEW public.v_dual_flow_workflow AS
@@ -4892,8 +5171,10 @@ CREATE VIEW public.v_dual_flow_workflow AS
   ORDER BY t.created_at DESC;
 
 
+ALTER TABLE public.v_dual_flow_workflow OWNER TO cuentassik_owner;
+
 --
--- Name: v_pending_refund_claims; Type: VIEW; Schema: public; Owner: -
+-- Name: v_pending_refund_claims; Type: VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE VIEW public.v_pending_refund_claims AS
@@ -4919,8 +5200,10 @@ CREATE VIEW public.v_pending_refund_claims AS
   ORDER BY rc.created_at;
 
 
+ALTER TABLE public.v_pending_refund_claims OWNER TO cuentassik_owner;
+
 --
--- Name: VIEW v_pending_refund_claims; Type: COMMENT; Schema: public; Owner: -
+-- Name: VIEW v_pending_refund_claims; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON VIEW public.v_pending_refund_claims IS 'Vista para listar reclamos de reembolso pendientes de aprobación (solo owner).
@@ -4928,7 +5211,7 @@ COMMENT ON VIEW public.v_pending_refund_claims IS 'Vista para listar reclamos de
 
 
 --
--- Name: v_profile_primary_email; Type: VIEW; Schema: public; Owner: -
+-- Name: v_profile_primary_email; Type: VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE VIEW public.v_profile_primary_email AS
@@ -4941,15 +5224,17 @@ CREATE VIEW public.v_profile_primary_email AS
      LEFT JOIN public.profile_emails pe ON (((pe.profile_id = p.id) AND (pe.is_primary = true))));
 
 
+ALTER TABLE public.v_profile_primary_email OWNER TO cuentassik_owner;
+
 --
--- Name: VIEW v_profile_primary_email; Type: COMMENT; Schema: public; Owner: -
+-- Name: VIEW v_profile_primary_email; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON VIEW public.v_profile_primary_email IS 'Vista helper que retorna el email principal de cada perfil. Fallback a profiles.email si no existe en profile_emails.';
 
 
 --
--- Name: v_transaction_pairs; Type: VIEW; Schema: public; Owner: -
+-- Name: v_transaction_pairs; Type: VIEW; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE VIEW public.v_transaction_pairs AS
@@ -4969,22 +5254,24 @@ CREATE VIEW public.v_transaction_pairs AS
   WHERE ((t1.flow_type = 'direct'::text) AND (t1.type = 'expense'::text));
 
 
+ALTER TABLE public.v_transaction_pairs OWNER TO cuentassik_owner;
+
 --
--- Name: VIEW v_transaction_pairs; Type: COMMENT; Schema: public; Owner: -
+-- Name: VIEW v_transaction_pairs; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON VIEW public.v_transaction_pairs IS 'Vista que muestra pares de transacciones del flujo directo (gasto + ingreso automático)';
 
 
 --
--- Name: _migrations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: _migrations id; Type: DEFAULT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public._migrations ALTER COLUMN id SET DEFAULT nextval('public._migrations_id_seq'::regclass);
 
 
 --
--- Name: _migrations _migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: _migrations _migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public._migrations
@@ -4992,7 +5279,7 @@ ALTER TABLE ONLY public._migrations
 
 
 --
--- Name: categories categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: categories categories_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.categories
@@ -5000,7 +5287,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- Name: category_parents category_parents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: category_parents category_parents_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.category_parents
@@ -5008,7 +5295,7 @@ ALTER TABLE ONLY public.category_parents
 
 
 --
--- Name: contribution_adjustment_templates contribution_adjustment_templates_household_id_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustment_templates contribution_adjustment_templates_household_id_name_key; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustment_templates
@@ -5016,7 +5303,7 @@ ALTER TABLE ONLY public.contribution_adjustment_templates
 
 
 --
--- Name: contribution_adjustment_templates contribution_adjustment_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustment_templates contribution_adjustment_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustment_templates
@@ -5024,7 +5311,7 @@ ALTER TABLE ONLY public.contribution_adjustment_templates
 
 
 --
--- Name: contribution_adjustments contribution_adjustments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustments contribution_adjustments_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustments
@@ -5032,7 +5319,7 @@ ALTER TABLE ONLY public.contribution_adjustments
 
 
 --
--- Name: contribution_periods contribution_periods_household_id_year_month_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_periods contribution_periods_household_id_year_month_key; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_periods
@@ -5040,7 +5327,7 @@ ALTER TABLE ONLY public.contribution_periods
 
 
 --
--- Name: contribution_periods contribution_periods_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_periods contribution_periods_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_periods
@@ -5048,7 +5335,7 @@ ALTER TABLE ONLY public.contribution_periods
 
 
 --
--- Name: contribution_reconciliations contribution_reconciliations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_reconciliations contribution_reconciliations_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_reconciliations
@@ -5056,7 +5343,7 @@ ALTER TABLE ONLY public.contribution_reconciliations
 
 
 --
--- Name: contributions contributions_household_profile_period_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contributions contributions_household_profile_period_key; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contributions
@@ -5064,7 +5351,7 @@ ALTER TABLE ONLY public.contributions
 
 
 --
--- Name: contributions contributions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contributions contributions_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contributions
@@ -5072,7 +5359,7 @@ ALTER TABLE ONLY public.contributions
 
 
 --
--- Name: credit_refund_requests credit_refund_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: credit_refund_requests credit_refund_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.credit_refund_requests
@@ -5080,7 +5367,7 @@ ALTER TABLE ONLY public.credit_refund_requests
 
 
 --
--- Name: dual_flow_config dual_flow_config_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_config dual_flow_config_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_config
@@ -5088,7 +5375,7 @@ ALTER TABLE ONLY public.dual_flow_config
 
 
 --
--- Name: dual_flow_events dual_flow_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_events dual_flow_events_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_events
@@ -5096,7 +5383,7 @@ ALTER TABLE ONLY public.dual_flow_events
 
 
 --
--- Name: dual_flow_transactions dual_flow_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_transactions dual_flow_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_transactions
@@ -5104,7 +5391,7 @@ ALTER TABLE ONLY public.dual_flow_transactions
 
 
 --
--- Name: email_invitations email_invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: email_invitations email_invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.email_invitations
@@ -5112,7 +5399,7 @@ ALTER TABLE ONLY public.email_invitations
 
 
 --
--- Name: email_invitations email_invitations_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: email_invitations email_invitations_token_key; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.email_invitations
@@ -5120,7 +5407,7 @@ ALTER TABLE ONLY public.email_invitations
 
 
 --
--- Name: household_members household_members_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: household_members household_members_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.household_members
@@ -5128,7 +5415,7 @@ ALTER TABLE ONLY public.household_members
 
 
 --
--- Name: household_savings household_savings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: household_savings household_savings_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.household_savings
@@ -5136,7 +5423,7 @@ ALTER TABLE ONLY public.household_savings
 
 
 --
--- Name: household_settings household_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: household_settings household_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.household_settings
@@ -5144,7 +5431,7 @@ ALTER TABLE ONLY public.household_settings
 
 
 --
--- Name: households households_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: households households_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.households
@@ -5152,7 +5439,7 @@ ALTER TABLE ONLY public.households
 
 
 --
--- Name: invitations invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: invitations invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.invitations
@@ -5160,7 +5447,7 @@ ALTER TABLE ONLY public.invitations
 
 
 --
--- Name: invitations invitations_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: invitations invitations_token_key; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.invitations
@@ -5168,7 +5455,7 @@ ALTER TABLE ONLY public.invitations
 
 
 --
--- Name: joint_accounts joint_accounts_household_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: joint_accounts joint_accounts_household_id_key; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.joint_accounts
@@ -5176,7 +5463,7 @@ ALTER TABLE ONLY public.joint_accounts
 
 
 --
--- Name: joint_accounts joint_accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: joint_accounts joint_accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.joint_accounts
@@ -5184,7 +5471,7 @@ ALTER TABLE ONLY public.joint_accounts
 
 
 --
--- Name: journal_adjustments journal_adjustments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: journal_adjustments journal_adjustments_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.journal_adjustments
@@ -5192,7 +5479,7 @@ ALTER TABLE ONLY public.journal_adjustments
 
 
 --
--- Name: journal_invitations journal_invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: journal_invitations journal_invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.journal_invitations
@@ -5200,7 +5487,7 @@ ALTER TABLE ONLY public.journal_invitations
 
 
 --
--- Name: journal_roles journal_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: journal_roles journal_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.journal_roles
@@ -5208,7 +5495,7 @@ ALTER TABLE ONLY public.journal_roles
 
 
 --
--- Name: journal_transactions journal_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: journal_transactions journal_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.journal_transactions
@@ -5216,7 +5503,7 @@ ALTER TABLE ONLY public.journal_transactions
 
 
 --
--- Name: member_balances member_balances_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: member_balances member_balances_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.member_balances
@@ -5224,7 +5511,7 @@ ALTER TABLE ONLY public.member_balances
 
 
 --
--- Name: member_credits member_credits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: member_credits member_credits_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.member_credits
@@ -5232,7 +5519,7 @@ ALTER TABLE ONLY public.member_credits
 
 
 --
--- Name: member_incomes member_incomes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: member_incomes member_incomes_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.member_incomes
@@ -5240,7 +5527,7 @@ ALTER TABLE ONLY public.member_incomes
 
 
 --
--- Name: monthly_periods monthly_periods_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monthly_periods monthly_periods_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.monthly_periods
@@ -5248,7 +5535,7 @@ ALTER TABLE ONLY public.monthly_periods
 
 
 --
--- Name: personal_loans personal_loans_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: personal_loans personal_loans_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.personal_loans
@@ -5256,7 +5543,7 @@ ALTER TABLE ONLY public.personal_loans
 
 
 --
--- Name: profile_emails profile_emails_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: profile_emails profile_emails_email_unique; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.profile_emails
@@ -5264,7 +5551,7 @@ ALTER TABLE ONLY public.profile_emails
 
 
 --
--- Name: profile_emails profile_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: profile_emails profile_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.profile_emails
@@ -5272,7 +5559,7 @@ ALTER TABLE ONLY public.profile_emails
 
 
 --
--- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.profiles
@@ -5280,7 +5567,7 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- Name: refund_claims refund_claims_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: refund_claims refund_claims_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.refund_claims
@@ -5288,7 +5575,7 @@ ALTER TABLE ONLY public.refund_claims
 
 
 --
--- Name: subcategories subcategories_category_id_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: subcategories subcategories_category_id_name_key; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.subcategories
@@ -5296,7 +5583,7 @@ ALTER TABLE ONLY public.subcategories
 
 
 --
--- Name: subcategories subcategories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: subcategories subcategories_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.subcategories
@@ -5304,7 +5591,7 @@ ALTER TABLE ONLY public.subcategories
 
 
 --
--- Name: system_admins system_admins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: system_admins system_admins_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.system_admins
@@ -5312,7 +5599,7 @@ ALTER TABLE ONLY public.system_admins
 
 
 --
--- Name: transactions transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -5320,7 +5607,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: household_savings unique_household_savings_household_id; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: household_savings unique_household_savings_household_id; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.household_savings
@@ -5328,7 +5615,7 @@ ALTER TABLE ONLY public.household_savings
 
 
 --
--- Name: user_active_household user_active_household_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_active_household user_active_household_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.user_active_household
@@ -5336,7 +5623,7 @@ ALTER TABLE ONLY public.user_active_household
 
 
 --
--- Name: user_settings user_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_settings user_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.user_settings
@@ -5344,889 +5631,889 @@ ALTER TABLE ONLY public.user_settings
 
 
 --
--- Name: idx_adjustments_template; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_adjustments_template; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_adjustments_template ON public.contribution_adjustments USING btree (template_id) WHERE (template_id IS NOT NULL);
 
 
 --
--- Name: idx_categories_created_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_categories_created_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_categories_created_by ON public.categories USING btree (created_by_profile_id) WHERE (created_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_categories_household_creator; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_categories_household_creator; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_categories_household_creator ON public.categories USING btree (household_id, created_by_profile_id);
 
 
 --
--- Name: idx_categories_parent_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_categories_parent_id; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_categories_parent_id ON public.categories USING btree (parent_id, display_order) WHERE (parent_id IS NOT NULL);
 
 
 --
--- Name: idx_categories_updated_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_categories_updated_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_categories_updated_by ON public.categories USING btree (updated_by_profile_id) WHERE (updated_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_category_parents_household; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_category_parents_household; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_category_parents_household ON public.category_parents USING btree (household_id, type, display_order);
 
 
 --
--- Name: idx_contribution_periods_date; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contribution_periods_date; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contribution_periods_date ON public.contribution_periods USING btree (year, month);
 
 
 --
--- Name: idx_contribution_periods_household; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contribution_periods_household; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contribution_periods_household ON public.contribution_periods USING btree (household_id);
 
 
 --
--- Name: idx_contribution_periods_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contribution_periods_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contribution_periods_status ON public.contribution_periods USING btree (status);
 
 
 --
--- Name: idx_contributions_created_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contributions_created_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contributions_created_by ON public.contributions USING btree (created_by_profile_id) WHERE (created_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_contributions_household_creator; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contributions_household_creator; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contributions_household_creator ON public.contributions USING btree (household_id, created_by_profile_id);
 
 
 --
--- Name: idx_contributions_household_profile; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contributions_household_profile; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contributions_household_profile ON public.contributions USING btree (household_id, profile_id);
 
 
 --
--- Name: idx_contributions_period; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contributions_period; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contributions_period ON public.contributions USING btree (household_id, year, month);
 
 
 --
--- Name: idx_contributions_period_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contributions_period_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contributions_period_status ON public.contributions USING btree (household_id, year, month, status) WHERE (status IS NOT NULL);
 
 
 --
--- Name: idx_contributions_updated_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_contributions_updated_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_contributions_updated_by ON public.contributions USING btree (updated_by_profile_id) WHERE (updated_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_credit_refunds_household_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_credit_refunds_household_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_credit_refunds_household_status ON public.credit_refund_requests USING btree (household_id, status);
 
 
 --
--- Name: idx_credit_refunds_profile; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_credit_refunds_profile; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_credit_refunds_profile ON public.credit_refund_requests USING btree (profile_id);
 
 
 --
--- Name: idx_dual_flow_auto_pairing_candidates; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_dual_flow_auto_pairing_candidates; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_dual_flow_auto_pairing_candidates ON public.dual_flow_transactions USING btree (household_id, tipo, importe, fecha) WHERE ((auto_paired = false) AND (estado = 'approved'::public.dual_flow_status));
 
 
 --
--- Name: idx_dual_flow_estado_tipo; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_dual_flow_estado_tipo; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_dual_flow_estado_tipo ON public.dual_flow_transactions USING btree (estado, tipo);
 
 
 --
--- Name: idx_dual_flow_events_household_created_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_dual_flow_events_household_created_at; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_dual_flow_events_household_created_at ON public.dual_flow_events USING btree (household_id, created_at DESC);
 
 
 --
--- Name: idx_dual_flow_events_period; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_dual_flow_events_period; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_dual_flow_events_period ON public.dual_flow_events USING btree (period_id, created_at DESC);
 
 
 --
--- Name: idx_dual_flow_household_fecha; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_dual_flow_household_fecha; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_dual_flow_household_fecha ON public.dual_flow_transactions USING btree (household_id, fecha DESC);
 
 
 --
--- Name: idx_dual_flow_pairing; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_dual_flow_pairing; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_dual_flow_pairing ON public.dual_flow_transactions USING btree (transaccion_pareja, auto_paired) WHERE (transaccion_pareja IS NOT NULL);
 
 
 --
--- Name: idx_dual_flow_pending_approval; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_dual_flow_pending_approval; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_dual_flow_pending_approval ON public.dual_flow_transactions USING btree (household_id, estado, created_at) WHERE (estado = 'pending_review'::public.dual_flow_status);
 
 
 --
--- Name: idx_email_invitations_expires_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_email_invitations_expires_at; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_email_invitations_expires_at ON public.email_invitations USING btree (expires_at) WHERE (status = 'pending'::text);
 
 
 --
--- Name: idx_email_invitations_invited_email; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_email_invitations_invited_email; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_email_invitations_invited_email ON public.email_invitations USING btree (invited_email);
 
 
 --
--- Name: idx_email_invitations_profile_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_email_invitations_profile_id; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_email_invitations_profile_id ON public.email_invitations USING btree (profile_id);
 
 
 --
--- Name: idx_email_invitations_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_email_invitations_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_email_invitations_status ON public.email_invitations USING btree (status);
 
 
 --
--- Name: idx_email_invitations_token; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_email_invitations_token; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_email_invitations_token ON public.email_invitations USING btree (token);
 
 
 --
--- Name: idx_email_invitations_unique_pending; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_email_invitations_unique_pending; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE UNIQUE INDEX idx_email_invitations_unique_pending ON public.email_invitations USING btree (profile_id, invited_email) WHERE (status = 'pending'::text);
 
 
 --
--- Name: idx_household_members_household_role; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_members_household_role; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_household_members_household_role ON public.household_members USING btree (household_id, role);
 
 
 --
--- Name: idx_household_members_invited_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_members_invited_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_household_members_invited_by ON public.household_members USING btree (invited_by_profile_id) WHERE (invited_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_household_members_owner; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_members_owner; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_household_members_owner ON public.household_members USING btree (household_id, is_owner) WHERE (is_owner = true);
 
 
 --
--- Name: idx_household_members_owners; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_members_owners; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_household_members_owners ON public.household_members USING btree (household_id, profile_id) WHERE (role = 'owner'::text);
 
 
 --
--- Name: idx_household_members_profile_role; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_members_profile_role; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_household_members_profile_role ON public.household_members USING btree (profile_id, role);
 
 
 --
--- Name: idx_household_savings_household; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_savings_household; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_household_savings_household ON public.household_savings USING btree (household_id);
 
 
 --
--- Name: idx_household_stats_household_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_stats_household_id; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE UNIQUE INDEX idx_household_stats_household_id ON public.household_stats USING btree (household_id);
 
 
 --
--- Name: idx_household_stats_member_count; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_stats_member_count; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_household_stats_member_count ON public.household_stats USING btree (member_count);
 
 
 --
--- Name: idx_household_stats_single_owner; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_household_stats_single_owner; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_household_stats_single_owner ON public.household_stats USING btree (household_id) WHERE (owner_count = 1);
 
 
 --
--- Name: idx_households_created_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_households_created_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_households_created_by ON public.households USING btree (created_by_profile_id) WHERE (created_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_households_deleted_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_households_deleted_at; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_households_deleted_at ON public.households USING btree (deleted_at) WHERE (deleted_at IS NULL);
 
 
 --
--- Name: idx_households_deleted_at_not_null; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_households_deleted_at_not_null; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_households_deleted_at_not_null ON public.households USING btree (deleted_at) WHERE (deleted_at IS NOT NULL);
 
 
 --
--- Name: idx_households_updated_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_households_updated_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_households_updated_by ON public.households USING btree (updated_by_profile_id) WHERE (updated_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_invitations_email_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_invitations_email_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_invitations_email_status ON public.invitations USING btree (email, status);
 
 
 --
--- Name: idx_invitations_household_inviter; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_invitations_household_inviter; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_invitations_household_inviter ON public.invitations USING btree (household_id, invited_by_profile_id);
 
 
 --
--- Name: idx_invitations_household_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_invitations_household_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_invitations_household_status ON public.invitations USING btree (household_id, status);
 
 
 --
--- Name: idx_invitations_invited_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_invitations_invited_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_invitations_invited_by ON public.invitations USING btree (invited_by_profile_id) WHERE (invited_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_invitations_status_created; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_invitations_status_created; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_invitations_status_created ON public.invitations USING btree (status, created_at) WHERE (status = 'pending'::text);
 
 
 --
--- Name: idx_invitations_token; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_invitations_token; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_invitations_token ON public.invitations USING btree (token);
 
 
 --
--- Name: idx_member_balances_household; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_member_balances_household; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_member_balances_household ON public.member_balances USING btree (household_id);
 
 
 --
--- Name: idx_member_balances_negative; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_member_balances_negative; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_member_balances_negative ON public.member_balances USING btree (household_id, profile_id) WHERE (current_balance < (0)::numeric);
 
 
 --
--- Name: idx_member_balances_positive; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_member_balances_positive; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_member_balances_positive ON public.member_balances USING btree (household_id, profile_id) WHERE (current_balance > (0)::numeric);
 
 
 --
--- Name: idx_member_credits_created_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_member_credits_created_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_member_credits_created_by ON public.member_credits USING btree (created_by_profile_id) WHERE (created_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_member_credits_household_creator; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_member_credits_household_creator; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_member_credits_household_creator ON public.member_credits USING btree (household_id, created_by_profile_id);
 
 
 --
--- Name: idx_member_credits_updated_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_member_credits_updated_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_member_credits_updated_by ON public.member_credits USING btree (updated_by_profile_id) WHERE (updated_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_monthly_periods_household_phase; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_monthly_periods_household_phase; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_monthly_periods_household_phase ON public.monthly_periods USING btree (household_id, phase);
 
 
 --
--- Name: idx_mv_household_balances_household_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_mv_household_balances_household_id; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE UNIQUE INDEX idx_mv_household_balances_household_id ON public.mv_household_balances USING btree (household_id);
 
 
 --
--- Name: idx_mv_member_pending_contributions_unique; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_mv_member_pending_contributions_unique; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE UNIQUE INDEX idx_mv_member_pending_contributions_unique ON public.mv_member_pending_contributions USING btree (household_id, profile_id);
 
 
 --
--- Name: idx_personal_loans_active; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_personal_loans_active; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_personal_loans_active ON public.personal_loans USING btree (household_id, profile_id, status) WHERE ((status = 'approved'::text) AND (settled_at IS NULL));
 
 
 --
--- Name: idx_personal_loans_household; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_personal_loans_household; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_personal_loans_household ON public.personal_loans USING btree (household_id);
 
 
 --
--- Name: idx_personal_loans_pending; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_personal_loans_pending; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_personal_loans_pending ON public.personal_loans USING btree (household_id, status) WHERE (status = 'pending'::text);
 
 
 --
--- Name: idx_personal_loans_profile; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_personal_loans_profile; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_personal_loans_profile ON public.personal_loans USING btree (profile_id);
 
 
 --
--- Name: idx_personal_loans_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_personal_loans_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_personal_loans_status ON public.personal_loans USING btree (status) WHERE (status = ANY (ARRAY['pending'::text, 'approved'::text]));
 
 
 --
--- Name: idx_profile_emails_email; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_profile_emails_email; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_profile_emails_email ON public.profile_emails USING btree (email);
 
 
 --
--- Name: idx_profile_emails_primary; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_profile_emails_primary; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE UNIQUE INDEX idx_profile_emails_primary ON public.profile_emails USING btree (profile_id) WHERE (is_primary = true);
 
 
 --
--- Name: idx_profile_emails_profile_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_profile_emails_profile_id; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_profile_emails_profile_id ON public.profile_emails USING btree (profile_id);
 
 
 --
--- Name: idx_profiles_deleted_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_profiles_deleted_at; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_profiles_deleted_at ON public.profiles USING btree (deleted_at) WHERE (deleted_at IS NULL);
 
 
 --
--- Name: idx_profiles_system_admin; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_profiles_system_admin; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_profiles_system_admin ON public.profiles USING btree (is_system_admin) WHERE (is_system_admin = true);
 
 
 --
--- Name: idx_refund_claims_expense_tx; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_refund_claims_expense_tx; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_refund_claims_expense_tx ON public.refund_claims USING btree (expense_transaction_id);
 
 
 --
--- Name: idx_refund_claims_household; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_refund_claims_household; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_refund_claims_household ON public.refund_claims USING btree (household_id);
 
 
 --
--- Name: idx_refund_claims_profile; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_refund_claims_profile; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_refund_claims_profile ON public.refund_claims USING btree (profile_id);
 
 
 --
--- Name: idx_refund_claims_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_refund_claims_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_refund_claims_status ON public.refund_claims USING btree (status);
 
 
 --
--- Name: idx_subcategories_category; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_subcategories_category; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_subcategories_category ON public.subcategories USING btree (category_id, display_order);
 
 
 --
--- Name: idx_templates_default; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_templates_default; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_templates_default ON public.contribution_adjustment_templates USING btree (is_default) WHERE (is_default = true);
 
 
 --
--- Name: idx_templates_household; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_templates_household; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_templates_household ON public.contribution_adjustment_templates USING btree (household_id);
 
 
 --
--- Name: idx_transactions_auto_paired; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_auto_paired; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_auto_paired ON public.transactions USING btree (auto_paired) WHERE (auto_paired IS TRUE);
 
 
 --
--- Name: idx_transactions_compensatory_income; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_compensatory_income; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_compensatory_income ON public.transactions USING btree (household_id, is_compensatory_income) WHERE (is_compensatory_income = true);
 
 
 --
--- Name: INDEX idx_transactions_compensatory_income; Type: COMMENT; Schema: public; Owner: -
+-- Name: INDEX idx_transactions_compensatory_income; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON INDEX public.idx_transactions_compensatory_income IS 'Índice parcial para filtrar ingresos compensatorios en queries de UI';
 
 
 --
--- Name: idx_transactions_created_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_created_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_created_by ON public.transactions USING btree (created_by_profile_id) WHERE (created_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_transactions_date_range; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_date_range; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_date_range ON public.transactions USING btree (household_id, occurred_at DESC, amount) WHERE (occurred_at IS NOT NULL);
 
 
 --
--- Name: idx_transactions_direct_pending; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_direct_pending; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_direct_pending ON public.transactions USING btree (household_id, real_payer_id, occurred_at) WHERE ((flow_type = 'direct'::text) AND (type = 'expense'::text));
 
 
 --
--- Name: idx_transactions_dual_flow_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_dual_flow_status; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_dual_flow_status ON public.transactions USING btree (dual_flow_status);
 
 
 --
--- Name: idx_transactions_flow_type; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_flow_type; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_flow_type ON public.transactions USING btree (flow_type);
 
 
 --
--- Name: idx_transactions_household_creator; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_household_creator; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_household_creator ON public.transactions USING btree (household_id, created_by_profile_id);
 
 
 --
--- Name: idx_transactions_household_date; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_household_date; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_household_date ON public.transactions USING btree (household_id, occurred_at) WHERE (occurred_at IS NOT NULL);
 
 
 --
--- Name: idx_transactions_household_flow; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_household_flow; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_household_flow ON public.transactions USING btree (household_id, flow_type);
 
 
 --
--- Name: idx_transactions_household_number; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_household_number; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_household_number ON public.transactions USING btree (household_id, transaction_number);
 
 
 --
--- Name: INDEX idx_transactions_household_number; Type: COMMENT; Schema: public; Owner: -
+-- Name: INDEX idx_transactions_household_number; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON INDEX public.idx_transactions_household_number IS 'Índice para consultas rápidas de transacciones por número dentro de un household.';
 
 
 --
--- Name: idx_transactions_household_profile; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_household_profile; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_household_profile ON public.transactions USING btree (household_id, profile_id) WHERE (profile_id IS NOT NULL);
 
 
 --
--- Name: idx_transactions_pair_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_pair_id; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_pair_id ON public.transactions USING btree (transaction_pair_id);
 
 
 --
--- Name: idx_transactions_real_payer; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_real_payer; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_real_payer ON public.transactions USING btree (real_payer_id);
 
 
 --
--- Name: idx_transactions_requires_approval; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_requires_approval; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_requires_approval ON public.transactions USING btree (requires_approval) WHERE (requires_approval IS TRUE);
 
 
 --
--- Name: idx_transactions_subcategory; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_subcategory; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_subcategory ON public.transactions USING btree (subcategory_id) WHERE (subcategory_id IS NOT NULL);
 
 
 --
--- Name: idx_transactions_updated_by; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_transactions_updated_by; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_transactions_updated_by ON public.transactions USING btree (updated_by_profile_id) WHERE (updated_by_profile_id IS NOT NULL);
 
 
 --
--- Name: idx_user_active_household_household_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_user_active_household_household_id; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_user_active_household_household_id ON public.user_active_household USING btree (household_id);
 
 
 --
--- Name: idx_user_active_household_updated_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_user_active_household_updated_at; Type: INDEX; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE INDEX idx_user_active_household_updated_at ON public.user_active_household USING btree (updated_at DESC);
 
 
 --
--- Name: transactions before_insert_transaction_number; Type: TRIGGER; Schema: public; Owner: -
+-- Name: transactions before_insert_transaction_number; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER before_insert_transaction_number BEFORE INSERT ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.assign_transaction_number();
 
 
 --
--- Name: TRIGGER before_insert_transaction_number ON transactions; Type: COMMENT; Schema: public; Owner: -
+-- Name: TRIGGER before_insert_transaction_number ON transactions; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TRIGGER before_insert_transaction_number ON public.transactions IS 'Asigna automáticamente transaction_number antes de insertar una nueva transacción.';
 
 
 --
--- Name: transactions trg_journal_transactions; Type: TRIGGER; Schema: public; Owner: -
+-- Name: transactions trg_journal_transactions; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trg_journal_transactions AFTER INSERT OR DELETE OR UPDATE ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.log_transaction_journal();
 
 
 --
--- Name: refund_claims trg_update_refund_claims_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: refund_claims trg_update_refund_claims_updated_at; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trg_update_refund_claims_updated_at BEFORE UPDATE ON public.refund_claims FOR EACH ROW EXECUTE FUNCTION public.update_refund_claims_updated_at();
 
 
 --
--- Name: category_parents trigger_category_parents_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: category_parents trigger_category_parents_updated_at; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_category_parents_updated_at BEFORE UPDATE ON public.category_parents FOR EACH ROW EXECUTE FUNCTION public.update_category_parent_timestamp();
 
 
 --
--- Name: contributions trigger_contribution_changes_refresh_matviews; Type: TRIGGER; Schema: public; Owner: -
+-- Name: contributions trigger_contribution_changes_refresh_matviews; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_contribution_changes_refresh_matviews AFTER INSERT OR DELETE OR UPDATE ON public.contributions FOR EACH STATEMENT EXECUTE FUNCTION public.trigger_refresh_transaction_matviews();
 
 
 --
--- Name: households trigger_create_default_categories; Type: TRIGGER; Schema: public; Owner: -
+-- Name: households trigger_create_default_categories; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_create_default_categories AFTER INSERT ON public.households FOR EACH ROW EXECUTE FUNCTION public.create_default_household_categories();
 
 
 --
--- Name: households trigger_create_dual_flow_config; Type: TRIGGER; Schema: public; Owner: -
+-- Name: households trigger_create_dual_flow_config; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_create_dual_flow_config AFTER INSERT ON public.households FOR EACH ROW EXECUTE FUNCTION public.create_default_dual_flow_config();
 
 
 --
--- Name: households trigger_create_joint_account; Type: TRIGGER; Schema: public; Owner: -
+-- Name: households trigger_create_joint_account; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_create_joint_account AFTER INSERT ON public.households FOR EACH ROW EXECUTE FUNCTION public.create_joint_account_for_household();
 
 
 --
--- Name: TRIGGER trigger_create_joint_account ON households; Type: COMMENT; Schema: public; Owner: -
+-- Name: TRIGGER trigger_create_joint_account ON households; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TRIGGER trigger_create_joint_account ON public.households IS 'Auto-crea Cuenta Común cuando se crea un nuevo hogar.';
 
 
 --
--- Name: transactions trigger_dual_flow_auto_pairing; Type: TRIGGER; Schema: public; Owner: -
+-- Name: transactions trigger_dual_flow_auto_pairing; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_dual_flow_auto_pairing AFTER UPDATE ON public.transactions FOR EACH ROW WHEN (((new.flow_type = 'direct'::text) AND (new.type = ANY (ARRAY['expense_direct'::text, 'income_direct'::text])))) EXECUTE FUNCTION public.trigger_auto_pairing();
 
 
 --
--- Name: dual_flow_transactions trigger_dual_flow_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: dual_flow_transactions trigger_dual_flow_updated_at; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_dual_flow_updated_at BEFORE UPDATE ON public.dual_flow_transactions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: household_members trigger_ensure_last_member_owner; Type: TRIGGER; Schema: public; Owner: -
+-- Name: household_members trigger_ensure_last_member_owner; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_ensure_last_member_owner AFTER DELETE ON public.household_members FOR EACH ROW EXECUTE FUNCTION public.ensure_last_member_is_owner();
 
 
 --
--- Name: TRIGGER trigger_ensure_last_member_owner ON household_members; Type: COMMENT; Schema: public; Owner: -
+-- Name: TRIGGER trigger_ensure_last_member_owner ON household_members; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON TRIGGER trigger_ensure_last_member_owner ON public.household_members IS 'Trigger que garantiza que siempre haya al menos un owner por hogar. Se ejecuta después de eliminar un miembro.';
 
 
 --
--- Name: household_members trigger_ensure_owner; Type: TRIGGER; Schema: public; Owner: -
+-- Name: household_members trigger_ensure_owner; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_ensure_owner AFTER INSERT OR UPDATE OF role ON public.household_members FOR EACH ROW EXECUTE FUNCTION public.ensure_household_owner();
 
 
 --
--- Name: profile_emails trigger_ensure_single_primary_email; Type: TRIGGER; Schema: public; Owner: -
+-- Name: profile_emails trigger_ensure_single_primary_email; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_ensure_single_primary_email BEFORE INSERT OR UPDATE OF is_primary ON public.profile_emails FOR EACH ROW WHEN ((new.is_primary = true)) EXECUTE FUNCTION public.ensure_single_primary_email();
 
 
 --
--- Name: households trigger_refresh_household_stats_on_household_change; Type: TRIGGER; Schema: public; Owner: -
+-- Name: households trigger_refresh_household_stats_on_household_change; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_refresh_household_stats_on_household_change AFTER INSERT OR DELETE OR UPDATE ON public.households FOR EACH STATEMENT EXECUTE FUNCTION public.refresh_household_stats();
 
 
 --
--- Name: household_members trigger_refresh_household_stats_on_member_change; Type: TRIGGER; Schema: public; Owner: -
+-- Name: household_members trigger_refresh_household_stats_on_member_change; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_refresh_household_stats_on_member_change AFTER INSERT OR DELETE OR UPDATE ON public.household_members FOR EACH STATEMENT EXECUTE FUNCTION public.refresh_household_stats();
 
 
 --
--- Name: subcategories trigger_subcategories_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: subcategories trigger_subcategories_updated_at; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_subcategories_updated_at BEFORE UPDATE ON public.subcategories FOR EACH ROW EXECUTE FUNCTION public.update_subcategory_timestamp();
 
 
 --
--- Name: transactions trigger_transaction_changes_refresh_matviews; Type: TRIGGER; Schema: public; Owner: -
+-- Name: transactions trigger_transaction_changes_refresh_matviews; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_transaction_changes_refresh_matviews AFTER INSERT OR DELETE OR UPDATE ON public.transactions FOR EACH STATEMENT EXECUTE FUNCTION public.trigger_refresh_transaction_matviews();
 
 
 --
--- Name: categories trigger_update_category_audit; Type: TRIGGER; Schema: public; Owner: -
+-- Name: categories trigger_update_category_audit; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_category_audit BEFORE UPDATE ON public.categories FOR EACH ROW EXECUTE FUNCTION public.update_category_audit();
 
 
 --
--- Name: contributions trigger_update_contribution_audit; Type: TRIGGER; Schema: public; Owner: -
+-- Name: contributions trigger_update_contribution_audit; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_contribution_audit BEFORE UPDATE ON public.contributions FOR EACH ROW EXECUTE FUNCTION public.update_contribution_audit();
 
 
 --
--- Name: households trigger_update_household_audit; Type: TRIGGER; Schema: public; Owner: -
+-- Name: households trigger_update_household_audit; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_household_audit BEFORE UPDATE ON public.households FOR EACH ROW EXECUTE FUNCTION public.update_household_audit();
 
 
 --
--- Name: member_credits trigger_update_member_credit_audit; Type: TRIGGER; Schema: public; Owner: -
+-- Name: member_credits trigger_update_member_credit_audit; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_member_credit_audit BEFORE UPDATE ON public.member_credits FOR EACH ROW EXECUTE FUNCTION public.update_member_credit_audit();
 
 
 --
--- Name: monthly_periods trigger_update_monthly_periods_timestamp; Type: TRIGGER; Schema: public; Owner: -
+-- Name: monthly_periods trigger_update_monthly_periods_timestamp; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_monthly_periods_timestamp BEFORE UPDATE ON public.monthly_periods FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
--- Name: personal_loans trigger_update_personal_loans_timestamp; Type: TRIGGER; Schema: public; Owner: -
+-- Name: personal_loans trigger_update_personal_loans_timestamp; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_personal_loans_timestamp BEFORE UPDATE ON public.personal_loans FOR EACH ROW EXECUTE FUNCTION public.update_personal_loans_timestamp();
 
 
 --
--- Name: profile_emails trigger_update_profile_emails_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: profile_emails trigger_update_profile_emails_updated_at; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_profile_emails_updated_at BEFORE UPDATE ON public.profile_emails FOR EACH ROW EXECUTE FUNCTION public.update_profile_emails_updated_at();
 
 
 --
--- Name: transactions trigger_update_transaction_audit; Type: TRIGGER; Schema: public; Owner: -
+-- Name: transactions trigger_update_transaction_audit; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_transaction_audit BEFORE UPDATE ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.update_transaction_audit();
 
 
 --
--- Name: user_active_household trigger_update_user_active_household_timestamp; Type: TRIGGER; Schema: public; Owner: -
+-- Name: user_active_household trigger_update_user_active_household_timestamp; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_update_user_active_household_timestamp BEFORE UPDATE ON public.user_active_household FOR EACH ROW EXECUTE FUNCTION public.update_user_active_household_timestamp();
 
 
 --
--- Name: profile_emails trigger_validate_primary_email_exists; Type: TRIGGER; Schema: public; Owner: -
+-- Name: profile_emails trigger_validate_primary_email_exists; Type: TRIGGER; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE TRIGGER trigger_validate_primary_email_exists AFTER DELETE OR UPDATE OF is_primary ON public.profile_emails FOR EACH ROW EXECUTE FUNCTION public.validate_primary_email_exists();
 
 
 --
--- Name: categories categories_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: categories categories_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.categories
@@ -6234,7 +6521,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- Name: categories categories_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: categories categories_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.categories
@@ -6242,7 +6529,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- Name: categories categories_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: categories categories_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.categories
@@ -6250,7 +6537,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- Name: category_parents category_parents_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: category_parents category_parents_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.category_parents
@@ -6258,7 +6545,7 @@ ALTER TABLE ONLY public.category_parents
 
 
 --
--- Name: contribution_adjustment_templates contribution_adjustment_templates_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustment_templates contribution_adjustment_templates_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustment_templates
@@ -6266,7 +6553,7 @@ ALTER TABLE ONLY public.contribution_adjustment_templates
 
 
 --
--- Name: contribution_adjustment_templates contribution_adjustment_templates_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustment_templates contribution_adjustment_templates_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustment_templates
@@ -6274,7 +6561,7 @@ ALTER TABLE ONLY public.contribution_adjustment_templates
 
 
 --
--- Name: contribution_adjustment_templates contribution_adjustment_templates_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustment_templates contribution_adjustment_templates_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustment_templates
@@ -6282,7 +6569,7 @@ ALTER TABLE ONLY public.contribution_adjustment_templates
 
 
 --
--- Name: contribution_adjustments contribution_adjustments_expense_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustments contribution_adjustments_expense_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustments
@@ -6290,7 +6577,7 @@ ALTER TABLE ONLY public.contribution_adjustments
 
 
 --
--- Name: contribution_adjustments contribution_adjustments_income_movement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustments contribution_adjustments_income_movement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustments
@@ -6298,7 +6585,7 @@ ALTER TABLE ONLY public.contribution_adjustments
 
 
 --
--- Name: contribution_adjustments contribution_adjustments_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_adjustments contribution_adjustments_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_adjustments
@@ -6306,7 +6593,7 @@ ALTER TABLE ONLY public.contribution_adjustments
 
 
 --
--- Name: contribution_periods contribution_periods_closed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_periods contribution_periods_closed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_periods
@@ -6314,7 +6601,7 @@ ALTER TABLE ONLY public.contribution_periods
 
 
 --
--- Name: contribution_periods contribution_periods_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_periods contribution_periods_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_periods
@@ -6322,7 +6609,7 @@ ALTER TABLE ONLY public.contribution_periods
 
 
 --
--- Name: contribution_periods contribution_periods_locked_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_periods contribution_periods_locked_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_periods
@@ -6330,7 +6617,7 @@ ALTER TABLE ONLY public.contribution_periods
 
 
 --
--- Name: contribution_reconciliations contribution_reconciliations_contribution_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_reconciliations contribution_reconciliations_contribution_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_reconciliations
@@ -6338,7 +6625,7 @@ ALTER TABLE ONLY public.contribution_reconciliations
 
 
 --
--- Name: contribution_reconciliations contribution_reconciliations_reconciled_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contribution_reconciliations contribution_reconciliations_reconciled_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contribution_reconciliations
@@ -6346,7 +6633,7 @@ ALTER TABLE ONLY public.contribution_reconciliations
 
 
 --
--- Name: contributions contributions_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contributions contributions_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contributions
@@ -6354,7 +6641,7 @@ ALTER TABLE ONLY public.contributions
 
 
 --
--- Name: contributions contributions_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: contributions contributions_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.contributions
@@ -6362,7 +6649,7 @@ ALTER TABLE ONLY public.contributions
 
 
 --
--- Name: credit_refund_requests credit_refund_requests_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: credit_refund_requests credit_refund_requests_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.credit_refund_requests
@@ -6370,7 +6657,7 @@ ALTER TABLE ONLY public.credit_refund_requests
 
 
 --
--- Name: credit_refund_requests credit_refund_requests_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: credit_refund_requests credit_refund_requests_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.credit_refund_requests
@@ -6378,7 +6665,7 @@ ALTER TABLE ONLY public.credit_refund_requests
 
 
 --
--- Name: credit_refund_requests credit_refund_requests_refund_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: credit_refund_requests credit_refund_requests_refund_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.credit_refund_requests
@@ -6386,7 +6673,7 @@ ALTER TABLE ONLY public.credit_refund_requests
 
 
 --
--- Name: credit_refund_requests credit_refund_requests_requested_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: credit_refund_requests credit_refund_requests_requested_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.credit_refund_requests
@@ -6394,7 +6681,7 @@ ALTER TABLE ONLY public.credit_refund_requests
 
 
 --
--- Name: dual_flow_config dual_flow_config_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_config dual_flow_config_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_config
@@ -6402,7 +6689,7 @@ ALTER TABLE ONLY public.dual_flow_config
 
 
 --
--- Name: dual_flow_events dual_flow_events_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_events dual_flow_events_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_events
@@ -6410,7 +6697,7 @@ ALTER TABLE ONLY public.dual_flow_events
 
 
 --
--- Name: dual_flow_events dual_flow_events_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_events dual_flow_events_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_events
@@ -6418,7 +6705,7 @@ ALTER TABLE ONLY public.dual_flow_events
 
 
 --
--- Name: dual_flow_events dual_flow_events_period_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_events dual_flow_events_period_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_events
@@ -6426,7 +6713,7 @@ ALTER TABLE ONLY public.dual_flow_events
 
 
 --
--- Name: dual_flow_transactions dual_flow_transactions_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_transactions dual_flow_transactions_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_transactions
@@ -6434,7 +6721,7 @@ ALTER TABLE ONLY public.dual_flow_transactions
 
 
 --
--- Name: dual_flow_transactions dual_flow_transactions_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_transactions dual_flow_transactions_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_transactions
@@ -6442,7 +6729,7 @@ ALTER TABLE ONLY public.dual_flow_transactions
 
 
 --
--- Name: dual_flow_transactions dual_flow_transactions_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_transactions dual_flow_transactions_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_transactions
@@ -6450,7 +6737,7 @@ ALTER TABLE ONLY public.dual_flow_transactions
 
 
 --
--- Name: dual_flow_transactions dual_flow_transactions_pagado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_transactions dual_flow_transactions_pagado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_transactions
@@ -6458,7 +6745,7 @@ ALTER TABLE ONLY public.dual_flow_transactions
 
 
 --
--- Name: dual_flow_transactions dual_flow_transactions_transaccion_pareja_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: dual_flow_transactions dual_flow_transactions_transaccion_pareja_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.dual_flow_transactions
@@ -6466,7 +6753,7 @@ ALTER TABLE ONLY public.dual_flow_transactions
 
 
 --
--- Name: email_invitations email_invitations_accepted_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: email_invitations email_invitations_accepted_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.email_invitations
@@ -6474,7 +6761,7 @@ ALTER TABLE ONLY public.email_invitations
 
 
 --
--- Name: email_invitations email_invitations_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: email_invitations email_invitations_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.email_invitations
@@ -6482,7 +6769,7 @@ ALTER TABLE ONLY public.email_invitations
 
 
 --
--- Name: transactions fk_refund_claim; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions fk_refund_claim; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -6490,7 +6777,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: household_members household_members_invited_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: household_members household_members_invited_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.household_members
@@ -6498,7 +6785,7 @@ ALTER TABLE ONLY public.household_members
 
 
 --
--- Name: households households_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: households households_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.households
@@ -6506,7 +6793,7 @@ ALTER TABLE ONLY public.households
 
 
 --
--- Name: households households_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: households households_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.households
@@ -6514,7 +6801,7 @@ ALTER TABLE ONLY public.households
 
 
 --
--- Name: invitations invitations_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invitations invitations_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.invitations
@@ -6522,7 +6809,7 @@ ALTER TABLE ONLY public.invitations
 
 
 --
--- Name: invitations invitations_invited_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invitations invitations_invited_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.invitations
@@ -6530,7 +6817,7 @@ ALTER TABLE ONLY public.invitations
 
 
 --
--- Name: joint_accounts joint_accounts_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: joint_accounts joint_accounts_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.joint_accounts
@@ -6538,7 +6825,7 @@ ALTER TABLE ONLY public.joint_accounts
 
 
 --
--- Name: member_balances member_balances_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: member_balances member_balances_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.member_balances
@@ -6546,7 +6833,7 @@ ALTER TABLE ONLY public.member_balances
 
 
 --
--- Name: member_balances member_balances_household_member_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: member_balances member_balances_household_member_fk; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.member_balances
@@ -6554,7 +6841,7 @@ ALTER TABLE ONLY public.member_balances
 
 
 --
--- Name: member_balances member_balances_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: member_balances member_balances_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.member_balances
@@ -6562,7 +6849,7 @@ ALTER TABLE ONLY public.member_balances
 
 
 --
--- Name: member_credits member_credits_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: member_credits member_credits_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.member_credits
@@ -6570,7 +6857,7 @@ ALTER TABLE ONLY public.member_credits
 
 
 --
--- Name: member_credits member_credits_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: member_credits member_credits_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.member_credits
@@ -6578,7 +6865,7 @@ ALTER TABLE ONLY public.member_credits
 
 
 --
--- Name: monthly_periods monthly_periods_closing_started_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monthly_periods monthly_periods_closing_started_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.monthly_periods
@@ -6586,7 +6873,7 @@ ALTER TABLE ONLY public.monthly_periods
 
 
 --
--- Name: monthly_periods monthly_periods_last_reopened_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monthly_periods monthly_periods_last_reopened_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.monthly_periods
@@ -6594,7 +6881,7 @@ ALTER TABLE ONLY public.monthly_periods
 
 
 --
--- Name: monthly_periods monthly_periods_locked_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monthly_periods monthly_periods_locked_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.monthly_periods
@@ -6602,7 +6889,7 @@ ALTER TABLE ONLY public.monthly_periods
 
 
 --
--- Name: monthly_periods monthly_periods_opened_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monthly_periods monthly_periods_opened_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.monthly_periods
@@ -6610,7 +6897,7 @@ ALTER TABLE ONLY public.monthly_periods
 
 
 --
--- Name: monthly_periods monthly_periods_validated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monthly_periods monthly_periods_validated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.monthly_periods
@@ -6618,7 +6905,7 @@ ALTER TABLE ONLY public.monthly_periods
 
 
 --
--- Name: personal_loans personal_loans_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: personal_loans personal_loans_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.personal_loans
@@ -6626,7 +6913,7 @@ ALTER TABLE ONLY public.personal_loans
 
 
 --
--- Name: personal_loans personal_loans_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: personal_loans personal_loans_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.personal_loans
@@ -6634,7 +6921,7 @@ ALTER TABLE ONLY public.personal_loans
 
 
 --
--- Name: personal_loans personal_loans_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: personal_loans personal_loans_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.personal_loans
@@ -6642,7 +6929,7 @@ ALTER TABLE ONLY public.personal_loans
 
 
 --
--- Name: personal_loans personal_loans_requested_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: personal_loans personal_loans_requested_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.personal_loans
@@ -6650,7 +6937,7 @@ ALTER TABLE ONLY public.personal_loans
 
 
 --
--- Name: personal_loans personal_loans_settled_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: personal_loans personal_loans_settled_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.personal_loans
@@ -6658,7 +6945,7 @@ ALTER TABLE ONLY public.personal_loans
 
 
 --
--- Name: personal_loans personal_loans_settlement_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: personal_loans personal_loans_settlement_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.personal_loans
@@ -6666,7 +6953,7 @@ ALTER TABLE ONLY public.personal_loans
 
 
 --
--- Name: personal_loans personal_loans_withdrawal_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: personal_loans personal_loans_withdrawal_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.personal_loans
@@ -6674,7 +6961,7 @@ ALTER TABLE ONLY public.personal_loans
 
 
 --
--- Name: profile_emails profile_emails_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: profile_emails profile_emails_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.profile_emails
@@ -6682,7 +6969,7 @@ ALTER TABLE ONLY public.profile_emails
 
 
 --
--- Name: profile_emails profile_emails_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: profile_emails profile_emails_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.profile_emails
@@ -6690,14 +6977,14 @@ ALTER TABLE ONLY public.profile_emails
 
 
 --
--- Name: CONSTRAINT profile_emails_profile_id_fkey ON profile_emails; Type: COMMENT; Schema: public; Owner: -
+-- Name: CONSTRAINT profile_emails_profile_id_fkey ON profile_emails; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
 COMMENT ON CONSTRAINT profile_emails_profile_id_fkey ON public.profile_emails IS 'FK con CASCADE: cuando se elimina un perfil (incluso soft delete manual), sus emails secundarios se eliminan automáticamente';
 
 
 --
--- Name: refund_claims refund_claims_approved_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: refund_claims refund_claims_approved_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.refund_claims
@@ -6705,7 +6992,7 @@ ALTER TABLE ONLY public.refund_claims
 
 
 --
--- Name: refund_claims refund_claims_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: refund_claims refund_claims_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.refund_claims
@@ -6713,7 +7000,7 @@ ALTER TABLE ONLY public.refund_claims
 
 
 --
--- Name: refund_claims refund_claims_expense_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: refund_claims refund_claims_expense_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.refund_claims
@@ -6721,7 +7008,7 @@ ALTER TABLE ONLY public.refund_claims
 
 
 --
--- Name: refund_claims refund_claims_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: refund_claims refund_claims_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.refund_claims
@@ -6729,7 +7016,7 @@ ALTER TABLE ONLY public.refund_claims
 
 
 --
--- Name: refund_claims refund_claims_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: refund_claims refund_claims_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.refund_claims
@@ -6737,7 +7024,7 @@ ALTER TABLE ONLY public.refund_claims
 
 
 --
--- Name: refund_claims refund_claims_refund_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: refund_claims refund_claims_refund_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.refund_claims
@@ -6745,7 +7032,7 @@ ALTER TABLE ONLY public.refund_claims
 
 
 --
--- Name: subcategories subcategories_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: subcategories subcategories_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.subcategories
@@ -6753,7 +7040,7 @@ ALTER TABLE ONLY public.subcategories
 
 
 --
--- Name: system_admins system_admins_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: system_admins system_admins_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.system_admins
@@ -6761,7 +7048,7 @@ ALTER TABLE ONLY public.system_admins
 
 
 --
--- Name: transactions transactions_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -6769,7 +7056,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: transactions transactions_created_by_member_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_created_by_member_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -6777,7 +7064,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: transactions transactions_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_created_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -6785,7 +7072,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: transactions transactions_performed_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_performed_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -6793,7 +7080,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: transactions transactions_real_payer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_real_payer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -6801,7 +7088,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: transactions transactions_subcategory_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_subcategory_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -6809,7 +7096,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: transactions transactions_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_updated_by_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -6817,7 +7104,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: user_active_household user_active_household_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_active_household user_active_household_household_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.user_active_household
@@ -6825,7 +7112,7 @@ ALTER TABLE ONLY public.user_active_household
 
 
 --
--- Name: user_active_household user_active_household_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_active_household user_active_household_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: cuentassik_owner
 --
 
 ALTER TABLE ONLY public.user_active_household
@@ -6833,22 +7120,785 @@ ALTER TABLE ONLY public.user_active_household
 
 
 --
--- Name: monthly_periods No one can delete periods; Type: POLICY; Schema: public; Owner: -
+-- Name: monthly_periods No one can delete periods; Type: POLICY; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE POLICY "No one can delete periods" ON public.monthly_periods FOR DELETE USING (false);
 
 
 --
--- Name: monthly_periods Only system can create periods; Type: POLICY; Schema: public; Owner: -
+-- Name: monthly_periods Only system can create periods; Type: POLICY; Schema: public; Owner: cuentassik_owner
 --
 
 CREATE POLICY "Only system can create periods" ON public.monthly_periods FOR INSERT WITH CHECK (false);
 
 
 --
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: cuentassik_owner
+--
+
+GRANT USAGE ON SCHEMA public TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION _phase_to_status(p_phase text); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public._phase_to_status(p_phase text) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION assign_transaction_number(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.assign_transaction_number() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION calculate_member_net_contribution(p_household_id uuid, p_profile_id uuid, p_year integer, p_month integer); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.calculate_member_net_contribution(p_household_id uuid, p_profile_id uuid, p_year integer, p_month integer) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION close_monthly_period(p_household_id uuid, p_period_id uuid, p_closed_by uuid, p_reason text); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.close_monthly_period(p_household_id uuid, p_period_id uuid, p_closed_by uuid, p_reason text) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION create_default_dual_flow_config(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.create_default_dual_flow_config() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION create_default_household_categories(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.create_default_household_categories() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION create_direct_expense_pair(p_household_id uuid, p_category_id uuid, p_amount numeric, p_description text, p_real_payer_id uuid, p_occurred_at date, p_created_by_email text); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.create_direct_expense_pair(p_household_id uuid, p_category_id uuid, p_amount numeric, p_description text, p_real_payer_id uuid, p_occurred_at date, p_created_by_email text) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION create_household_with_owner(p_name text, p_profile_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.create_household_with_owner(p_name text, p_profile_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION create_joint_account_for_household(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.create_joint_account_for_household() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION ensure_household_owner(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.ensure_household_owner() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION ensure_last_member_is_owner(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.ensure_last_member_is_owner() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION ensure_monthly_period(p_household_id uuid, p_year integer, p_month integer); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.ensure_monthly_period(p_household_id uuid, p_year integer, p_month integer) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION ensure_single_primary_email(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.ensure_single_primary_email() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION execute_auto_pairing(p_transaction_id uuid, p_candidate_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.execute_auto_pairing(p_transaction_id uuid, p_candidate_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION find_pairing_candidates(p_household_id uuid, p_transaction_id uuid, p_umbral numeric); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.find_pairing_candidates(p_household_id uuid, p_transaction_id uuid, p_umbral numeric) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION generate_contributions_for_period(p_household_id uuid, p_period_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.generate_contributions_for_period(p_household_id uuid, p_period_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION generate_pair_reference(p_household_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.generate_pair_reference(p_household_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_approved_refunds(p_household_id uuid, p_profile_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_approved_refunds(p_household_id uuid, p_profile_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_household_balances_overview(p_household_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_household_balances_overview(p_household_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_household_members(p_household_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_household_members(p_household_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_household_members_optimized(p_household_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_household_members_optimized(p_household_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_joint_account_id(p_household_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_joint_account_id(p_household_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_member_balance_status(p_household_id uuid, p_profile_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_member_balance_status(p_household_id uuid, p_profile_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_member_income(p_household_id uuid, p_profile_id uuid, p_date date); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_member_income(p_household_id uuid, p_profile_id uuid, p_date date) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_profile_emails(p_profile_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_profile_emails(p_profile_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_user_active_household(p_profile_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_user_active_household(p_profile_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION get_user_households_optimized(p_profile_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.get_user_households_optimized(p_profile_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION is_user_household_owner(p_profile_id uuid, p_household_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.is_user_household_owner(p_profile_id uuid, p_household_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION lock_contributions_period(p_household_id uuid, p_period_id uuid, p_locked_by uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.lock_contributions_period(p_household_id uuid, p_period_id uuid, p_locked_by uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION log_dual_flow_event(p_household_id uuid, p_period_id uuid, p_event_type text, p_payload jsonb, p_created_by uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.log_dual_flow_event(p_household_id uuid, p_period_id uuid, p_event_type text, p_payload jsonb, p_created_by uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION log_transaction_journal(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.log_transaction_journal() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION open_monthly_period(p_household_id uuid, p_period_id uuid, p_opened_by uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.open_monthly_period(p_household_id uuid, p_period_id uuid, p_opened_by uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION reconcile_contribution_balance(p_contribution_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.reconcile_contribution_balance(p_contribution_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION refresh_critical_matviews(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.refresh_critical_matviews() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION refresh_household_stats(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.refresh_household_stats() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION reopen_monthly_period(p_period_id uuid, p_reopened_by uuid, p_reason text); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.reopen_monthly_period(p_period_id uuid, p_reopened_by uuid, p_reason text) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION reopen_monthly_period(p_household_id uuid, p_period_id uuid, p_reopened_by uuid, p_reason text); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.reopen_monthly_period(p_household_id uuid, p_period_id uuid, p_reopened_by uuid, p_reason text) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION start_monthly_closing(p_household_id uuid, p_period_id uuid, p_started_by uuid, p_reason text); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.start_monthly_closing(p_household_id uuid, p_period_id uuid, p_started_by uuid, p_reason text) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION trigger_auto_pairing(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.trigger_auto_pairing() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION trigger_refresh_transaction_matviews(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.trigger_refresh_transaction_matviews() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_category_audit(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_category_audit() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_category_parent_timestamp(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_category_parent_timestamp() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_contribution_adjustments_total(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_contribution_adjustments_total() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_contribution_audit(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_contribution_audit() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_household_audit(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_household_audit() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_member_balance(p_household_id uuid, p_profile_id uuid, p_delta_amount numeric, p_notes text); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_member_balance(p_household_id uuid, p_profile_id uuid, p_delta_amount numeric, p_notes text) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_member_credit_audit(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_member_credit_audit() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_personal_loans_timestamp(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_personal_loans_timestamp() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_profile_emails_updated_at(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_profile_emails_updated_at() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_refund_claims_updated_at(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_refund_claims_updated_at() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_subcategory_timestamp(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_subcategory_timestamp() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_transaction_audit(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_transaction_audit() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_updated_at(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_updated_at() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION update_user_active_household_timestamp(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.update_user_active_household_timestamp() TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION validate_household_has_owner(p_household_id uuid); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.validate_household_has_owner(p_household_id uuid) TO cuentassik_user;
+
+
+--
+-- Name: FUNCTION validate_primary_email_exists(); Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT ALL ON FUNCTION public.validate_primary_email_exists() TO cuentassik_user;
+
+
+--
+-- Name: TABLE _migrations; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public._migrations TO cuentassik_user;
+
+
+--
+-- Name: SEQUENCE _migrations_id_seq; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,USAGE ON SEQUENCE public._migrations_id_seq TO cuentassik_user;
+
+
+--
+-- Name: TABLE categories; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.categories TO cuentassik_user;
+
+
+--
+-- Name: TABLE category_parents; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.category_parents TO cuentassik_user;
+
+
+--
+-- Name: TABLE contribution_adjustment_templates; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contribution_adjustment_templates TO cuentassik_user;
+
+
+--
+-- Name: TABLE contribution_adjustments; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contribution_adjustments TO cuentassik_user;
+
+
+--
+-- Name: TABLE contribution_periods; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contribution_periods TO cuentassik_user;
+
+
+--
+-- Name: TABLE contribution_reconciliations; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contribution_reconciliations TO cuentassik_user;
+
+
+--
+-- Name: TABLE contributions; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contributions TO cuentassik_user;
+
+
+--
+-- Name: TABLE credit_refund_requests; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.credit_refund_requests TO cuentassik_user;
+
+
+--
+-- Name: TABLE dual_flow_config; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dual_flow_config TO cuentassik_user;
+
+
+--
+-- Name: TABLE dual_flow_events; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dual_flow_events TO cuentassik_user;
+
+
+--
+-- Name: TABLE dual_flow_transactions; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dual_flow_transactions TO cuentassik_user;
+
+
+--
+-- Name: TABLE email_invitations; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.email_invitations TO cuentassik_user;
+
+
+--
+-- Name: TABLE household_members; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.household_members TO cuentassik_user;
+
+
+--
+-- Name: TABLE household_savings; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.household_savings TO cuentassik_user;
+
+
+--
+-- Name: TABLE household_settings; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.household_settings TO cuentassik_user;
+
+
+--
+-- Name: TABLE households; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.households TO cuentassik_user;
+
+
+--
+-- Name: TABLE household_stats; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.household_stats TO cuentassik_user;
+
+
+--
+-- Name: TABLE invitations; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.invitations TO cuentassik_user;
+
+
+--
+-- Name: TABLE joint_accounts; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.joint_accounts TO cuentassik_user;
+
+
+--
+-- Name: TABLE journal_adjustments; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.journal_adjustments TO cuentassik_user;
+
+
+--
+-- Name: TABLE journal_invitations; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.journal_invitations TO cuentassik_user;
+
+
+--
+-- Name: TABLE journal_roles; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.journal_roles TO cuentassik_user;
+
+
+--
+-- Name: TABLE journal_transactions; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.journal_transactions TO cuentassik_user;
+
+
+--
+-- Name: TABLE member_balances; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.member_balances TO cuentassik_user;
+
+
+--
+-- Name: TABLE member_credits; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.member_credits TO cuentassik_user;
+
+
+--
+-- Name: TABLE member_incomes; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.member_incomes TO cuentassik_user;
+
+
+--
+-- Name: TABLE monthly_periods; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.monthly_periods TO cuentassik_user;
+
+
+--
+-- Name: TABLE transactions; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.transactions TO cuentassik_user;
+
+
+--
+-- Name: TABLE mv_household_balances; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.mv_household_balances TO cuentassik_user;
+
+
+--
+-- Name: TABLE profiles; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.profiles TO cuentassik_user;
+
+
+--
+-- Name: TABLE mv_member_pending_contributions; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.mv_member_pending_contributions TO cuentassik_user;
+
+
+--
+-- Name: TABLE personal_loans; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.personal_loans TO cuentassik_user;
+
+
+--
+-- Name: TABLE profile_emails; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.profile_emails TO cuentassik_user;
+
+
+--
+-- Name: TABLE refund_claims; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.refund_claims TO cuentassik_user;
+
+
+--
+-- Name: SEQUENCE seq_transaction_pair_ref; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,USAGE ON SEQUENCE public.seq_transaction_pair_ref TO cuentassik_user;
+
+
+--
+-- Name: TABLE subcategories; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.subcategories TO cuentassik_user;
+
+
+--
+-- Name: TABLE system_admins; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.system_admins TO cuentassik_user;
+
+
+--
+-- Name: TABLE user_active_household; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.user_active_household TO cuentassik_user;
+
+
+--
+-- Name: TABLE user_settings; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.user_settings TO cuentassik_user;
+
+
+--
+-- Name: TABLE v_dual_flow_balance; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.v_dual_flow_balance TO cuentassik_user;
+
+
+--
+-- Name: TABLE v_dual_flow_metrics; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.v_dual_flow_metrics TO cuentassik_user;
+
+
+--
+-- Name: TABLE v_dual_flow_transactions_unified; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.v_dual_flow_transactions_unified TO cuentassik_user;
+
+
+--
+-- Name: TABLE v_dual_flow_workflow; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.v_dual_flow_workflow TO cuentassik_user;
+
+
+--
+-- Name: TABLE v_pending_refund_claims; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.v_pending_refund_claims TO cuentassik_user;
+
+
+--
+-- Name: TABLE v_profile_primary_email; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.v_profile_primary_email TO cuentassik_user;
+
+
+--
+-- Name: TABLE v_transaction_pairs; Type: ACL; Schema: public; Owner: cuentassik_owner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.v_transaction_pairs TO cuentassik_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: cuentassik_owner
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cuentassik_owner IN SCHEMA public GRANT SELECT,USAGE ON SEQUENCES  TO cuentassik_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: cuentassik_owner
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cuentassik_owner IN SCHEMA public GRANT ALL ON FUNCTIONS  TO cuentassik_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: cuentassik_owner
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cuentassik_owner IN SCHEMA public GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES  TO cuentassik_user;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict UjiI4FcKBE1FhwogRP4LpKSflA4HbtHmDFTcvXog2EpypiMcj29SFWBHQ4Z5uKL
+\unrestrict q7fMzLCELvUjtFGhj6gbNFvJgOflseAlpKfwe4tfVEq46YEgD2g7SQejp4amb8x
 
