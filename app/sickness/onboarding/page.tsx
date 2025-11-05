@@ -1,6 +1,6 @@
 'use client';
 
-import { deleteAccount } from '@/app/configuracion/perfil/email-actions';
+import { deleteAccount } from '@/app/sickness/configuracion/perfil/email-actions';
 import {
     AlertDialog,
     AlertDialogAction,

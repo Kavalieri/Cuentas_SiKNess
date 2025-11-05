@@ -9,7 +9,7 @@ import {
     setPrimaryEmail,
     type EmailInvitation,
     type ProfileEmail
-} from '@/app/configuracion/perfil/email-actions';
+} from '@/app/sickness/configuracion/perfil/email-actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

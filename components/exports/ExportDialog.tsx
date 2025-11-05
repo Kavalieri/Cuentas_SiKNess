@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { FileText, Table, FileSpreadsheet, Loader2, Download } from 'lucide-react';
-import { getExportData } from '@/app/exports/actions';
+import { getExportData } from '@/lib/export/actions';
 import { generateMonthlyPDF } from '@/lib/export/pdf-generator';
 import { generateFullCSV } from '@/lib/export/csv-generator';
 
