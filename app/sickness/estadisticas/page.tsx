@@ -199,7 +199,7 @@ export default function EstadisticasPage() {
     };
 
     loadData();
-  }, [householdId, selectedPeriodFull?.id, selectedPeriodFull?.year, selectedPeriodFull?.month]);
+  }, [householdId, selectedPeriodFull]);
 
   return (
     <div className="container mx-auto p-4 space-y-8">

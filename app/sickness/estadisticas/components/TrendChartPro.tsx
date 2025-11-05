@@ -20,7 +20,7 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface TrendChartProProps {
   householdId: string;
@@ -96,8 +96,8 @@ export default function TrendChartPro({
     fetchData();
   }, [householdId, type, timeframe, periodId]);
 
-  // Calculate indicators
-  const calculateSMA = (data: LineData[], period: number): LineData[] => {
+  // Calculate indicators (memoized to avoid recreating in every render)
+  const calculateSMA = useCallback((data: LineData[], period: number): LineData[] => {
     const sma: LineData[] = [];
     for (let i = period - 1; i < data.length; i++) {
       const sum = data.slice(i - period + 1, i + 1).reduce((acc, d) => acc + d.value, 0);
@@ -107,9 +107,9 @@ export default function TrendChartPro({
       }
     }
     return sma;
-  };
+  }, []);
 
-  const calculateEMA = (data: LineData[], period: number): LineData[] => {
+  const calculateEMA = useCallback((data: LineData[], period: number): LineData[] => {
     if (data.length === 0) return [];
     const multiplier = 2 / (period + 1);
     const ema: LineData[] = [];
@@ -130,9 +130,9 @@ export default function TrendChartPro({
       }
     }
     return ema;
-  };
+  }, []);
 
-  const calculateBollingerBands = (data: LineData[], period: number, stdDev: number) => {
+  const calculateBollingerBands = useCallback((data: LineData[], period: number, stdDev: number) => {
     const sma = calculateSMA(data, period);
     const bands = sma.map((s, i) => {
       const slice = data.slice(i, i + period);
@@ -147,7 +147,7 @@ export default function TrendChartPro({
       };
     });
     return bands;
-  };
+  }, [calculateSMA]);
 
   // Initialize and update chart
   useEffect(() => {
@@ -382,7 +382,7 @@ export default function TrendChartPro({
         indicatorSeriesRef.current = null;
       }
     };
-  }, [data, average, type, isDark, mounted, chartType, indicator, isFullscreen, showAvgLine, timeframe]);
+  }, [data, average, type, isDark, mounted, chartType, indicator, isFullscreen, showAvgLine, timeframe, calculateSMA, calculateEMA, calculateBollingerBands]);
 
   // Export chart as image
   const handleExport = () => {

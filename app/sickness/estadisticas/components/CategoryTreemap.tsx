@@ -38,7 +38,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
   const [error, setError] = useState<string | null>(null);
 
   // Generar IDs únicos recursivamente para evitar colisiones con nombres duplicados
-  const generateUniqueIds = (node: TreemapNode, parentPath = ''): TreemapNode => {
+  const generateUniqueIds = useCallback((node: TreemapNode, parentPath = ''): TreemapNode => {
     const currentPath = parentPath ? `${parentPath}/${node.name}` : node.name;
     const nodeWithId: TreemapNode = {
       ...node,
@@ -50,7 +50,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
     }
 
     return nodeWithId;
-  };
+  }, []);
 
   const loadTreemapData = useCallback(async () => {
     if (!householdId) return;
@@ -86,7 +86,7 @@ export function CategoryTreemap({ householdId, startDate, endDate, type = 'expen
     } finally {
       setLoading(false);
     }
-  }, [householdId, startDate, endDate, type]);
+  }, [householdId, startDate, endDate, type, generateUniqueIds]);
 
   useEffect(() => {
     loadTreemapData();
