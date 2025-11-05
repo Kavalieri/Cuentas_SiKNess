@@ -782,7 +782,7 @@ BEGIN
   -- ========== HOGAR ==========
   -- Vivienda (3 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_vivienda, 'Alquiler', 1),
     (v_cat_vivienda, 'Hipoteca', 2),
     (v_cat_vivienda, 'Varios', 99);
@@ -797,7 +797,7 @@ BEGIN
 
   -- Lavandería (3 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_lavanderia, 'Tintorería', 1),
     (v_cat_lavanderia, 'Lavandería', 2),
     (v_cat_lavanderia, 'Varios', 99);
@@ -826,7 +826,7 @@ BEGIN
   -- ========== SUMINISTROS ==========
   -- Luz (5 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_luz, 'Luz Hogar', 1),
     (v_cat_luz, 'Luz Otro', 2),
     (v_cat_luz, 'Luz Vacaciones', 3),
@@ -835,21 +835,21 @@ BEGIN
 
   -- Agua (3 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_agua, 'Agua Hogar', 1),
     (v_cat_agua, 'Agua Vacaciones', 2),
     (v_cat_agua, 'Varios', 99);
 
   -- Gas/Butano (3 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_gas_butano, 'Gas Hogar', 1),
     (v_cat_gas_butano, 'Gas Vacaciones', 2),
     (v_cat_gas_butano, 'Varios', 99);
 
   -- Internet (6 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_internet, 'Internet Hogar', 1),
     (v_cat_internet, 'Internet Fibra', 2),
     (v_cat_internet, 'Internet Vacaciones', 3),
@@ -859,7 +859,7 @@ BEGIN
 
   -- Teléfono (5 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_telefono, 'Teléfono Hogar', 1),
     (v_cat_telefono, 'Teléfono Móvil', 2),
     (v_cat_telefono, 'Teléfono Vacaciones', 3),
@@ -902,7 +902,7 @@ BEGIN
   -- ========== ALIMENTACIÓN ==========
   -- Supermercado (9 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_supermercado, 'Supermercado Hogar', 1),
     (v_cat_supermercado, 'Supermercado DIA', 2),
     (v_cat_supermercado, 'Supermercado Mercadona', 3),
@@ -919,7 +919,7 @@ BEGIN
 
   -- Restaurantes (6 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_restaurantes, 'Restaurante', 1),
     (v_cat_restaurantes, 'Bar/Cafetería', 2),
     (v_cat_restaurantes, 'Comida a Domicilio', 3),
@@ -946,7 +946,7 @@ BEGIN
   -- ========== TRANSPORTE ==========
   -- Transporte (12 subcats)
   INSERT INTO subcategories (category_id, name, display_order)
-  VALUES 
+  VALUES
     (v_cat_transporte, 'Coche', 1),
     (v_cat_transporte, 'Moto', 2),
     (v_cat_transporte, 'Autobús', 3),
@@ -1057,7 +1057,7 @@ ALTER FUNCTION public.create_default_household_categories() OWNER TO cuentassik_
 -- Name: FUNCTION create_default_household_categories(); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
-COMMENT ON FUNCTION public.create_default_household_categories() IS 'Función trigger que crea automáticamente la estructura completa de categorías 
+COMMENT ON FUNCTION public.create_default_household_categories() IS 'Función trigger que crea automáticamente la estructura completa de categorías
 para nuevos hogares. Genera 9 category_parents, 50 categories y 95 subcategories.
 Versión única consolidada (5 Nov 2025) que reemplaza las 2 versiones duplicadas anteriores.
 Estructura extraída de producción real (8 meses de uso).';
@@ -1680,12 +1680,12 @@ BEGIN
   ) INTO v_members
   FROM household_members hm
   INNER JOIN profiles p ON p.id = hm.profile_id
-  LEFT JOIN member_balances mb ON mb.household_id = hm.household_id 
+  LEFT JOIN member_balances mb ON mb.household_id = hm.household_id
     AND mb.profile_id = hm.profile_id
   WHERE hm.household_id = p_household_id;
 
   -- Totales del hogar
-  SELECT 
+  SELECT
     COALESCE(SUM(GREATEST(current_balance, 0)), 0),
     COALESCE(SUM(ABS(LEAST(current_balance, 0))), 0)
   INTO v_total_credits, v_total_debts
@@ -1839,7 +1839,7 @@ BEGIN
     AND profile_id = p_profile_id;
 
   -- Préstamos activos (aprobados pero no liquidados)
-  SELECT 
+  SELECT
     COALESCE(SUM(amount), 0),
     COUNT(*)
   INTO v_active_loans_amount, v_active_loans_count
@@ -1852,7 +1852,7 @@ BEGIN
   -- Cálculos
   v_credit := GREATEST(v_balance, 0);
   v_total_debt := ABS(LEAST(v_balance, 0)) + v_active_loans_amount;
-  
+
   -- Determinar status
   IF v_total_debt > 0 THEN
     v_status := 'debt';
@@ -2024,7 +2024,7 @@ ALTER FUNCTION public.get_member_balance_status_v2(p_household_id uuid, p_profil
 -- Name: FUNCTION get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
-COMMENT ON FUNCTION public.get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid) IS 'Calcula balance EN VIVO (incluyendo períodos abiertos) sin esperar cierre del período. 
+COMMENT ON FUNCTION public.get_member_balance_status_v2(p_household_id uuid, p_profile_id uuid) IS 'Calcula balance EN VIVO (incluyendo períodos abiertos) sin esperar cierre del período.
    Fórmula: balance_histórico + contribuciones_pendientes - gastos_directos_mes + préstamos_activos.
    Permite solicitar reembolsos/préstamos en cualquier fase (SETUP/LOCKED/CLOSED).';
 
@@ -2493,10 +2493,28 @@ CREATE FUNCTION public.refresh_critical_matviews() RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DECLARE
+  v_mv_name TEXT;
+  v_is_populated BOOLEAN;
 BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_household_balances;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_member_pending_contributions;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY household_stats;
+  -- Refrescar cada MV crítica
+  FOR v_mv_name IN
+    SELECT unnest(ARRAY['mv_household_balances', 'mv_member_pending_contributions', 'household_stats'])
+  LOOP
+    -- Verificar si la MV está poblada (ispopulated en pg_matviews)
+    SELECT ispopulated INTO v_is_populated
+    FROM pg_matviews
+    WHERE schemaname = 'public'
+      AND matviewname = v_mv_name;
+
+    IF v_is_populated THEN
+      -- MV poblada: usar CONCURRENTLY (no bloquea lecturas)
+      EXECUTE format('REFRESH MATERIALIZED VIEW CONCURRENTLY %I', v_mv_name);
+    ELSE
+      -- MV no poblada: refresh normal (primera vez)
+      EXECUTE format('REFRESH MATERIALIZED VIEW %I', v_mv_name);
+    END IF;
+  END LOOP;
 END;
 $$;
 
@@ -2507,7 +2525,7 @@ ALTER FUNCTION public.refresh_critical_matviews() OWNER TO cuentassik_owner;
 -- Name: FUNCTION refresh_critical_matviews(); Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
-COMMENT ON FUNCTION public.refresh_critical_matviews() IS 'Refresca todas las vistas materializadas críticas (SECURITY DEFINER para permisos)';
+COMMENT ON FUNCTION public.refresh_critical_matviews() IS 'Refresca todas las vistas materializadas críticas (maneja MVs vacías y pobladas)';
 
 
 --
@@ -2518,9 +2536,23 @@ CREATE FUNCTION public.refresh_household_stats() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DECLARE
+  v_is_populated BOOLEAN;
 BEGIN
-  -- Refresco concurrente permite queries durante el refresh
-  REFRESH MATERIALIZED VIEW CONCURRENTLY household_stats;
+  -- Verificar si household_stats está poblada (ispopulated en pg_matviews)
+  SELECT ispopulated INTO v_is_populated
+  FROM pg_matviews
+  WHERE schemaname = 'public'
+    AND matviewname = 'household_stats';
+
+  IF v_is_populated THEN
+    -- MV poblada: usar CONCURRENTLY (no bloquea lecturas)
+    REFRESH MATERIALIZED VIEW CONCURRENTLY household_stats;
+  ELSE
+    -- MV no poblada: refresh normal (primera vez)
+    REFRESH MATERIALIZED VIEW household_stats;
+  END IF;
+
   RETURN NULL;
 END;
 $$;
@@ -2897,13 +2929,13 @@ DECLARE
 BEGIN
   INSERT INTO member_balances (household_id, profile_id, current_balance, last_updated_at, notes)
   VALUES (p_household_id, p_profile_id, p_delta_amount, NOW(), p_notes)
-  ON CONFLICT (household_id, profile_id) 
-  DO UPDATE SET 
+  ON CONFLICT (household_id, profile_id)
+  DO UPDATE SET
     current_balance = member_balances.current_balance + p_delta_amount,
     last_updated_at = NOW(),
     notes = COALESCE(p_notes, member_balances.notes)
   RETURNING current_balance INTO v_new_balance;
-  
+
   RETURN v_new_balance;
 END;
 $$;
@@ -3551,7 +3583,7 @@ COMMENT ON COLUMN public.credit_refund_requests.refund_transaction_id IS 'Si ref
 -- Name: COLUMN credit_refund_requests.refund_type; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
-COMMENT ON COLUMN public.credit_refund_requests.refund_type IS 'Tipo de reembolso: 
+COMMENT ON COLUMN public.credit_refund_requests.refund_type IS 'Tipo de reembolso:
    - balance: Reembolso de saldo acumulado a favor (requiere validación de owner, genera movimiento)
    - transaction: Reembolso asociado a transacción existente (sin cálculos extra, solo resta saldo)';
 
@@ -4426,11 +4458,11 @@ COMMENT ON COLUMN public.transactions.id IS 'UUID generado automáticamente por 
 --
 
 COMMENT ON COLUMN public.transactions.paid_by IS '⚠️ DEPRECATED (Issue #33): Campo calculado dinámicamente.
-   
+
    REGLAS DE CÁLCULO:
    - Gastos (expense, expense_direct): paid_by = joint_account_id (Cuenta Común)
    - Ingresos (income, income_direct): paid_by = performed_by_profile_id (Miembro)
-   
+
    Usar performed_by_profile_id como fuente única de verdad.
    Este campo almacenado será eliminado físicamente en una migración futura.
    Deprecado: 02 November 2025';
@@ -4579,7 +4611,7 @@ COMMENT ON COLUMN public.transactions.approved_by IS 'Perfil que aprobó la tran
 -- Name: COLUMN transactions.refund_claim_id; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
-COMMENT ON COLUMN public.transactions.refund_claim_id IS 'UUID que vincula un reembolso DECLARADO a su gasto directo correspondiente. 
+COMMENT ON COLUMN public.transactions.refund_claim_id IS 'UUID que vincula un reembolso DECLARADO a su gasto directo correspondiente.
    Permite saber: "Este gasto directo incluye un reembolso de X euros".
    NULL = sin vinculación de reembolso (gasto directo normal o reembolso activo independiente).
    Self-referencing: refund_claim_id apunta a otra fila en transactions (el gasto directo que respalda el reembolso).';
@@ -4904,7 +4936,7 @@ COMMENT ON TABLE public.refund_claims IS 'Reclamos de reembolso: cuando un gasto
 -- Name: COLUMN refund_claims.status; Type: COMMENT; Schema: public; Owner: cuentassik_owner
 --
 
-COMMENT ON COLUMN public.refund_claims.status IS 'pending: Reclamo en espera de aprobación del owner. 
+COMMENT ON COLUMN public.refund_claims.status IS 'pending: Reclamo en espera de aprobación del owner.
    approved: Owner aprobó, se cuenta el reembolso en el balance.
    rejected: Owner rechazó, no se cuenta el reembolso.';
 
@@ -7901,4 +7933,3 @@ ALTER DEFAULT PRIVILEGES FOR ROLE cuentassik_owner IN SCHEMA public GRANT SELECT
 --
 
 \unrestrict q7fMzLCELvUjtFGhj6gbNFvJgOflseAlpKfwe4tfVEq46YEgD2g7SQejp4amb8x
-
