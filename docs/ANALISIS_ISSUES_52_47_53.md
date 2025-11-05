@@ -1,7 +1,7 @@
 # 📊 Análisis Detallado: Issues #52, #47 y #53
 
-**Fecha**: 5 Noviembre 2025  
-**Autor**: AI Assistant  
+**Fecha**: 5 Noviembre 2025
+**Autor**: AI Assistant
 **Contexto**: Release 3.0.0 - Modernización del sistema de migraciones y baseline
 
 ---
@@ -86,14 +86,14 @@ RETURNING id;
 SELECT create_default_household_categories('<HOGAR_ID>');
 
 -- 3. Verificar jerarquía
-SELECT 
+SELECT
   (SELECT COUNT(*) FROM category_parents WHERE household_id = '<HOGAR_ID>') as parents,
   (SELECT COUNT(*) FROM categories WHERE household_id = '<HOGAR_ID>') as categories,
-  (SELECT COUNT(*) FROM subcategories s 
-   JOIN categories c ON c.id = s.category_id 
+  (SELECT COUNT(*) FROM subcategories s
+   JOIN categories c ON c.id = s.category_id
    WHERE c.household_id = '<HOGAR_ID>') as subcategories,
-  (SELECT COUNT(*) FROM categories c 
-   WHERE household_id = '<HOGAR_ID>' 
+  (SELECT COUNT(*) FROM categories c
+   WHERE household_id = '<HOGAR_ID>'
    AND NOT EXISTS (SELECT 1 FROM subcategories WHERE category_id = c.id)) as sin_subcat;
 
 -- Resultado esperado:
@@ -276,12 +276,12 @@ database/migrations/baseline_3.0.0/
    ```bash
    # Verificar estado actual de ambas DB
    ./scripts/audit_unified_ownership.sh
-   
+
    # Dump completo de PROD (schema + data)
    pg_dump -h 127.0.0.1 -U cuentassik_user -d cuentassik_prod \
      --schema-only --no-owner --no-privileges \
      > /tmp/prod_schema_clean.sql
-   
+
    # Revisar diferencias con baseline actual
    diff -u database/migrations/applied/20251101_000000_baseline_v2.1.0.sql \
            /tmp/prod_schema_clean.sql | less
@@ -296,7 +296,7 @@ database/migrations/baseline_3.0.0/
    ```bash
    # PROD
    pg_dump -d cuentassik_prod > .archive/prod_pre_baseline_3.0.0_$(date +%Y%m%d_%H%M%S).sql
-   
+
    # DEV
    pg_dump -d cuentassik_dev > .archive/dev_pre_baseline_3.0.0_$(date +%Y%m%d_%H%M%S).sql
    ```
@@ -323,11 +323,11 @@ database/migrations/baseline_3.0.0/
    -- Fecha: 5 Noviembre 2025
    -- Propósito: Release 3.0.0 con sistema de migraciones simplificado
    -- Owner: cuentassik_owner (unificado)
-   
+
    SET ROLE cuentassik_owner;
-   
+
    -- [CONTENIDO DUMPEADO LIMPIO]
-   
+
    -- Añadir al final:
    -- Permisos para cuentassik_user
    GRANT CONNECT ON DATABASE cuentassik_dev TO cuentassik_user;
@@ -336,7 +336,7 @@ database/migrations/baseline_3.0.0/
    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO cuentassik_user;
    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cuentassik_user;
    GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO cuentassik_user;
-   
+
    -- Default privileges para objetos futuros
    ALTER DEFAULT PRIVILEGES FOR ROLE cuentassik_owner IN SCHEMA public
      GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO cuentassik_user;
@@ -344,7 +344,7 @@ database/migrations/baseline_3.0.0/
      GRANT USAGE, SELECT ON SEQUENCES TO cuentassik_user;
    ALTER DEFAULT PRIVILEGES FOR ROLE cuentassik_owner IN SCHEMA public
      GRANT EXECUTE ON FUNCTIONS TO cuentassik_user;
-   
+
    RESET ROLE;
    ```
 
@@ -378,7 +378,7 @@ INSERT INTO households (id, name) VALUES (gen_random_uuid(), 'Test 3.0.0') RETUR
 -- Guardar ID: <TEST_HOUSEHOLD_ID>
 
 -- Test 2: Verificar categorías automáticas
-SELECT 
+SELECT
   (SELECT COUNT(*) FROM category_parents WHERE household_id = '<TEST_HOUSEHOLD_ID>') as parents,
   (SELECT COUNT(*) FROM categories WHERE household_id = '<TEST_HOUSEHOLD_ID>') as categories,
   (SELECT COUNT(*) FROM subcategories s JOIN categories c ON c.id = s.category_id WHERE c.household_id = '<TEST_HOUSEHOLD_ID>') as subcategories;
@@ -386,11 +386,11 @@ SELECT
 
 -- Test 3: Crear transacción
 INSERT INTO transactions (
-  household_id, flow_type, transaction_type, 
-  category_id, subcategory_id, 
+  household_id, flow_type, transaction_type,
+  category_id, subcategory_id,
   amount, description, occurred_at
 )
-SELECT 
+SELECT
   '<TEST_HOUSEHOLD_ID>',
   'common', 'expense',
   c.id, s.id,
@@ -402,7 +402,7 @@ LIMIT 1
 RETURNING id;
 
 -- Test 4: Verificar permisos
-SELECT 
+SELECT
   has_table_privilege('cuentassik_user', 'transactions', 'SELECT') as can_select,
   has_table_privilege('cuentassik_user', 'transactions', 'INSERT') as can_insert,
   has_table_privilege('cuentassik_user', 'transactions', 'UPDATE') as can_update,
@@ -546,15 +546,15 @@ database/migrations/
 1. Desarrollador crea migración:
    ./scripts/create_migration.sh "add refund system"
    → database/migrations/20251105_120000_add_refund_system.sql
-   
+
 2. Aplica a DEV:
    ./scripts/apply_migration.sh dev 20251105_120000_add_refund_system.sql
    → Registro en _migrations (cuentassik_dev)
-   
+
 3. Si funciona, aplica a PROD:
    ./scripts/apply_migration.sh prod 20251105_120000_add_refund_system.sql
    → Registro en _migrations (cuentassik_prod)
-   
+
 4. Git commit:
    git add database/migrations/20251105_120000_add_refund_system.sql
    git commit -m "feat(db): add refund system"
@@ -638,16 +638,16 @@ database/migrations/
    ```bash
    #!/bin/bash
    # Ver qué migraciones están aplicadas en cada DB
-   
+
    echo "📊 DEV Database:"
    psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev -c \
      "SELECT migration_name, applied_at, status FROM _migrations ORDER BY applied_at DESC LIMIT 10;"
-   
+
    echo ""
    echo "📊 PROD Database:"
    psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_prod -c \
      "SELECT migration_name, applied_at, status FROM _migrations ORDER BY applied_at DESC LIMIT 10;"
-   
+
    echo ""
    echo "📁 Available Migrations:"
    ls -1 database/migrations/*.sql | grep -v baseline | grep -v archive
@@ -657,16 +657,16 @@ database/migrations/
    ```bash
    #!/bin/bash
    # Ver qué migraciones están en DEV pero no en PROD
-   
+
    DEV_MIGRATIONS=$(psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev -t -c \
      "SELECT migration_name FROM _migrations WHERE status='success' ORDER BY applied_at;")
-   
+
    PROD_MIGRATIONS=$(psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_prod -t -c \
      "SELECT migration_name FROM _migrations WHERE status='success' ORDER BY applied_at;")
-   
+
    echo "🔵 Migraciones SOLO en DEV (listas para PROD):"
    comm -23 <(echo "$DEV_MIGRATIONS" | sort) <(echo "$PROD_MIGRATIONS" | sort)
-   
+
    echo ""
    echo "🔴 Migraciones SOLO en PROD (¿inconsistencia?):"
    comm -13 <(echo "$DEV_MIGRATIONS" | sort) <(echo "$PROD_MIGRATIONS" | sort)
@@ -683,45 +683,45 @@ database/migrations/
 1. **`database/README.md`**:
    ```markdown
    ## 🔄 Sistema de Migraciones v3.0.0
-   
+
    ### Estructura Simplificada
-   
+
    database/migrations/
    ├── 20251105_000000_baseline_v3.0.0.sql  ← Base actual
    ├── [nuevas migraciones]
    └── archive/
        └── v2.1.0/  ← Históricas
-   
+
    ### Workflow
-   
+
    1. Crear: ./scripts/create_migration.sh "descripción"
    2. Aplicar DEV: ./scripts/apply_migration.sh dev archivo.sql
    3. Probar en aplicación
    4. Aplicar PROD: ./scripts/apply_migration.sh prod archivo.sql
    5. Commit: git add + git commit + git push
-   
+
    ### Ver Estado
-   
+
    ./scripts/migration_status.sh      # Estado en ambas DB
    ./scripts/diff_migrations.sh       # Diferencias DEV-PROD
-   
+
    ### Source of Truth
-   
+
    Tabla `_migrations` en cada base de datos
    ```
 
 2. **`AGENTS.md`**:
    ```markdown
    ## 🔄 Sistema de Migraciones v3.0.0
-   
+
    **Cambio importante**: Ya NO hay directorios development/tested/applied.
-   
+
    **Workflow simplificado**:
    1. Todas las migraciones van a `database/migrations/`
    2. Se aplican a DEV primero (testing)
    3. Si OK, se aplican a PROD
    4. La tabla `_migrations` registra qué está aplicado en cada DB
-   
+
    **Scripts disponibles**:
    - `create_migration.sh`: Crear nueva migración
    - `apply_migration.sh`: Aplicar a DEV o PROD
@@ -732,9 +732,9 @@ database/migrations/
 3. **`.github/copilot-instructions.md`**:
    ```markdown
    ## 🔄 Sistema de Migraciones (actualizado v3.0.0)
-   
+
    **IMPORTANTE**: Ya NO promocionar entre directorios.
-   
+
    Todas las migraciones van a `database/migrations/`
    Source of truth: tabla `_migrations` en cada DB
    ```
@@ -982,8 +982,8 @@ Las **Issues #52, #47 y #53 forman un refactor arquitectónico coherente** que:
 3. ✅ **Simplifica workflow** (1 directorio vs 3)
 4. ✅ **Mejora DX** (source of truth claro)
 
-**Esfuerzo total**: 15-17 horas (2-3 días)  
-**Riesgo global**: 🟢 BAJO (con testing apropiado)  
+**Esfuerzo total**: 15-17 horas (2-3 días)
+**Riesgo global**: 🟢 BAJO (con testing apropiado)
 **Beneficio**: 🟢 ALTO (base sólida + DX mejorada)
 
 **Recomendación final**: ✅ **IMPLEMENTAR EN ORDEN SECUENCIAL**
@@ -996,6 +996,6 @@ Este es el momento adecuado:
 
 ---
 
-**Fecha de análisis**: 5 Noviembre 2025  
-**Autor**: AI Assistant  
+**Fecha de análisis**: 5 Noviembre 2025
+**Autor**: AI Assistant
 **Estado**: ANÁLISIS COMPLETO - LISTO PARA IMPLEMENTACIÓN

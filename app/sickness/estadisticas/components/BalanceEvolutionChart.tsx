@@ -53,13 +53,13 @@ function calculateSMA(data: LineData[], period: number): LineData[] {
 function calculateEMA(data: LineData[], period: number): LineData[] {
   const ema: LineData[] = [];
   const multiplier = 2 / (period + 1);
-  
+
   // Primer valor es SMA
   const firstSMA = data.slice(0, period).reduce((acc, d) => acc + (d.value as number), 0) / period;
   const firstTime = data[period - 1]?.time;
   if (!firstTime) return [];
   ema.push({ time: firstTime, value: firstSMA });
-  
+
   // Resto son EMA
   for (let i = period; i < data.length; i++) {
     const prevEma = ema[ema.length - 1]?.value;
@@ -70,7 +70,7 @@ function calculateEMA(data: LineData[], period: number): LineData[] {
       ema.push({ time: currentTime, value: emaValue });
     }
   }
-  
+
   return ema;
 }
 
@@ -79,21 +79,21 @@ function calculateBollingerBands(data: LineData[], period: number = 20, stdDev: 
   const sma = calculateSMA(data, period);
   const upper: LineData[] = [];
   const lower: LineData[] = [];
-  
+
   for (let i = 0; i < sma.length; i++) {
     const dataSlice = data.slice(i, i + period);
     const smaPoint = sma[i];
     const mean = smaPoint?.value as number;
     const time = smaPoint?.time;
     if (!time || mean === undefined) continue;
-    
+
     const variance = dataSlice.reduce((acc, d) => acc + Math.pow((d.value as number) - mean, 2), 0) / period;
     const std = Math.sqrt(variance);
-    
+
     upper.push({ time, value: mean + (stdDev * std) });
     lower.push({ time, value: mean - (stdDev * std) });
   }
-  
+
   return { middle: sma, upper, lower };
 }
 
@@ -101,20 +101,20 @@ function calculateBollingerBands(data: LineData[], period: number = 20, stdDev: 
 function calculateTrendLine(data: LineData[]): LineData[] {
   const n = data.length;
   if (n < 2) return [];
-  
+
   // Convertir timestamps a números secuenciales
   const x = data.map((_, i) => i);
   const y = data.map(d => d.value as number);
-  
+
   // Calcular regresión lineal: y = mx + b
   const sumX = x.reduce((a, b) => a + b, 0);
   const sumY = y.reduce((a, b) => a + b, 0);
   const sumXY = x.reduce((acc, xi, i) => acc + xi * (y[i] ?? 0), 0);
   const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
-  
+
   const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
   const b = (sumY - m * sumX) / n;
-  
+
   // Generar puntos de la línea
   return data.map((d, i) => {
     const time = d.time;
