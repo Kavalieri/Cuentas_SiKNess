@@ -24,12 +24,13 @@ export async function middleware(request: NextRequest) {
 
   const isApiRoute = pathname.startsWith('/api') || pathname.startsWith('/app/api');
   const isProtectedRoute = pathname.startsWith('/app') || pathname.startsWith('/sickness');
-  const isDualFlowRoute = pathname.startsWith('/dual-flow');
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth/verify');
   const isLoginRoute = request.nextUrl.pathname.startsWith('/login');
-  const requiresAuth = (isProtectedRoute || isDualFlowRoute) && !isAuthRoute;
+  // Legacy: removed `dual-flow` routes during cleanup (Issue #54).
+  // Protected routes are now only the app/sickness paths.
+  const requiresAuth = isProtectedRoute && !isAuthRoute;
 
-  console.log('[MIDDLEWARE] Flags:', { isApiRoute, isProtectedRoute, isDualFlowRoute, requiresAuth });
+  console.log('[MIDDLEWARE] Flags:', { isApiRoute, isProtectedRoute, requiresAuth });
 
   if (isApiRoute) {
     console.log('[MIDDLEWARE] ✅ API route, dejando pasar');
@@ -58,7 +59,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/sickness', request.url));
       }
 
-      // Para rutas /sickness/* y /dual-flow/*, dejar pasar
+  // Para rutas /sickness/*, dejar pasar
       console.log('[MIDDLEWARE] ✅ Dejando pasar a:', pathname);
       return response;
     } catch (error) {
