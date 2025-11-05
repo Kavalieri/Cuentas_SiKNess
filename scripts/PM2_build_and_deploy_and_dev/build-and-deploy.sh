@@ -9,9 +9,9 @@ npm run build
 
 echo ""
 echo "🔄 Restarting production..."
-./scripts/pm2-prod-stop.sh
+./scripts/PM2_build_and_deploy_and_dev/pm2-prod-stop.sh
 sleep 2
-./scripts/pm2-prod-start.sh
+./scripts/PM2_build_and_deploy_and_dev/pm2-prod-start.sh
 
 echo ""
 echo "✅ Production deployed successfully!"
