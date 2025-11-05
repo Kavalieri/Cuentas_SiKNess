@@ -866,34 +866,59 @@ npm run dev
 
 ---
 
-### FASE 5: Limpieza Middleware (Bajo Riesgo) - 30 min
+### FASE 5: Limpieza Middleware (Bajo Riesgo) - 30 min ✅ COMPLETADO
 
 **Objetivo**: Eliminar referencia a dual-flow
 
-**Editar `middleware.ts`**:
+**Estado**: ✅ **COMPLETADO** - 6 Nov 2025 - Commit `11ceabb`
 
-```typescript
-// ANTES (líneas 26-27):
-const isDualFlowRoute = pathname.startsWith('/dual-flow');
-const requiresAuth = (isProtectedRoute || isDualFlowRoute) && !isAuthRoute;
+**Cambios Realizados**:
 
-// DESPUÉS:
-const requiresAuth = isProtectedRoute && !isAuthRoute;
-```
+1. **Búsqueda de referencias a `isDualFlowRoute`**:
+   - 7 referencias encontradas totales
+   - 3 en `middleware.ts` (código activo)
+   - 4 en `docs/ISSUE_54_ANALISIS_COMPLETO.md` (documentación)
+
+2. **Edición de `middleware.ts`**:
+   ```typescript
+   // ANTES (líneas 27-32):
+   const isDualFlowRoute = pathname.startsWith('/dual-flow');
+   const requiresAuth = (isProtectedRoute || isDualFlowRoute) && !isAuthRoute;
+   console.log('[MIDDLEWARE] Flags:', { isApiRoute, isProtectedRoute, isDualFlowRoute, requiresAuth });
+   // Comment: "Para rutas /sickness/* y /dual-flow/*, dejar pasar"
+   
+   // DESPUÉS (líneas 25-31):
+   // Legacy: removed `dual-flow` routes during cleanup (Issue #54).
+   // Protected routes are now only the app/sickness paths.
+   const requiresAuth = isProtectedRoute && !isAuthRoute;
+   console.log('[MIDDLEWARE] Flags:', { isApiRoute, isProtectedRoute, requiresAuth });
+   // Comment: "Para rutas /sickness/*, dejar pasar"
+   ```
+
+3. **Validación**:
+   - ✅ TypeCheck: Sin errores (`tsc --noEmit`)
+   - ✅ Lint: Sin errores ni warnings (`next lint`)
+   - ✅ Comportamiento: Auth simplificado, solo rutas `/app/*` y `/sickness/*` protegidas
+
+**Archivos modificados**:
+- `middleware.ts` (103 líneas, sin cambio de tamaño)
+
+**Impacto**: Eliminada lógica legacy de protección de rutas `/dual-flow` (ya archivadas en FASE 2.2). Sistema de auth simplificado y más mantenible. Sin regresiones.
 
 **Commit**:
 ```bash
-git add middleware.ts
-git commit -m "refactor(middleware): eliminar referencia a dual-flow (Issue #54)
+refactor(middleware): remove isDualFlowRoute legacy variable
 
-- Eliminar variable isDualFlowRoute (no usada)
-- Simplificar lógica requiresAuth
-- dual-flow archivado en .archive/
+- Eliminada variable isDualFlowRoute tras archivado de dual-flow en FASE 2
+- Simplificada lógica requiresAuth (solo isProtectedRoute)
+- Actualizado console.log para remover isDualFlowRoute de flags
+- Actualizado comentario de rutas protegidas (removido /dual-flow/*)
+- Agregado comentario explicativo sobre Issue #54
 
-Relacionado: Issue #54"
+Issue: #54 FASE 5 - Actualizar middleware.ts
 ```
 
-**Validación**:
+**Validación adicional realizada**:
 ```bash
 npm run typecheck
 npm run lint
