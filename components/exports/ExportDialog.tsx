@@ -1,28 +1,28 @@
 /**
  * EXPORT DIALOG - Dialog para seleccionar formato y opciones de exportación
- * 
+ *
  * Permite al usuario:
  * - Seleccionar formato (PDF, CSV, Excel)
  * - Elegir período (mes/año)
  * - Configurar qué incluir (balance, transacciones, contribuciones, ahorro)
- * 
+ *
  * Al confirmar, obtiene datos del servidor y genera el archivo client-side
  */
 
 'use client';
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
-import { FileText, Table, FileSpreadsheet, Loader2, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getExportData } from '@/lib/export/actions';
-import { generateMonthlyPDF } from '@/lib/export/pdf-generator';
 import { generateFullCSV } from '@/lib/export/csv-generator';
+import { generateMonthlyPDF } from '@/lib/export/pdf-generator';
+import { Download, FileSpreadsheet, FileText, Loader2, Table } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface ExportDialogProps {
   open: boolean;
@@ -41,15 +41,15 @@ export function ExportDialog({
   const [year, setYear] = useState(defaultYear);
   const [month, setMonth] = useState(defaultMonth);
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   const [includeBalance, setIncludeBalance] = useState(true);
   const [includeTransactions, setIncludeTransactions] = useState(true);
   const [includeContributions, setIncludeContributions] = useState(true);
   const [includeSavings, setIncludeSavings] = useState(true);
-  
+
   const handleGenerate = async () => {
     setIsGenerating(true);
-    
+
     try {
       // 1. Obtener datos del servidor
       const result = await getExportData({
@@ -61,23 +61,23 @@ export function ExportDialog({
         includeContributions,
         includeSavings
       });
-      
+
       if (!result.ok) {
         toast.error(result.message || 'Error al obtener datos');
         return;
       }
-      
+
       if (!result.data) {
         toast.error('No se obtuvieron datos para exportar');
         return;
       }
-      
+
       const data = result.data;
-      
+
       // 2. Generar archivo según formato
       let blob: Blob;
       let filename: string;
-      
+
       if (format === 'pdf') {
         blob = await generateMonthlyPDF(data);
         filename = `CuentasSiK_${sanitizeFilename(data.householdName)}_${year}-${month.toString().padStart(2, '0')}.pdf`;
@@ -89,7 +89,7 @@ export function ExportDialog({
         toast.error('Exportación Excel disponible próximamente');
         return;
       }
-      
+
       // 3. Descargar archivo
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -99,10 +99,10 @@ export function ExportDialog({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
+
       toast.success(`Archivo ${format.toUpperCase()} generado exitosamente`);
       onOpenChange(false);
-      
+
     } catch (error) {
       console.error('Error generando exportación:', error);
       toast.error('Error al generar archivo. Intenta de nuevo.');
@@ -110,7 +110,7 @@ export function ExportDialog({
       setIsGenerating(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -120,7 +120,7 @@ export function ExportDialog({
             Selecciona el formato y período para exportar
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 py-4">
           {/* Formato */}
           <div className="space-y-3">
@@ -138,7 +138,7 @@ export function ExportDialog({
                   </p>
                 </Label>
               </div>
-              
+
               <div className="flex items-start space-x-3 p-3 border-2 rounded-lg hover:bg-accent cursor-pointer transition-colors">
                 <RadioGroupItem value="csv" id="csv" className="mt-1" />
                 <Label htmlFor="csv" className="cursor-pointer flex-1">
@@ -152,7 +152,7 @@ export function ExportDialog({
                   </p>
                 </Label>
               </div>
-              
+
               <div className="flex items-start space-x-3 p-3 border-2 rounded-lg hover:bg-accent cursor-pointer transition-colors opacity-50">
                 <RadioGroupItem value="excel" id="excel" className="mt-1" disabled />
                 <Label htmlFor="excel" className="cursor-pointer flex-1">
@@ -168,7 +168,7 @@ export function ExportDialog({
               </div>
             </RadioGroup>
           </div>
-          
+
           {/* Período */}
           <div className="space-y-3">
             <Label className="text-base font-semibold">Período</Label>
@@ -185,7 +185,7 @@ export function ExportDialog({
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
                 <SelectTrigger className="w-[120px]">
                   <SelectValue />
@@ -200,15 +200,15 @@ export function ExportDialog({
               </Select>
             </div>
           </div>
-          
+
           {/* Opciones (solo para PDF) */}
           {format === 'pdf' && (
             <div className="space-y-3">
               <Label className="text-base font-semibold">Incluir en el export</Label>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="balance" 
+                  <Checkbox
+                    id="balance"
                     checked={includeBalance}
                     onCheckedChange={(c) => setIncludeBalance(c as boolean)}
                   />
@@ -216,10 +216,10 @@ export function ExportDialog({
                     Balance desglosado
                   </Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="transactions" 
+                  <Checkbox
+                    id="transactions"
                     checked={includeTransactions}
                     onCheckedChange={(c) => setIncludeTransactions(c as boolean)}
                   />
@@ -227,10 +227,10 @@ export function ExportDialog({
                     Transacciones (top 10)
                   </Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="contributions" 
+                  <Checkbox
+                    id="contributions"
                     checked={includeContributions}
                     onCheckedChange={(c) => setIncludeContributions(c as boolean)}
                   />
@@ -238,10 +238,10 @@ export function ExportDialog({
                     Contribuciones
                   </Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="savings" 
+                  <Checkbox
+                    id="savings"
                     checked={includeSavings}
                     onCheckedChange={(c) => setIncludeSavings(c as boolean)}
                   />
@@ -253,7 +253,7 @@ export function ExportDialog({
             </div>
           )}
         </div>
-        
+
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
             Cancelar
