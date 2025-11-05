@@ -1,8 +1,8 @@
 # 🔍 Análisis Completo de Estructura del Proyecto - Issue #54
 
-**Fecha**: 5 Noviembre 2025  
-**Versión**: v2.1.0 (post-Issue #53)  
-**Auditor**: AI Assistant  
+**Fecha**: 5 Noviembre 2025
+**Versión**: v2.1.0 (post-Issue #53)
+**Auditor**: AI Assistant
 **Actualización**: ✅ docs/TO-DO/ archivado (5 Nov 2025)
 
 ---
@@ -77,8 +77,8 @@ app/sickness/
     └── page.tsx
 ```
 
-**Rutas Activas**: 11+ páginas funcionales  
-**Middleware**: Protegido, redirige automáticamente aquí  
+**Rutas Activas**: 11+ páginas funcionales
+**Middleware**: Protegido, redirige automáticamente aquí
 **Recomendación**: ✅ **MANTENER TODO - SISTEMA PRINCIPAL**
 
 ---
@@ -199,7 +199,7 @@ import { getExportData } from '@/app/exports/actions';
    ```typescript
    // ANTES:
    import { getExportData } from '@/app/exports/actions';
-   
+
    // DESPUÉS:
    import { getExportData } from '@/lib/export/actions';
    ```
@@ -288,7 +288,7 @@ app/api/
 1. ✅ `/api/auth/accept-email-invitation` - OAuth y invitaciones
 2. ✅ `/api/auth/signout` - Cerrar sesión
 3. ✅ `/api/periods/lock` - Bloquear período
-4. ✅ `/api/periods/open` - Abrir período  
+4. ✅ `/api/periods/open` - Abrir período
 5. ✅ `/api/periods/close` - Cerrar período
 6. ✅ `/api/periods/reopen` - Reabrir período
 7. ✅ `/api/periods/start-closing` - Iniciar cierre
@@ -312,7 +312,7 @@ grep -r "fetch.*transactions/recent" app/  # ❌ 0 resultados
 #### ⚠️ `/api/admin/` - NO USADO
 - **Contenido**: `adjustments/route.ts`
 - **Uso**: ❌ No se encontraron fetch activos
-- **Recomendación**: 
+- **Recomendación**:
   1. 🔍 Verificar si es funcionalidad futura
   2. Si NO: 🗑️ **ARCHIVAR** → `.archive/2025-11-05_api_admin/`
 
@@ -327,7 +327,7 @@ grep -r "fetch.*transactions/recent" app/  # ❌ 0 resultados
 #### ⚠️ `/api/transactions/recent/` - NO USADO
 - **Contenido**: `route.ts`
 - **Uso**: ❌ No se encontraron fetch activos
-- **Recomendación**: 
+- **Recomendación**:
   1. 🔍 Verificar uso en components
   2. Si NO: 🗑️ **ARCHIVAR** → `.archive/2025-11-05_api_transactions/`
 
@@ -626,46 +626,54 @@ touch .archive/INDEX.md
 # - Creado INDEX.md completo
 ```
 
-**2.2. Archivar dual-flow completo**
+**2.2. ✅ COMPLETADO: Archivar dual-flow completo**
 ```bash
-# Mover preservando estructura
-mv app/dual-flow .archive/2025-11-05_app_dual-flow/
-
-# Verificar no rompe nada
-npm run typecheck  # Debe pasar sin errores
+# ✅ HECHO (5 Nov 2025):
+# - Movido app/dual-flow/ a .archive/2025-11-05_app_dual-flow/
+# - Verificado 0 imports activos
+# - TypeCheck pasa sin errores
+# - Creado INDEX.md con documentación
 ```
 
-**2.3. Archivar wrappers PostgreSQL obsoletos**
+**2.3. ✅ COMPLETADO: Archivar wrappers PostgreSQL obsoletos**
 ```bash
-mv lib/pgAdmin.ts .archive/2025-11-05_lib_wrappers/
-mv lib/pgBrowser.ts .archive/2025-11-05_lib_wrappers/
-
-# Verificar
-npm run typecheck
+# ✅ HECHO (5 Nov 2025):
+# - Movido lib/pgAdmin.ts a .archive/2025-11-05_lib_wrappers/
+# - Movido lib/pgBrowser.ts a .archive/2025-11-05_lib_wrappers/
+# - Verificado 0 imports activos
+# - TypeCheck pasa sin errores
+# - Creado INDEX.md con documentación migración PostgreSQL
 ```
 
-**2.4. Eliminar backup manual**
+**2.4. ✅ COMPLETADO: Eliminar backup manual**
 ```bash
-rm lib/dualFlow.ts.backup
-# Git ya mantiene historial, no necesario backup en repo
+# ✅ HECHO (5 Nov 2025):
+# - Eliminado lib/dualFlow.ts.backup
+# - Git mantiene historial completo, backup innecesario
 ```
 
-**2.5. Archivar /api/dev (vacío)**
+**2.5. ✅ COMPLETADO: Archivar /api/dev (vacío)**
 ```bash
-rmdir app/api/dev
-# Directorio vacío, sin riesgo
+# ✅ HECHO (5 Nov 2025):
+# - Eliminado app/api/dev/ (directorio vacío)
+# - Sin riesgo, no contenía archivos
 ```
 
-**2.6. Consolidar archive legacy antiguo**
+**2.6. ✅ COMPLETADO: Consolidar archive legacy antiguo**
 ```bash
-mv archive/legacy/* .archive/legacy_pre_2025/
-rmdir archive/legacy
-rmdir archive
+# ✅ HECHO (5 Nov 2025):
+# - Movido archive/legacy/* a .archive/legacy_pre_2025/
+# - Eliminado directorio /archive/ de raíz
+# - Creado INDEX.md documentando consolidación
 ```
 
-**2.6. Actualizar .archive/INDEX.md**
+**2.7. ✅ COMPLETADO: Documentación de archives**
 ```markdown
-# Documentar cada archivo movido con razón y fecha
+# ✅ HECHO (5 Nov 2025):
+# - Creado .archive/2025-11-05_app_dual-flow/INDEX.md
+# - Creado .archive/2025-11-05_lib_wrappers/INDEX.md
+# - Creado .archive/legacy_pre_2025/INDEX.md
+# - Cada INDEX.md documenta: razón, contenido, recuperación, referencias
 ```
 
 **Commit**:
@@ -931,15 +939,15 @@ npm run dev
 1. `.github/copilot-instructions.md`
    - Eliminar referencias a dual-flow
    - Actualizar estructura app/
-   
+
 2. `AGENTS.md`
    - Eliminar referencias a configuracion/ y credits/
    - Actualizar paths de actions
-   
+
 3. `app/AGENTS.md`
    - Documentar estructura limpia
    - Actualizar ejemplos
-   
+
 4. `lib/AGENTS.md`
    - Eliminar referencias a pgAdmin/pgBrowser
    - Documentar reorganización
@@ -1197,7 +1205,7 @@ chmod +x check-api-usage.sh
 
 **Archivado en**: `.archive/2025-11-05_app_dual-flow/`
 
-**Razón**: 
+**Razón**:
 - Sistema v1.0 legacy (nombre "dual-flow" deprecado)
 - Sin imports activos desde /app/sickness
 - Sin enlaces (href) en UI activa
@@ -1288,6 +1296,6 @@ git commit -m "restore: recuperar wrappers PostgreSQL (no recomendado)"
 
 ---
 
-**Documento generado**: 5 Noviembre 2025  
-**Última actualización**: 5 Noviembre 2025  
+**Documento generado**: 5 Noviembre 2025
+**Última actualización**: 5 Noviembre 2025
 **Estado**: ✅ Listo para revisión y ejecución
