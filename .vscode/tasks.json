@@ -7,7 +7,7 @@
     {
       "label": "🟢 DEV: Iniciar (con archivado de logs)",
       "type": "shell",
-      "command": "./scripts/pm2-dev-start.sh",
+      "command": "./scripts/PM2_build_and_deploy_and_dev/pm2-dev-start.sh",
       "group": {
         "kind": "build",
         "isDefault": false
@@ -24,7 +24,7 @@
     {
       "label": "🔴 DEV: Detener",
       "type": "shell",
-      "command": "./scripts/pm2-dev-stop.sh",
+      "command": "./scripts/PM2_build_and_deploy_and_dev/pm2-dev-stop.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -39,7 +39,7 @@
       "label": "🔄 DEV: Reiniciar (Stop + Start con logs limpios)",
       "type": "shell",
       "command": "bash",
-      "args": ["-c", "./scripts/pm2-dev-stop.sh && sleep 1 && ./scripts/pm2-dev-start.sh"],
+      "args": ["-c", "./scripts/PM2_build_and_deploy_and_dev/pm2-dev-stop.sh && sleep 1 && ./scripts/PM2_build_and_deploy_and_dev/pm2-dev-start.sh"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -56,7 +56,7 @@
     {
       "label": "🟢 PROD: Iniciar (con archivado de logs)",
       "type": "shell",
-      "command": "./scripts/pm2-prod-start.sh",
+      "command": "./scripts/PM2_build_and_deploy_and_dev/pm2-prod-start.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -70,7 +70,7 @@
     {
       "label": "🔴 PROD: Detener",
       "type": "shell",
-      "command": "./scripts/pm2-prod-stop.sh",
+      "command": "./scripts/PM2_build_and_deploy_and_dev/pm2-prod-stop.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -85,7 +85,7 @@
       "label": "🔄 PROD: Reiniciar (Stop + Start con logs limpios)",
       "type": "shell",
       "command": "bash",
-      "args": ["-c", "./scripts/pm2-prod-stop.sh && sleep 2 && ./scripts/pm2-prod-start.sh"],
+      "args": ["-c", "./scripts/PM2_build_and_deploy_and_dev/pm2-prod-stop.sh && sleep 2 && ./scripts/PM2_build_and_deploy_and_dev/pm2-prod-start.sh"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -99,7 +99,7 @@
     {
       "label": "🏗️ PROD: Build + Deploy + Reiniciar",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/build-and-deploy.sh",
+      "command": "${workspaceFolder}/scripts/PM2_build_and_deploy_and_dev/build-and-deploy.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -117,7 +117,7 @@
     {
       "label": "📊 Estado PM2 General",
       "type": "shell",
-      "command": "./scripts/pm2-status.sh",
+      "command": "./scripts/PM2_build_and_deploy_and_dev/pm2-status.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -198,7 +198,7 @@
     {
       "label": "🧹 Limpiar Logs PM2 (7 días)",
       "type": "shell",
-      "command": "./scripts/pm2-clean-logs.sh",
+      "command": "./scripts/PM2_build_and_deploy_and_dev/pm2-clean-logs.sh",
       "args": ["7"],
       "group": "build",
       "presentation": {
@@ -213,7 +213,7 @@
     {
       "label": "🧹 Limpiar Logs PM2 (30 días)",
       "type": "shell",
-      "command": "./scripts/pm2-clean-logs.sh",
+      "command": "./scripts/PM2_build_and_deploy_and_dev/pm2-clean-logs.sh",
       "args": ["30"],
       "group": "build",
       "presentation": {
@@ -253,7 +253,7 @@
     {
       "label": "➕ Crear Nueva Migración",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/create_migration.sh",
+      "command": "${workspaceFolder}/scripts/migrations/create_migration.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -268,7 +268,7 @@
     {
       "label": "📊 Ver Estado de Migraciones",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/migration_status.sh",
+      "command": "${workspaceFolder}/scripts/migrations/migration_status.sh",
       "group": "build",
       "presentation": {
         "echo": true,
@@ -281,30 +281,30 @@
       "problemMatcher": []
     },
     {
-      "label": "⬆️ Promover Migración (dev → tested)",
+      "label": "🔍 Comparar Migraciones entre Entornos",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/promote_migration.sh",
+      "command": "${workspaceFolder}/scripts/migrations/diff_migrations.sh",
       "group": "build",
       "presentation": {
         "echo": true,
         "reveal": "always",
-        "focus": true,
-        "panel": "dedicated",
+        "focus": false,
+        "panel": "shared",
         "showReuseMessage": false,
         "clear": true
       },
       "problemMatcher": []
     },
     // ========================================
-    // 🔧 MIGRACIONES - APLICAR (DEV)
+    // 🔧 MIGRACIONES - APLICAR
     // ========================================
     {
-      "label": "� DEV: Aplicar Migración Específica",
+      "label": "🔧 DEV: Aplicar Migración Específica",
       "type": "shell",
       "command": "bash",
       "args": [
         "-c",
-        "read -p '📄 Nombre del archivo (ej: 20251101_120000_add_feature.sql): ' FILENAME && ${workspaceFolder}/scripts/apply_migration.sh dev \"$FILENAME\""
+        "read -p '📄 Nombre del archivo (ej: 20251101_120000_add_feature.sql): ' FILENAME && ${workspaceFolder}/scripts/migrations/apply_migration.sh dev \"$FILENAME\""
       ],
       "group": "build",
       "presentation": {
@@ -318,9 +318,13 @@
       "problemMatcher": []
     },
     {
-      "label": "🔄 DEV: Aplicar Todas las Migraciones Pendientes",
+      "label": "� PROD: Aplicar Migración Específica",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/apply_migrations_dev.sh",
+      "command": "bash",
+      "args": [
+        "-c",
+        "read -p '⚠️  PRODUCCIÓN - Archivo (ej: 20251101_120000_add_feature.sql): ' FILENAME && read -p '¿Confirmas aplicar en PROD? (yes/no): ' CONFIRM && [[ \"$CONFIRM\" == \"yes\" ]] && ${workspaceFolder}/scripts/migrations/apply_migration.sh prod \"$FILENAME\" || echo '❌ Operación cancelada'"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -332,16 +336,32 @@
       },
       "problemMatcher": []
     },
-    // ========================================
-    // 🚀 MIGRACIONES - APLICAR (PROD)
-    // ========================================
     {
-      "label": "🚀 PROD: Aplicar Migración Específica",
+      "label": "🧪 TEST: Aplicar Migración Específica",
       "type": "shell",
       "command": "bash",
       "args": [
         "-c",
-        "read -p '⚠️  PRODUCCIÓN - Archivo (ej: 20251101_120000_add_feature.sql): ' FILENAME && read -p '¿Confirmas aplicar en PROD? (yes/no): ' CONFIRM && [[ \"$CONFIRM\" == \"yes\" ]] && ${workspaceFolder}/scripts/apply_migration.sh prod \"$FILENAME\" || echo '❌ Operación cancelada'"
+        "read -p '🧪 TEST BASELINE - Archivo (ej: 20251101_120000_add_feature.sql): ' FILENAME && ${workspaceFolder}/scripts/migrations/apply_migration.sh test \"$FILENAME\""
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "↩️ Rollback: Marcar Migración como Revertida",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "read -p '🔄 Entorno (dev/prod/test): ' ENV && read -p '📄 Nombre del archivo: ' FILENAME && ${workspaceFolder}/scripts/migrations/rollback_migration.sh \"$ENV\" \"$FILENAME\""
       ],
       "group": "build",
       "presentation": {
@@ -393,22 +413,7 @@
     // 🗄️ DATABASE - SINCRONIZACIÓN Y AUDITORÍA
     // ========================================
     {
-      "label": "🔄 Sincronizar DEV → PROD (Database)",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/sync_dev_to_prod.sh",
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "dedicated",
-        "showReuseMessage": false,
-        "clear": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "📊 Verificar Estado Bases de Datos",
+      "label": " Verificar Estado Bases de Datos",
       "type": "shell",
       "command": "bash",
       "args": [
@@ -422,21 +427,6 @@
         "focus": false,
         "panel": "shared",
         "showReuseMessage": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "🔍 Auditoría de Ownership Unificado",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/audit_unified_ownership.sh",
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "dedicated",
-        "showReuseMessage": false,
-        "clear": true
       },
       "problemMatcher": []
     }
