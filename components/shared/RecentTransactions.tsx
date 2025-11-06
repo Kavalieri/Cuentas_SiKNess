@@ -1,19 +1,44 @@
 "use client";
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/format';
-import type { Database } from '@/types/database';
+import { formatCurrency, toNumber } from '@/lib/format';
+import type { Categories, Profiles, Transactions } from '@/types/database.generated';
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { TransactionPairItem } from './data-display/TransactionPairItem';
 
-type Transaction = Database['public']['Tables']['transactions']['Row'] & {
-  categories?: Database['public']['Tables']['categories']['Row'] | null;
-  profiles?: Database['public']['Tables']['profiles']['Row'] | null;
+type Transaction = Transactions & {
+  categories?: Categories | null;
+  profiles?: Profiles | null;
   profile?: {
     display_name: string;
     avatar_url: string | null;
   } | null;
 };
+
+// Type compatible con TransactionPairItem (temporal hasta migrar ese archivo)
+type TransactionForPairItem = {
+  id: string;
+  amount: number;
+  description: string | null;
+  occurred_at: string;
+  performed_at?: string | null;
+  flow_type: string;
+  type: string;
+  performed_by_profile_id?: string | null;
+};
+
+function toTransactionForPairItem(tx: Transaction): TransactionForPairItem {
+  return {
+    id: String(tx.id),
+    amount: toNumber(tx.amount),
+    description: tx.description,
+    occurred_at: String(tx.occurred_at),
+    performed_at: tx.performed_at ? String(tx.performed_at) : null,
+    flow_type: String(tx.flow_type),
+    type: String(tx.type),
+    performed_by_profile_id: tx.performed_by_profile_id ? String(tx.performed_by_profile_id) : null,
+  };
+}
 
 interface RecentTransactionsProps {
   householdId: string;
@@ -57,7 +82,7 @@ async function fetchRecentTransactions(
 
 function TransactionItem({ transaction }: { transaction: Transaction }) {
   const isIncome = transaction.type === 'income' || transaction.type === 'income_direct';
-  const amount = isIncome ? transaction.amount : -transaction.amount;
+  const amount = isIncome ? toNumber(transaction.amount) : -toNumber(transaction.amount);
 
   return (
     <div className="flex items-center justify-between py-3 border-b border-border last:border-b-0">
@@ -74,7 +99,7 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
           <p className="text-xs text-muted-foreground">
             {(() => {
               const src = transaction.performed_at || transaction.occurred_at;
-              const d = new Date(src as string);
+              const d = new Date(String(src));
               return (
                 <>
                   {d.toLocaleDateString('es-ES')}
@@ -94,7 +119,7 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
           {formatCurrency(amount)}
         </p>
         <Badge variant="outline" className="text-xs">
-          {transaction.flow_type === 'direct' ? 'Directo' : 'Común'}
+          {String(transaction.flow_type) === 'direct' ? 'Directo' : 'Común'}
         </Badge>
       </div>
     </div>
@@ -150,9 +175,9 @@ const RecentTransactions = ({ householdId, limit = 5, flowType = 'all', year, mo
   const pairs: Record<string, { expense?: Transaction; income?: Transaction }> = {};
   const singles: Transaction[] = [];
   transactions.forEach(tx => {
-    if (tx.flow_type === 'direct' && tx.transaction_pair_id) {
-  if (!pairs[tx.transaction_pair_id]) pairs[tx.transaction_pair_id] = {};
-      const pair = pairs[tx.transaction_pair_id];
+    if (String(tx.flow_type) === 'direct' && tx.transaction_pair_id) {
+      if (!pairs[String(tx.transaction_pair_id)]) pairs[String(tx.transaction_pair_id)] = {};
+      const pair = pairs[String(tx.transaction_pair_id)];
       if (pair) {
         if (tx.type === 'expense' || tx.type === 'expense_direct') pair.expense = tx;
         if (tx.type === 'income' || tx.type === 'income_direct') pair.income = tx;
@@ -170,15 +195,15 @@ const RecentTransactions = ({ householdId, limit = 5, flowType = 'all', year, mo
         {Object.values(pairs).map((pair) =>
           pair.expense && pair.income ? (
             <TransactionPairItem
-              key={pair.expense.id + '-' + pair.income.id}
-              expense={pair.expense}
-              income={pair.income}
+              key={String(pair.expense.id) + '-' + String(pair.income.id)}
+              expense={toTransactionForPairItem(pair.expense)}
+              income={toTransactionForPairItem(pair.income)}
             />
           ) : null
         )}
         {/* Mostrar transacciones individuales */}
         {singles.map((transaction) => (
-          <TransactionItem key={transaction.id} transaction={transaction} />
+          <TransactionItem key={String(transaction.id)} transaction={transaction} />
         ))}
       </div>
     </div>
