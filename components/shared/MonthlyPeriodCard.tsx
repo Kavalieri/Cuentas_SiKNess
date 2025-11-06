@@ -35,9 +35,9 @@ export function MonthlyPeriodCard({
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base font-semibold">
-          {formatPeriodMonth(period.year, period.month)}
+          {formatPeriodMonth(period.year ?? 0, period.month ?? 0)}
         </CardTitle>
-  <MonthStatusBadge phase={period.phase} />
+  <MonthStatusBadge phase={String(period.phase)} />
       </CardHeader>
       <CardContent>
         <div className="space-y-3">

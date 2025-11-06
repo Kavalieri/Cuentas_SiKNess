@@ -3,9 +3,9 @@
  */
 
 import { toNumber } from '@/lib/format';
-import type { Database } from '@/types/database';
+import type { MonthlyPeriods } from '@/types/database.generated';
 
-export type MonthlyPeriod = Database['public']['Tables']['monthly_periods']['Row'];
+export type MonthlyPeriod = MonthlyPeriods;
 export type MonthlyPeriodPhase = 'preparing' | 'validation' | 'active' | 'closing' | 'closed';
 
 const KNOWN_PHASES: readonly MonthlyPeriodPhase[] = [
@@ -17,8 +17,8 @@ const KNOWN_PHASES: readonly MonthlyPeriodPhase[] = [
 ];
 const KNOWN_PHASE_SET = new Set<MonthlyPeriodPhase>(KNOWN_PHASES);
 
-export function normalizePeriodPhase(phase?: string | null): MonthlyPeriodPhase | 'unknown' {
-  const normalizedPhase = phase ? phase.toString().trim().toLowerCase() : null;
+export function normalizePeriodPhase(phase?: unknown): MonthlyPeriodPhase | 'unknown' {
+  const normalizedPhase = phase ? String(phase).trim().toLowerCase() : null;
   if (normalizedPhase && KNOWN_PHASE_SET.has(normalizedPhase as MonthlyPeriodPhase)) {
     return normalizedPhase as MonthlyPeriodPhase;
   }

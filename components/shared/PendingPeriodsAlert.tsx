@@ -35,7 +35,7 @@ export function PendingPeriodsAlert({ periods }: PendingPeriodsAlertProps) {
               <p>
                 El mes de{' '}
                 <strong>
-                  {formatPeriodMonth(actionablePeriods[0]!.year, actionablePeriods[0]!.month)}
+                  {formatPeriodMonth(actionablePeriods[0]!.year ?? 0, actionablePeriods[0]!.month ?? 0)}
                 </strong>{' '}
                 está listo para cerrar. Cierra el mes para consolidar el balance y evitar
                 modificaciones accidentales.
@@ -44,9 +44,9 @@ export function PendingPeriodsAlert({ periods }: PendingPeriodsAlertProps) {
               <p>
                 Los meses{' '}
                 {actionablePeriods.map((p, i) => (
-                  <span key={p.id}>
+                  <span key={String(p.id)}>
                     {i > 0 && (i === actionablePeriods.length - 1 ? ' y ' : ', ')}
-                    <strong>{formatPeriodMonth(p.year, p.month)}</strong>
+                    <strong>{formatPeriodMonth(p.year ?? 0, p.month ?? 0)}</strong>
                   </span>
                 ))}{' '}
                 están listos para cerrar.
@@ -59,9 +59,9 @@ export function PendingPeriodsAlert({ periods }: PendingPeriodsAlertProps) {
             </Button>
             {actionablePeriods.length === 1 && (
               <Button asChild variant="default" size="sm">
-                <Link href={`/app/periods/${actionablePeriods[0]!.id}`}>
+                <Link href={`/app/periods/${String(actionablePeriods[0]!.id)}`}>
                   Cerrar{' '}
-                  {formatPeriodMonth(actionablePeriods[0]!.year, actionablePeriods[0]!.month)}
+                  {formatPeriodMonth(actionablePeriods[0]!.year ?? 0, actionablePeriods[0]!.month ?? 0)}
                 </Link>
               </Button>
             )}

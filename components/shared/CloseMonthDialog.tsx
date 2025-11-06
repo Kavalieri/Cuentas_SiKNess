@@ -33,12 +33,16 @@ export function CloseMonthDialog({ period, children }: CloseMonthDialogProps) {
   const handleClose = async () => {
     setIsLoading(true);
 
-    const result = await closePeriod(period.id, notes || undefined);
+    // Kysely ColumnType: convertir id a string
+    const result = await closePeriod(String(period.id), notes || undefined);
 
     if (!result.ok) {
       toast.error(result.message);
     } else {
-      toast.success(`Mes de ${formatPeriodMonth(period.year, period.month)} cerrado exitosamente`);
+      // Asegurar que year/month no son null (deben existir siempre en un período válido)
+      const year = period.year ?? 0;
+      const month = period.month ?? 0;
+      toast.success(`Mes de ${formatPeriodMonth(year, month)} cerrado exitosamente`);
       setOpen(false);
       setNotes('');
     }
@@ -61,7 +65,7 @@ export function CloseMonthDialog({ period, children }: CloseMonthDialogProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Cerrar Mes de {formatPeriodMonth(period.year, period.month)}</DialogTitle>
+          <DialogTitle>Cerrar Mes de {formatPeriodMonth(period.year ?? 0, period.month ?? 0)}</DialogTitle>
           <DialogDescription>
             Al cerrar el mes, el balance se consolidará y no podrás editar ni eliminar movimientos de
             este período. Esta acción puede ser revertida por un administrador.

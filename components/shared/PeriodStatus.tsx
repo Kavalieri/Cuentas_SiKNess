@@ -59,11 +59,11 @@ export async function PeriodStatus({ householdId }: PeriodStatusProps) {
         <div>
           <h3 className="font-medium">Período Actual</h3>
           <p className="text-sm text-muted-foreground">
-            {monthNames[period.month - 1]} {period.year}
+            {period.month && monthNames[(period.month ?? 1) - 1]} {period.year ?? 0}
           </p>
         </div>
         {/* Mostrar badge por phase */}
-        <MonthStatusBadge phase={period.phase} />
+        <MonthStatusBadge phase={String(period.phase)} />
       </div>
     </div>
   );
