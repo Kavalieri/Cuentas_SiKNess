@@ -1,19 +1,10 @@
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, toNumber } from '@/lib/format';
+import type { Transactions } from '@/types/database.generated';
 import { ArrowDownLeft, ArrowUpRight, Link2 } from 'lucide-react';
-type Transaction = {
-  id: string;
-  amount: number;
-  description: string | null;
-  occurred_at: string;
-  performed_at?: string | null;
-  flow_type: string;
-  type: string;
-  performed_by_profile_id?: string | null;
-};
 
 interface TransactionPairItemProps {
-  expense: Transaction;
-  income: Transaction;
+  expense: Transactions;
+  income: Transactions;
 }
 
 export function TransactionPairItem({ expense, income }: TransactionPairItemProps) {
@@ -28,20 +19,20 @@ export function TransactionPairItem({ expense, income }: TransactionPairItemProp
         <div className="flex-1 flex items-center gap-2">
           <ArrowDownLeft className="h-4 w-4 text-red-500" />
           <span className="font-medium text-sm">{expense.description ?? 'Sin descripción'}</span>
-          <span className="text-red-600 font-bold">-{formatCurrency(expense.amount)}</span>
+          <span className="text-red-600 font-bold">-{formatCurrency(toNumber(expense.amount))}</span>
         </div>
         {/* Ingreso */}
         <div className="flex-1 flex items-center gap-2">
           <ArrowUpRight className="h-4 w-4 text-green-500" />
           <span className="font-medium text-sm">{income.description ?? 'Sin descripción'}</span>
-          <span className="text-green-600 font-bold">+{formatCurrency(income.amount)}</span>
+          <span className="text-green-600 font-bold">+{formatCurrency(toNumber(income.amount))}</span>
         </div>
       </div>
       <div className="flex justify-between text-xs text-muted-foreground mt-1">
-        <span>Miembro: {expense.performed_by_profile_id ?? 'N/A'}</span>
+        <span>Miembro: {String(expense.performed_by_profile_id ?? 'N/A')}</span>
         {(() => {
           const src = expense.performed_at || expense.occurred_at;
-          const d = new Date(src as string);
+          const d = new Date(String(src));
           return (
             <span>
               Fecha: {d.toLocaleDateString('es-ES')}

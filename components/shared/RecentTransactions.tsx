@@ -15,31 +15,6 @@ type Transaction = Transactions & {
   } | null;
 };
 
-// Type compatible con TransactionPairItem (temporal hasta migrar ese archivo)
-type TransactionForPairItem = {
-  id: string;
-  amount: number;
-  description: string | null;
-  occurred_at: string;
-  performed_at?: string | null;
-  flow_type: string;
-  type: string;
-  performed_by_profile_id?: string | null;
-};
-
-function toTransactionForPairItem(tx: Transaction): TransactionForPairItem {
-  return {
-    id: String(tx.id),
-    amount: toNumber(tx.amount),
-    description: tx.description,
-    occurred_at: String(tx.occurred_at),
-    performed_at: tx.performed_at ? String(tx.performed_at) : null,
-    flow_type: String(tx.flow_type),
-    type: String(tx.type),
-    performed_by_profile_id: tx.performed_by_profile_id ? String(tx.performed_by_profile_id) : null,
-  };
-}
-
 interface RecentTransactionsProps {
   householdId: string;
   limit?: number;
@@ -196,8 +171,8 @@ const RecentTransactions = ({ householdId, limit = 5, flowType = 'all', year, mo
           pair.expense && pair.income ? (
             <TransactionPairItem
               key={String(pair.expense.id) + '-' + String(pair.income.id)}
-              expense={toTransactionForPairItem(pair.expense)}
-              income={toTransactionForPairItem(pair.income)}
+              expense={pair.expense}
+              income={pair.income}
             />
           ) : null
         )}
