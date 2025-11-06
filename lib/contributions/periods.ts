@@ -6,10 +6,10 @@
 import { getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
-import type { Database } from '@/types/database';
+import type { Contributions } from '@/types/database.generated';
 import { z } from 'zod';
 
-type Contribution = Database['public']['Tables']['contributions']['Row'];
+type Contribution = Contributions;
 
 // (sin interfaz de settings local; se consulta directamente en DB)
 
