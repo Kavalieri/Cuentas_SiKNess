@@ -11,8 +11,8 @@ type Checklist = {
   year: number | null;
   month: number | null;
   phase: string | null;
-  hasHouseholdGoal: boolean;
-  monthlyContributionGoal: number | null;
+  hasHouseholdBudget: boolean;
+  monthlyBudget: number | null;
   calculationType: string | null;
   membersWithIncome: number;
   totalMembers: number;
@@ -64,26 +64,27 @@ export async function GET(req: NextRequest) {
 
     const period = periodRes.rows[0];
 
-    // Obtener objetivo: usar snapshot del período si existe, sino valor actual de settings
+    // Obtener presupuesto: usar snapshot del período si existe, sino valor actual de settings
+    // Lee de AMBAS columnas con fallback automático (transición objetivo→presupuesto)
     const goalRes = await query<{
-      monthly_goal: string | null;
+      monthly_budget: string | null;
       calculation_type: string | null;
     }>(
       period?.id
         ? `SELECT
-             COALESCE(mp.snapshot_contribution_goal, hs.monthly_contribution_goal) as monthly_goal,
+             COALESCE(mp.snapshot_budget, mp.snapshot_contribution_goal, hs.monthly_budget, hs.monthly_contribution_goal) as monthly_budget,
              hs.calculation_type
            FROM monthly_periods mp
            LEFT JOIN household_settings hs ON hs.household_id = mp.household_id
            WHERE mp.id = $1`
-        : `SELECT monthly_contribution_goal as monthly_goal, calculation_type
+        : `SELECT COALESCE(monthly_budget, monthly_contribution_goal) as monthly_budget, calculation_type
            FROM household_settings
            WHERE household_id = $1`,
       period?.id ? [period.id] : [householdId],
     );
 
-    const monthlyContributionGoal = goalRes.rows[0]?.monthly_goal ? Number(goalRes.rows[0]?.monthly_goal) : null;
-    const hasHouseholdGoal = Boolean(monthlyContributionGoal);
+    const monthlyBudget = goalRes.rows[0]?.monthly_budget ? Number(goalRes.rows[0]?.monthly_budget) : null;
+    const hasHouseholdBudget = Boolean(monthlyBudget);
     const calculationType = goalRes.rows[0]?.calculation_type ?? 'equal';
 
     const membersRes = await query<{ total: number }>(
@@ -108,8 +109,8 @@ export async function GET(req: NextRequest) {
       year: period?.year ?? null,
       month: period?.month ?? null,
       phase: period?.phase ?? null,
-      hasHouseholdGoal,
-      monthlyContributionGoal,
+      hasHouseholdBudget,
+      monthlyBudget,
       calculationType,
       membersWithIncome,
       totalMembers,

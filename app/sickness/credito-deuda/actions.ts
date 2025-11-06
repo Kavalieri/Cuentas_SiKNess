@@ -112,17 +112,18 @@ export async function getMemberBalanceStatus(
   // 3) Si no hay fila, calcular expected en base a settings + método del hogar
   let expected = Number(contribRes.rows[0]?.expected_amount ?? 0);
         if (!contribRes.rows[0]) {
-          // Obtener objetivo: usar snapshot del período si existe, sino valor actual
-          const goalRes = await query<{ monthly_goal: string | null; calculation_type: string | null }>(
+          // Obtener presupuesto: usar snapshot del período si existe, sino valor actual
+          // Lee de AMBAS columnas con fallback automático (transición objetivo→presupuesto)
+          const goalRes = await query<{ monthly_budget: string | null; calculation_type: string | null }>(
             `SELECT
-               COALESCE(mp.snapshot_contribution_goal, hs.monthly_contribution_goal) as monthly_goal,
+               COALESCE(mp.snapshot_budget, mp.snapshot_contribution_goal, hs.monthly_budget, hs.monthly_contribution_goal) as monthly_budget,
                hs.calculation_type
              FROM monthly_periods mp
              LEFT JOIN household_settings hs ON hs.household_id = mp.household_id
              WHERE mp.id = $1`,
             [period.id],
           );
-          const monthlyGoal = Number(goalRes.rows[0]?.monthly_goal ?? 0) || 0;
+          const monthlyBudget = Number(goalRes.rows[0]?.monthly_budget ?? 0) || 0;
           const calculationType = goalRes.rows[0]?.calculation_type || 'equal';
 
           // Miembros del hogar y sus ingresos vigentes
@@ -150,7 +151,7 @@ export async function getMemberBalanceStatus(
           const sharePercent = calculationType === 'proportional'
             ? (totalIncome > 0 ? (incomeMap.get(user.profile_id) ?? 0) / totalIncome : 0)
             : (memberCount > 0 ? 1 / memberCount : 0);
-          expected = monthlyGoal * sharePercent;
+          expected = monthlyBudget * sharePercent;
         }
 
         // 4) Sumar ingresos comunes realizados por el miembro en el período (excluye 'Pago Préstamo')
@@ -350,21 +351,22 @@ export async function getHouseholdBalancesOverview(
         let pendingBalance = 0;
         const period = periodRes.rows[0];
         if (period) {
-          // Obtener objetivo: usar snapshot del período si existe, sino valor actual
-          const goalRes = await query<{ monthly_goal: number; calculation_type: string }>(
+          // Obtener presupuesto: usar snapshot del período si existe, sino valor actual
+          // Lee de AMBAS columnas con fallback automático (transición objetivo→presupuesto)
+          const goalRes = await query<{ monthly_budget: number; calculation_type: string }>(
             `SELECT
-               COALESCE(mp.snapshot_contribution_goal, hs.monthly_contribution_goal) as monthly_goal,
+               COALESCE(mp.snapshot_budget, mp.snapshot_contribution_goal, hs.monthly_budget, hs.monthly_contribution_goal) as monthly_budget,
                hs.calculation_type
              FROM monthly_periods mp
              LEFT JOIN household_settings hs ON hs.household_id = mp.household_id
              WHERE mp.id = $1`,
             [period.id],
           );
-          const monthlyGoal = Number(goalRes.rows[0]?.monthly_goal ?? 0);
+          const monthlyBudget = Number(goalRes.rows[0]?.monthly_budget ?? 0);
           const calculationType = goalRes.rows[0]?.calculation_type || 'equal';
 
           let expected = 0;
-          if (monthlyGoal > 0) {
+          if (monthlyBudget > 0) {
             const allMembersRes = await query<{ profile_id: string }>(
               `SELECT profile_id FROM household_members WHERE household_id = $1`,
               [householdId],
@@ -392,7 +394,7 @@ export async function getHouseholdBalancesOverview(
                 : memberCount > 0
                   ? 1 / memberCount
                   : 0;
-            expected = monthlyGoal * sharePercent;
+            expected = monthlyBudget * sharePercent;
           }
 
           const startDate = `${period.year}-${String(period.month).padStart(2, '0')}-01`;

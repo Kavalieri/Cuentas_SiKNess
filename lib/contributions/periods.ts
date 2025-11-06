@@ -7,7 +7,6 @@ import { getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
 import type { Contributions } from '@/types/database.generated';
-import { getMonthlyBudget, getSnapshotBudget } from '@/lib/budget-migration';
 import { z } from 'zod';
 
 type Contribution = Contributions;
@@ -196,7 +195,7 @@ export async function calculateContributionsWithDirectExpenses(
     return fail('Error al obtener período');
   }
 
-  // 2. Obtener configuración del hogar (meta mensual y método de cálculo)
+  // 2. Obtener configuración del hogar (presupuesto mensual y método de cálculo)
   const { data: settingsRow, error: settingsError } = await supabase
     .from('household_settings')
     .select('monthly_contribution_goal, calculation_type')

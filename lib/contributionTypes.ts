@@ -17,7 +17,7 @@ export const CALCULATION_TYPE_LABELS: Record<CalculationType, string> = {
 export const CALCULATION_TYPE_DESCRIPTIONS: Record<CalculationType, string> = {
   proportional: 'Cada miembro aporta según su ingreso mensual. Mayor ingreso = mayor contribución.',
   equal: 'Todos los miembros aportan la misma cantidad, independientemente de sus ingresos.',
-  custom: 'Define manualmente la contribución de cada miembro. La suma debe ser igual a la meta mensual.',
+  custom: 'Define manualmente la contribución de cada miembro. La suma debe ser igual al presupuesto mensual.',
 };
 
 /**

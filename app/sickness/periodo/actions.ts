@@ -94,6 +94,7 @@ export async function lockPeriod(
         `UPDATE monthly_periods
          SET contribution_disabled = TRUE,
              phase = 'validation',
+             snapshot_budget = NULL,
              snapshot_contribution_goal = NULL,
              updated_at = NOW()
          WHERE id = $1 AND household_id = $2`,
@@ -125,23 +126,25 @@ export async function lockPeriod(
     }
 
     // Flujo normal: validación completa de contribuciones
-    // Primero obtener el objetivo actual para guardarlo como snapshot
-    const settingsRes = await query<{ monthly_contribution_goal: string | null }>(
-      `SELECT monthly_contribution_goal FROM household_settings WHERE household_id = $1`,
+    // Primero obtener el presupuesto actual para guardarlo como snapshot
+    // Lee de AMBAS columnas con fallback automático (transición objetivo→presupuesto)
+    const settingsRes = await query<{ monthly_budget: string | null }>(
+      `SELECT COALESCE(monthly_budget, monthly_contribution_goal) as monthly_budget FROM household_settings WHERE household_id = $1`,
       [householdId],
     );
 
-    const snapshotGoal = Number(settingsRes.rows[0]?.monthly_contribution_goal ?? 0);
-    if (snapshotGoal <= 0) {
-      return fail('Configura primero el objetivo mensual en Configuración > Hogar');
+    const snapshotBudget = Number(settingsRes.rows[0]?.monthly_budget ?? 0);
+    if (snapshotBudget <= 0) {
+      return fail('Configura primero el presupuesto mensual en Configuración > Hogar');
     }
 
     // Guardar snapshot ANTES de bloquear el período
+    // Escribe en AMBAS columnas para compatibilidad durante transición
     await query(
       `UPDATE monthly_periods
-       SET snapshot_contribution_goal = $1, updated_at = NOW()
+       SET snapshot_budget = $1, snapshot_contribution_goal = $1, updated_at = NOW()
        WHERE id = $2 AND household_id = $3`,
-      [snapshotGoal, periodId, householdId],
+      [snapshotBudget, periodId, householdId],
     );
 
     // Llamar función SQL con los 3 parámetros requeridos

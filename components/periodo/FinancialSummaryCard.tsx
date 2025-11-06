@@ -14,10 +14,10 @@ export interface MemberContribution {
 export interface FinancialSummaryCardProps {
   contributions: MemberContribution[];
   calculationType: string;
-  monthlyGoal: number;
+  monthlyBudget: number;
 }
 
-export function FinancialSummaryCard({ contributions, calculationType, monthlyGoal }: FinancialSummaryCardProps) {
+export function FinancialSummaryCard({ contributions, calculationType, monthlyBudget }: FinancialSummaryCardProps) {
   // Unificación de nombres de fases/estados para UI
   const getPhaseLabel = (phase?: string | null) => {
     switch (phase) {
@@ -36,7 +36,7 @@ export function FinancialSummaryCard({ contributions, calculationType, monthlyGo
     }
   };
   const totalPaid = contributions.reduce((acc, m) => acc + (m.paid_amount ?? 0), 0);
-  const progress = monthlyGoal > 0 ? Math.round((totalPaid / monthlyGoal) * 100) : 0;
+  const progress = monthlyBudget > 0 ? Math.round((totalPaid / monthlyBudget) * 100) : 0;
 
   return (
     <Card className="border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20">
@@ -45,8 +45,8 @@ export function FinancialSummaryCard({ contributions, calculationType, monthlyGo
         <div className="text-sm text-muted-foreground">
           Estado: <strong>{getPhaseLabel(contributions?.[0]?.status)}</strong>
           {' · '}Método: <strong>{CALCULATION_TYPE_LABELS[calculationType as keyof typeof CALCULATION_TYPE_LABELS]}</strong>
-          {monthlyGoal > 0 && (
-            <span className="ml-2">Meta mensual: <span className="font-medium">{monthlyGoal.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></span>
+          {monthlyBudget > 0 && (
+            <span className="ml-2">Presupuesto mensual: <span className="font-medium">{monthlyBudget.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></span>
           )}
         </div>
       </CardHeader>

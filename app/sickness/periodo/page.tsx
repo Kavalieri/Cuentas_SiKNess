@@ -17,8 +17,8 @@ type Checklist = {
   year: number | null;
   month: number | null;
   phase: string | null; // Fase del workflow
-  hasHouseholdGoal: boolean;
-  monthlyContributionGoal: number | null;
+  hasHouseholdBudget: boolean;
+  monthlyBudget: number | null;
   calculationType: string | null;
   membersWithIncome: number;
   totalMembers: number;
@@ -60,11 +60,11 @@ function FinancialSummaryCardSection({ checklist, refreshChecklist: _refreshChec
       .catch(() => setLoading(false));
   }, [checklist?.periodId, selectedPeriod?.year, selectedPeriod?.month]);
 
-  if (!checklist || !checklist.hasHouseholdGoal) return null;
+  if (!checklist || !checklist.hasHouseholdBudget) return null;
   if (loading) return <div className="mt-4 text-sm text-muted-foreground">Cargando resumen financiero…</div>;
 
-  // Obtener meta mensual y tipo de cálculo
-  const monthlyGoal = Number(checklist.monthlyContributionGoal ?? 0) || 0;
+  // Obtener presupuesto mensual y tipo de cálculo
+  const monthlyBudget = Number(checklist.monthlyBudget ?? 0) || 0;
   const calculationType = checklist.calculationType ?? 'equal';
 
 
@@ -73,7 +73,7 @@ function FinancialSummaryCardSection({ checklist, refreshChecklist: _refreshChec
       <ContributionsOverview
         contributions={contributions}
         calculationType={calculationType}
-        monthlyGoal={monthlyGoal}
+        monthlyBudget={monthlyBudget}
         phase={checklist?.phase}
         privacyMode={privacyMode}
       />
@@ -120,7 +120,7 @@ export default function PeriodosYContribucionPage() {
   const canLock = useMemo(() => {
     if (!data) return false;
     const phaseOk = data.phase === 'preparing' || data.phase === 'validation';
-    return phaseOk && data.hasHouseholdGoal && data.membersWithIncome > 0 && data.totalMembers > 0 && contributionsExist;
+    return phaseOk && data.hasHouseholdBudget && data.membersWithIncome > 0 && data.totalMembers > 0 && contributionsExist;
   }, [data, contributionsExist]);
 
   const progress = useMemo(() => {
@@ -128,7 +128,7 @@ export default function PeriodosYContribucionPage() {
     if (!data) return 0;
     let pct = 0;
     // Checklist base
-    if (data.hasHouseholdGoal) pct += 20;
+    if (data.hasHouseholdBudget) pct += 20;
     if (data.totalMembers > 0 && data.membersWithIncome === data.totalMembers) pct += 20;
 
     const phase = data.phase || 'preparing';
@@ -330,7 +330,7 @@ export default function PeriodosYContribucionPage() {
                   Periodo: {data.year}/{data.month} — Fase: <strong>{phaseLabel}</strong>
                 </div>
                 <div>Miembros: {data.membersWithIncome}/{data.totalMembers} con ingresos configurados</div>
-                <div>Objetivo común: {data.hasHouseholdGoal ? 'Configurado' : 'No configurado'}</div>
+                <div>Presupuesto común: {data.hasHouseholdBudget ? 'Configurado' : 'No configurado'}</div>
               </>
             ) : (
               <span>Cargando…</span>
@@ -347,9 +347,9 @@ export default function PeriodosYContribucionPage() {
           title="Configuración Inicial"
           icon={<CalendarCheck2 />}
           status={data?.phase === 'preparing' ? 'active' : ['validation','active','closing','closed'].includes(data?.phase ?? '') ? 'completed' : 'pending'}
-          description="Configura el objetivo mensual y los ingresos de todos los miembros para poder avanzar. Calcula las contribuciones antes de bloquear."
+          description="Configura el presupuesto mensual y los ingresos de todos los miembros para poder avanzar. Calcula las contribuciones antes de bloquear."
           checklist={[
-            { label: 'Objetivo mensual definido', done: !!data?.hasHouseholdGoal },
+            { label: 'Presupuesto mensual definido', done: !!data?.hasHouseholdBudget },
             { label: 'Ingresos de miembros informados', done: data ? data.membersWithIncome === data.totalMembers && data.totalMembers > 0 : false },
             { label: 'Contribuciones generadas', done: contributionsExist },
           ]}
@@ -524,7 +524,7 @@ export default function PeriodosYContribucionPage() {
             <h4 className="font-medium mb-2">Checklist rápida</h4>
             <ul className="text-sm space-y-1">
               <li>
-                <span className={data?.hasHouseholdGoal ? 'text-green-600' : 'text-amber-600'}>• Configuración Inicial</span>
+                <span className={data?.hasHouseholdBudget ? 'text-green-600' : 'text-amber-600'}>• Configuración Inicial</span>
               </li>
               <li>
                 <span className={data && data.membersWithIncome === data.totalMembers && data.totalMembers > 0 ? 'text-green-600' : 'text-amber-600'}>

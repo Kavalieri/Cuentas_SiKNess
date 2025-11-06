@@ -180,7 +180,7 @@ export function WipeOptionsSelector({
               htmlFor="householdSettings"
               className="text-sm font-normal cursor-pointer"
             >
-              Configuración del hogar (meta mensual, tipo de cálculo)
+              Configuración del hogar (presupuesto mensual, tipo de cálculo)
             </Label>
           </div>
 

@@ -25,7 +25,7 @@ export type CombinedMemberContribution = {
 export interface ContributionsOverviewProps {
   contributions: CombinedMemberContribution[];
   calculationType: string; // 'equal' | 'proportional' | ...
-  monthlyGoal: number; // meta mensual del hogar
+  monthlyBudget: number; // presupuesto mensual del hogar
   phase?: string | null; // 'preparing' | 'validation' | 'active' | 'closing' | 'closed'
   privacyMode?: boolean;
   title?: string;
@@ -56,7 +56,7 @@ function formatCurrency(amount: number, privacy?: boolean) {
 export function ContributionsOverview({
   contributions,
   calculationType,
-  monthlyGoal,
+  monthlyBudget,
   phase,
   privacyMode = false,
   title = 'Contribuciones: resumen y desglose',
@@ -64,7 +64,7 @@ export function ContributionsOverview({
   if (!Array.isArray(contributions) || contributions.length === 0) return null;
 
   const totalPaid = contributions.reduce((acc, m) => acc + (Number(m.paid_amount ?? 0)), 0);
-  const progress = monthlyGoal > 0 ? Math.round((totalPaid / monthlyGoal) * 100) : 0;
+  const progress = monthlyBudget > 0 ? Math.round((totalPaid / monthlyBudget) * 100) : 0;
 
   return (
     <Card className="border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20">
@@ -73,9 +73,9 @@ export function ContributionsOverview({
         <div className="text-sm text-muted-foreground">
           Estado: <strong>{getPhaseLabel(phase)}</strong>
           {' · '}Método: <strong>{CALCULATION_TYPE_LABELS[calculationType as keyof typeof CALCULATION_TYPE_LABELS]}</strong>
-          {monthlyGoal > 0 && (
+          {monthlyBudget > 0 && (
             <span className="ml-2">
-              Meta mensual: <span className="font-medium">{formatCurrency(monthlyGoal, privacyMode)}</span>
+              Presupuesto mensual: <span className="font-medium">{formatCurrency(monthlyBudget, privacyMode)}</span>
             </span>
           )}
         </div>
@@ -87,7 +87,7 @@ export function ContributionsOverview({
           <div className="text-xs text-muted-foreground mt-1">
             Total aportado:{' '}
             <strong>{formatCurrency(totalPaid, privacyMode)}</strong>
-            {monthlyGoal > 0 ? ` (${progress}% de la meta)` : ''}
+            {monthlyBudget > 0 ? ` (${progress}% del presupuesto)` : ''}
           </div>
         </div>
 

@@ -31,7 +31,7 @@ const CATEGORY_CONFIG = {
     icon: TrendingUp,
     color: 'text-green-600 dark:text-green-400',
     bgColor: 'bg-green-50 dark:bg-green-950/20',
-    description: 'Revisa ingresos y compara con objetivos'
+    description: 'Revisa ingresos y compara con presupuesto'
   },
   balance: {
     label: 'Balance',

@@ -64,9 +64,9 @@ export const QUERY_CATALOG: QueryOption[] = [
     category: 'ingresos',
   },
   {
-    id: 'ingresos_vs_objetivo',
-    label: 'Ingresos vs Objetivo',
-    description: 'Comparación de ingresos reales con objetivo mensual',
+    id: 'ingresos_vs_presupuesto',
+    label: 'Ingresos vs Presupuesto',
+    description: 'Comparación de ingresos reales con presupuesto mensual',
     category: 'ingresos',
   },
   {

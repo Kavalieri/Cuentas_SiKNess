@@ -56,11 +56,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: true, contributions: [] });
     }
 
-    // Cargar objetivo de contribución: usar snapshot del período si existe, sino valor actual
-    const goalRes = await query<{ monthly_goal: string | null; calculation_type: string | null }>(
+    // Cargar presupuesto de contribución: usar snapshot del período si existe, sino valor actual
+    // Lee de AMBAS columnas con fallback automático (transición objetivo→presupuesto)
+    const budgetRes = await query<{ monthly_budget: string | null; calculation_type: string | null }>(
       `
         SELECT
-          COALESCE(mp.snapshot_contribution_goal, hs.monthly_contribution_goal) as monthly_goal,
+          COALESCE(mp.snapshot_budget, mp.snapshot_contribution_goal, hs.monthly_budget, hs.monthly_contribution_goal) as monthly_budget,
           hs.calculation_type
         FROM monthly_periods mp
         LEFT JOIN household_settings hs ON hs.household_id = mp.household_id
@@ -68,8 +69,8 @@ export async function GET(req: NextRequest) {
       `,
       [period.id],
     );
-    const monthlyGoal = Number(goalRes.rows[0]?.monthly_goal ?? 0) || 0;
-    const calculationType = goalRes.rows[0]?.calculation_type || 'equal';
+    const monthlyBudget = Number(budgetRes.rows[0]?.monthly_budget ?? 0) || 0;
+    const calculationType = budgetRes.rows[0]?.calculation_type || 'equal';
 
     // Obtener miembros del hogar (con email y display_name)
     const membersRes = await query<{ profile_id: string; email: string; display_name: string | null }>(
@@ -204,7 +205,7 @@ export async function GET(req: NextRequest) {
       const sharePercent = calculationType === 'proportional'
         ? (totalIncome > 0 ? income / totalIncome : 0)
         : equalShare;
-      const baseExpected = monthlyGoal * sharePercent;
+      const baseExpected = monthlyBudget * sharePercent;
       const directExpenses = directMap.get(m.profile_id) ?? 0;
       const expectedAfterDirect = Math.max(0, baseExpected - directExpenses);
       const existing = contribMap.get(m.profile_id);
@@ -249,7 +250,7 @@ export async function GET(req: NextRequest) {
         year: period.year,
         month: period.month,
         calculationType,
-        monthlyGoal,
+        monthlyBudget,
         phase: currentPhase,
       },
     });

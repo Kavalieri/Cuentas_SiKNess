@@ -70,8 +70,9 @@ export async function executeQuery(
       case 'ingresos_por_mes':
         return await queryIngresosPorMes(pool, householdId);
 
-      case 'ingresos_vs_objetivo':
-        return await queryIngresosVsObjetivo(pool, householdId);
+      case 'ingresos_vs_presupuesto':
+      case 'ingresos_vs_objetivo': // Alias legacy para compatibilidad
+        return await queryIngresosVsPresupuesto(pool, householdId);
 
       case 'detalle_ingresos_periodo':
         return await queryDetalleIngresosPeriodo(pool, householdId, params.year!, params.month!);
@@ -405,7 +406,7 @@ async function queryIngresosPorMes(pool: Pool, householdId: string): Promise<Que
   };
 }
 
-async function queryIngresosVsObjetivo(pool: Pool, householdId: string): Promise<QueryResult> {
+async function queryIngresosVsPresupuesto(pool: Pool, householdId: string): Promise<QueryResult> {
   const currency = await getHouseholdCurrency(householdId);
 
   const result = await pool.query(`
@@ -436,11 +437,11 @@ async function queryIngresosVsObjetivo(pool: Pool, householdId: string): Promise
       im.month AS mes,
       im.periodo,
       im.ingresos_reales,
-      COALESCE(hs.monthly_contribution_goal, 0) AS objetivo,
-      im.ingresos_reales - COALESCE(hs.monthly_contribution_goal, 0) AS diferencia,
+      COALESCE(hs.monthly_budget, hs.monthly_contribution_goal, 0) AS presupuesto,
+      im.ingresos_reales - COALESCE(hs.monthly_budget, hs.monthly_contribution_goal, 0) AS diferencia,
       CASE
-        WHEN hs.monthly_contribution_goal > 0 THEN
-          ROUND((im.ingresos_reales * 100.0 / hs.monthly_contribution_goal), 2)
+        WHEN COALESCE(hs.monthly_budget, hs.monthly_contribution_goal, 0) > 0 THEN
+          ROUND((im.ingresos_reales * 100.0 / COALESCE(hs.monthly_budget, hs.monthly_contribution_goal, 0)), 2)
         ELSE 0
       END AS porcentaje_cumplimiento
     FROM ingresos_mensuales im
@@ -453,12 +454,12 @@ async function queryIngresosVsObjetivo(pool: Pool, householdId: string): Promise
   const formattedRows = result.rows.map((row: Record<string, unknown>) => ({
     ...row,
     ingresos_reales: formatCurrency(parseFloat(row.ingresos_reales as string), currency),
-    objetivo: formatCurrency(parseFloat(row.objetivo as string), currency),
+    presupuesto: formatCurrency(parseFloat(row.presupuesto as string), currency),
     diferencia: formatCurrency(parseFloat(row.diferencia as string), currency),
   }));
 
   return {
-    columns: ['Año', 'Mes', 'Período', 'Ingresos Reales', 'Objetivo', 'Diferencia', '% Cumplimiento'],
+    columns: ['Año', 'Mes', 'Período', 'Ingresos Reales', 'Presupuesto', 'Diferencia', '% Cumplimiento'],
     rows: formattedRows,
     summary: {
       count: result.rows.length,
