@@ -414,15 +414,15 @@ export async function cancelInvitation(formData: FormData): Promise<Result> {
   return ok();
 }
 
-// Actualizar nombre del hogar y objetivo mensual
+// Actualizar nombre del hogar y presupuesto mensual
 const UpdateHouseholdSchema = z.object({
   householdId: z.string().uuid(),
   name: z.string().min(3, 'Mínimo 3 caracteres').max(80, 'Máximo 80 caracteres'),
-  monthlyGoal: z
+  monthlyBudget: z
     .union([z.string(), z.number()])
     .transform((v) => (typeof v === 'number' ? v : Number(v)))
     .refine((n) => Number.isFinite(n) && n >= 0 && n <= 1_000_000, {
-      message: 'Objetivo entre 0 y 1.000.000',
+      message: 'Presupuesto entre 0 y 1.000.000',
     }),
   calculationType: z.enum(['equal', 'proportional', 'custom']).default('equal'),
 });
@@ -436,13 +436,13 @@ export async function updateHouseholdSettings(formData: FormData): Promise<Resul
   const parsed = UpdateHouseholdSchema.safeParse({
     householdId: formData.get('householdId'),
     name: formData.get('name'),
-    monthlyGoal: formData.get('monthlyGoal'),
+    monthlyBudget: formData.get('monthlyBudget'),
     calculationType: formData.get('calculationType'),
   });
   if (!parsed.success) {
     return fail('Datos inválidos', parsed.error.flatten().fieldErrors);
   }
-  const { householdId, name, monthlyGoal, calculationType } = parsed.data;
+  const { householdId, name, monthlyBudget, calculationType } = parsed.data;
 
   // Verificar owner
   const roleCheck = await query<{ role: string }>(
@@ -460,16 +460,18 @@ export async function updateHouseholdSettings(formData: FormData): Promise<Resul
     householdId,
   ]);
 
-  // Upsert objetivo mensual y tipo de cálculo en household_settings
+  // Upsert presupuesto mensual y tipo de cálculo en household_settings
+  // Escribir en AMBAS columnas durante transición (budget + goal)
   await query(
-    `INSERT INTO household_settings (household_id, monthly_contribution_goal, currency, calculation_type, updated_at, updated_by)
-     VALUES ($1, $2, 'EUR', $3, NOW(), $4)
+    `INSERT INTO household_settings (household_id, monthly_budget, monthly_contribution_goal, currency, calculation_type, updated_at, updated_by)
+     VALUES ($1, $2, $2, 'EUR', $3, NOW(), $4)
      ON CONFLICT (household_id) DO UPDATE
-       SET monthly_contribution_goal = EXCLUDED.monthly_contribution_goal,
+       SET monthly_budget = EXCLUDED.monthly_budget,
+           monthly_contribution_goal = EXCLUDED.monthly_contribution_goal,
            calculation_type = EXCLUDED.calculation_type,
            updated_at = NOW(),
            updated_by = EXCLUDED.updated_by`,
-    [householdId, monthlyGoal, calculationType, user.profile_id],
+    [householdId, monthlyBudget, calculationType, user.profile_id],
   );
 
   revalidatePath('/sickness/configuracion/hogar');

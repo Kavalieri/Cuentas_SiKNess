@@ -23,20 +23,22 @@ export default async function HogarPage() {
   }
   const rows = await getHouseholdMembers(householdId);
 
-  // Obtener nombre del hogar y objetivo
+  // Obtener nombre del hogar y presupuesto
   const householdRes = await query<{ name: string }>(
     'SELECT name FROM households WHERE id = $1',
     [householdId],
   );
   const settingsRes = await query<{
-    monthly_contribution_goal: number | null;
+    monthly_budget: number | null;
+    monthly_contribution_goal: number | null; // Fallback legacy
     calculation_type: string | null;
   }>(
-    'SELECT monthly_contribution_goal, calculation_type FROM household_settings WHERE household_id = $1',
+    'SELECT monthly_budget, monthly_contribution_goal, calculation_type FROM household_settings WHERE household_id = $1',
     [householdId],
   );
   const householdName = householdRes.rows[0]?.name || 'Mi Hogar';
-  const monthlyGoal = settingsRes.rows[0]?.monthly_contribution_goal ?? 0;
+  // Usar nueva columna o fallback a legacy
+  const monthlyBudget = settingsRes.rows[0]?.monthly_budget ?? settingsRes.rows[0]?.monthly_contribution_goal ?? 0;
   const calculationType = settingsRes.rows[0]?.calculation_type ?? 'equal';
 
   // Invitaciones pendientes
@@ -56,7 +58,7 @@ export default async function HogarPage() {
       members={members}
       householdId={householdId}
       householdName={householdName}
-      monthlyGoal={monthlyGoal}
+      monthlyBudget={monthlyBudget}
       calculationType={calculationType}
       pendingInvitations={pendingInvitations}
       isOwner={isOwner}

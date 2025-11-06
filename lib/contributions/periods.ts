@@ -7,6 +7,7 @@ import { getUserHouseholdId, pgServer } from '@/lib/pgServer';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
 import type { Contributions } from '@/types/database.generated';
+import { getMonthlyBudget, getSnapshotBudget } from '@/lib/budget-migration';
 import { z } from 'zod';
 
 type Contribution = Contributions;
@@ -27,7 +28,7 @@ export interface ContributionPeriodData {
   year: number;
   month: number;
   status: ContributionPeriodStatus;
-  target_amount: number;
+  budget: number; // Presupuesto mensual del hogar
   locked_at?: string;
   locked_by?: string;
   closed_at?: string;
@@ -104,7 +105,7 @@ export async function getContributionPeriodStatus(
     year,
     month,
     status: hasLockedContributions ? 'locked' : 'setup',
-    target_amount: 0, // TODO: Obtener de household_settings
+    budget: 0, // TODO: Obtener de household_settings.monthly_budget
   });
 }
 

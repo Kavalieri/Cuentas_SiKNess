@@ -41,7 +41,7 @@ interface HogarMembersClientProps {
   householdId: string;
   householdName: string;
   isOwner: boolean;
-  monthlyGoal: number;
+  monthlyBudget: number;
   calculationType: string;
   pendingInvitations: PendingInvitationRow[];
 }
@@ -51,7 +51,7 @@ export default function HogarMembersClient({
   householdId,
   householdName,
   isOwner,
-  monthlyGoal,
+  monthlyBudget,
   calculationType,
   pendingInvitations,
 }: HogarMembersClientProps) {
@@ -74,9 +74,9 @@ export default function HogarMembersClient({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<HouseholdContextUser | null>(null);
 
-  // Estado para edición de nombre/objetivo/tipo de cálculo
+  // Estado para edición de nombre/presupuesto/tipo de cálculo
   const [nameInput, setNameInput] = useState(householdName);
-  const [goalInput, setGoalInput] = useState(String(monthlyGoal ?? 0));
+  const [budgetInput, setBudgetInput] = useState(String(monthlyBudget ?? 0));
   const [calculationTypeInput, setCalculationTypeInput] = useState(calculationType);
 
   const handleUpdateSettings = () => {
@@ -84,7 +84,7 @@ export default function HogarMembersClient({
       const fd = new FormData();
       fd.append('householdId', householdId);
       fd.append('name', nameInput);
-      fd.append('monthlyGoal', goalInput);
+      fd.append('monthlyBudget', budgetInput);
       fd.append('calculationType', calculationTypeInput);
       const res = await updateHouseholdSettings(fd);
       if (res.ok) {
@@ -259,7 +259,7 @@ export default function HogarMembersClient({
         </form>
       </div>
 
-      {/* Edición de nombre, objetivo y tipo de cálculo */}
+      {/* Edición de nombre, presupuesto y tipo de cálculo */}
       {isOwner && (
         <div className="p-4 border rounded-lg grid gap-3 md:grid-cols-4">
           <div className="space-y-1">
@@ -267,9 +267,9 @@ export default function HogarMembersClient({
             <Input id="nameInput" value={nameInput} onChange={(e) => setNameInput(e.target.value)} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="goalInput">Objetivo mensual</Label>
-            <Input id="goalInput" type="number" min={0} step="0.01" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} />
-            <p className="text-xs text-muted-foreground">Objetivo actual: {formatCurrency(monthlyGoal || 0)}</p>
+            <Label htmlFor="budgetInput">Presupuesto mensual</Label>
+            <Input id="budgetInput" type="number" min={0} step="0.01" value={budgetInput} onChange={(e) => setBudgetInput(e.target.value)} />
+            <p className="text-xs text-muted-foreground">Presupuesto actual: {formatCurrency(monthlyBudget || 0)}</p>
           </div>
           <div className="space-y-1">
             <Label htmlFor="calculationType">Tipo de contribución</Label>

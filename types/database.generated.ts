@@ -393,6 +393,10 @@ export interface HouseholdSettings {
   calculation_type: string | null;
   currency: string | null;
   household_id: string;
+  /**
+   * Presupuesto mensual del hogar (reemplaza monthly_contribution_goal). Monto total destinado a gastos comunes cada mes.
+   */
+  monthly_budget: Numeric | null;
   monthly_contribution_goal: Numeric | null;
   updated_at: Timestamp | null;
   updated_by: string | null;
@@ -600,6 +604,13 @@ export interface MonthlyPeriods {
    * Número de veces que el período ha retrocedido de fase (reaperturas).
    */
   reopened_count: Generated<number>;
+  /**
+   * Snapshot del presupuesto mensual al momento de validar/bloquear el período.
+   *    NULL = período en preparing (usa valor actual de household_settings.monthly_budget).
+   *    NOT NULL = período validado/cerrado (usa este valor histórico para cálculos).
+   *    Se guarda automáticamente al ejecutar lock_contributions_period() en fase validation→active.
+   */
+  snapshot_budget: Numeric | null;
   /**
    * Snapshot del objetivo de contribución al momento de bloquear el período.
    *    NULL = período en preparing (usa valor actual de household_settings).
