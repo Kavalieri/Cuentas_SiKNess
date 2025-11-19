@@ -1,476 +1,216 @@
-import { getCurrentUser, getUserHouseholdId } from '@/lib/auth';
-import { query } from '@/lib/db';
-import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import {
-    approveCreditRefund,
-    approvePersonalLoan,
-    getActiveLoans,
-    getHouseholdBalancesOverview,
-    getMemberBalanceStatus,
-    getPendingLoans,
-    getPendingRefunds,
-    rejectCreditRefund,
-    rejectPersonalLoan,
-    repayLoan,
-} from './actions';
-import { LoanRequestForm } from './components/LoanRequestForm';
-import { RefundRequestForm } from './components/RefundRequestForm';
+import { PeriodSelector } from '@/components/balance/PeriodSelector';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getHouseholdMembersBalance } from '@/lib/balance/actions';
+import { cn } from '@/lib/utils';
+import { CheckCircle, TrendingDown, TrendingUp, Users } from 'lucide-react';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CreditDebtPage() {
-  const user = await getCurrentUser();
-  const householdId = await getUserHouseholdId();
+export default async function BalancePage({
+  searchParams,
+}: {
+  searchParams: { year?: string; month?: string };
+}) {
+  const year = searchParams.year ? Number(searchParams.year) : undefined;
+  const month = searchParams.month ? Number(searchParams.month) : undefined;
 
-  if (!user || !householdId) {
+  const balancesRes = await getHouseholdMembersBalance(year, month);
+
+  if (!balancesRes.ok) {
     return (
-      <div className="p-4">
-        <h1 className="text-xl font-semibold">Crédito y Deuda</h1>
-        <p className="text-sm text-muted-foreground mt-2">Necesitas iniciar sesión y pertenecer a un hogar.</p>
+      <div className="container max-w-7xl mx-auto p-6">
+        <div className="text-destructive">Error: {balancesRes.message}</div>
       </div>
     );
   }
 
-  const roleResult = await query(
-    `SELECT role FROM household_members WHERE household_id = $1 AND profile_id = $2`,
-    [householdId, user.profile_id],
-  );
-  const isOwner = roleResult.rows[0]?.role === 'owner';
-
-  // Periodo seleccionado (SSR): leer cookie establecida al seleccionar periodo.
-  // Formato de cookie: `csik-selected-period-${householdId}` => "YYYY-M"
-  const periodCookieName = `csik-selected-period-${householdId}`;
-  const cookieStore = await cookies();
-  const periodCookie = cookieStore.get(periodCookieName)?.value;
-  let selectedYear: number;
-  let selectedMonth: number;
-  if (periodCookie) {
-    const [yStr, mStr] = periodCookie.split('-');
-    selectedYear = Number(yStr);
-    selectedMonth = Number(mStr);
-  } else {
-    // Si no hay cookie aún (primera visita), usamos el mes/año actuales como selección inicial.
-    const now = new Date();
-    selectedYear = now.getFullYear();
-    selectedMonth = now.getMonth() + 1;
+  if (!balancesRes.data) {
+    return (
+      <div className="container max-w-7xl mx-auto p-6">
+        <div className="text-destructive">Error: No se pudieron obtener los datos</div>
+      </div>
+    );
   }
 
-  const [memberStatusRes, activeLoansRes, pendingLoansRes, pendingRefundsRes, householdOverviewRes] = await Promise.all([
-    getMemberBalanceStatus(selectedYear, selectedMonth),
-    getActiveLoans(),
-    isOwner ? getPendingLoans() : Promise.resolve({ ok: true, data: [] }),
-    isOwner ? getPendingRefunds() : Promise.resolve({ ok: true, data: [] }),
-    isOwner ? getHouseholdBalancesOverview(selectedYear, selectedMonth) : Promise.resolve({ ok: false, data: null }),
-  ]);
-
-  const memberData = memberStatusRes.ok ? memberStatusRes.data : null;
-  const activeLoans = (activeLoansRes.ok && activeLoansRes.data ? activeLoansRes.data : []) as Array<{
-    id: string;
-    profile_id: string;
-    email: string;
-    display_name: string | null;
-    amount: number;
-    approved_at: string;
-    notes: string | null;
-  }>;
-  const pendingLoans = (pendingLoansRes.ok && pendingLoansRes.data ? pendingLoansRes.data : []) as Array<{
-    id: string;
-    display_name: string | null;
-    email: string;
-    amount: number;
-    notes: string;
-    requested_at: string;
-  }>;
-  const pendingRefunds = (pendingRefundsRes.ok && pendingRefundsRes.data ? pendingRefundsRes.data : []) as Array<{
-    id: string;
-    display_name: string | null;
-    email: string;
-    amount: number;
-    notes: string | null;
-    requested_at: string;
-  }>;
-
-    const householdOverview = isOwner && householdOverviewRes.ok && householdOverviewRes.data ? householdOverviewRes.data : null;
-
-  // Normalización a céntimos para evitar artefactos de coma flotante (-0.00, 0.001, etc.)
-  const toCents = (n: number | null | undefined) => Math.round((Number(n ?? 0)) * 100);
-  const fromCents = (c: number) => c / 100;
-
-  const balanceCents = toCents(memberData?.balance as number);
-  const balance = fromCents(balanceCents);
-  const credit = Math.max(balance, 0);
-  const debt = Math.abs(Math.min(balance, 0));
-  const totalDebtCents = toCents(memberData?.total_debt as number);
-  const totalDebt = fromCents(totalDebtCents);
-  const isSaldado = balanceCents === 0 && totalDebtCents === 0;
+  const { members, household_total, period_info } = balancesRes.data;
 
   return (
-    <div className="p-4 space-y-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-semibold">Crédito y Deuda</h1>
-
-       {/* ========== OWNER: ESTADO GLOBAL DEL HOGAR ========== */}
-       {isOwner && householdOverview && (
-         <section className="rounded-lg border bg-card p-5 space-y-4">
-           <h2 className="text-lg font-semibold">Estado global del hogar</h2>
-           <div className="overflow-x-auto">
-             <table className="w-full text-sm">
-               <thead className="border-b">
-                 <tr className="text-left text-muted-foreground">
-                   <th className="py-2 pr-4">Miembro</th>
-                   <th className="py-2 pr-4">Saldo</th>
-                   <th className="py-2">Estado</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {householdOverview.members.map((m: { profile_id: string; display_name: string | null; email: string; balance: number }) => {
-                   const memberBalanceCents = toCents(m.balance);
-                   const memberBalance = fromCents(memberBalanceCents);
-                   const memberCredit = Math.max(memberBalance, 0);
-                   const memberIsSaldado = memberBalanceCents === 0;
-
-                   return (
-                     <tr key={m.profile_id} className="border-b last:border-0">
-                       <td className="py-3 pr-4">
-                         <div className="font-medium">{m.display_name || 'Sin nombre'}</div>
-                         <div className="text-xs text-muted-foreground">{m.email}</div>
-                       </td>
-                       <td className="py-3 pr-4 font-semibold">
-                         {memberBalance > 0 ? '+' : ''}{memberBalance.toFixed(2)} €
-                       </td>
-                       <td className="py-3">
-                         {memberIsSaldado ? (
-                           <span className="text-green-600 font-medium">✓ Saldado</span>
-                         ) : memberCredit > 0 ? (
-                           <span className="text-blue-600 font-medium">A favor</span>
-                         ) : (
-                           <span className="text-red-600 font-medium">Deuda</span>
-                         )}
-                       </td>
-                     </tr>
-                   );
-                 })}
-               </tbody>
-             </table>
-           </div>
-         </section>
-       )}
-
-      {/* ========== ESTADO DEL MIEMBRO ========== */}
-      <section className="rounded-lg border bg-card p-5 space-y-4">
-        <h2 className="text-lg font-semibold">Tu situación</h2>
-
-        {isSaldado ? (
-          <div className="rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
-            <p className="text-green-800 dark:text-green-200 font-medium">✓ Saldado</p>
-            <p className="text-sm text-green-700 dark:text-green-300 mt-1">No tienes crédito ni deuda pendiente.</p>
-          </div>
-        ) : credit > 0 ? (
-          <div className="rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-4">
-            <p className="text-blue-800 dark:text-blue-200 font-medium">✓ Saldo a tu favor</p>
-            <p className="text-2xl font-bold text-blue-900 dark:text-blue-100 mt-2">+{credit.toFixed(2)} €</p>
-            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-              El hogar te debe este importe. Puedes solicitar un reembolso.
-            </p>
-          </div>
-        ) : debt > 0 ? (
-          <div className="rounded-md bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 p-4">
-            <p className="text-red-800 dark:text-red-200 font-medium">⚠ Deuda pendiente</p>
-            <p className="text-2xl font-bold text-red-900 dark:text-red-100 mt-2">-{debt.toFixed(2)} €</p>
-            <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-              Debes abonar este importe al hogar.
-            </p>
-          </div>
-        ) : null}
-
-        {totalDebt > 0 && (
-          <div className="mt-3 text-sm text-muted-foreground">
-            <p>Deuda total (incluyendo préstamos): <span className="font-medium">{totalDebt.toFixed(2)} €</span></p>
-          </div>
-        )}
-      </section>
-
-      {/* ========== REEMBOLSOS ========== */}
-      {credit > 0 && (
-        <section className="rounded-lg border bg-card p-5 space-y-4">
-          <h2 className="text-lg font-semibold">Solicitar reembolso</h2>
-          <p className="text-sm text-muted-foreground">
-            Tienes {credit.toFixed(2)} € a tu favor. Solicita recuperar todo o parte de ese importe.
+    <div className="container max-w-7xl mx-auto p-6 space-y-6">
+      {/* ===== HEADER CON SELECTOR DE PERIODO ===== */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Users className="h-8 w-8" />
+            Balance del Hogar
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {period_info.month_name} {period_info.year}
           </p>
-          <RefundRequestForm credit={credit} />
-        </section>
-      )}
+        </div>
+        <PeriodSelector />
+      </div>
 
-      {/* ========== PRÉSTAMOS ACTIVOS ========== */}
-      {activeLoans.length > 0 && (
-        <section className="rounded-lg border bg-card p-5 space-y-4">
-          <h2 className="text-lg font-semibold">Préstamos activos</h2>
-          <p className="text-sm text-muted-foreground">
-            {isOwner ? 'Préstamos aprobados en el hogar.' : 'Tus préstamos activos.'}
-          </p>
-          <ActiveLoansTable loans={activeLoans} isOwner={isOwner} currentUserId={user.profile_id} />
-        </section>
-      )}
-
-      {/* ========== SOLICITAR PRÉSTAMO ========== */}
-      <section className="rounded-lg border bg-card p-5 space-y-4">
-        <h2 className="text-lg font-semibold">Solicitar préstamo</h2>
-        <p className="text-sm text-muted-foreground">
-          Pide un préstamo al hogar. Se convertirá en deuda una vez aprobado.
-        </p>
-        <LoanRequestForm />
-      </section>
-
-      {/* ========== OWNER: PRÉSTAMOS PENDIENTES ========== */}
-      {isOwner && pendingLoans.length > 0 && (
-        <section className="rounded-lg border bg-card p-5 space-y-4">
-          <h2 className="text-lg font-semibold">Préstamos pendientes de aprobar</h2>
-          <PendingLoansTable loans={pendingLoans} />
-        </section>
-      )}
-
-      {/* ========== OWNER: REEMBOLSOS PENDIENTES ========== */}
-      {isOwner && pendingRefunds.length > 0 && (
-        <section className="rounded-lg border bg-card p-5 space-y-4">
-          <h2 className="text-lg font-semibold">Reembolsos pendientes de aprobar</h2>
-          <PendingRefundsTable refunds={pendingRefunds} />
-        </section>
-      )}
-    </div>
-  );
-}
-
-// ============================================================
-// COMPONENTES DE FORMULARIO
-// ============================================================
-
-// ============================================================
-// TABLAS
-// ============================================================
-
-function ActiveLoansTable({
-  loans,
-  isOwner,
-  currentUserId,
-}: {
-  loans: Array<{
-    id: string;
-    profile_id: string;
-    email: string;
-    display_name: string | null;
-    amount: number;
-    approved_at: string;
-    notes: string | null;
-  }>;
-  isOwner: boolean;
-  currentUserId: string;
-}) {
-  async function repay(loanId: string, formData: FormData) {
-    'use server';
-    const amount = Number(formData.get('amount'));
-    const notes = String(formData.get('notes') || '');
-    await repayLoan(loanId, amount, notes);
-    revalidatePath('/sickness/credito-deuda');
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="border-b">
-          <tr className="text-left text-muted-foreground">
-            {isOwner && <th className="py-2 pr-4">Miembro</th>}
-            <th className="py-2 pr-4">Importe</th>
-            <th className="py-2 pr-4">Fecha aprobación</th>
-            <th className="py-2 pr-4">Notas</th>
-            <th className="py-2">Saldar</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loans.map((loan) => {
-            const canRepay = isOwner || loan.profile_id === currentUserId;
-            return (
-              <tr key={loan.id} className="border-b last:border-0">
-                {isOwner && (
-                  <td className="py-3 pr-4">
-                    <div className="font-medium">{loan.display_name || 'Sin nombre'}</div>
-                    <div className="text-xs text-muted-foreground">{loan.email}</div>
-                  </td>
+      {/* ===== RESUMEN GLOBAL DEL HOGAR ===== */}
+      <Card className="border-primary/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Resumen del Periodo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Aportación Esperada Total</p>
+              <p className="text-2xl font-bold">€{household_total.expected_total.toFixed(2)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Total Aportado</p>
+              <p className="text-2xl font-bold text-blue-600">
+                €{household_total.paid_total.toFixed(2)}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Pendiente Total</p>
+              <p
+                className={cn(
+                  'text-2xl font-bold',
+                  household_total.pending_total === 0 && 'text-green-600',
+                  household_total.pending_total > 0 && 'text-red-600',
+                  household_total.pending_total < 0 && 'text-green-600',
                 )}
-                <td className="py-3 pr-4 font-semibold">{loan.amount.toFixed(2)} €</td>
-                <td className="py-3 pr-4 text-muted-foreground">
-                  {new Date(loan.approved_at).toLocaleDateString('es-ES')}
-                </td>
-                <td className="py-3 pr-4 text-muted-foreground">{loan.notes || '—'}</td>
-                <td className="py-3">
-                  {canRepay ? (
-                    <form action={(fd) => repay(loan.id, fd)} className="flex gap-2 items-center">
-                      <input
-                        name="amount"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        max={loan.amount}
-                        defaultValue={loan.amount}
-                        className="w-24 rounded border px-2 py-1 text-xs bg-background"
-                        required
-                      />
-                      <input name="notes" type="hidden" value="Pago de préstamo" />
-                      <button
-                        type="submit"
-                        className="rounded bg-green-600 text-white px-3 py-1 text-xs font-medium hover:bg-green-700"
-                      >
-                        Pagar
-                      </button>
-                    </form>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
+              >
+                €{household_total.pending_total.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ===== TARJETAS DE BALANCE POR MIEMBRO ===== */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold">Balance por Miembro</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {members.map((member: typeof members[0]) => (
+            <Card
+              key={member.profile_id}
+              className={cn(
+                'transition-all hover:shadow-lg',
+                member.balance.status === 'credit' && 'border-green-500/50',
+                member.balance.status === 'pending' && 'border-red-500/50',
+                member.balance.status === 'settled' && 'border-gray-500/50',
+              )}
+            >
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={member.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {member.display_name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold text-lg">{member.display_name}</p>
+                      {member.role === 'owner' && (
+                        <Badge variant="secondary" className="mt-1">
+                          Administrador
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  {member.balance.status === 'credit' && (
+                    <TrendingUp className="h-6 w-6 text-green-600" />
                   )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function PendingLoansTable({
-  loans,
-}: {
-  loans: Array<{
-    id: string;
-    display_name: string | null;
-    email: string;
-    amount: number;
-    notes: string;
-    requested_at: string;
-  }>;
-}) {
-  async function approve(id: string) {
-    'use server';
-    await approvePersonalLoan(id);
-    revalidatePath('/sickness/credito-deuda');
-  }
-
-  async function reject(id: string) {
-    'use server';
-    await rejectPersonalLoan(id);
-    revalidatePath('/sickness/credito-deuda');
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="border-b">
-          <tr className="text-left text-muted-foreground">
-            <th className="py-2 pr-4">Miembro</th>
-            <th className="py-2 pr-4">Importe</th>
-            <th className="py-2 pr-4">Motivo</th>
-            <th className="py-2 pr-4">Solicitado</th>
-            <th className="py-2">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loans.map((loan) => (
-            <tr key={loan.id} className="border-b last:border-0">
-              <td className="py-3 pr-4">
-                <div className="font-medium">{loan.display_name || 'Sin nombre'}</div>
-                <div className="text-xs text-muted-foreground">{loan.email}</div>
-              </td>
-              <td className="py-3 pr-4 font-semibold">{loan.amount.toFixed(2)} €</td>
-              <td className="py-3 pr-4 text-muted-foreground">{loan.notes}</td>
-              <td className="py-3 pr-4 text-muted-foreground">
-                {new Date(loan.requested_at).toLocaleString('es-ES')}
-              </td>
-              <td className="py-3">
-                <div className="flex gap-2">
-                  <form action={async () => approve(loan.id)}>
-                    <button className="rounded bg-green-600 text-white px-3 py-1 text-xs font-medium hover:bg-green-700">
-                      Aprobar
-                    </button>
-                  </form>
-                  <form action={async () => reject(loan.id)}>
-                    <button className="rounded bg-red-600 text-white px-3 py-1 text-xs font-medium hover:bg-red-700">
-                      Rechazar
-                    </button>
-                  </form>
+                  {member.balance.status === 'pending' && (
+                    <TrendingDown className="h-6 w-6 text-red-600" />
+                  )}
+                  {member.balance.status === 'settled' && (
+                    <CheckCircle className="h-6 w-6 text-gray-600" />
+                  )}
                 </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+              </CardHeader>
 
-function PendingRefundsTable({
-  refunds,
-}: {
-  refunds: Array<{
-    id: string;
-    display_name: string | null;
-    email: string;
-    amount: number;
-    notes: string | null;
-    requested_at: string;
-  }>;
-}) {
-  async function approve(id: string) {
-    'use server';
-    await approveCreditRefund(id);
-    revalidatePath('/sickness/credito-deuda');
-  }
-
-  async function reject(id: string) {
-    'use server';
-    await rejectCreditRefund(id);
-    revalidatePath('/sickness/credito-deuda');
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="border-b">
-          <tr className="text-left text-muted-foreground">
-            <th className="py-2 pr-4">Miembro</th>
-            <th className="py-2 pr-4">Importe</th>
-            <th className="py-2 pr-4">Notas</th>
-            <th className="py-2 pr-4">Solicitado</th>
-            <th className="py-2">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {refunds.map((refund) => (
-            <tr key={refund.id} className="border-b last:border-0">
-              <td className="py-3 pr-4">
-                <div className="font-medium">{refund.display_name || 'Sin nombre'}</div>
-                <div className="text-xs text-muted-foreground">{refund.email}</div>
-              </td>
-              <td className="py-3 pr-4 font-semibold">{refund.amount.toFixed(2)} €</td>
-              <td className="py-3 pr-4 text-muted-foreground">{refund.notes || '—'}</td>
-              <td className="py-3 pr-4 text-muted-foreground">
-                {new Date(refund.requested_at).toLocaleString('es-ES')}
-              </td>
-              <td className="py-3">
-                <div className="flex gap-2">
-                  <form action={async () => approve(refund.id)}>
-                    <button className="rounded bg-green-600 text-white px-3 py-1 text-xs font-medium hover:bg-green-700">
-                      Aprobar
-                    </button>
-                  </form>
-                  <form action={async () => reject(refund.id)}>
-                    <button className="rounded bg-red-600 text-white px-3 py-1 text-xs font-medium hover:bg-red-700">
-                      Rechazar
-                    </button>
-                  </form>
+              <CardContent className="space-y-4">
+                {/* Balance Principal */}
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Balance:</p>
+                  <div className="flex items-baseline gap-2">
+                    <p
+                      className={cn(
+                        'text-3xl font-bold',
+                        member.balance.pending === 0 && 'text-gray-600',
+                        member.balance.pending > 0 && 'text-red-600',
+                        member.balance.pending < 0 && 'text-green-600',
+                      )}
+                    >
+                      €{Math.abs(member.balance.pending).toFixed(2)}
+                    </p>
+                    <Badge
+                      variant={
+                        member.balance.status === 'credit'
+                          ? 'default'
+                          : member.balance.status === 'pending'
+                          ? 'destructive'
+                          : 'secondary'
+                      }
+                    >
+                      {member.balance.status === 'credit' && 'Crédito a favor'}
+                      {member.balance.status === 'pending' && 'Pendiente'}
+                      {member.balance.status === 'settled' && 'Al día'}
+                    </Badge>
+                  </div>
                 </div>
-              </td>
-            </tr>
+
+                {/* Desglose Compacto */}
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Esperado</p>
+                    <p className="text-lg font-semibold">€{member.balance.expected.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Aportado</p>
+                    <p className="text-lg font-semibold text-blue-600">
+                      €{member.balance.paid.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Botón Ver Detalle */}
+                <Link href={`/app/sickness/credito-deuda/miembro/${member.profile_id}`}>
+                  <Button variant="outline" className="w-full mt-4">
+                    Ver Detalle Completo
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           ))}
-        </tbody>
-      </table>
+        </div>
+      </div>
+
+      {/* ===== ACCIONES RÁPIDAS (PERSONALES) ===== */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Mis Acciones</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/app/sickness/credito-deuda/solicitar-prestamo">
+              <Button>Solicitar Préstamo</Button>
+            </Link>
+            <Link href="/app/sickness/credito-deuda/devolver-prestamo">
+              <Button variant="secondary">Devolver Préstamo</Button>
+            </Link>
+            <Link href="/app/sickness/credito-deuda/mi-historial">
+              <Button variant="outline">Mi Historial</Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
