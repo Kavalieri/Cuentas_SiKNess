@@ -172,7 +172,11 @@ export async function GET(req: NextRequest) {
 
     // Determinar fase normalizada del periodo (para reglas de gasto directo)
   const currentPhase = period.phase ?? 'unknown'; // 'preparing' | 'validation' | 'active' | 'closing' | 'closed' | 'unknown'
-    const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase === 'active';
+    // REGLA: Contar gastos directos y aportaciones comunes en todas las fases excepto 'preparing'
+    // - preparing: Solo mostrar contribuciones esperadas (sin contar ejecución real)
+    // - validation/active/closing/closed: Contar todo lo ejecutado (gastos directos + ingresos comunes)
+    // Esto mantiene la consistencia: el cálculo NO cambia al cerrar el periodo
+    const shouldCountDirectAsPaid = currentPhase !== 'preparing';
 
     // Sumar aportaciones a la cuenta común por miembro en el período
     // Regla: contar cualquier ingreso común del miembro, excepto "Pago Préstamo".
