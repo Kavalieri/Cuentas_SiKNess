@@ -189,7 +189,7 @@ export default async function BalancePage() {
                   </div>
 
                   {/* Botón Ver Detalle */}
-                  <Link href={`/app/sickness/credito-deuda/miembro/${member.profile_id}`}>
+                  <Link href={`/sickness/credito-deuda/miembro/${member.profile_id}`}>
                     <Button variant="outline" className="w-full mt-4">
                       Ver Historial Detallado
                     </Button>
