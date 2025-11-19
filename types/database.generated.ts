@@ -35,6 +35,87 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type TransactionTypeDualFlow = "gasto" | "gasto_directo" | "ingreso" | "ingreso_directo";
 
+export interface _LegacyMemberCredits {
+  amount: Numeric | null;
+  applied_at: Timestamp | null;
+  applied_to_contribution_id: string | null;
+  applied_to_period_id: string | null;
+  created_at: Generated<Timestamp | null>;
+  /**
+   * ID del usuario que OTORGÓ este crédito al miembro.
+   */
+  created_by_profile_id: string | null;
+  currency: string | null;
+  household_id: string | null;
+  id: Generated<string>;
+  monthly_decision: string | null;
+  profile_id: string | null;
+  /**
+   * Timestamp cuando el crédito fue reservado para aplicar al mes siguiente.
+   * NULL = crédito activo (puede gastarse, forma parte del balance principal)
+   * NOT NULL = crédito reservado (bloqueado para próximo mes, NO disponible para gastos)
+   *
+   * Cuando un miembro decide "aplicar al mes siguiente" su crédito, se marca reserved_at.
+   * Esto retira el crédito del balance principal disponible inmediatamente.
+   */
+  reserved_at: Timestamp | null;
+  source_month: number | null;
+  source_period_id: string | null;
+  source_year: number | null;
+  status: string | null;
+  /**
+   * Fecha de la última modificación del crédito.
+   */
+  updated_at: Generated<Timestamp | null>;
+  /**
+   * ID del usuario que MODIFICÓ este crédito por última vez.
+   */
+  updated_by_profile_id: string | null;
+}
+
+export interface _LegacyPersonalLoans {
+  amount: Numeric;
+  approved_at: Timestamp | null;
+  approved_by: string | null;
+  created_at: Generated<Timestamp>;
+  household_id: string;
+  id: Generated<string>;
+  notes: string | null;
+  profile_id: string;
+  requested_at: Generated<Timestamp>;
+  requested_by: string;
+  settled_at: Timestamp | null;
+  settled_by: string | null;
+  settlement_transaction_id: string | null;
+  /**
+   * Estado: pending (pendiente aprobación), approved (aprobado y retirado), rejected (rechazado), settled (liquidado)
+   */
+  status: Generated<string>;
+  updated_at: Generated<Timestamp>;
+  withdrawal_transaction_id: string | null;
+}
+
+export interface _LegacyRefundClaims {
+  approved_at: Timestamp | null;
+  approved_by_profile_id: string | null;
+  created_at: Generated<Timestamp | null>;
+  created_by_profile_id: string | null;
+  expense_transaction_id: string;
+  household_id: string;
+  id: Generated<string>;
+  profile_id: string;
+  reason: string | null;
+  refund_amount: Numeric;
+  refund_transaction_id: string | null;
+  /**
+   * pending: Reclamo en espera de aprobación del owner. 
+   *    approved: Owner aprobó, se cuenta el reembolso en el balance.
+   *    rejected: Owner rechazó, no se cuenta el reembolso.
+   */
+  status: Generated<string | null>;
+  updated_at: Generated<Timestamp | null>;
+}
+
 export interface _Migrations {
   /**
    * Timestamp de aplicación
@@ -500,44 +581,6 @@ export interface MemberBalances {
   profile_id: string;
 }
 
-export interface MemberCredits {
-  amount: Numeric | null;
-  applied_at: Timestamp | null;
-  applied_to_contribution_id: string | null;
-  applied_to_period_id: string | null;
-  created_at: Generated<Timestamp | null>;
-  /**
-   * ID del usuario que OTORGÓ este crédito al miembro.
-   */
-  created_by_profile_id: string | null;
-  currency: string | null;
-  household_id: string | null;
-  id: Generated<string>;
-  monthly_decision: string | null;
-  profile_id: string | null;
-  /**
-   * Timestamp cuando el crédito fue reservado para aplicar al mes siguiente.
-   * NULL = crédito activo (puede gastarse, forma parte del balance principal)
-   * NOT NULL = crédito reservado (bloqueado para próximo mes, NO disponible para gastos)
-   *
-   * Cuando un miembro decide "aplicar al mes siguiente" su crédito, se marca reserved_at.
-   * Esto retira el crédito del balance principal disponible inmediatamente.
-   */
-  reserved_at: Timestamp | null;
-  source_month: number | null;
-  source_period_id: string | null;
-  source_year: number | null;
-  status: string | null;
-  /**
-   * Fecha de la última modificación del crédito.
-   */
-  updated_at: Generated<Timestamp | null>;
-  /**
-   * ID del usuario que MODIFICÓ este crédito por última vez.
-   */
-  updated_by_profile_id: string | null;
-}
-
 export interface MemberIncomes {
   created_at: Generated<Timestamp | null>;
   effective_from: Timestamp | null;
@@ -644,28 +687,6 @@ export interface MonthlyPeriods {
   year: number | null;
 }
 
-export interface PersonalLoans {
-  amount: Numeric;
-  approved_at: Timestamp | null;
-  approved_by: string | null;
-  created_at: Generated<Timestamp>;
-  household_id: string;
-  id: Generated<string>;
-  notes: string | null;
-  profile_id: string;
-  requested_at: Generated<Timestamp>;
-  requested_by: string;
-  settled_at: Timestamp | null;
-  settled_by: string | null;
-  settlement_transaction_id: string | null;
-  /**
-   * Estado: pending (pendiente aprobación), approved (aprobado y retirado), rejected (rechazado), settled (liquidado)
-   */
-  status: Generated<string>;
-  updated_at: Generated<Timestamp>;
-  withdrawal_transaction_id: string | null;
-}
-
 export interface ProfileEmails {
   added_at: Generated<Timestamp>;
   /**
@@ -716,27 +737,6 @@ export interface Profiles {
    */
   is_system_admin: Generated<boolean>;
   updated_at: Timestamp | null;
-}
-
-export interface RefundClaims {
-  approved_at: Timestamp | null;
-  approved_by_profile_id: string | null;
-  created_at: Generated<Timestamp | null>;
-  created_by_profile_id: string | null;
-  expense_transaction_id: string;
-  household_id: string;
-  id: Generated<string>;
-  profile_id: string;
-  reason: string | null;
-  refund_amount: Numeric;
-  refund_transaction_id: string | null;
-  /**
-   * pending: Reclamo en espera de aprobación del owner. 
-   *    approved: Owner aprobó, se cuenta el reembolso en el balance.
-   *    rejected: Owner rechazó, no se cuenta el reembolso.
-   */
-  status: Generated<string | null>;
-  updated_at: Generated<Timestamp | null>;
 }
 
 export interface Subcategories {
@@ -1054,6 +1054,9 @@ export interface VTransactionPairs {
 }
 
 export interface DB {
+  _legacy_member_credits: _LegacyMemberCredits;
+  _legacy_personal_loans: _LegacyPersonalLoans;
+  _legacy_refund_claims: _LegacyRefundClaims;
   _migrations: _Migrations;
   _migrations_backup_pre_v2_1_0: _MigrationsBackupPreV210;
   categories: Categories;
@@ -1079,13 +1082,10 @@ export interface DB {
   journal_roles: JournalRoles;
   journal_transactions: JournalTransactions;
   member_balances: MemberBalances;
-  member_credits: MemberCredits;
   member_incomes: MemberIncomes;
   monthly_periods: MonthlyPeriods;
-  personal_loans: PersonalLoans;
   profile_emails: ProfileEmails;
   profiles: Profiles;
-  refund_claims: RefundClaims;
   subcategories: Subcategories;
   system_admins: SystemAdmins;
   transactions: Transactions;
