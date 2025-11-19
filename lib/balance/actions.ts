@@ -1,46 +1,37 @@
 'use server';
 
 import { getCurrentUser, getUserHouseholdId } from '@/lib/auth';
+import { calculateHouseholdStats, getMemberBalances } from '@/lib/balance/queries';
 import { query } from '@/lib/db';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
 import { revalidatePath } from 'next/cache';
 
 /**
- * Obtener balance de TODOS los miembros del hogar
- * 
- * NOTA: Reutiliza la API existente /api/periods/contributions
- * que ya calcula correctamente el balance según la lógica validada.
- * 
- * Issue #60 - Phase 4: Backend integrado
+ * Obtener balance GLOBAL de TODOS los miembros del hogar
+ *
+ * IMPORTANTE: Este NO es balance por período, es balance ACUMULADO global.
+ * - Usa tabla member_balances (créditos/deudas persistentes)
+ * - NO confundir con contribuciones mensuales (tabla contributions)
+ *
+ * Issue #60 - Sistema de Balance Global (Créditos/Deudas)
  */
-export async function getHouseholdMembersBalance(
-  year?: number,
-  month?: number
-): Promise<
+export async function getHouseholdMembersBalance(): Promise<
   Result<{
     members: Array<{
       profile_id: string;
       display_name: string;
       avatar_url: string | null;
       role: 'owner' | 'member';
-      balance: {
-        expected: number;
-        paid: number;
-        pending: number;
-        status: 'settled' | 'pending' | 'credit';
-      };
+      current_balance: number;
+      last_updated_at: string;
+      status: 'settled' | 'debt' | 'credit';
     }>;
-    household_total: {
-      expected_total: number;
-      paid_total: number;
-      pending_total: number;
-    };
-    period_info: {
-      year: number;
-      month: number;
-      month_name: string;
-      phase: string;
+    summary: {
+      total_credits: number;
+      total_debts: number;
+      members_with_credit: number;
+      members_with_debt: number;
     };
   }>
 > {
@@ -51,68 +42,32 @@ export async function getHouseholdMembersBalance(
   if (!householdId) return fail('No perteneces a ningún hogar');
 
   try {
-    const currentDate = new Date();
-    const targetYear = year || currentDate.getFullYear();
-    const targetMonth = month || currentDate.getMonth() + 1;
+    // Obtener balances globales calculados desde contribuciones acumuladas
+    const memberBalances = await getMemberBalances(householdId);
 
-    // Llamar a la API existente que ya calcula todo correctamente
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const response = await fetch(
-      `${baseUrl}/api/periods/contributions?year=${targetYear}&month=${targetMonth}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          // Pasar info de autenticación (cookies se pasan automáticamente en SSR)
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Error al obtener contribuciones de la API');
-    }
-
-    const apiData = await response.json();
-
-    // Transformar respuesta de API al formato esperado
-    const monthNames = [
-      'Enero',
-      'Febrero',
-      'Marzo',
-      'Abril',
-      'Mayo',
-      'Junio',
-      'Julio',
-      'Agosto',
-      'Septiembre',
-      'Octubre',
-      'Noviembre',
-      'Diciembre',
-    ];
+    // Calcular estadísticas
+    const stats = calculateHouseholdStats(memberBalances);
 
     return ok({
-      members: apiData.contributions.map((contrib: any) => ({
-        profile_id: contrib.profile_id,
-        display_name: contrib.display_name,
-        avatar_url: contrib.avatar_url,
-        role: contrib.role,
-        balance: {
-          expected: contrib.expected,
-          paid: contrib.paid,
-          pending: contrib.pending,
-          status:
-            contrib.pending === 0 ? 'settled' : contrib.pending < 0 ? 'credit' : 'pending',
-        },
+      members: memberBalances.map((m) => ({
+        profile_id: m.profile_id,
+        display_name: m.display_name,
+        avatar_url: m.avatar_url,
+        role: m.role === 'owner' ? ('owner' as const) : ('member' as const),
+        current_balance: m.current_balance,
+        last_updated_at: m.last_updated_at,
+        status:
+          m.current_balance === 0
+            ? ('settled' as const)
+            : m.current_balance > 0
+            ? ('credit' as const)
+            : ('debt' as const),
       })),
-      household_total: {
-        expected_total: apiData.totals.expectedTotal,
-        paid_total: apiData.totals.paidTotal,
-        pending_total: apiData.totals.pendingTotal,
-      },
-      period_info: {
-        year: apiData.period.year,
-        month: apiData.period.month,
-        month_name: monthNames[apiData.period.month - 1] || 'Desconocido',
-        phase: apiData.period.phase,
+      summary: {
+        total_credits: stats.total_credit,
+        total_debts: stats.total_debt,
+        members_with_credit: stats.members_with_credit,
+        members_with_debt: stats.members_with_debt,
       },
     });
   } catch (error) {
@@ -120,28 +75,21 @@ export async function getHouseholdMembersBalance(
     return fail('Error al obtener balance del hogar');
   }
 }
-
 /**
- * Obtener balance de UN miembro específico
- * 
+ * Obtener balance de UN miembro específico (GLOBAL)
+ *
  * Reutiliza getHouseholdMembersBalance() y filtra por perfil
+ * NOTA: Balance es global, no tiene parámetros de período
  */
-export async function getMemberBalance(
-  targetProfileId?: string,
-  year?: number,
-  month?: number
-): Promise<
+export async function getMemberBalance(targetProfileId?: string): Promise<
   Result<{
     profile_id: string;
     display_name: string;
     avatar_url: string | null;
-    role: string;
-    balance: {
-      expected: number;
-      paid: number;
-      pending: number;
-      status: 'settled' | 'pending' | 'credit';
-    };
+    role: 'owner' | 'member';
+    current_balance: number;
+    last_updated_at: string;
+    status: 'settled' | 'debt' | 'credit';
   }>
 > {
   const user = await getCurrentUser();
@@ -150,10 +98,14 @@ export async function getMemberBalance(
   const profileId = targetProfileId || user.profile_id;
 
   // Obtener balance de todos y filtrar
-  const householdBalance = await getHouseholdMembersBalance(year, month);
+  const householdBalance = await getHouseholdMembersBalance();
 
   if (!householdBalance.ok) {
-    return fail('ok' in householdBalance && householdBalance.ok === false ? householdBalance.message : 'Error al obtener balance');
+    return fail(
+      'ok' in householdBalance && householdBalance.ok === false
+        ? householdBalance.message
+        : 'Error al obtener balance',
+    );
   }
 
   if (!householdBalance.data) {
@@ -171,7 +123,7 @@ export async function getMemberBalance(
 
 /**
  * Solicitar préstamo del hogar
- * 
+ *
  * Crea transacción tipo 'expense' con categoría "Préstamo Personal"
  */
 export async function requestLoan(formData: FormData): Promise<Result> {
@@ -192,10 +144,10 @@ export async function requestLoan(formData: FormData): Promise<Result> {
   try {
     // Obtener ID de categoría "Préstamo Personal"
     const categoryRes = await query<{ id: string }>(
-      `SELECT id FROM categories 
-       WHERE name = 'Préstamo Personal' 
-         AND is_system = true 
-       LIMIT 1`
+      `SELECT id FROM categories
+       WHERE name = 'Préstamo Personal'
+         AND is_system = true
+       LIMIT 1`,
     );
 
     if (categoryRes.rows.length === 0 || !categoryRes.rows[0]) {
@@ -219,7 +171,7 @@ export async function requestLoan(formData: FormData): Promise<Result> {
         profile_id,
         requires_approval
       ) VALUES ($1, $2, 'expense', $3, 'EUR', $4, $5, 'common', $6, $6, true)`,
-      [householdId, loanCategoryId, amount, description, occurred_at, user.profile_id]
+      [householdId, loanCategoryId, amount, description, occurred_at, user.profile_id],
     );
 
     revalidatePath('/app/sickness/credito-deuda');
@@ -242,9 +194,9 @@ export async function approveLoan(transactionId: string): Promise<Result> {
 
   // Verificar que el usuario es owner
   const roleRes = await query<{ role: string }>(
-    `SELECT role FROM household_members 
+    `SELECT role FROM household_members
      WHERE household_id = $1 AND profile_id = $2`,
-    [householdId, user.profile_id]
+    [householdId, user.profile_id],
   );
 
   if (roleRes.rows[0]?.role !== 'owner') {
@@ -253,12 +205,12 @@ export async function approveLoan(transactionId: string): Promise<Result> {
 
   try {
     await query(
-      `UPDATE transactions 
-       SET requires_approval = false, 
-           approved_at = NOW(), 
+      `UPDATE transactions
+       SET requires_approval = false,
+           approved_at = NOW(),
            approved_by = $1
        WHERE id = $2 AND household_id = $3`,
-      [user.profile_id, transactionId, householdId]
+      [user.profile_id, transactionId, householdId],
     );
 
     revalidatePath('/app/sickness/credito-deuda');
@@ -271,7 +223,7 @@ export async function approveLoan(transactionId: string): Promise<Result> {
 
 /**
  * Devolver préstamo
- * 
+ *
  * Crea transacción tipo 'income' con categoría "Pago Préstamo"
  */
 export async function repayLoan(formData: FormData): Promise<Result> {
@@ -292,10 +244,10 @@ export async function repayLoan(formData: FormData): Promise<Result> {
   try {
     // Obtener ID de categoría "Pago Préstamo"
     const categoryRes = await query<{ id: string }>(
-      `SELECT id FROM categories 
-       WHERE name = 'Pago Préstamo' 
-         AND is_system = true 
-       LIMIT 1`
+      `SELECT id FROM categories
+       WHERE name = 'Pago Préstamo'
+         AND is_system = true
+       LIMIT 1`,
     );
 
     if (categoryRes.rows.length === 0 || !categoryRes.rows[0]) {
@@ -318,7 +270,7 @@ export async function repayLoan(formData: FormData): Promise<Result> {
         performed_by_profile_id,
         profile_id
       ) VALUES ($1, $2, 'income', $3, 'EUR', $4, $5, 'common', $6, $6)`,
-      [householdId, repaymentCategoryId, amount, description, occurred_at, user.profile_id]
+      [householdId, repaymentCategoryId, amount, description, occurred_at, user.profile_id],
     );
 
     revalidatePath('/app/sickness/credito-deuda');
@@ -363,7 +315,7 @@ export async function getLoansHistory(): Promise<
       category_name: string;
       requires_approval: boolean;
     }>(
-      `SELECT 
+      `SELECT
         t.id,
         t.amount,
         t.description,
@@ -380,7 +332,7 @@ export async function getLoansHistory(): Promise<
         AND c.name IN ('Préstamo Personal', 'Pago Préstamo')
       ORDER BY t.occurred_at DESC, t.created_at DESC
       LIMIT 50`,
-      [householdId]
+      [householdId],
     );
 
     const loans = result.rows.map((row) => ({
@@ -394,8 +346,8 @@ export async function getLoansHistory(): Promise<
       status: row.requires_approval
         ? ('pending_approval' as const)
         : row.category_name === 'Préstamo Personal'
-          ? ('active' as const)
-          : ('repaid' as const),
+        ? ('active' as const)
+        : ('repaid' as const),
     }));
 
     return ok(loans);
