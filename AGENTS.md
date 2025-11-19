@@ -161,6 +161,237 @@ console.log(result.rows);
 
 ---
 
+## 🏷️ Sistema de Categorías (Estructura de 3 Niveles)
+
+### Arquitectura Real de Tablas
+
+**⚠️ IMPORTANTE**: El sistema usa una jerarquía de **3 niveles** (NO 2):
+
+```
+category_parents (Grupos)
+    ↓ parent_id
+categories (Categorías)
+    ↓ category_id
+subcategories (Subcategorías)
+    ↓ subcategory_id
+transactions
+```
+
+### 1. `category_parents` (Nivel 1 - "Grupos")
+
+```sql
+Tabla: category_parents
+Columnas principales:
+  - id UUID PRIMARY KEY
+  - household_id UUID (FK households)
+  - name TEXT NOT NULL  -- Ej: "Otros Ingresos", "Hogar"
+  - icon TEXT NOT NULL
+  - type TEXT NOT NULL  -- CHECK: 'income' | 'expense'
+  - display_order INTEGER DEFAULT 0
+  - created_at TIMESTAMPTZ DEFAULT now()
+  - updated_at TIMESTAMPTZ DEFAULT now()
+
+Índices:
+  - idx_category_parents_household (household_id, type, display_order)
+  
+Constraints:
+  - type IN ('income', 'expense')
+```
+
+**Ejemplos reales**:
+- "Otros Ingresos" (type: 'income')
+- "Hogar" (type: 'expense')
+- "Transporte" (type: 'expense')
+
+### 2. `categories` (Nivel 2 - "Categorías")
+
+```sql
+Tabla: categories
+Columnas principales:
+  - id UUID PRIMARY KEY
+  - household_id UUID (FK households)
+  - parent_id UUID (FK category_parents) ⭐ CLAVE
+  - name TEXT  -- Ej: "Aportación Cuenta Conjunta"
+  - icon TEXT
+  - type TEXT
+  - is_system BOOLEAN DEFAULT FALSE
+  - display_order INTEGER DEFAULT 0
+  - created_by_profile_id UUID
+  - updated_by_profile_id UUID
+  - created_at TIMESTAMPTZ DEFAULT now()
+  - updated_at TIMESTAMPTZ DEFAULT now()
+
+Índices:
+  - idx_categories_parent_id (parent_id, display_order)
+  - idx_categories_is_system WHERE is_system = true
+  
+Foreign Keys:
+  - parent_id → category_parents(id) ON DELETE SET NULL
+  - created_by_profile_id → profiles(id)
+  - updated_by_profile_id → profiles(id)
+```
+
+**Ejemplos reales**:
+- "Aportación Cuenta Conjunta" (parent: "Otros Ingresos")
+- "Supermercado" (parent: "Hogar")
+- "Préstamo Personal" (parent: NULL, is_system: TRUE) ⭐ Categoría especial
+
+### 3. `subcategories` (Nivel 3 - "Subcategorías")
+
+```sql
+Tabla: subcategories
+Columnas principales:
+  - id UUID PRIMARY KEY
+  - household_id UUID (FK households)
+  - category_id UUID (FK categories) ⭐ CLAVE
+  - name TEXT  -- Ej: "Otros", "Frutas y verduras"
+  - created_at TIMESTAMPTZ DEFAULT now()
+
+Foreign Keys:
+  - category_id → categories(id) ON DELETE CASCADE
+```
+
+**Ejemplos reales**:
+- "Otros" (category: "Aportación Cuenta Conjunta")
+- "Frutas y verduras" (category: "Supermercado")
+
+### 4. `transactions` (Uso de Categorías)
+
+```sql
+Tabla: transactions (fragmento relevante)
+Columnas de categorización:
+  - category_id UUID (FK categories) ⚠️ GENERALMENTE NULL
+  - subcategory_id UUID (FK subcategories) ⭐ PRINCIPAL
+  
+Regla: 
+  - Se guarda SOLO subcategory_id
+  - category_id generalmente es NULL
+  - Para obtener grupo + categoría: JOIN mediante subcategory → category → category_parent
+```
+
+### Consultas Correctas (3 Niveles)
+
+**❌ INCORRECTO** (Asume category_id en transactions):
+```sql
+SELECT t.*, c.name as categoria
+FROM transactions t
+LEFT JOIN categories c ON c.id = t.category_id  -- ⚠️ Esto da NULL
+WHERE t.id = 'xxx';
+```
+
+**✅ CORRECTO** (JOIN mediante subcategory_id):
+```sql
+SELECT 
+  t.id,
+  t.amount,
+  t.description,
+  t.occurred_at,
+  cp.name as grupo,           -- Nivel 1
+  c.name as categoria,        -- Nivel 2
+  sc.name as subcategoria     -- Nivel 3
+FROM transactions t
+LEFT JOIN subcategories sc ON sc.id = t.subcategory_id          -- ⭐ START aquí
+LEFT JOIN categories c ON c.id = sc.category_id                 -- ⭐ Subir a categoría
+LEFT JOIN category_parents cp ON cp.id = c.parent_id            -- ⭐ Subir a grupo
+WHERE t.household_id = $1
+ORDER BY t.occurred_at DESC;
+```
+
+### Categorías de Sistema (is_system = TRUE)
+
+Creadas en migración `20251119_160000_create_loan_categories.sql`:
+
+1. **"Préstamo Personal"** (income, common)
+   - Para registrar préstamos recibidos entre miembros
+   - Incrementa el crédito del prestamista hacia el prestatario
+   
+2. **"Pago Préstamo"** (income, common)
+   - Para registrar devoluciones de préstamos
+   - Decrementa el crédito del prestamista hacia el prestatario
+
+**Uso en consultas**:
+```sql
+-- Excluir pagos de préstamo al calcular contribuciones
+WHERE (c.name IS NULL OR c.name <> 'Pago Préstamo')
+```
+
+### Errores Comunes a Evitar
+
+**❌ NO hacer**:
+```sql
+-- Error 1: Buscar tabla que no existe
+LEFT JOIN category_groups cg ...  -- ⚠️ NO EXISTE
+
+-- Error 2: Asumir category_id tiene valor
+WHERE t.category_id IS NOT NULL  -- ⚠️ Generalmente es NULL
+
+-- Error 3: JOIN directo desde transactions a category_parents
+LEFT JOIN category_parents cp ON cp.id = t.category_id  -- ⚠️ INCORRECTO
+```
+
+**✅ SÍ hacer**:
+```sql
+-- Correcto 1: Siempre partir de subcategory_id
+LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
+
+-- Correcto 2: JOIN en cascada (3 niveles)
+LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
+LEFT JOIN categories c ON c.id = sc.category_id
+LEFT JOIN category_parents cp ON cp.id = c.parent_id
+
+-- Correcto 3: Verificar existencia de categoría por nombre
+WHERE (c.name IS NULL OR c.name <> 'Pago Préstamo')
+```
+
+### Ejemplo Completo: Transacción con Categorización
+
+**Dato en UI**:
+- Grupo: "Otros Ingresos"
+- Categoría: "Aportación Cuenta Conjunta"
+- Subcategoría: "Otros"
+- Monto: 150.36€
+- Fecha: 04/11/2025
+
+**Dato en DB** (`transaction_id = '244082f4-23c2-46f3-9b1b-323e68833302'`):
+```sql
+transactions:
+  - subcategory_id = 'dd2d048b-1d72-4f66-b28f-58d0d200680d'  -- "Otros"
+  - category_id = NULL  ⚠️ No se guarda
+
+subcategories (id = 'dd2d048b...'):
+  - name = 'Otros'
+  - category_id = '9fa72930-5aa5-450a-b4ec-e9723be29695'  -- "Aportación Cuenta Conjunta"
+
+categories (id = '9fa72930...'):
+  - name = 'Aportación Cuenta Conjunta'
+  - parent_id = 'abc123...'  -- "Otros Ingresos"
+
+category_parents (id = 'abc123...'):
+  - name = 'Otros Ingresos'
+  - type = 'income'
+```
+
+**Consulta para obtener todo**:
+```sql
+SELECT 
+  cp.name as grupo,
+  c.name as categoria,
+  sc.name as subcategoria,
+  t.amount,
+  t.occurred_at
+FROM transactions t
+LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
+LEFT JOIN categories c ON c.id = sc.category_id
+LEFT JOIN category_parents cp ON cp.id = c.parent_id
+WHERE t.id = '244082f4-23c2-46f3-9b1b-323e68833302';
+
+-- Resultado:
+-- grupo           | categoria                       | subcategoria | amount | occurred_at
+-- Otros Ingresos  | Aportación Cuenta Conjunta     | Otros        | 150.36 | 2025-11-04
+```
+
+---
+
 ## 🔄 Sistema de Auto-generación de Types (✅ Completado)
 
 **Estado**: ✅ **Issue #8 y #10 COMPLETADOS**
@@ -255,6 +486,253 @@ npm run lint       # Debe pasar sin warnings
 **Tracking**: Ver `docs/MIGRATION_TYPES_PROGRESS.md` para lista completa.
 
 📚 **Documentación completa**: Issue #11
+
+---
+
+## 💰 Sistema de Contribuciones y Períodos (CRÍTICO)
+
+### Tabla `contributions` - ⚠️ NO SE USA
+
+```sql
+Tabla: contributions
+Estado: VACÍA (0 filas en DEV y PROD)
+Uso: NO UTILIZADA por el sistema actual
+
+Columnas:
+  - id UUID
+  - household_id UUID
+  - profile_id UUID
+  - year INTEGER
+  - month INTEGER
+  - expected_amount NUMERIC  -- NO expected_contribution
+  - paid_amount NUMERIC  -- NO actual_contribution
+  - status TEXT
+  - created_at TIMESTAMP
+
+⚠️ IMPORTANTE:
+- Esta tabla NO se usa para cálculos
+- Todos los cálculos son en TIEMPO REAL desde transactions
+- NO consultar ni escribir en esta tabla
+- Deprecada según ANALISIS_PROBLEMA_PERIODOS_CERRADOS.md
+```
+
+### Tabla `transactions` - Campos Relevantes para Contribuciones
+
+```sql
+Tabla: transactions
+Columnas principales para contribuciones:
+  - id UUID PRIMARY KEY
+  - household_id UUID (FK households)
+  - period_id UUID (FK monthly_periods)  -- Vinculación al período
+  - type TEXT  -- 'income', 'expense', 'income_direct', 'expense_direct'
+  - flow_type TEXT  -- 'common', 'direct'
+  - amount NUMERIC
+  - occurred_at DATE  -- NO timestamp
+  - performed_by_profile_id UUID  -- ⭐ QUIÉN EJECUTÓ (source of truth)
+  - profile_id UUID  -- Quién registró
+  - is_compensatory_income BOOLEAN  -- TRUE para ingresos de equilibrio
+  - transaction_pair_id UUID  -- Vincula gasto directo con ingreso compensatorio
+
+Tipos de transacciones relevantes:
+  1. income + common → Aportación a cuenta conjunta
+  2. expense + common → Gasto del hogar
+  3. expense_direct + direct → Gasto directo de un miembro
+  4. income_direct + direct → Ingreso compensatorio (equilibrio dual-flow)
+```
+
+### Tabla `monthly_periods` - Fases y Estados
+
+```sql
+Tabla: monthly_periods
+Columnas principales:
+  - id UUID PRIMARY KEY
+  - household_id UUID
+  - year INTEGER
+  - month INTEGER
+  - phase period_phase_enum  -- ⭐ CRÍTICO para lógica de cálculo
+  - status TEXT  -- 'open', 'pending_close', 'closed'
+  - snapshot_contribution_goal NUMERIC  -- Presupuesto bloqueado al cerrar
+  - snapshot_budget NUMERIC
+  - contribution_disabled BOOLEAN DEFAULT FALSE
+  - opened_at TIMESTAMP
+  - closed_at TIMESTAMP
+
+Enum phase:
+  - 'preparing' → Preparación inicial, NO contar pagos reales
+  - 'validation' → Validación de ingresos
+  - 'active' → Período activo, contar pagos
+  - 'closing' → En proceso de cierre
+  - 'closed' → Cerrado, contar pagos (⚠️ era el bug)
+```
+
+### Lógica de Cálculo de Contribuciones (⚠️ BUG CRÍTICO RESUELTO)
+
+**Archivo**: `/app/api/periods/contributions/route.ts`
+
+**ANTES (BUG - Línea 174)** ❌:
+```typescript
+const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase === 'active';
+// PROBLEMA: Excluía 'closed', causando cálculos incorrectos en períodos cerrados
+```
+
+**DESPUÉS (FIX - Commit d8e0480)** ✅:
+```typescript
+// REGLA CRÍTICA (Línea 174):
+// Contar gastos directos y aportaciones comunes en todas las fases excepto 'preparing'
+// - preparing: Solo mostrar contribuciones esperadas (sin contar ejecución real)
+// - validation/active/closing/closed: Contar todo lo ejecutado (gastos directos + ingresos comunes)
+// Esto mantiene la consistencia: el cálculo NO cambia al cerrar el periodo
+const shouldCountDirectAsPaid = currentPhase !== 'preparing';
+```
+
+**Fórmula de Cálculo**:
+```typescript
+// Líneas 227-228 (route.ts)
+const paidDirect = shouldCountDirectAsPaid ? directExpenses : 0;
+const paidCommon = shouldCountDirectAsPaid ? (commonIncomesMap.get(m.profile_id) ?? 0) : 0;
+const paid = paidDirect + paidCommon;
+const pending = Math.max(0, (finalExpected ?? 0) - paid);
+```
+
+### Patrones de Consulta Correctos
+
+**Gastos Directos (lines ~199-208 route.ts)**:
+```sql
+SELECT 
+  performed_by_profile_id,
+  SUM(amount) AS total
+FROM transactions
+WHERE household_id = $1
+  AND flow_type = 'direct'
+  AND (type = 'expense' OR type = 'expense_direct')  -- ⚠️ AMBOS tipos
+  AND (
+    period_id = $2 
+    OR (period_id IS NULL AND occurred_at >= $3 AND occurred_at < $4)
+  )
+GROUP BY performed_by_profile_id;
+```
+
+**Contribuciones Comunes (lines ~212-225 route.ts)**:
+```sql
+SELECT 
+  t.performed_by_profile_id as profile_id,
+  SUM(t.amount) AS total
+FROM transactions t
+LEFT JOIN categories c ON c.id = t.category_id
+WHERE t.household_id = $1
+  AND t.type = 'income'
+  AND t.flow_type = 'common'
+  AND (c.name IS NULL OR c.name <> 'Pago Préstamo')  -- ⚠️ Excluir pagos de préstamo
+  AND (
+    t.period_id = $2 
+    OR (t.period_id IS NULL AND t.occurred_at >= $3 AND t.occurred_at < $4)
+  )
+GROUP BY t.performed_by_profile_id;
+```
+
+**Ingresos de Miembros**:
+```sql
+-- Patrón: DISTINCT ON para obtener el ingreso más reciente
+SELECT DISTINCT ON (profile_id)
+  profile_id,
+  monthly_income,
+  effective_from
+FROM member_incomes
+WHERE household_id = $1
+  AND effective_from <= $2  -- Fecha de corte
+ORDER BY profile_id, effective_from DESC;
+```
+
+### Vista Materializada `mv_member_pending_contributions`
+
+```sql
+Vista: mv_member_pending_contributions
+Uso: Cálculos de balance de miembros
+Refresco: Automático mediante triggers
+
+Columnas relevantes:
+  - household_id UUID
+  - profile_id UUID
+  - expected_contribution NUMERIC  -- Contribución esperada mensual
+  - actual_contributions NUMERIC  -- Aportaciones comunes realizadas
+  - direct_expenses_current_month NUMERIC  -- Gastos directos del mes actual
+  - pending_amount NUMERIC  -- Pendiente calculado
+
+Lógica:
+  - Calcula desde transactions en tiempo real
+  - NO usa la tabla contributions
+  - Incluye gastos directos como parte del pago
+```
+
+### Errores Comunes a Evitar
+
+**❌ NO hacer**:
+```typescript
+// Error 1: Usar tabla contributions
+const contrib = await query('SELECT * FROM contributions WHERE profile_id = $1', [profileId]);
+// ⚠️ La tabla está VACÍA, no tiene datos
+
+// Error 2: Usar nombres de columnas incorrectos
+WHERE expected_contribution > 0  -- ⚠️ Se llama expected_amount
+
+// Error 3: Solo buscar un tipo de gasto directo
+WHERE type = 'expense' AND flow_type = 'direct'  -- ⚠️ Falta 'expense_direct'
+
+// Error 4: Excluir fases incorrectamente
+if (phase === 'active' || phase === 'validation')  -- ⚠️ Excluye 'closed'
+
+// Error 5: Usar performed_by vs paid_by
+WHERE paid_by_profile_id = $1  -- ⚠️ No existe, se llama performed_by_profile_id
+```
+
+**✅ SÍ hacer**:
+```typescript
+// Correcto 1: Calcular desde transactions
+const directExpenses = await query(`
+  SELECT SUM(amount) FROM transactions
+  WHERE flow_type = 'direct' 
+    AND (type = 'expense' OR type = 'expense_direct')
+    AND performed_by_profile_id = $1
+`, [profileId]);
+
+// Correcto 2: Incluir todas las fases excepto 'preparing'
+const shouldCount = currentPhase !== 'preparing';
+
+// Correcto 3: Excluir pagos de préstamo
+LEFT JOIN categories c ON c.id = t.category_id
+WHERE (c.name IS NULL OR c.name <> 'Pago Préstamo')
+
+// Correcto 4: Usar performed_by_profile_id
+WHERE t.performed_by_profile_id = $1
+```
+
+### Caso Real: Cálculo Octubre 2025 (Resuelto)
+
+**Problema Detectado**:
+- Octubre 2025 (phase: 'closed') mostraba cálculos incorrectos
+- Noviembre 2025 (phase: 'active') mostraba cálculos correctos
+
+**Causa Raíz**:
+```typescript
+// ANTES (BUG):
+const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase === 'active';
+// Cuando phase = 'closed': shouldCountDirectAsPaid = false
+// Resultado: paidDirect = 0, paidCommon = 0 (ignoraba pagos reales)
+```
+
+**Solución Aplicada**:
+```typescript
+// DESPUÉS (FIX):
+const shouldCountDirectAsPaid = currentPhase !== 'preparing';
+// Ahora 'closed' también cuenta pagos: shouldCountDirectAsPaid = true
+```
+
+**Resultado**:
+- ✅ Octubre 2025: Cálculos ahora correctos (150.36€ + 327€ = 477.36€ pagado)
+- ✅ Noviembre 2025: Sigue funcionando correctamente
+- ✅ User validation: "Ya lo valido yo, el cálculo ya es correcto"
+
+**Documentación Completa**: `docs/ANALISIS_PROBLEMA_PERIODOS_CERRADOS.md`
 
 ---
 
