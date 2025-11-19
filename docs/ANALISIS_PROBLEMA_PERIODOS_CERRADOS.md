@@ -13,11 +13,13 @@ Los cálculos de contribución son **correctos en periodos activos** pero **inco
 ### Evidencia
 
 **NOVIEMBRE 2025 (active)** ✅:
+
 - Kava: Aportado 562.64€, Gastos Directos 60€ → Pendiente: 477.36€
 - Sarini13: Aportado 150.36€, Gastos Directos 327€ → Pendiente: 622.64€
 - **Cálculo correcto**: Los gastos directos se descuentan del pendiente
 
 **OCTUBRE 2025 (closed)** ❌:
+
 - Los gastos directos **NO se descuentan** del pendiente
 - El cálculo ignora los 327€ de gastos directos de Sarini13
 
@@ -35,13 +37,15 @@ const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase ==
 **Problema**: Esta lógica **excluye** los periodos cerrados (`phase = 'closed'`).
 
 **Efecto**:
+
 ```typescript
 // Línea 227
 const paidDirect = shouldCountDirectAsPaid ? directExpenses : 0;
-const paidCommon = shouldCountDirectAsPaid ? (commonIncomesMap.get(m.profile_id) ?? 0) : 0;
+const paidCommon = shouldCountDirectAsPaid ? commonIncomesMap.get(m.profile_id) ?? 0 : 0;
 ```
 
 Cuando `phase = 'closed'`:
+
 - `paidDirect = 0` ❌ (debería ser el total de gastos directos)
 - `paidCommon = 0` ❌ (debería ser el total de ingresos comunes)
 
@@ -52,6 +56,7 @@ Cuando `phase = 'closed'`:
 **¿Por qué existe esta condición?**
 
 Posibles razones históricas:
+
 1. **Fase "preparing"**: No contar gastos directos hasta validar contribuciones
 2. **Fase "closed"**: ¿Protección contra modificaciones? (pero NO tiene sentido ignorar gastos reales)
 
@@ -64,13 +69,12 @@ Posibles razones históricas:
 ### Opción 1: Incluir 'closed' en la condición (RECOMENDADA)
 
 ```typescript
-const shouldCountDirectAsPaid = 
-  currentPhase === 'validation' || 
-  currentPhase === 'active' || 
-  currentPhase === 'closed';
+const shouldCountDirectAsPaid =
+  currentPhase === 'validation' || currentPhase === 'active' || currentPhase === 'closed';
 ```
 
 **Justificación**:
+
 - Los gastos directos son **hechos históricos** que no cambian
 - Deben contarse siempre después de la fase preparing
 - Mantiene consistencia: el cálculo no cambia al cerrar el periodo
@@ -90,6 +94,7 @@ const shouldCountDirectAsPaid = currentPhase !== 'preparing';
 ### Cambios en el Cálculo
 
 **ANTES (Octubre cerrado)**:
+
 ```typescript
 paidDirect = 0  // ❌ Ignora 327€ de Sarini13
 paidCommon = 0  // ❌ Ignora ingresos
@@ -98,6 +103,7 @@ pending = 1200€ (sin ajustar)
 ```
 
 **DESPUÉS (Octubre cerrado)**:
+
 ```typescript
 paidDirect = 327€  // ✅ Cuenta gastos directos
 paidCommon = 193.75€  // ✅ Cuenta ingresos
@@ -142,12 +148,14 @@ const shouldCountDirectAsPaid = currentPhase !== 'preparing';
 La tabla `contributions` está **vacía** y **no se usa** en el sistema actual.
 
 **Documentar**:
+
 - ❌ NO se usa para cálculos
 - ❌ NO se pobla automáticamente
 - ⚠️ Podría causar confusión
 - ✅ El cálculo es 100% en tiempo real desde `transactions`
 
 **Opciones**:
+
 1. **Deprecar y documentar**: Renombrar a `_legacy_contributions`
 2. **Eliminar**: Si no hay plan de uso futuro
 3. **Implementar**: Poblar durante bloqueo de periodo (más complejo)
@@ -160,14 +168,14 @@ La tabla `contributions` está **vacía** y **no se usa** en el sistema actual.
 
 ```sql
 -- Verificar Octubre después del fix
-SELECT 
+SELECT
   p.display_name,
   -- Gastos directos (deben contarse)
   COALESCE(SUM(CASE WHEN t.type = 'expense_direct' THEN t.amount ELSE 0 END), 0) as gastos_directos,
   -- Ingresos comunes (deben contarse)
   COALESCE(SUM(CASE WHEN t.type = 'income' AND t.flow_type = 'common' THEN t.amount ELSE 0 END), 0) as ingresos_comunes,
   -- Total pagado efectivo
-  COALESCE(SUM(CASE WHEN t.type = 'expense_direct' THEN t.amount ELSE 0 END), 0) + 
+  COALESCE(SUM(CASE WHEN t.type = 'expense_direct' THEN t.amount ELSE 0 END), 0) +
   COALESCE(SUM(CASE WHEN t.type = 'income' AND t.flow_type = 'common' THEN t.amount ELSE 0 END), 0) as total_pagado
 FROM transactions t
 JOIN profiles p ON p.id = t.performed_by_profile_id
@@ -179,6 +187,7 @@ GROUP BY p.display_name;
 ```
 
 **Resultado Esperado**:
+
 - Kava: gastos_directos=0, ingresos_comunes=680, total_pagado=680
 - Sarini13: gastos_directos=327, ingresos_comunes=193.75, total_pagado=520.75
 
@@ -200,6 +209,7 @@ curl http://localhost:3001/api/periods/contributions?year=2025&month=10
 Crear: `docs/SISTEMA_CONTRIBUCIONES_FLUJO_REAL.md`
 
 **Contenido**:
+
 - Cómo se calculan las contribuciones (100% en tiempo real)
 - Qué tablas se usan (transactions, monthly_periods, member_incomes)
 - Qué tablas NO se usan (contributions está vacía)
@@ -211,6 +221,7 @@ Crear: `docs/SISTEMA_CONTRIBUCIONES_FLUJO_REAL.md`
 Crear: `docs/DEPRECATION_CONTRIBUTIONS_TABLE.md`
 
 **Contenido**:
+
 - Estado actual: Tabla vacía, no utilizada
 - Razón histórica de existencia
 - Por qué se depreca
@@ -220,12 +231,14 @@ Crear: `docs/DEPRECATION_CONTRIBUTIONS_TABLE.md`
 ### 3. Actualizar AGENTS.md
 
 Añadir sección sobre contribuciones:
+
 ```markdown
 ## Sistema de Contribuciones
 
 **Cálculo**: 100% en tiempo real desde `transactions`
 **NO usar**: Tabla `contributions` (deprecada, vacía)
 **Fases del periodo**:
+
 - `preparing`: Solo mostrar esperado (no contar ejecución)
 - `validation/active/closed`: Contar gastos directos + ingresos comunes
 

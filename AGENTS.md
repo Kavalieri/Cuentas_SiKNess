@@ -120,6 +120,7 @@ mcp_shell_execute_command('psql -h 127.0.0.1 -U cuentassik_user -d cuentassik_de
 - **Ejecución**: Conectarse como `postgres` y ejecutar `SET ROLE cuentassik_owner;` dentro de migraciones
 
 **⚠️ Roles OBSOLETOS (eliminados en Issue #6 - v2.1.0):**
+
 - ❌ `cuentassik_dev_owner` (reemplazado por `cuentassik_owner`)
 - ❌ `cuentassik_prod_owner` (reemplazado por `cuentassik_owner`)
 
@@ -193,12 +194,13 @@ Columnas principales:
 
 Índices:
   - idx_category_parents_household (household_id, type, display_order)
-  
+
 Constraints:
   - type IN ('income', 'expense')
 ```
 
 **Ejemplos reales**:
+
 - "Otros Ingresos" (type: 'income')
 - "Hogar" (type: 'expense')
 - "Transporte" (type: 'expense')
@@ -224,7 +226,7 @@ Columnas principales:
 Índices:
   - idx_categories_parent_id (parent_id, display_order)
   - idx_categories_is_system WHERE is_system = true
-  
+
 Foreign Keys:
   - parent_id → category_parents(id) ON DELETE SET NULL
   - created_by_profile_id → profiles(id)
@@ -232,6 +234,7 @@ Foreign Keys:
 ```
 
 **Ejemplos reales**:
+
 - "Aportación Cuenta Conjunta" (parent: "Otros Ingresos")
 - "Supermercado" (parent: "Hogar")
 - "Préstamo Personal" (parent: NULL, is_system: TRUE) ⭐ Categoría especial
@@ -252,6 +255,7 @@ Foreign Keys:
 ```
 
 **Ejemplos reales**:
+
 - "Otros" (category: "Aportación Cuenta Conjunta")
 - "Frutas y verduras" (category: "Supermercado")
 
@@ -262,8 +266,8 @@ Tabla: transactions (fragmento relevante)
 Columnas de categorización:
   - category_id UUID (FK categories) ⚠️ GENERALMENTE NULL
   - subcategory_id UUID (FK subcategories) ⭐ PRINCIPAL
-  
-Regla: 
+
+Regla:
   - Se guarda SOLO subcategory_id
   - category_id generalmente es NULL
   - Para obtener grupo + categoría: JOIN mediante subcategory → category → category_parent
@@ -272,6 +276,7 @@ Regla:
 ### Consultas Correctas (3 Niveles)
 
 **❌ INCORRECTO** (Asume category_id en transactions):
+
 ```sql
 SELECT t.*, c.name as categoria
 FROM transactions t
@@ -280,8 +285,9 @@ WHERE t.id = 'xxx';
 ```
 
 **✅ CORRECTO** (JOIN mediante subcategory_id):
+
 ```sql
-SELECT 
+SELECT
   t.id,
   t.amount,
   t.description,
@@ -302,14 +308,16 @@ ORDER BY t.occurred_at DESC;
 Creadas en migración `20251119_160000_create_loan_categories.sql`:
 
 1. **"Préstamo Personal"** (income, common)
+
    - Para registrar préstamos recibidos entre miembros
    - Incrementa el crédito del prestamista hacia el prestatario
-   
+
 2. **"Pago Préstamo"** (income, common)
    - Para registrar devoluciones de préstamos
    - Decrementa el crédito del prestamista hacia el prestatario
 
 **Uso en consultas**:
+
 ```sql
 -- Excluir pagos de préstamo al calcular contribuciones
 WHERE (c.name IS NULL OR c.name <> 'Pago Préstamo')
@@ -318,6 +326,7 @@ WHERE (c.name IS NULL OR c.name <> 'Pago Préstamo')
 ### Errores Comunes a Evitar
 
 **❌ NO hacer**:
+
 ```sql
 -- Error 1: Buscar tabla que no existe
 LEFT JOIN category_groups cg ...  -- ⚠️ NO EXISTE
@@ -330,6 +339,7 @@ LEFT JOIN category_parents cp ON cp.id = t.category_id  -- ⚠️ INCORRECTO
 ```
 
 **✅ SÍ hacer**:
+
 ```sql
 -- Correcto 1: Siempre partir de subcategory_id
 LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
@@ -346,6 +356,7 @@ WHERE (c.name IS NULL OR c.name <> 'Pago Préstamo')
 ### Ejemplo Completo: Transacción con Categorización
 
 **Dato en UI**:
+
 - Grupo: "Otros Ingresos"
 - Categoría: "Aportación Cuenta Conjunta"
 - Subcategoría: "Otros"
@@ -353,6 +364,7 @@ WHERE (c.name IS NULL OR c.name <> 'Pago Préstamo')
 - Fecha: 04/11/2025
 
 **Dato en DB** (`transaction_id = '244082f4-23c2-46f3-9b1b-323e68833302'`):
+
 ```sql
 transactions:
   - subcategory_id = 'dd2d048b-1d72-4f66-b28f-58d0d200680d'  -- "Otros"
@@ -372,8 +384,9 @@ category_parents (id = 'abc123...'):
 ```
 
 **Consulta para obtener todo**:
+
 ```sql
-SELECT 
+SELECT
   cp.name as grupo,
   c.name as categoria,
   sc.name as subcategoria,
@@ -401,6 +414,7 @@ WHERE t.id = '244082f4-23c2-46f3-9b1b-323e68833302';
 Los types de base de datos se generan **automáticamente** desde el schema PostgreSQL usando `kysely-codegen`.
 
 **Archivo generado**: `types/database.generated.ts`
+
 - **Líneas**: ~1,013 (43 tablas + enums)
 - **Formato**: Kysely (interfaces TypeScript)
 - **Source of truth**: Schema PostgreSQL
@@ -420,6 +434,7 @@ Cuando aplicas una migración, **los types se regeneran automáticamente**:
 ```
 
 **Beneficios**:
+
 - ✅ Sincronización automática schema ↔ types
 - ✅ Compilación TypeScript siempre limpia
 - ✅ Cero mantenimiento manual
@@ -436,10 +451,12 @@ npm run types:generate:prod
 ```
 
 **VS Code Tasks disponibles**:
+
 - `🔄 Regenerar Types (DEV)`
 - `🔄 Regenerar Types (PROD)`
 
 **Documentación completa**:
+
 - `docs/ISSUE_8_AUTO_GENERACION_TYPES.md`
 - `database/README.md` (sección auto-generación)
 
@@ -452,6 +469,7 @@ npm run types:generate:prod
 Si tocas un archivo que importa `@/types/database`, debes migrarlo a `@/types/database.generated` en el mismo commit.
 
 ### Por Qué:
+
 - ✅ `database.generated.ts`: Auto-generado desde PostgreSQL, siempre sincronizado
 - ❌ `database.ts`: Manual, formato Supabase legacy, puede quedar obsoleto
 
@@ -467,17 +485,20 @@ import type { Transactions } from '@/types/database.generated';
 ```
 
 **Cambios típicos:**
+
 1. Import: `database` → `database.generated`
 2. Type: `Database['public']['Tables']['X']['Row']` → `X` (tabla en PascalCase)
 3. Eliminar tipos Insert/Update si no se usan
 
 ### Workflow:
+
 1. Abres archivo para editar (ej: `lib/periods.ts`)
 2. Detectas: `import type { Database } from '@/types/database'`
 3. **PRIMERO**: Migrar tipos (commit independiente)
 4. **DESPUÉS**: Hacer cambios solicitados
 
 ### Validación:
+
 ```bash
 npm run typecheck  # Debe pasar sin errores
 npm run lint       # Debe pasar sin warnings
@@ -570,12 +591,14 @@ Enum phase:
 **Archivo**: `/app/api/periods/contributions/route.ts`
 
 **ANTES (BUG - Línea 174)** ❌:
+
 ```typescript
 const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase === 'active';
 // PROBLEMA: Excluía 'closed', causando cálculos incorrectos en períodos cerrados
 ```
 
 **DESPUÉS (FIX - Commit d8e0480)** ✅:
+
 ```typescript
 // REGLA CRÍTICA (Línea 174):
 // Contar gastos directos y aportaciones comunes en todas las fases excepto 'preparing'
@@ -586,10 +609,11 @@ const shouldCountDirectAsPaid = currentPhase !== 'preparing';
 ```
 
 **Fórmula de Cálculo**:
+
 ```typescript
 // Líneas 227-228 (route.ts)
 const paidDirect = shouldCountDirectAsPaid ? directExpenses : 0;
-const paidCommon = shouldCountDirectAsPaid ? (commonIncomesMap.get(m.profile_id) ?? 0) : 0;
+const paidCommon = shouldCountDirectAsPaid ? commonIncomesMap.get(m.profile_id) ?? 0 : 0;
 const paid = paidDirect + paidCommon;
 const pending = Math.max(0, (finalExpected ?? 0) - paid);
 ```
@@ -597,8 +621,9 @@ const pending = Math.max(0, (finalExpected ?? 0) - paid);
 ### Patrones de Consulta Correctos
 
 **Gastos Directos (lines ~199-208 route.ts)**:
+
 ```sql
-SELECT 
+SELECT
   performed_by_profile_id,
   SUM(amount) AS total
 FROM transactions
@@ -606,15 +631,16 @@ WHERE household_id = $1
   AND flow_type = 'direct'
   AND (type = 'expense' OR type = 'expense_direct')  -- ⚠️ AMBOS tipos
   AND (
-    period_id = $2 
+    period_id = $2
     OR (period_id IS NULL AND occurred_at >= $3 AND occurred_at < $4)
   )
 GROUP BY performed_by_profile_id;
 ```
 
 **Contribuciones Comunes (lines ~212-225 route.ts)**:
+
 ```sql
-SELECT 
+SELECT
   t.performed_by_profile_id as profile_id,
   SUM(t.amount) AS total
 FROM transactions t
@@ -624,13 +650,14 @@ WHERE t.household_id = $1
   AND t.flow_type = 'common'
   AND (c.name IS NULL OR c.name <> 'Pago Préstamo')  -- ⚠️ Excluir pagos de préstamo
   AND (
-    t.period_id = $2 
+    t.period_id = $2
     OR (t.period_id IS NULL AND t.occurred_at >= $3 AND t.occurred_at < $4)
   )
 GROUP BY t.performed_by_profile_id;
 ```
 
 **Ingresos de Miembros**:
+
 ```sql
 -- Patrón: DISTINCT ON para obtener el ingreso más reciente
 SELECT DISTINCT ON (profile_id)
@@ -667,6 +694,7 @@ Lógica:
 ### Errores Comunes a Evitar
 
 **❌ NO hacer**:
+
 ```typescript
 // Error 1: Usar tabla contributions
 const contrib = await query('SELECT * FROM contributions WHERE profile_id = $1', [profileId]);
@@ -686,11 +714,12 @@ WHERE paid_by_profile_id = $1  -- ⚠️ No existe, se llama performed_by_profil
 ```
 
 **✅ SÍ hacer**:
+
 ```typescript
 // Correcto 1: Calcular desde transactions
 const directExpenses = await query(`
   SELECT SUM(amount) FROM transactions
-  WHERE flow_type = 'direct' 
+  WHERE flow_type = 'direct'
     AND (type = 'expense' OR type = 'expense_direct')
     AND performed_by_profile_id = $1
 `, [profileId]);
@@ -709,10 +738,12 @@ WHERE t.performed_by_profile_id = $1
 ### Caso Real: Cálculo Octubre 2025 (Resuelto)
 
 **Problema Detectado**:
+
 - Octubre 2025 (phase: 'closed') mostraba cálculos incorrectos
 - Noviembre 2025 (phase: 'active') mostraba cálculos correctos
 
 **Causa Raíz**:
+
 ```typescript
 // ANTES (BUG):
 const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase === 'active';
@@ -721,6 +752,7 @@ const shouldCountDirectAsPaid = currentPhase === 'validation' || currentPhase ==
 ```
 
 **Solución Aplicada**:
+
 ```typescript
 // DESPUÉS (FIX):
 const shouldCountDirectAsPaid = currentPhase !== 'preparing';
@@ -728,6 +760,7 @@ const shouldCountDirectAsPaid = currentPhase !== 'preparing';
 ```
 
 **Resultado**:
+
 - ✅ Octubre 2025: Cálculos ahora correctos (150.36€ + 327€ = 477.36€ pagado)
 - ✅ Noviembre 2025: Sigue funcionando correctamente
 - ✅ User validation: "Ya lo valido yo, el cálculo ya es correcto"

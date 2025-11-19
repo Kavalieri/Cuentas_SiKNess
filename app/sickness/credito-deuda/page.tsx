@@ -69,10 +69,12 @@ export default async function BalancePage() {
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Total Deudas Pendientes</p>
-              <p className={cn(
-                "text-2xl font-bold",
-                summary.total_debts < 0.01 ? "text-green-600" : "text-red-600"
-              )}>
+              <p
+                className={cn(
+                  'text-2xl font-bold',
+                  summary.total_debts < 0.01 ? 'text-green-600' : 'text-red-600',
+                )}
+              >
                 €{summary.total_debts.toFixed(2)}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -91,8 +93,7 @@ export default async function BalancePage() {
                   <>
                     <CheckCircle className="h-6 w-6 text-green-600" />
                     <p className="text-2xl font-bold text-green-600">
-                      Excedente: €
-                      {Math.abs(summary.total_credits - summary.total_debts).toFixed(2)}
+                      Excedente: €{Math.abs(summary.total_credits - summary.total_debts).toFixed(2)}
                     </p>
                   </>
                 )}
@@ -208,14 +209,11 @@ export default async function BalancePage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Link href="/app/sickness/credito-deuda/solicitar-prestamo">
+            <Link href="/sickness/credito-deuda/solicitar-prestamo">
               <Button>Solicitar Préstamo</Button>
             </Link>
-            <Link href="/app/sickness/credito-deuda/devolver-prestamo">
+            <Link href="/sickness/credito-deuda/devolver-prestamo">
               <Button variant="secondary">Devolver Préstamo</Button>
-            </Link>
-            <Link href="/app/sickness/credito-deuda/mi-historial">
-              <Button variant="outline">Mi Historial</Button>
             </Link>
           </div>
         </CardContent>

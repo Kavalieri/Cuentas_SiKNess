@@ -23,8 +23,8 @@ BEGIN;
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' 
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
     AND table_name = 'personal_loans'
   ) THEN
     ALTER TABLE personal_loans RENAME TO _legacy_personal_loans;
@@ -41,8 +41,8 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' 
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
     AND table_name = 'refund_claims'
   ) THEN
     ALTER TABLE refund_claims RENAME TO _legacy_refund_claims;
@@ -59,8 +59,8 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' 
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
     AND table_name = 'member_credits'
   ) THEN
     ALTER TABLE member_credits RENAME TO _legacy_member_credits;
@@ -78,16 +78,16 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' 
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
     AND table_name = '_legacy_personal_loans'
   ) THEN
-    COMMENT ON TABLE _legacy_personal_loans IS 
+    COMMENT ON TABLE _legacy_personal_loans IS
     '⚠️ LEGACY TABLE (Phase 4 - Issue #60 - 19 Nov 2025)
     Datos migrados a transactions con categoría "Préstamo Personal".
     Tabla renombrada y preservada para rollback.
     ELIMINAR EN: v4.0.0 (tras 6 meses de estabilidad del nuevo sistema)
-    
+
     ROLLBACK: Si es necesario, renombrar de vuelta:
     ALTER TABLE _legacy_personal_loans RENAME TO personal_loans;';
   END IF;
@@ -97,15 +97,15 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' 
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
     AND table_name = '_legacy_refund_claims'
   ) THEN
-    COMMENT ON TABLE _legacy_refund_claims IS 
+    COMMENT ON TABLE _legacy_refund_claims IS
     '⚠️ LEGACY TABLE (Phase 4 - Issue #60 - 19 Nov 2025)
     Reemplazado por sistema integrado de transacciones (expense_direct).
     ELIMINAR EN: v4.0.0
-    
+
     ROLLBACK: ALTER TABLE _legacy_refund_claims RENAME TO refund_claims;';
   END IF;
 END $$;
@@ -114,15 +114,15 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_schema = 'public' 
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
     AND table_name = '_legacy_member_credits'
   ) THEN
-    COMMENT ON TABLE _legacy_member_credits IS 
+    COMMENT ON TABLE _legacy_member_credits IS
     '⚠️ LEGACY TABLE (Phase 4 - Issue #60 - 19 Nov 2025)
     Balance ahora calculado dinámicamente por API /api/periods/contributions.
     ELIMINAR EN: v4.0.0
-    
+
     ROLLBACK: ALTER TABLE _legacy_member_credits RENAME TO member_credits;';
   END IF;
 END $$;
@@ -132,38 +132,38 @@ END $$;
 -- ==================================================
 
 -- Mostrar estado final de tablas legacy
-SELECT 
+SELECT
   'VERIFICACIÓN RENOMBRADO' as status,
-  CASE 
+  CASE
     WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '_legacy_personal_loans')
     THEN '✅ _legacy_personal_loans'
     ELSE '❌ No renombrada'
   END as personal_loans_status,
-  CASE 
+  CASE
     WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '_legacy_refund_claims')
     THEN '✅ _legacy_refund_claims'
     ELSE '❌ No renombrada'
   END as refund_claims_status,
-  CASE 
+  CASE
     WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '_legacy_member_credits')
     THEN '✅ _legacy_member_credits'
     ELSE '❌ No renombrada'
   END as member_credits_status;
 
 -- Confirmar que tablas originales ya no existen
-SELECT 
+SELECT
   'VERIFICACIÓN ORIGINAL' as status,
-  CASE 
+  CASE
     WHEN NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'personal_loans')
     THEN '✅ personal_loans eliminada'
     ELSE '⚠️  Aún existe'
   END as personal_loans_check,
-  CASE 
+  CASE
     WHEN NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'refund_claims')
     THEN '✅ refund_claims eliminada'
     ELSE '⚠️  Aún existe'
   END as refund_claims_check,
-  CASE 
+  CASE
     WHEN NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'member_credits')
     THEN '✅ member_credits eliminada'
     ELSE '⚠️  Aún existe'

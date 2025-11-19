@@ -1,9 +1,9 @@
 'use client';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Shield } from 'lucide-react';
+import { Shield, Trash2 } from 'lucide-react';
 
 export interface WipeOptions {
   transactions: boolean;
@@ -22,13 +22,13 @@ interface WipeOptionsSelectorProps {
   disabled?: boolean;
 }
 
-export function WipeOptionsSelector({ 
-  options, 
-  onChange, 
+export function WipeOptionsSelector({
+  options,
+  onChange,
   showHouseholdsOption = false,
-  disabled = false 
+  disabled = false
 }: WipeOptionsSelectorProps) {
-  
+
   const toggleOption = (key: keyof WipeOptions) => {
     onChange({ ...options, [key]: !options[key] });
   };

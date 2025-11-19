@@ -34,15 +34,15 @@ export function calculateContributionAmount(
     case CALCULATION_TYPES.PROPORTIONAL:
       if (totalIncome === 0) return 0;
       return (memberIncome / totalIncome) * monthlyGoal;
-    
+
     case CALCULATION_TYPES.EQUAL:
       if (memberCount === 0) return 0;
       return monthlyGoal / memberCount;
-    
+
     case CALCULATION_TYPES.CUSTOM:
       // Future: use custom percentages
       return monthlyGoal / memberCount; // Fallback to equal
-    
+
     default:
       return 0;
   }
@@ -61,15 +61,15 @@ export function getContributionPercentage(
     case CALCULATION_TYPES.PROPORTIONAL:
       if (totalIncome === 0) return 0;
       return (memberIncome / totalIncome) * 100;
-    
+
     case CALCULATION_TYPES.EQUAL:
       if (memberCount === 0) return 0;
       return 100 / memberCount;
-    
+
     case CALCULATION_TYPES.CUSTOM:
       // Future: use custom percentages
       return 100 / memberCount; // Fallback to equal
-    
+
     default:
       return 0;
   }

@@ -5,11 +5,11 @@
  * cómo se generó el crédito/deuda actual.
  */
 
-import { query } from '@/lib/db';
 import { getUserHouseholdId } from '@/lib/auth';
 import { getContributionsData } from '@/lib/contributions/getContributionsData';
+import { query } from '@/lib/db';
 import type { Result } from '@/lib/result';
-import { ok, fail } from '@/lib/result';
+import { fail, ok } from '@/lib/result';
 
 /**
  * Entrada de historial por período

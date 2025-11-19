@@ -150,13 +150,15 @@ export function calculateHouseholdTotal(balances: MemberBalance[]): number {
  */
 export function calculateHouseholdStats(balances: MemberBalance[]) {
   const EPSILON = 0.01; // Tolerancia para redondeo (±1 céntimo)
-  
+
   const totalCredit = balances
     .filter((m) => m.current_balance > EPSILON)
     .reduce((sum, m) => sum + m.current_balance, 0);
 
   const totalDebt = Math.abs(
-    balances.filter((m) => m.current_balance < -EPSILON).reduce((sum, m) => sum + m.current_balance, 0),
+    balances
+      .filter((m) => m.current_balance < -EPSILON)
+      .reduce((sum, m) => sum + m.current_balance, 0),
   );
 
   return {
