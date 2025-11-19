@@ -1,16 +1,21 @@
-import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
-import { getUserHouseholdId } from '@/lib/auth';
-import { query } from '@/lib/db';
-import RequestLoanForm from './_components/RequestLoanForm';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getCurrentUser, getUserHouseholdId } from '@/lib/auth';
+import { query } from '@/lib/db';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import RequestLoanForm from './_components/RequestLoanForm';
 
 async function getHouseholdMembers() {
   const householdId = await getUserHouseholdId();
   if (!householdId) {
+    return [];
+  }
+
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
     return [];
   }
 
@@ -21,17 +26,17 @@ async function getHouseholdMembers() {
     balance: number;
   }>(
     `
-    SELECT 
+    SELECT
       p.id as profile_id,
       p.display_name,
       0 as balance
     FROM profiles p
     INNER JOIN household_members hm ON hm.profile_id = p.id
     WHERE hm.household_id = $1
-      AND hm.is_current_user = false
+      AND p.id != $2
     ORDER BY p.display_name
   `,
-    [householdId],
+    [householdId, currentUser.profile_id],
   );
 
   return res.rows;
@@ -61,26 +66,19 @@ export default async function SolicitarPrestamoPage() {
       {/* Información contextual */}
       <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
         <CardHeader>
-          <CardTitle className="text-blue-900 dark:text-blue-100">
-            ℹ️ ¿Cómo funciona?
-          </CardTitle>
+          <CardTitle className="text-blue-900 dark:text-blue-100">ℹ️ ¿Cómo funciona?</CardTitle>
         </CardHeader>
         <CardContent className="text-blue-800 dark:text-blue-200 space-y-2">
           <p>
-            Cuando solicitas un préstamo, estás registrando que otro miembro te
-            ha prestado dinero de su bolsillo.
+            Cuando solicitas un préstamo, estás registrando que otro miembro te ha prestado dinero
+            de su bolsillo.
           </p>
           <p>
             <strong>Efecto:</strong>
           </p>
           <ul className="list-disc list-inside ml-4 space-y-1">
-            <li>
-              El prestamista aumenta su crédito (le debes dinero, su balance
-              sube)
-            </li>
-            <li>
-              Tú reduces tu deuda (recibes dinero, tu balance baja)
-            </li>
+            <li>El prestamista aumenta su crédito (le debes dinero, su balance sube)</li>
+            <li>Tú reduces tu deuda (recibes dinero, tu balance baja)</li>
             <li>Este préstamo se refleja en el historial de ambos</li>
           </ul>
         </CardContent>

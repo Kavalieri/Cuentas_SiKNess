@@ -1,12 +1,12 @@
-import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
-import { getUserHouseholdId } from '@/lib/auth';
-import { query } from '@/lib/db';
-import RepayLoanForm from './_components/RepayLoanForm';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getCurrentUser, getUserHouseholdId } from '@/lib/auth';
+import { query } from '@/lib/db';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import RepayLoanForm from './_components/RepayLoanForm';
 
 interface MemberDebt {
   profile_id: string;
@@ -20,17 +20,12 @@ async function getMembersIOweTo(): Promise<MemberDebt[]> {
     return [];
   }
 
-  // Obtener profile_id del usuario actual
-  const userRes = await query<{ profile_id: string }>(
-    `SELECT profile_id FROM household_members WHERE household_id = $1 AND is_current_user = true`,
-    [householdId],
-  );
-
-  if (!userRes.rows[0]) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
     return [];
   }
 
-  const currentUserId = userRes.rows[0].profile_id;
+  const currentUserId = currentUser.profile_id;
 
   // Obtener balance actual usando los cálculos de contribuciones
   // Un balance negativo significa que debo dinero
@@ -41,7 +36,7 @@ async function getMembersIOweTo(): Promise<MemberDebt[]> {
   }>(
     `
     WITH period_balances AS (
-      SELECT 
+      SELECT
         mp.id as period_id,
         mp.year,
         mp.month,
@@ -56,7 +51,7 @@ async function getMembersIOweTo(): Promise<MemberDebt[]> {
     ),
     my_balance AS (
       -- Mi balance total (suma de todos los períodos)
-      SELECT 
+      SELECT
         SUM(
           COALESCE(contrib.overpaid_amount, 0) - COALESCE(contrib.pending_amount, 0)
         ) as total_balance
@@ -73,7 +68,7 @@ async function getMembersIOweTo(): Promise<MemberDebt[]> {
     ),
     other_balances AS (
       -- Balance de otros miembros
-      SELECT 
+      SELECT
         pb.profile_id,
         pb.display_name,
         SUM(
@@ -91,7 +86,7 @@ async function getMembersIOweTo(): Promise<MemberDebt[]> {
       WHERE pb.profile_id != $2
       GROUP BY pb.profile_id, pb.display_name
     )
-    SELECT 
+    SELECT
       ob.profile_id as other_profile_id,
       ob.display_name as other_display_name,
       (SELECT total_balance FROM my_balance) - ob.total_balance as balance_difference
@@ -134,14 +129,12 @@ export default async function DevolverPrestamoPage() {
       {/* Información contextual */}
       <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
         <CardHeader>
-          <CardTitle className="text-green-900 dark:text-green-100">
-            ℹ️ ¿Cómo funciona?
-          </CardTitle>
+          <CardTitle className="text-green-900 dark:text-green-100">ℹ️ ¿Cómo funciona?</CardTitle>
         </CardHeader>
         <CardContent className="text-green-800 dark:text-green-200 space-y-2">
           <p>
-            Cuando devuelves un préstamo, estás registrando un pago que reduces
-            tu deuda con otro miembro.
+            Cuando devuelves un préstamo, estás registrando un pago que reduces tu deuda con otro
+            miembro.
           </p>
           <p>
             <strong>Efecto:</strong>
@@ -180,13 +173,9 @@ export default async function DevolverPrestamoPage() {
                   >
                     <div>
                       <p className="font-medium">{debt.display_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Debes aproximadamente
-                      </p>
+                      <p className="text-sm text-muted-foreground">Debes aproximadamente</p>
                     </div>
-                    <p className="text-xl font-bold text-red-600">
-                      €{debt.debt_amount.toFixed(2)}
-                    </p>
+                    <p className="text-xl font-bold text-red-600">€{debt.debt_amount.toFixed(2)}</p>
                   </div>
                 ))}
               </div>

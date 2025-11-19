@@ -218,8 +218,10 @@ export default async function MemberBalanceHistoryPage({
                     const phaseLabel = PHASE_LABELS[entry.period.phase] || entry.period.phase;
 
                     // Normalizar valores muy pequeños a 0 para evitar -0.00
-                    const periodBalance = Math.abs(entry.period_balance) < EPSILON ? 0 : entry.period_balance;
-                    const runningBalance = Math.abs(entry.running_balance) < EPSILON ? 0 : entry.running_balance;
+                    const periodBalance =
+                      Math.abs(entry.period_balance) < EPSILON ? 0 : entry.period_balance;
+                    const runningBalance =
+                      Math.abs(entry.running_balance) < EPSILON ? 0 : entry.running_balance;
 
                     const isPeriodPositive = periodBalance > EPSILON;
                     const isPeriodNegative = periodBalance < -EPSILON;

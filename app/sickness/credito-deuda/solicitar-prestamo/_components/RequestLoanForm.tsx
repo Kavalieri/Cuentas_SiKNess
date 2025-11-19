@@ -1,8 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { requestLoan } from '@/lib/loans/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +11,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { requestLoan } from '@/lib/loans/actions';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface Member {
   profile_id: string;
@@ -78,9 +78,7 @@ export default function RequestLoanForm({ members }: RequestLoanFormProps) {
           </SelectContent>
         </Select>
         {members.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No hay otros miembros en el hogar
-          </p>
+          <p className="text-sm text-muted-foreground">No hay otros miembros en el hogar</p>
         )}
       </div>
 
@@ -104,9 +102,7 @@ export default function RequestLoanForm({ members }: RequestLoanFormProps) {
       <div className="space-y-2">
         <Label htmlFor="description">
           Descripción (opcional)
-          <span className="text-muted-foreground ml-2">
-            Ej: Para compra de...
-          </span>
+          <span className="text-muted-foreground ml-2">Ej: Para compra de...</span>
         </Label>
         <Textarea
           id="description"
@@ -120,12 +116,7 @@ export default function RequestLoanForm({ members }: RequestLoanFormProps) {
 
       {/* Botones */}
       <div className="flex gap-3 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          disabled={loading}
-        >
+        <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
           Cancelar
         </Button>
         <Button type="submit" disabled={loading || members.length === 0}>

@@ -1,10 +1,10 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { getCurrentUser, getUserHouseholdId } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { getUserHouseholdId } from '@/lib/auth';
-import { ok, fail } from '@/lib/result';
 import type { Result } from '@/lib/result';
+import { fail, ok } from '@/lib/result';
+import { revalidatePath } from 'next/cache';
 
 /**
  * IDs de las categorías del sistema para préstamos
@@ -17,11 +17,11 @@ const LOAN_CATEGORIES = {
 
 /**
  * Solicitar un préstamo a otro miembro del hogar
- * 
+ *
  * Crea una transacción de tipo expense con la categoría "Préstamo Personal"
  * - El prestamista (lender) registra un gasto, lo que aumenta su crédito
  * - El prestatario (borrower) recibe el préstamo, lo que reduce su deuda
- * 
+ *
  * @param lenderId - UUID del miembro que presta el dinero
  * @param amount - Monto del préstamo
  * @param description - Descripción opcional del préstamo
@@ -38,6 +38,13 @@ export async function requestLoan(
       return fail('No se pudo obtener el hogar del usuario');
     }
 
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return fail('No se pudo obtener el usuario actual');
+    }
+
+    const borrowerId = currentUser.profile_id;
+
     // Validaciones
     if (amount <= 0) {
       return fail('El monto debe ser mayor a 0');
@@ -46,18 +53,6 @@ export async function requestLoan(
     if (!lenderId) {
       return fail('Debe seleccionar un prestamista');
     }
-
-    // Obtener profile_id del usuario actual
-    const userRes = await query<{ profile_id: string }>(
-      `SELECT profile_id FROM household_members WHERE household_id = $1 AND is_current_user = true`,
-      [householdId],
-    );
-
-    if (!userRes.rows[0]) {
-      return fail('No se pudo obtener el perfil del usuario');
-    }
-
-    const borrowerId = userRes.rows[0].profile_id;
 
     // No permitir préstamos a uno mismo
     if (lenderId === borrowerId) {
@@ -82,8 +77,7 @@ export async function requestLoan(
 
     // Crear transacción de préstamo
     // El prestamista "realiza el gasto" (performed_by) del préstamo
-    const finalDescription =
-      description || `Préstamo de ${lenderName} a ${borrowerName}`;
+    const finalDescription = description || `Préstamo de ${lenderName} a ${borrowerName}`;
 
     await query(
       `
@@ -121,24 +115,28 @@ export async function requestLoan(
 
 /**
  * Realizar un pago de préstamo a otro miembro
- * 
+ *
  * Crea una transacción de tipo income con la categoría "Pago Préstamo"
  * - El deudor (debtor) registra un ingreso, lo que reduce su deuda
  * - El acreedor (creditor) recibe el pago, lo que reduce su crédito
- * 
+ *
  * @param creditorId - UUID del miembro al que se le paga
  * @param amount - Monto del pago
  */
-export async function repayLoan(
-  creditorId: string,
-  amount: number,
-): Promise<Result> {
+export async function repayLoan(creditorId: string, amount: number): Promise<Result> {
   try {
     // Obtener usuario actual y su hogar
     const householdId = await getUserHouseholdId();
     if (!householdId) {
       return fail('No se pudo obtener el hogar del usuario');
     }
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return fail('No se pudo obtener el usuario actual');
+    }
+
+    const debtorId = currentUser.profile_id;
 
     // Validaciones
     if (amount <= 0) {
@@ -148,18 +146,6 @@ export async function repayLoan(
     if (!creditorId) {
       return fail('Debe seleccionar un acreedor');
     }
-
-    // Obtener profile_id del usuario actual
-    const userRes = await query<{ profile_id: string }>(
-      `SELECT profile_id FROM household_members WHERE household_id = $1 AND is_current_user = true`,
-      [householdId],
-    );
-
-    if (!userRes.rows[0]) {
-      return fail('No se pudo obtener el perfil del usuario');
-    }
-
-    const debtorId = userRes.rows[0].profile_id;
 
     // No permitir pagos a uno mismo
     if (creditorId === debtorId) {
@@ -246,7 +232,7 @@ export async function getHouseholdMembersWithBalance(): Promise<
       balance: number;
     }>(
       `
-      SELECT 
+      SELECT
         p.id as profile_id,
         p.display_name,
         COALESCE(
@@ -255,7 +241,7 @@ export async function getHouseholdMembersWithBalance(): Promise<
         ) as balance
       FROM profiles p
       INNER JOIN household_members hm ON hm.profile_id = p.id
-      LEFT JOIN mv_member_pending_contributions mv 
+      LEFT JOIN mv_member_pending_contributions mv
         ON mv.profile_id = p.id AND mv.household_id = hm.household_id
       WHERE hm.household_id = $1
       ORDER BY p.display_name
