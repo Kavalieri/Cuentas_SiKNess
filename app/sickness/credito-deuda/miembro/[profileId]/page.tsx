@@ -159,8 +159,8 @@ export default async function MemberBalanceHistoryPage({
             {isCredit && (
               <p>
                 Has aportado{' '}
-                <span className="font-semibold text-green-600">€{absBalance.toFixed(2)} más</span> de
-                lo esperado. Este crédito se mantendrá acumulado hasta que se utilice o se salde.
+                <span className="font-semibold text-green-600">€{absBalance.toFixed(2)} más</span>{' '}
+                de lo esperado. Este crédito se mantendrá acumulado hasta que se utilice o se salde.
               </p>
             )}
             {isDebt && (
@@ -212,16 +212,22 @@ export default async function MemberBalanceHistoryPage({
                   </TableRow>
                 ) : (
                   history.map((entry) => {
-                    const periodName = `${MONTH_NAMES[entry.period.month - 1]} ${entry.period.year}`;
+                    const periodName = `${MONTH_NAMES[entry.period.month - 1]} ${
+                      entry.period.year
+                    }`;
                     const phaseLabel = PHASE_LABELS[entry.period.phase] || entry.period.phase;
 
-                    const isPeriodPositive = entry.period_balance > EPSILON;
-                    const isPeriodNegative = entry.period_balance < -EPSILON;
-                    const isPeriodZero = Math.abs(entry.period_balance) < EPSILON;
+                    // Normalizar valores muy pequeños a 0 para evitar -0.00
+                    const periodBalance = Math.abs(entry.period_balance) < EPSILON ? 0 : entry.period_balance;
+                    const runningBalance = Math.abs(entry.running_balance) < EPSILON ? 0 : entry.running_balance;
 
-                    const isRunningPositive = entry.running_balance > EPSILON;
-                    const isRunningNegative = entry.running_balance < -EPSILON;
-                    const isRunningZero = Math.abs(entry.running_balance) < EPSILON;
+                    const isPeriodPositive = periodBalance > EPSILON;
+                    const isPeriodNegative = periodBalance < -EPSILON;
+                    const isPeriodZero = Math.abs(periodBalance) < EPSILON;
+
+                    const isRunningPositive = runningBalance > EPSILON;
+                    const isRunningNegative = runningBalance < -EPSILON;
+                    const isRunningZero = Math.abs(runningBalance) < EPSILON;
 
                     return (
                       <TableRow key={entry.period.id}>
@@ -272,8 +278,7 @@ export default async function MemberBalanceHistoryPage({
                               isPeriodZero && 'text-muted-foreground',
                             )}
                           >
-                            {isPeriodPositive && '+'}
-                            €{entry.period_balance.toFixed(2)}
+                            {isPeriodPositive && '+'}€{periodBalance.toFixed(2)}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -285,8 +290,7 @@ export default async function MemberBalanceHistoryPage({
                               isRunningZero && 'text-green-600',
                             )}
                           >
-                            {isRunningPositive && '+'}
-                            €{entry.running_balance.toFixed(2)}
+                            {isRunningPositive && '+'}€{runningBalance.toFixed(2)}
                           </span>
                         </TableCell>
                       </TableRow>
@@ -302,8 +306,8 @@ export default async function MemberBalanceHistoryPage({
             <h4 className="font-semibold">Leyenda:</h4>
             <ul className="space-y-1 text-muted-foreground">
               <li>
-                <span className="font-semibold text-foreground">Esperado:</span> Contribución mensual
-                calculada según ingresos y método del hogar
+                <span className="font-semibold text-foreground">Esperado:</span> Contribución
+                mensual calculada según ingresos y método del hogar
               </li>
               <li>
                 <span className="font-semibold text-foreground">Pagado:</span> Gastos directos +
@@ -314,8 +318,8 @@ export default async function MemberBalanceHistoryPage({
                 esperado (genera crédito)
               </li>
               <li>
-                <span className="font-semibold text-foreground">Pendiente:</span> Pagaste menos de lo
-                esperado (genera deuda)
+                <span className="font-semibold text-foreground">Pendiente:</span> Pagaste menos de
+                lo esperado (genera deuda)
               </li>
               <li>
                 <span className="font-semibold text-foreground">Balance Período:</span> Sobrepago -
