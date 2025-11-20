@@ -1,16 +1,16 @@
 # Issue #63: Análisis de Tablas Vacías
 
-**Fecha**: 20 Noviembre 2025  
-**Autor**: AI Assistant  
+**Fecha**: 20 Noviembre 2025
+**Autor**: AI Assistant
 **Estado**: 🔍 EN ANÁLISIS
 
 ---
 
 ## 📊 Resumen Ejecutivo
 
-**Base de datos analizada**: `cuentassik_dev`  
-**Total de tablas**: 37  
-**Tablas con datos**: 23  
+**Base de datos analizada**: `cuentassik_dev`
+**Total de tablas**: 37
+**Tablas con datos**: 23
 **Tablas vacías (0 filas)**: 14
 
 ### Tablas Vacías Identificadas
@@ -37,21 +37,24 @@
 ### 1. Tablas Legacy (Esperadas Vacías) ✅
 
 #### `_legacy_member_credits` (0 filas)
-**Estado**: ✅ CORRECTO - Tabla de migración  
-**Propósito**: Backup de datos legacy de créditos de miembros  
-**Referencias en código**: Ninguna (solo en migraciones)  
+
+**Estado**: ✅ CORRECTO - Tabla de migración
+**Propósito**: Backup de datos legacy de créditos de miembros
+**Referencias en código**: Ninguna (solo en migraciones)
 **Acción recomendada**: **MANTENER** - Tabla histórica para auditoría
 
 #### `_legacy_personal_loans` (0 filas)
-**Estado**: ✅ CORRECTO - Tabla de migración  
-**Propósito**: Backup de datos legacy de préstamos personales  
-**Referencias en código**: Ninguna (solo en migraciones)  
+
+**Estado**: ✅ CORRECTO - Tabla de migración
+**Propósito**: Backup de datos legacy de préstamos personales
+**Referencias en código**: Ninguna (solo en migraciones)
 **Acción recomendada**: **MANTENER** - Tabla histórica para auditoría
 
 #### `_legacy_refund_claims` (0 filas)
-**Estado**: ✅ CORRECTO - Tabla de migración  
-**Propósito**: Backup de datos legacy de reclamaciones de reembolso  
-**Referencias en código**: Ninguna (solo en migraciones)  
+
+**Estado**: ✅ CORRECTO - Tabla de migración
+**Propósito**: Backup de datos legacy de reclamaciones de reembolso
+**Referencias en código**: Ninguna (solo en migraciones)
 **Acción recomendada**: **MANTENER** - Tabla histórica para auditoría
 
 ---
@@ -59,10 +62,12 @@
 ### 2. Sistema de Contribuciones (Posible Redundancia)
 
 #### `contribution_adjustment_templates` (0 filas)
-**Estado**: ⚠️ VACÍA - Funcionalidad no implementada  
-**Propósito Original**: Plantillas para ajustes de contribuciones recurrentes  
+
+**Estado**: ⚠️ VACÍA - Funcionalidad no implementada
+**Propósito Original**: Plantillas para ajustes de contribuciones recurrentes
 
 **Schema**:
+
 ```sql
 CREATE TABLE contribution_adjustment_templates (
   id UUID PRIMARY KEY,
@@ -80,25 +85,30 @@ CREATE TABLE contribution_adjustment_templates (
 ```
 
 **Referencias en código**:
+
 - `types/database.ts` - Definición de tipos ✅
 - **NO se usa en ninguna query ni componente**
 
 **Análisis**:
+
 - ❌ No existe UI para crear plantillas
 - ❌ No existe lógica de aplicación automática
 - ✅ La tabla `contribution_adjustments` podría cubrirlo (aunque también está vacía)
 
 **Acción recomendada**: **DEPRECAR** y eliminar en futuro
+
 - Funcionalidad compleja no prioritaria
 - Si se necesita en futuro, recrear con diseño actualizado
 
 ---
 
 #### `contribution_adjustments` (0 filas)
-**Estado**: ⚠️ VACÍA - Funcionalidad no usada actualmente  
+
+**Estado**: ⚠️ VACÍA - Funcionalidad no usada actualmente
 **Propósito Original**: Ajustes manuales a contribuciones (bonificaciones, penalizaciones)
 
 **Schema**:
+
 ```sql
 CREATE TABLE contribution_adjustments (
   id UUID PRIMARY KEY,
@@ -116,30 +126,36 @@ CREATE TABLE contribution_adjustments (
 ```
 
 **Referencias en código**:
+
 - `types/database.ts` - Definición de tipos ✅
 - **NO se usa en queries ni componentes**
 
 **Análisis**:
+
 - Sistema actual usa directamente `transactions` para ajustes
 - Owner puede hacer transacciones directas para equilibrar
 - Tabla diseñada para workflow más complejo (aprobación, tracking)
 
 **¿Por qué está vacía?**
+
 - El sistema de balance actual NO usa tabla `contributions` (Issue #60)
 - Balance se calcula en tiempo real desde `transactions`
 - Esta tabla era para sistema legacy de contribuciones
 
 **Acción recomendada**: **DEPRECAR** y eliminar
+
 - Sistema de balance actual más eficiente
 - Si se necesitan ajustes, usar transacciones manuales
 
 ---
 
 #### `contribution_periods` (0 filas)
-**Estado**: ⚠️ VACÍA - Reemplazada por `monthly_periods`  
+
+**Estado**: ⚠️ VACÍA - Reemplazada por `monthly_periods`
 **Propósito Original**: Periodos de contribución con estados y bloqueos
 
 **Referencias en código**:
+
 ```typescript
 // lib/contributions/periods.ts
 // Línea 79:
@@ -150,6 +166,7 @@ CREATE TABLE contribution_adjustments (
 ```
 
 **Análisis**:
+
 - **Función reemplazada completamente por `monthly_periods`** ✅
 - `monthly_periods` tiene columnas equivalentes:
   - `phase` (preparing, validation, active, closing, closed)
@@ -159,15 +176,16 @@ CREATE TABLE contribution_adjustments (
 
 **Comparación**:
 
-| Feature | contribution_periods | monthly_periods |
-|---------|---------------------|-----------------|
-| Tracking período | ❌ No usado | ✅ Activo (8 filas) |
-| Estados/fases | ❌ No implementado | ✅ Enum completo |
-| Lock período | ❌ No implementado | ✅ phase='closed' |
-| Snapshot datos | ❌ No implementado | ✅ snapshot_* columnas |
-| Integración | ❌ Ninguna | ✅ FK en transactions |
+| Feature          | contribution_periods | monthly_periods          |
+| ---------------- | -------------------- | ------------------------ |
+| Tracking período | ❌ No usado          | ✅ Activo (8 filas)      |
+| Estados/fases    | ❌ No implementado   | ✅ Enum completo         |
+| Lock período     | ❌ No implementado   | ✅ phase='closed'        |
+| Snapshot datos   | ❌ No implementado   | ✅ snapshot\_\* columnas |
+| Integración      | ❌ Ninguna           | ✅ FK en transactions    |
 
 **Acción recomendada**: **ELIMINAR**
+
 1. Remover TODOs obsoletos en `lib/contributions/periods.ts`
 2. Crear migración para DROP TABLE
 3. Actualizar documentación mencionando `monthly_periods` como única source of truth
@@ -177,10 +195,12 @@ CREATE TABLE contribution_adjustments (
 ### 3. Sistema de Dual-Flow (Posible Redundancia)
 
 #### `dual_flow_config` (0 filas)
-**Estado**: ⚠️ VACÍA - Configuración no usada  
+
+**Estado**: ⚠️ VACÍA - Configuración no usada
 **Propósito Original**: Configuración del sistema dual-flow por hogar
 
 **Schema**:
+
 ```sql
 CREATE TABLE dual_flow_config (
   id UUID PRIMARY KEY,
@@ -193,30 +213,36 @@ CREATE TABLE dual_flow_config (
 ```
 
 **Referencias en código**:
+
 - `types/dualFlow.ts` - Interfaz definida ✅
 - **NO se consulta en ningún componente**
 
 **Análisis**:
+
 - **Sistema dual-flow funciona SIN esta tabla**
 - Configuración actualmente hardcoded o en `household_settings`
 - Columna `require_approval_for_direct` nunca implementada
 
 **¿Por qué no se necesita?**
+
 - Dual-flow SIEMPRE habilitado (no es opcional)
 - `default_flow_type` se maneja en UI (selección manual)
 - Aprobaciones se manejan via otras tablas (loan_requests)
 
 **Acción recomendada**: **ELIMINAR**
+
 - Funcionalidad cubierta por sistema actual
 - Si se necesita config en futuro, añadir columnas a `household_settings`
 
 ---
 
 #### `dual_flow_transactions` (0 filas)
-**Estado**: ⚠️ VACÍA - Reemplazada por `transactions` directamente  
+
+**Estado**: ⚠️ VACÍA - Reemplazada por `transactions` directamente
 **Propósito Original**: Tabla separada para transacciones dual-flow
 
 **Análisis**:
+
 - **Función reemplazada por columnas en tabla `transactions`** ✅
 - Columnas relevantes en `transactions`:
   - `flow_type` ('common' | 'direct')
@@ -227,16 +253,17 @@ CREATE TABLE dual_flow_config (
 
 **Comparación**:
 
-| Feature | dual_flow_transactions | transactions actual |
-|---------|----------------------|-------------------|
-| Flow tracking | ❌ Tabla separada | ✅ Columna `flow_type` |
-| Tipo transacción | ❌ Separado | ✅ Columna `type` |
-| Pairing | ❌ ? | ✅ `transaction_pair_id` |
-| Compensación | ❌ ? | ✅ `is_compensatory_income` |
-| Integración | ❌ Doble query | ✅ Single table |
-| Datos reales | 0 filas | 355 filas |
+| Feature          | dual_flow_transactions | transactions actual         |
+| ---------------- | ---------------------- | --------------------------- |
+| Flow tracking    | ❌ Tabla separada      | ✅ Columna `flow_type`      |
+| Tipo transacción | ❌ Separado            | ✅ Columna `type`           |
+| Pairing          | ❌ ?                   | ✅ `transaction_pair_id`    |
+| Compensación     | ❌ ?                   | ✅ `is_compensatory_income` |
+| Integración      | ❌ Doble query         | ✅ Single table             |
+| Datos reales     | 0 filas                | 355 filas                   |
 
 **Acción recomendada**: **ELIMINAR**
+
 - Sistema actual más eficiente (single table)
 - Todas las queries funcionan correctamente
 - Crear migración para DROP TABLE
@@ -246,10 +273,12 @@ CREATE TABLE dual_flow_config (
 ### 4. Sistema de Reembolsos (Funcionalidad No Implementada)
 
 #### `credit_refund_requests` (0 filas)
-**Estado**: ⚠️ VACÍA - Funcionalidad planificada pero no implementada  
+
+**Estado**: ⚠️ VACÍA - Funcionalidad planificada pero no implementada
 **Propósito Original**: Solicitudes de devolución de crédito acumulado
 
 **Schema** (inferido):
+
 ```sql
 -- Posible estructura (no confirmada en migración actual)
 CREATE TABLE credit_refund_requests (
@@ -266,15 +295,18 @@ CREATE TABLE credit_refund_requests (
 ```
 
 **Referencias en código**:
+
 - Solo en `types/database.ts` (definición)
 - **NO hay UI ni server actions**
 
 **Documentación relacionada**:
+
 - `docs/REFUND_SYSTEM.md` - Especificación completa ✅
 - `docs/REFUND_SYSTEM_SPECIFICATION.md` - Diseño detallado ✅
 - `docs/REFUND_UI_IMPLEMENTATION_GUIDE.md` - Guía de implementación ✅
 
 **Estado de implementación**:
+
 - ✅ Documentación completa (3 archivos)
 - ❌ Schema en base de datos
 - ❌ Server actions
@@ -282,11 +314,13 @@ CREATE TABLE credit_refund_requests (
 - ❌ Workflow implementado
 
 **Análisis**:
+
 - Sistema bien diseñado y documentado
 - No implementado por priorización (otros sistemas más críticos)
 - Balance actual se puede "devolver" mediante transacción manual del owner
 
 **Acción recomendada**: **MANTENER** (funcionalidad futura)
+
 - ✅ Documentación completa lista para implementar
 - ✅ Tabla ya creada (no requiere migración adicional)
 - ⚠️ Priorizar implementación en roadmap futuro (Issue #55 related)
@@ -297,10 +331,12 @@ CREATE TABLE credit_refund_requests (
 ### 5. Sistema de Ahorros (Funcionalidad No Implementada)
 
 #### `household_savings` (0 filas)
-**Estado**: ⚠️ VACÍA - Funcionalidad no implementada  
+
+**Estado**: ⚠️ VACÍA - Funcionalidad no implementada
 **Propósito Original**: Tracking de ahorros del hogar (metas, saldos)
 
 **Schema** (inferido de types):
+
 ```sql
 CREATE TABLE household_savings (
   id UUID PRIMARY KEY,
@@ -314,25 +350,29 @@ CREATE TABLE household_savings (
 ```
 
 **Referencias en código**:
+
 - `types/savings.ts` - Interfaz completa ✅
 - `lib/export/actions.ts` línea 279 - Query en export (nunca retorna datos)
 
 **Código de referencia**:
+
 ```typescript
 // lib/export/actions.ts
 const savings = await query<HouseholdSavings>(
   `SELECT * FROM household_savings WHERE household_id = $1`,
-  [householdId]
+  [householdId],
 );
 // savings.rows SIEMPRE vacío []
 ```
 
 **Análisis**:
+
 - Funcionalidad diseñada pero NUNCA implementada
 - Export incluye sección de savings (siempre vacía)
 - No existe UI para crear/editar savings
 
 **Workflow esperado (NO implementado)**:
+
 1. Owner define meta de ahorro (ej: "Vacaciones 2026", €3,000)
 2. Sistema trackea aportes al fondo de ahorro
 3. Dashboard muestra progreso (€1,500 / €3,000)
@@ -341,12 +381,14 @@ const savings = await query<HouseholdSavings>(
 **Acción recomendada**: **DEPRECAR** o **IMPLEMENTAR**
 
 **Opción A - DEPRECAR** (recomendada):
+
 - Remover query de `lib/export/actions.ts`
 - Eliminar tabla mediante migración
 - Archivar `types/savings.ts`
 - Razón: Funcionalidad no crítica, alternativas existen
 
 **Opción B - IMPLEMENTAR** (requiere roadmap):
+
 - Crear Issue específica para sistema de ahorros
 - Diseñar UI completa
 - Implementar server actions
@@ -360,13 +402,16 @@ const savings = await query<HouseholdSavings>(
 ### 6. Sistema de Journal (Completamente No Usado)
 
 #### `journal_adjustments` (0 filas)
+
 #### `journal_invitations` (0 filas)
+
 #### `journal_roles` (0 filas)
 
-**Estado**: ⚠️ VACÍAS - Sistema completo no implementado  
+**Estado**: ⚠️ VACÍAS - Sistema completo no implementado
 **Propósito Original**: Sistema de journal/libro de cuentas con roles y ajustes
 
 **Schema parcial**:
+
 ```sql
 -- journal_roles: Roles dentro de un journal (admin, viewer, editor)
 CREATE TABLE journal_roles (
@@ -401,10 +446,12 @@ CREATE TABLE journal_adjustments (
 ```
 
 **Referencias en código**:
+
 - Solo en `types/database.ts` (definiciones)
 - **NO hay queries, server actions, ni UI**
 
 **Análisis**:
+
 - Sistema ambicioso de "multi-journal" (múltiples libros de cuentas)
 - Posiblemente diseñado para:
   - Separar finanzas personales vs hogar
@@ -413,6 +460,7 @@ CREATE TABLE journal_adjustments (
 - **NUNCA implementado** - tablas huérfanas
 
 **Relación con `journal_transactions` (2,362 filas)**:
+
 - ✅ **INVESTIGADO** - Es tabla de AUDITORÍA (audit log)
 - ⚠️ Nombre confuso: debería llamarse `audit_log` o `transaction_audit`
 - **NO está relacionada con journal_roles/invitations/adjustments**
@@ -440,16 +488,19 @@ delete |    46 | Oct-Nov 2025
 ```
 
 **Análisis**:
+
 - ✅ Sistema de auditoría ACTIVO y funcional
 - ✅ Rastrea cambios en tabla `transactions` (2,362 eventos)
 - ❌ Nombre "journal_transactions" es **CONFUSO** (no es journal de contabilidad)
 - ❌ Las 3 tablas vacías (roles, invitations, adjustments) NO están relacionadas
 
 **Conclusión**:
+
 - `journal_transactions` = **AUDIT LOG** (mantener, funciona bien)
 - `journal_roles/invitations/adjustments` = **Sistema diferente no implementado** (eliminar)
 
-**Acción recomendada**: 
+**Acción recomendada**:
+
 1. **MANTENER** `journal_transactions` (es audit log activo)
 2. **ELIMINAR** `journal_roles`, `journal_invitations`, `journal_adjustments` (huérfanas)
 3. **OPCIONAL**: Renombrar `journal_transactions` → `transaction_audit_log` en futuro (requiere migración cuidadosa)
@@ -459,10 +510,12 @@ delete |    46 | Oct-Nov 2025
 ### 7. Sistema de Préstamos (Nuevo, Sin Datos Aún)
 
 #### `loan_requests` (0 filas)
-**Estado**: ✅ CORRECTO - Tabla nueva, funcionalidad recién implementada  
+
+**Estado**: ✅ CORRECTO - Tabla nueva, funcionalidad recién implementada
 **Propósito**: Solicitudes de préstamo household-to-member (Phase 40)
 
 **Schema**:
+
 ```sql
 CREATE TABLE loan_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -488,6 +541,7 @@ CREATE TYPE loan_request_status AS ENUM (
 ```
 
 **Referencias en código**:
+
 - `lib/loans/actions.ts` - 8 server actions ✅
 - `app/sickness/configuracion/prestamos-pendientes/` - UI owner ✅
 - `app/sickness/credito-deuda/solicitar-prestamo/` - UI member ✅
@@ -495,6 +549,7 @@ CREATE TYPE loan_request_status AS ENUM (
 - `docs/LOAN_SYSTEM.md` - Documentación completa ✅
 
 **Estado de implementación**: ✅ COMPLETAMENTE FUNCIONAL
+
 - ✅ Schema en base de datos
 - ✅ 8 Server actions (request, approve, reject, cancel, list, etc.)
 - ✅ UI completa (solicitar, aprobar, historial)
@@ -503,6 +558,7 @@ CREATE TYPE loan_request_status AS ENUM (
 - ✅ Documentación exhaustiva
 
 **¿Por qué está vacía?**
+
 - Sistema implementado en Phase 40 (20 Nov 2025)
 - Base de datos DEV es de testing/desarrollo
 - **NO es un problema** - esperado hasta que usuarios creen solicitudes
@@ -510,6 +566,7 @@ CREATE TYPE loan_request_status AS ENUM (
 **Acción recomendada**: **MANTENER** y **POBLAR CON DATOS DE PRUEBA**
 
 **Sugerencia - Crear datos de testing**:
+
 ```sql
 -- Insertar solicitudes de prueba para validar flujo completo
 INSERT INTO loan_requests (household_id, requested_by_profile_id, amount, reason, status)
@@ -520,14 +577,14 @@ VALUES
    500.00,
    'Necesito dinero para gastos médicos urgentes',
    'pending'),
-  
+
   -- Solicitud aprobada
   ((SELECT id FROM households LIMIT 1),
    (SELECT profile_id FROM household_members WHERE role = 'member' LIMIT 1 OFFSET 1),
    300.00,
    'Reparación del coche',
    'approved'),
-  
+
   -- Solicitud rechazada
   ((SELECT id FROM households LIMIT 1),
    (SELECT profile_id FROM household_members WHERE role = 'member' LIMIT 1),
@@ -542,22 +599,24 @@ VALUES
 
 ### Prioridad Alta (Eliminar - Redundantes)
 
-| Tabla | Acción | Razón | Impacto |
-|-------|--------|-------|---------|
-| `contribution_periods` | **ELIMINAR** | Reemplazada por `monthly_periods` | Bajo - Sin uso |
-| `dual_flow_config` | **ELIMINAR** | Config hardcoded/en household_settings | Bajo - Sin uso |
+| Tabla                    | Acción       | Razón                                      | Impacto        |
+| ------------------------ | ------------ | ------------------------------------------ | -------------- |
+| `contribution_periods`   | **ELIMINAR** | Reemplazada por `monthly_periods`          | Bajo - Sin uso |
+| `dual_flow_config`       | **ELIMINAR** | Config hardcoded/en household_settings     | Bajo - Sin uso |
 | `dual_flow_transactions` | **ELIMINAR** | Reemplazada por columnas en `transactions` | Bajo - Sin uso |
-| `journal_roles` | **ELIMINAR** | Sistema journal nunca implementado | Bajo - Sin uso |
-| `journal_invitations` | **ELIMINAR** | Sistema journal nunca implementado | Bajo - Sin uso |
-| `journal_adjustments` | **ELIMINAR** | Sistema journal nunca implementado | Bajo - Sin uso |
+| `journal_roles`          | **ELIMINAR** | Sistema journal nunca implementado         | Bajo - Sin uso |
+| `journal_invitations`    | **ELIMINAR** | Sistema journal nunca implementado         | Bajo - Sin uso |
+| `journal_adjustments`    | **ELIMINAR** | Sistema journal nunca implementado         | Bajo - Sin uso |
 
 **Beneficios**:
+
 - Reduce complejidad del schema (6 tablas menos)
 - Elimina confusión sobre tablas "correctas"
 - Limpia TODOs obsoletos en código
 - Clarifica que `journal_transactions` es audit log independiente
 
 **Migración sugerida**:
+
 ```sql
 -- 1. Verificar que realmente están vacías
 SELECT COUNT(*) FROM contribution_periods; -- Esperado: 0
@@ -583,16 +642,18 @@ npm run types:generate:dev
 
 ### Prioridad Media (Deprecar - No Usadas)
 
-| Tabla | Acción | Razón | Decisión requerida |
-|-------|--------|-------|-------------------|
-| `contribution_adjustment_templates` | **DEPRECAR** | Funcionalidad compleja no prioritaria | Owner aprueba |
-| `contribution_adjustments` | **DEPRECAR** | Sistema legacy, no usado con balance actual | Owner aprueba |
+| Tabla                               | Acción       | Razón                                       | Decisión requerida |
+| ----------------------------------- | ------------ | ------------------------------------------- | ------------------ |
+| `contribution_adjustment_templates` | **DEPRECAR** | Funcionalidad compleja no prioritaria       | Owner aprueba      |
+| `contribution_adjustments`          | **DEPRECAR** | Sistema legacy, no usado con balance actual | Owner aprueba      |
 
 **Consideraciones**:
+
 - Si en futuro se necesita sistema de ajustes, rediseñar desde cero
 - Sistema actual (transacciones manuales) es suficiente
 
 **Migración sugerida**:
+
 ```sql
 -- Solo si owner aprueba
 DROP TABLE IF EXISTS contribution_adjustment_templates CASCADE;
@@ -603,27 +664,30 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 
 ### Prioridad Baja (Investigar - Sistema Journal)
 
-| Tabla | Acción | Razón | Estado |
-|-------|--------|-------|--------|
-| `journal_transactions` | ✅ **MANTENER** | Audit log activo (2,362 eventos) | Funcional |
-| `journal_adjustments` | ❌ **ELIMINAR** | Sistema journal diferente no implementado | Incluido en Fase 1 |
-| `journal_invitations` | ❌ **ELIMINAR** | Sistema journal diferente no implementado | Incluido en Fase 1 |
-| `journal_roles` | ❌ **ELIMINAR** | Sistema journal diferente no implementado | Incluido en Fase 1 |
+| Tabla                  | Acción          | Razón                                     | Estado             |
+| ---------------------- | --------------- | ----------------------------------------- | ------------------ |
+| `journal_transactions` | ✅ **MANTENER** | Audit log activo (2,362 eventos)          | Funcional          |
+| `journal_adjustments`  | ❌ **ELIMINAR** | Sistema journal diferente no implementado | Incluido en Fase 1 |
+| `journal_invitations`  | ❌ **ELIMINAR** | Sistema journal diferente no implementado | Incluido en Fase 1 |
+| `journal_roles`        | ❌ **ELIMINAR** | Sistema journal diferente no implementado | Incluido en Fase 1 |
 
 **Conclusión de investigación**: ✅ COMPLETADA
 
 **Hallazgos**:
+
 - `journal_transactions` es un **audit log** (registro de cambios en transactions)
 - NO está relacionado con las 3 tablas vacías (journal_roles, invitations, adjustments)
 - Sistema funcional y valioso para auditoría
 - Nombre confuso (debería ser `transaction_audit_log`)
 
 **Acción tomada**:
+
 - ✅ Mantener `journal_transactions` (sistema activo)
 - ❌ Eliminar las 3 tablas vacías relacionadas con "journal" no implementado
 - 📝 Documentar que el nombre es histórico y confuso
 
 **Opcional (futuro)**:
+
 - Renombrar `journal_transactions` → `transaction_audit_log`
 - Requiere migración cuidadosa (muchas filas)
 
@@ -631,23 +695,26 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 
 ### Mantener (Funcionalidad Futura)
 
-| Tabla | Acción | Razón | Timeline |
-|-------|--------|-------|----------|
-| `credit_refund_requests` | **MANTENER** | Docs completas, implementar en futuro | Q1 2026 |
-| `household_savings` | **DECIDIR** | ¿Deprecar o implementar? | Owner decide |
-| `loan_requests` | **MANTENER + POBLAR** | Sistema nuevo, funcional, sin datos test | Inmediato |
+| Tabla                    | Acción                | Razón                                    | Timeline     |
+| ------------------------ | --------------------- | ---------------------------------------- | ------------ |
+| `credit_refund_requests` | **MANTENER**          | Docs completas, implementar en futuro    | Q1 2026      |
+| `household_savings`      | **DECIDIR**           | ¿Deprecar o implementar?                 | Owner decide |
+| `loan_requests`          | **MANTENER + POBLAR** | Sistema nuevo, funcional, sin datos test | Inmediato    |
 
 **Para `credit_refund_requests`**:
+
 - ✅ Mantener tabla (no molesta, no consume recursos)
 - ✅ Crear Issue para implementación (vincular docs existentes)
 - ⏰ Priorizar según demanda de usuarios
 
 **Para `household_savings`**:
+
 - ⚠️ **Decisión del owner requerida**:
   - **Opción A**: Deprecar (eliminar tabla + query en export)
   - **Opción B**: Priorizar implementación (Issue + roadmap)
 
 **Para `loan_requests`**:
+
 - ✅ Sistema completamente funcional
 - ⚠️ Crear datos de prueba para validar flujos
 - ✅ Monitorear uso en producción
@@ -656,13 +723,14 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 
 ### Mantener (Legacy/Auditoría)
 
-| Tabla | Acción | Razón |
-|-------|--------|-------|
+| Tabla                    | Acción       | Razón            |
+| ------------------------ | ------------ | ---------------- |
 | `_legacy_member_credits` | **MANTENER** | Backup histórico |
 | `_legacy_personal_loans` | **MANTENER** | Backup histórico |
-| `_legacy_refund_claims` | **MANTENER** | Backup histórico |
+| `_legacy_refund_claims`  | **MANTENER** | Backup histórico |
 
 **Razón**:
+
 - Tablas con prefijo `_legacy_` son backups de migraciones
 - No consumen recursos significativos
 - Útiles para auditoría y rollback si necesario
@@ -677,27 +745,31 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 **Objetivo**: Eliminar redundancias claras sin impacto
 
 1. ✅ Backup completo de base de datos DEV
+
    ```bash
    pg_dump -h 127.0.0.1 -U cuentassik_user -d cuentassik_dev > backup_pre_cleanup_$(date +%Y%m%d).sql
    ```
 
 2. ✅ Crear migración para eliminar tablas redundantes:
+
    ```bash
    ./scripts/migrations/create_migration.sh "remove redundant empty tables"
    ```
 
 3. ✅ Contenido migración:
+
    ```sql
    -- Eliminar tablas reemplazadas por sistemas actuales
    DROP TABLE IF EXISTS contribution_periods CASCADE;
    DROP TABLE IF EXISTS dual_flow_config CASCADE;
    DROP TABLE IF EXISTS dual_flow_transactions CASCADE;
-   
+
    -- Verificación
    SELECT 'Tablas eliminadas correctamente' as status;
    ```
 
 4. ✅ Aplicar en DEV y validar:
+
    ```bash
    ./scripts/migrations/apply_migration.sh dev 20251120_XXXXXX_remove_redundant_empty_tables.sql
    npm run typecheck
@@ -705,6 +777,7 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
    ```
 
 5. ✅ Actualizar código (remover TODOs):
+
    - `lib/contributions/periods.ts` - Eliminar TODOs sobre contribution_periods
 
 6. ✅ Regenerar types:
@@ -719,11 +792,13 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 **Objetivo**: Clarificar sistema journal y decidir acciones
 
 1. ✅ Analizar `journal_transactions`:
+
    - Ver estructura completa
    - Entender propósito de las 2,362 filas
    - Identificar si es sistema activo o legacy
 
 2. ✅ Decisión basada en análisis:
+
    - **Si activo**: Crear Issue para completar sistema journal
    - **Si legacy**: Renombrar/deprecar + eliminar tablas vacías relacionadas
 
@@ -738,11 +813,13 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 **Preguntas para el owner**:
 
 1. **Sistema de Ahorros** (`household_savings`):
+
    - ¿Quieres que implementemos tracking de metas de ahorro?
    - ¿O eliminamos la funcionalidad completamente?
    - **Impacto**: 20-30 horas si se implementa
 
 2. **Ajustes de Contribuciones** (`contribution_adjustments`):
+
    - ¿Necesitas sistema formal de ajustes con aprobación?
    - ¿O el sistema actual (transacciones manuales) es suficiente?
    - **Recomendación**: Eliminar (sistema actual funciona)
@@ -786,11 +863,13 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 ### Después de Cleanup Completo (Todas las fases)
 
 **Escenario Conservador** (deprecar la mayoría):
+
 - **Tablas totales**: ~26-28
 - **Tablas vacías**: ~5-7 (solo legacy + futuras)
 - **Schema clarity**: Alta
 
 **Escenario Agresivo** (implementar savings, refunds):
+
 - **Tablas totales**: ~28-30
 - **Tablas con datos**: ~24-26
 - **Funcionalidad completa**: +20%
@@ -800,16 +879,19 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 ## 🔗 Referencias
 
 **Issues Relacionadas**:
+
 - Issue #63 - Este análisis
 - Issue #60 - Sistema de Balance (depreca contribution_adjustments)
 - Issue #55 - Presupuestos (relacionado con savings)
 
 **Documentación**:
+
 - `docs/REFUND_SYSTEM.md` - Sistema de reembolsos (credit_refund_requests)
 - `docs/LOAN_SYSTEM.md` - Sistema de préstamos (loan_requests)
 - `docs/BALANCE_SYSTEM.md` - Sistema de balance actual
 
 **Archivos de Código**:
+
 - `types/database.ts` - Definiciones de todas las tablas
 - `lib/contributions/periods.ts` - TODOs obsoletos de contribution_periods
 - `lib/export/actions.ts` - Query de household_savings (siempre vacío)
@@ -826,6 +908,6 @@ DROP TABLE IF EXISTS contribution_adjustments CASCADE;
 
 ---
 
-**Última actualización**: 20 Noviembre 2025  
-**Autor**: AI Assistant  
+**Última actualización**: 20 Noviembre 2025
+**Autor**: AI Assistant
 **Revisado por**: Pendiente (Owner)

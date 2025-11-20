@@ -13,8 +13,6 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
-export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
-
 export type Json = JsonValue;
 
 export type JsonArray = JsonValue[];
@@ -245,28 +243,6 @@ export interface ContributionAdjustmentTemplates {
   usage_count: Generated<number | null>;
 }
 
-export interface ContributionPeriods {
-  closed_at: Timestamp | null;
-  /**
-   * Owner que cerró el período
-   */
-  closed_by: string | null;
-  created_at: Generated<Timestamp | null>;
-  household_id: string;
-  id: Generated<string>;
-  locked_at: Timestamp | null;
-  /**
-   * Owner que bloqueó el período y calculó contribuciones
-   */
-  locked_by: string | null;
-  month: number;
-  /**
-   * SETUP: solo gastos directos, LOCKED: ambos flujos, CLOSED: período cerrado
-   */
-  status: Generated<string>;
-  year: number;
-}
-
 export interface ContributionReconciliations {
   contribution_id: string;
   last_reconciled_at: Generated<Timestamp>;
@@ -326,24 +302,6 @@ export interface CreditRefundRequests {
   status: Generated<string>;
 }
 
-export interface DualFlowConfig {
-  created_at: Generated<Timestamp | null>;
-  dias_liquidacion: Generated<number | null>;
-  emparejamiento_automatico: Generated<boolean | null>;
-  household_id: string;
-  limite_gasto_personal: Generated<Numeric | null>;
-  liquidacion_automatica: Generated<boolean | null>;
-  notificaciones_activas: Generated<boolean | null>;
-  notificar_emparejamientos: Generated<boolean | null>;
-  notificar_limites: Generated<boolean | null>;
-  notificar_liquidaciones: Generated<boolean | null>;
-  notificar_nuevos_gastos: Generated<boolean | null>;
-  requiere_aprobacion_default: Generated<boolean | null>;
-  tiempo_revision_default: Generated<number | null>;
-  umbral_emparejamiento_default: Generated<Numeric | null>;
-  updated_at: Generated<Timestamp | null>;
-}
-
 export interface DualFlowEvents {
   created_at: Generated<Timestamp>;
   created_by: string | null;
@@ -358,29 +316,6 @@ export interface DualFlowEvents {
    */
   payload: Generated<Json>;
   period_id: string | null;
-}
-
-export interface DualFlowTransactions {
-  approved_at: Timestamp | null;
-  approved_by: string | null;
-  auto_paired: Generated<boolean | null>;
-  categoria: string;
-  concepto: string;
-  creado_por: string;
-  created_at: Generated<Timestamp | null>;
-  dias_revision: Generated<number | null>;
-  estado: Generated<DualFlowStatus>;
-  fecha: Generated<Timestamp>;
-  household_id: string;
-  id: Generated<string>;
-  importe: Numeric;
-  pagado_por: string | null;
-  requiere_aprobacion: Generated<boolean | null>;
-  tipo: TransactionTypeDualFlow;
-  tipo_flujo: DualFlowType;
-  transaccion_pareja: string | null;
-  umbral_emparejamiento: Generated<Numeric | null>;
-  updated_at: Generated<Timestamp | null>;
 }
 
 export interface EmailInvitations {
@@ -525,40 +460,6 @@ export interface JointAccounts {
    */
   household_id: string;
   id: Generated<string>;
-}
-
-export interface JournalAdjustments {
-  action: string;
-  adjustment_id: string | null;
-  id: Generated<string>;
-  new_data: Json | null;
-  old_data: Json | null;
-  performed_at: Generated<Timestamp | null>;
-  performed_by: string | null;
-  reason: string | null;
-}
-
-export interface JournalInvitations {
-  action: string;
-  id: Generated<string>;
-  invitation_id: string | null;
-  new_data: Json | null;
-  old_data: Json | null;
-  performed_at: Generated<Timestamp | null>;
-  performed_by: string | null;
-  reason: string | null;
-}
-
-export interface JournalRoles {
-  action: string;
-  household_id: string | null;
-  id: Generated<string>;
-  new_data: Json | null;
-  old_data: Json | null;
-  performed_at: Generated<Timestamp | null>;
-  performed_by: string | null;
-  profile_id: string | null;
-  reason: string | null;
 }
 
 export interface JournalTransactions {
@@ -959,35 +860,6 @@ export interface UserSettings {
   updated_at: Timestamp | null;
 }
 
-export interface VDualFlowBalance {
-  auto_emparejadas: Int8 | null;
-  fondo_comun: Numeric | null;
-  gastos_personales_pendientes: Numeric | null;
-  household_id: string | null;
-  pendientes_revision: Int8 | null;
-  reembolsos_pendientes: Numeric | null;
-  total_common_to_personal: Numeric | null;
-  total_personal_to_common: Numeric | null;
-  total_transacciones: Int8 | null;
-}
-
-export interface VDualFlowMetrics {
-  aprobadas: Int8 | null;
-  auto_emparejadas: Int8 | null;
-  completadas: Int8 | null;
-  dias_promedio_procesamiento: Numeric | null;
-  gastos_comunes: Int8 | null;
-  gastos_directos: Int8 | null;
-  hogares_activos: Int8 | null;
-  importe_promedio: Numeric | null;
-  ingresos_comunes: Int8 | null;
-  ingresos_directos: Int8 | null;
-  pendientes_revision: Int8 | null;
-  porcentaje_auto_pairing: Numeric | null;
-  scope: string | null;
-  total_transacciones: Int8 | null;
-}
-
 export interface VDualFlowTransactionsUnified {
   approved_at: Timestamp | null;
   approved_by: string | null;
@@ -1003,36 +875,6 @@ export interface VDualFlowTransactionsUnified {
   id: string | null;
   importe: Numeric | null;
   pagado_por: string | null;
-  requiere_aprobacion: boolean | null;
-  tipo: TransactionTypeDualFlow | null;
-  tipo_flujo: DualFlowType | null;
-  transaccion_pareja: string | null;
-  umbral_emparejamiento: Numeric | null;
-  updated_at: Timestamp | null;
-}
-
-export interface VDualFlowWorkflow {
-  approved_at: Timestamp | null;
-  approved_by: string | null;
-  auto_paired: boolean | null;
-  categoria: string | null;
-  concepto: string | null;
-  creado_por: string | null;
-  creado_por_nombre: string | null;
-  created_at: Timestamp | null;
-  dias_desde_creacion: number | null;
-  dias_restantes_revision: number | null;
-  dias_revision: number | null;
-  estado: DualFlowStatus | null;
-  fecha: Timestamp | null;
-  household_id: string | null;
-  id: string | null;
-  importe: Numeric | null;
-  pagado_por: string | null;
-  pagado_por_nombre: string | null;
-  pareja_concepto: string | null;
-  pareja_importe: Numeric | null;
-  pareja_tipo: TransactionTypeDualFlow | null;
   requiere_aprobacion: boolean | null;
   tipo: TransactionTypeDualFlow | null;
   tipo_flujo: DualFlowType | null;
@@ -1090,13 +932,10 @@ export interface DB {
   category_parents: CategoryParents;
   contribution_adjustment_templates: ContributionAdjustmentTemplates;
   contribution_adjustments: ContributionAdjustments;
-  contribution_periods: ContributionPeriods;
   contribution_reconciliations: ContributionReconciliations;
   contributions: Contributions;
   credit_refund_requests: CreditRefundRequests;
-  dual_flow_config: DualFlowConfig;
   dual_flow_events: DualFlowEvents;
-  dual_flow_transactions: DualFlowTransactions;
   email_invitations: EmailInvitations;
   household_members: HouseholdMembers;
   household_savings: HouseholdSavings;
@@ -1104,9 +943,6 @@ export interface DB {
   households: Households;
   invitations: Invitations;
   joint_accounts: JointAccounts;
-  journal_adjustments: JournalAdjustments;
-  journal_invitations: JournalInvitations;
-  journal_roles: JournalRoles;
   journal_transactions: JournalTransactions;
   loan_requests: LoanRequests;
   member_balances: MemberBalances;
@@ -1119,10 +955,7 @@ export interface DB {
   transactions: Transactions;
   user_active_household: UserActiveHousehold;
   user_settings: UserSettings;
-  v_dual_flow_balance: VDualFlowBalance;
-  v_dual_flow_metrics: VDualFlowMetrics;
   v_dual_flow_transactions_unified: VDualFlowTransactionsUnified;
-  v_dual_flow_workflow: VDualFlowWorkflow;
   v_pending_refund_claims: VPendingRefundClaims;
   v_profile_primary_email: VProfilePrimaryEmail;
   v_transaction_pairs: VTransactionPairs;

@@ -2,7 +2,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { getMemberLoanBalance } from '@/lib/loans/actions';
 import { cn } from '@/lib/utils';
 import { CheckCircle, TrendingDown, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
@@ -26,9 +25,9 @@ export async function MemberBalanceCard({ member }: MemberBalanceCardProps) {
   const isCredit = member.current_balance >= EPSILON;
   const isDebt = member.current_balance <= -EPSILON;
 
-  // Obtener desglose de préstamos del miembro
-  const loanBalanceRes = await getMemberLoanBalance(member.profile_id);
-  const loanData = loanBalanceRes.ok ? loanBalanceRes.data : null;
+  // TODO: Implementar desglose de préstamos por miembro
+  // Por ahora solo mostramos el balance sin desglose de préstamos
+  const loanData = null;
 
   return (
     <Card
@@ -87,14 +86,14 @@ export async function MemberBalanceCard({ member }: MemberBalanceCardProps) {
           </div>
         </div>
 
-        {/* Desglose de Préstamos */}
-        {loanData && loanData.net_debt !== 0 && (
+        {/* TODO: Implementar desglose de préstamos por miembro */}
+        {/* {loanData && loanData.net_debt !== 0 && (
           <LoanBreakdown
             loanExpenses={loanData.loan_expenses}
             loanRepayments={loanData.loan_repayments}
             netDebt={loanData.net_debt}
           />
-        )}
+        )} */}
 
         {/* Última actualización */}
         <div className="pt-3 border-t">

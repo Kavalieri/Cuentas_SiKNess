@@ -121,7 +121,6 @@ export default async function LoanHistoryPage() {
                     <TableHead>Monto</TableHead>
                     <TableHead>Descripción</TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead>Revisado Por</TableHead>
                     <TableHead>Fecha Revisión</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -156,11 +155,6 @@ export default async function LoanHistoryPage() {
                           {request.status === 'rejected' && 'Rechazado'}
                           {request.status === 'cancelled' && 'Cancelado'}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {request.reviewed_by_name || (
-                          <span className="text-muted-foreground">-</span>
-                        )}
                       </TableCell>
                       <TableCell>
                         {request.reviewed_at ? (
@@ -207,8 +201,14 @@ export default async function LoanHistoryPage() {
                   </div>
                 )}
                 <div className="mt-2 text-xs text-muted-foreground">
-                  Rechazado por {request.reviewed_by_name} el{' '}
-                  {request.reviewed_at && new Date(request.reviewed_at).toLocaleDateString('es-ES')}
+                  {request.reviewed_at ? (
+                    <>
+                      Revisado el{' '}
+                      {new Date(request.reviewed_at).toLocaleDateString('es-ES')}
+                    </>
+                  ) : (
+                    'Pendiente de revisión'
+                  )}
                 </div>
               </div>
             ))}
