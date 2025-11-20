@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentUser, getUserHouseholdId } from '@/lib/auth';
+import { getCurrentUser, getUserHouseholdId, isHouseholdOwner } from '@/lib/auth';
 import { query } from '@/lib/db';
 import type { Result } from '@/lib/result';
 import { fail, ok } from '@/lib/result';
@@ -117,7 +117,9 @@ export async function requestHouseholdLoan(
 
     if (amount > balanceResult.data!.max_loanable) {
       return fail(
-        `El monto solicitado (€${amount.toFixed(2)}) excede el disponible para préstamos (€${balanceResult.data!.max_loanable.toFixed(2)})`,
+        `El monto solicitado (€${amount.toFixed(
+          2,
+        )}) excede el disponible para préstamos (€${balanceResult.data!.max_loanable.toFixed(2)})`,
       );
     }
 
@@ -163,7 +165,7 @@ export async function getPendingLoanRequests(): Promise<
       display_name: string;
       amount: number;
       description: string | null;
-      requested_at: Date;
+      requested_at: string;
     }>
   >
 > {
@@ -198,7 +200,13 @@ export async function getPendingLoanRequests(): Promise<
       [householdId],
     );
 
-    return ok(result.rows);
+    // Convertir Date a string para serialización JSON
+    const requests = result.rows.map(row => ({
+      ...row,
+      requested_at: row.requested_at.toISOString(),
+    }));
+
+    return ok(requests);
   } catch (error) {
     console.error('Error al obtener solicitudes pendientes:', error);
     return fail('Error al obtener las solicitudes de préstamo');
@@ -223,7 +231,11 @@ export async function approveLoanRequest(requestId: string): Promise<Result> {
       return fail('No se pudo obtener el usuario actual');
     }
 
-    // TODO: Verificar que el usuario es owner del hogar
+    // Verificar que el usuario es owner del hogar
+    const isOwner = await isHouseholdOwner();
+    if (!isOwner) {
+      return fail('Solo el propietario del hogar puede aprobar préstamos');
+    }
 
     // Obtener detalles de la solicitud
     const requestRes = await query<{
@@ -326,7 +338,11 @@ export async function rejectLoanRequest(requestId: string, reason?: string): Pro
       return fail('No se pudo obtener el usuario actual');
     }
 
-    // TODO: Verificar que el usuario es owner del hogar
+    // Verificar que el usuario es owner del hogar
+    const isOwner = await isHouseholdOwner();
+    if (!isOwner) {
+      return fail('Solo el propietario del hogar puede rechazar préstamos');
+    }
 
     await query(
       `

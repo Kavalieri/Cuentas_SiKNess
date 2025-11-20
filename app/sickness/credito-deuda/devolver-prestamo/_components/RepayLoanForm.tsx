@@ -1,9 +1,9 @@
 'use client';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { repayHouseholdLoan } from '@/lib/loans/actions';
 import { Info, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -30,9 +30,9 @@ export default function RepayLoanForm({ currentDebt }: RepayLoanFormProps) {
     // Advertir si se paga más de lo debido
     if (parsedAmount > currentDebt) {
       const confirmOverpay = window.confirm(
-        `Estás pagando €${parsedAmount.toFixed(
+        `Estás pagando €${parsedAmount.toFixed(2)} pero solo debes €${currentDebt.toFixed(
           2,
-        )} pero solo debes €${currentDebt.toFixed(2)}. El exceso quedará a tu favor. ¿Deseas continuar?`,
+        )}. El exceso quedará a tu favor. ¿Deseas continuar?`,
       );
       if (!confirmOverpay) {
         return;
@@ -117,9 +117,7 @@ export default function RepayLoanForm({ currentDebt }: RepayLoanFormProps) {
             ) : parseFloat(amount) === currentDebt ? (
               <span className="text-green-600">✓ Saldarás la deuda completamente</span>
             ) : (
-              <span>
-                Quedarán €{(currentDebt - parseFloat(amount)).toFixed(2)} por pagar
-              </span>
+              <span>Quedarán €{(currentDebt - parseFloat(amount)).toFixed(2)} por pagar</span>
             )}
           </p>
         )}

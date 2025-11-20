@@ -1,11 +1,11 @@
 'use client';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { requestHouseholdLoan } from '@/lib/loans/actions';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -31,7 +31,9 @@ export default function RequestLoanForm({ availableBalance }: RequestLoanFormPro
 
     if (parsedAmount > availableBalance) {
       alert(
-        `El monto solicitado (€${parsedAmount.toFixed(2)}) excede el disponible (€${availableBalance.toFixed(2)})`,
+        `El monto solicitado (€${parsedAmount.toFixed(
+          2,
+        )}) excede el disponible (€${availableBalance.toFixed(2)})`,
       );
       return;
     }

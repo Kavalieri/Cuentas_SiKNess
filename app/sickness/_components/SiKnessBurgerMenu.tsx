@@ -10,7 +10,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { BarChart3, Calendar, Database, LogOut, Menu, Shield, Tag, User, Users, Wallet } from 'lucide-react';
+import { BarChart3, Calendar, Database, FileCheck, LogOut, Menu, Shield, Tag, User, Users, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -99,6 +99,12 @@ export function SiKnessBurgerMenu() {
               label: 'Categorías',
               href: '/sickness/configuracion/categorias',
             },
+            ...(isOwner ? [{
+              icon: FileCheck,
+              label: 'Préstamos Pendientes',
+              href: '/sickness/configuracion/prestamos-pendientes',
+              badge: 'Owner',
+            }] : []),
           ],
         },
       ];

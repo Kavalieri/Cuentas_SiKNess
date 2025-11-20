@@ -675,3 +675,29 @@ async function createUserFromGoogle(
     return { success: false, error: 'Error al crear el usuario' };
   }
 }
+
+/**
+ * Verifica si el usuario actual es el owner del hogar
+ * @returns true si el usuario es owner, false en caso contrario
+ */
+export async function isHouseholdOwner(): Promise<boolean> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return false;
+
+    const householdId = await getUserHouseholdId();
+    if (!householdId) return false;
+
+    const result = await query<{ owner_profile_id: string }>(
+      `SELECT owner_profile_id FROM households WHERE id = $1`,
+      [householdId],
+    );
+
+    if (result.rows.length === 0 || !result.rows[0]) return false;
+
+    return result.rows[0].owner_profile_id === currentUser.profile_id;
+  } catch (error) {
+    console.error('Error checking household ownership:', error);
+    return false;
+  }
+}
