@@ -3,44 +3,23 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { repayLoan } from '@/lib/loans/actions';
-import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { repayHouseholdLoan } from '@/lib/loans/actions';
+import { Info, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface MemberDebt {
-  profile_id: string;
-  display_name: string;
-  debt_amount: number;
-}
-
 interface RepayLoanFormProps {
-  debts: MemberDebt[];
+  currentDebt: number;
 }
 
-export default function RepayLoanForm({ debts }: RepayLoanFormProps) {
+export default function RepayLoanForm({ currentDebt }: RepayLoanFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [creditorId, setCreditorId] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
-
-  // Encontrar la deuda seleccionada
-  const selectedDebt = debts.find((d) => d.profile_id === creditorId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!creditorId) {
-      alert('Debes seleccionar a quién le pagas');
-      return;
-    }
 
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -49,11 +28,11 @@ export default function RepayLoanForm({ debts }: RepayLoanFormProps) {
     }
 
     // Advertir si se paga más de lo debido
-    if (selectedDebt && parsedAmount > selectedDebt.debt_amount) {
+    if (parsedAmount > currentDebt) {
       const confirmOverpay = window.confirm(
         `Estás pagando €${parsedAmount.toFixed(
           2,
-        )} pero solo debes €${selectedDebt.debt_amount.toFixed(2)}. ¿Deseas continuar?`,
+        )} pero solo debes €${currentDebt.toFixed(2)}. El exceso quedará a tu favor. ¿Deseas continuar?`,
       );
       if (!confirmOverpay) {
         return;
@@ -62,7 +41,7 @@ export default function RepayLoanForm({ debts }: RepayLoanFormProps) {
 
     setLoading(true);
 
-    const result = await repayLoan(creditorId, parsedAmount);
+    const result = await repayHouseholdLoan(parsedAmount);
 
     if (result.ok) {
       alert('✅ Pago registrado exitosamente');
@@ -74,35 +53,37 @@ export default function RepayLoanForm({ debts }: RepayLoanFormProps) {
   };
 
   const handlePayFull = () => {
-    if (selectedDebt) {
-      setAmount(selectedDebt.debt_amount.toFixed(2));
-    }
+    setAmount(currentDebt.toFixed(2));
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Selección de acreedor */}
-      <div className="space-y-2">
-        <Label htmlFor="creditor">¿A quién le pagas?</Label>
-        <Select value={creditorId} onValueChange={setCreditorId} disabled={loading}>
-          <SelectTrigger id="creditor">
-            <SelectValue placeholder="Selecciona un miembro" />
-          </SelectTrigger>
-          <SelectContent>
-            {debts.map((debt) => (
-              <SelectItem key={debt.profile_id} value={debt.profile_id}>
-                {debt.display_name} - Debes €{debt.debt_amount.toFixed(2)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Info de deuda actual */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>Tu deuda con el hogar:</strong>{' '}
+          {currentDebt > 0 ? (
+            <span className="text-orange-600 font-semibold">€{currentDebt.toFixed(2)}</span>
+          ) : currentDebt < 0 ? (
+            <span className="text-green-600 font-semibold">
+              Crédito a favor: €{Math.abs(currentDebt).toFixed(2)}
+            </span>
+          ) : (
+            <span className="text-green-600">€0.00 (sin deuda)</span>
+          )}
+          <br />
+          <span className="text-muted-foreground text-sm">
+            El pago se registra inmediatamente en la cuenta común del hogar.
+          </span>
+        </AlertDescription>
+      </Alert>
 
       {/* Monto */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <Label htmlFor="amount">Monto a pagar (€)</Label>
-          {selectedDebt && (
+          {currentDebt > 0 && (
             <Button
               type="button"
               variant="link"
@@ -111,7 +92,7 @@ export default function RepayLoanForm({ debts }: RepayLoanFormProps) {
               disabled={loading}
               className="h-auto p-0"
             >
-              Pagar deuda completa (€{selectedDebt.debt_amount.toFixed(2)})
+              Pagar deuda completa (€{currentDebt.toFixed(2)})
             </Button>
           )}
         </div>
@@ -126,17 +107,18 @@ export default function RepayLoanForm({ debts }: RepayLoanFormProps) {
           disabled={loading}
           required
         />
-        {selectedDebt && parseFloat(amount) > 0 && (
+        {parseFloat(amount) > 0 && (
           <p className="text-sm text-muted-foreground">
-            {parseFloat(amount) > selectedDebt.debt_amount ? (
+            {parseFloat(amount) > currentDebt ? (
               <span className="text-orange-600">
-                ⚠️ Pagarás €{(parseFloat(amount) - selectedDebt.debt_amount).toFixed(2)} de más
+                ⚠️ Pagarás €{(parseFloat(amount) - currentDebt).toFixed(2)} de más (quedará a tu
+                favor)
               </span>
-            ) : parseFloat(amount) === selectedDebt.debt_amount ? (
+            ) : parseFloat(amount) === currentDebt ? (
               <span className="text-green-600">✓ Saldarás la deuda completamente</span>
             ) : (
               <span>
-                Quedarán €{(selectedDebt.debt_amount - parseFloat(amount)).toFixed(2)} por pagar
+                Quedarán €{(currentDebt - parseFloat(amount)).toFixed(2)} por pagar
               </span>
             )}
           </p>
@@ -152,10 +134,10 @@ export default function RepayLoanForm({ debts }: RepayLoanFormProps) {
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Registrando...
+              Registrando pago...
             </>
           ) : (
-            'Registrar Pago'
+            'Realizar Pago'
           )}
         </Button>
       </div>

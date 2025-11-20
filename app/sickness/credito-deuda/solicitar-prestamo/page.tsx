@@ -1,45 +1,19 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getCurrentUser, getUserHouseholdId } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { getUserHouseholdId } from '@/lib/auth';
+import { getHouseholdAvailableBalance } from '@/lib/loans/actions';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import RequestLoanForm from './_components/RequestLoanForm';
 
-async function getHouseholdMembers() {
-  const householdId = await getUserHouseholdId();
-  if (!householdId) {
-    return [];
+async function getAvailableBalance() {
+  const result = await getHouseholdAvailableBalance();
+  if (!result.ok) {
+    return 0;
   }
-
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return [];
-  }
-
-  // Obtener miembros del hogar excepto el usuario actual
-  const res = await query<{
-    profile_id: string;
-    display_name: string;
-    balance: number;
-  }>(
-    `
-    SELECT
-      p.id as profile_id,
-      p.display_name,
-      0 as balance
-    FROM profiles p
-    INNER JOIN household_members hm ON hm.profile_id = p.id
-    WHERE hm.household_id = $1
-      AND p.id != $2
-    ORDER BY p.display_name
-  `,
-    [householdId, currentUser.profile_id],
-  );
-
-  return res.rows;
+  return result.data?.max_loanable ?? 0;
 }
 
 export default async function SolicitarPrestamoPage() {
@@ -48,7 +22,7 @@ export default async function SolicitarPrestamoPage() {
     redirect('/sickness/onboarding');
   }
 
-  const members = await getHouseholdMembers();
+  const availableBalance = await getAvailableBalance();
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -60,7 +34,7 @@ export default async function SolicitarPrestamoPage() {
             Volver
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold">Solicitar Préstamo</h1>
+        <h1 className="text-3xl font-bold">Solicitar Préstamo del Hogar</h1>
       </div>
 
       {/* Información contextual */}
@@ -70,16 +44,19 @@ export default async function SolicitarPrestamoPage() {
         </CardHeader>
         <CardContent className="text-blue-800 dark:text-blue-200 space-y-2">
           <p>
-            Cuando solicitas un préstamo, estás registrando que otro miembro te ha prestado dinero
-            de su bolsillo.
+            Puedes solicitar un préstamo de la cuenta común del hogar. Este préstamo debe ser
+            aprobado por el administrador antes de ser efectivo.
           </p>
           <p>
-            <strong>Efecto:</strong>
+            <strong>Proceso:</strong>
           </p>
           <ul className="list-disc list-inside ml-4 space-y-1">
-            <li>El prestamista aumenta su crédito (le debes dinero, su balance sube)</li>
-            <li>Tú reduces tu deuda (recibes dinero, tu balance baja)</li>
-            <li>Este préstamo se refleja en el historial de ambos</li>
+            <li>Solicitas el monto que necesitas (dentro del saldo disponible)</li>
+            <li>El administrador del hogar revisa y aprueba/rechaza tu solicitud</li>
+            <li>
+              Si se aprueba: el dinero sale de la cuenta común y aumenta tu deuda con el hogar
+            </li>
+            <li>Puedes devolver el préstamo cuando quieras mediante un pago común</li>
           </ul>
         </CardContent>
       </Card>
@@ -91,7 +68,7 @@ export default async function SolicitarPrestamoPage() {
         </CardHeader>
         <CardContent>
           <Suspense fallback={<div>Cargando...</div>}>
-            <RequestLoanForm members={members} />
+            <RequestLoanForm availableBalance={availableBalance} />
           </Suspense>
         </CardContent>
       </Card>

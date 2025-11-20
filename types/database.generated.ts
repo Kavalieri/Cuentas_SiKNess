@@ -27,6 +27,8 @@ export type JsonPrimitive = boolean | number | string | null;
 
 export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
 
+export type LoanRequestStatus = "approved" | "cancelled" | "pending" | "rejected";
+
 export type Numeric = ColumnType<string, number | string, number | string>;
 
 export type PeriodPhaseEnum = "active" | "closed" | "closing" | "preparing" | "validation";
@@ -570,6 +572,31 @@ export interface JournalTransactions {
   transaction_id: string | null;
 }
 
+export interface LoanRequests {
+  /**
+   * Monto solicitado del préstamo
+   */
+  amount: Numeric;
+  created_at: Generated<Timestamp>;
+  description: string | null;
+  household_id: string;
+  id: Generated<string>;
+  profile_id: string;
+  rejection_reason: string | null;
+  requested_at: Generated<Timestamp>;
+  reviewed_at: Timestamp | null;
+  reviewed_by_profile_id: string | null;
+  /**
+   * Estado: pending (pendiente), approved (aprobado), rejected (rechazado), cancelled (cancelado por el solicitante)
+   */
+  status: Generated<LoanRequestStatus>;
+  /**
+   * ID de la transacción de gasto común creada al aprobar el préstamo
+   */
+  transaction_id: string | null;
+  updated_at: Generated<Timestamp>;
+}
+
 export interface MemberBalances {
   /**
    * Balance actual: (+) hogar debe a miembro, (-) miembro debe al hogar, (0) saldado
@@ -1081,6 +1108,7 @@ export interface DB {
   journal_invitations: JournalInvitations;
   journal_roles: JournalRoles;
   journal_transactions: JournalTransactions;
+  loan_requests: LoanRequests;
   member_balances: MemberBalances;
   member_incomes: MemberIncomes;
   monthly_periods: MonthlyPeriods;
