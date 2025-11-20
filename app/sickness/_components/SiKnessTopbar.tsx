@@ -7,9 +7,13 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { GlobalHouseholdSelector } from './GlobalHouseholdSelector';
 import { GlobalPeriodSelector } from './GlobalPeriodSelector';
-import { SiKnessBurgerMenu } from './SiKnessBurgerMenu';
+import { SiKnessBurgerMenuClient } from './SiKnessBurgerMenu';
 
-export function SiKnessTopbar() {
+interface SiKnessTopbarProps {
+  pendingLoansCount?: number;
+}
+
+export function SiKnessTopbar({ pendingLoansCount = 0 }: SiKnessTopbarProps) {
   const { theme, setTheme } = useTheme();
   const { privacyMode, togglePrivacyMode } = useSiKness();
   const [mounted, setMounted] = useState(false);
@@ -24,7 +28,7 @@ export function SiKnessTopbar() {
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         {/* Menú burguer y selector de hogar */}
         <div className="flex items-center gap-2">
-          <SiKnessBurgerMenu />
+          <SiKnessBurgerMenuClient pendingLoansCount={pendingLoansCount} />
           <GlobalHouseholdSelector />
         </div>
 

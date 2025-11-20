@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { approveLoanRequest, rejectLoanRequest } from '@/lib/loans/actions';
-import { CheckCircle2, XCircle, Clock, User, Calendar, FileText } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, FileText, User, XCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface PendingLoan {
   id: string;
@@ -44,7 +44,11 @@ function PendingLoanCard({ request }: { request: PendingLoan }) {
     try {
       const result = await approveLoanRequest(request.id);
       if (result.ok) {
-        alert(`✅ Préstamo aprobado: Se ha aprobado el préstamo de €${request.amount.toFixed(2)} para ${request.display_name}`);
+        alert(
+          `✅ Préstamo aprobado: Se ha aprobado el préstamo de €${request.amount.toFixed(2)} para ${
+            request.display_name
+          }`,
+        );
         router.refresh();
       } else {
         alert(`❌ Error: ${result.message}`);
@@ -110,9 +114,7 @@ function PendingLoanCard({ request }: { request: PendingLoan }) {
             </CardDescription>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-primary">
-              €{request.amount.toFixed(2)}
-            </div>
+            <div className="text-2xl font-bold text-primary">€{request.amount.toFixed(2)}</div>
           </div>
         </div>
       </CardHeader>
@@ -130,12 +132,7 @@ function PendingLoanCard({ request }: { request: PendingLoan }) {
 
         {!isRejecting ? (
           <div className="flex gap-2">
-            <Button
-              onClick={handleApprove}
-              disabled={isLoading}
-              className="flex-1"
-              size="lg"
-            >
+            <Button onClick={handleApprove} disabled={isLoading} className="flex-1" size="lg">
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Aprobar Préstamo
             </Button>
@@ -153,9 +150,7 @@ function PendingLoanCard({ request }: { request: PendingLoan }) {
         ) : (
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor={`rejection-reason-${request.id}`}>
-                Motivo del rechazo
-              </Label>
+              <Label htmlFor={`rejection-reason-${request.id}`}>Motivo del rechazo</Label>
               <Textarea
                 id={`rejection-reason-${request.id}`}
                 value={rejectionReason}

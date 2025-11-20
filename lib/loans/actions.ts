@@ -201,7 +201,7 @@ export async function getPendingLoanRequests(): Promise<
     );
 
     // Convertir Date a string para serialización JSON
-    const requests = result.rows.map(row => ({
+    const requests = result.rows.map((row) => ({
       ...row,
       requested_at: row.requested_at.toISOString(),
     }));

@@ -272,7 +272,12 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    console.log('[getCurrentUser] ✅ Usuario encontrado:', profile.display_name, 'profile_id:', profile.id);
+    console.log(
+      '[getCurrentUser] ✅ Usuario encontrado:',
+      profile.display_name,
+      'profile_id:',
+      profile.id,
+    );
     // Mapear a interfaz User (compatibilidad con código existente)
     const user: User = {
       id: profile.auth_user_id, // id = auth UUID (para código existente)
@@ -599,18 +604,16 @@ export async function authenticateWithGoogle(
       }
 
       // Solo actualizar display_name si está vacío o es el email (caso default)
-      const isDefaultName = !existingUser.display_name || existingUser.display_name === existingUser.email.split('@')[0];
+      const isDefaultName =
+        !existingUser.display_name ||
+        existingUser.display_name === existingUser.email.split('@')[0];
       if (userInfo.name && isDefaultName) {
         updates.display_name = userInfo.name;
       }
 
       // Solo hacer update si hay cambios más allá de updated_at
       if (updates.avatar_url || updates.display_name) {
-        await sql.update(
-          'profiles',
-          updates,
-          { auth_user_id: userId },
-        );
+        await sql.update('profiles', updates, { auth_user_id: userId });
       }
     } else {
       // Crear nuevo usuario

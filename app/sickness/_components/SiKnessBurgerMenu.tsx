@@ -1,16 +1,29 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from '@/components/ui/sheet';
 import { useSiKness } from '@/contexts/SiKnessContext';
-import { BarChart3, Calendar, Database, FileCheck, LogOut, Menu, Shield, Tag, User, Users, Wallet } from 'lucide-react';
+import {
+  BarChart3,
+  Calendar,
+  Database,
+  FileCheck,
+  LogOut,
+  Menu,
+  Shield,
+  Tag,
+  User,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -19,6 +32,7 @@ interface NavItem {
   label: string;
   href: string;
   badge?: string;
+  badgeCount?: number;
 }
 
 interface NavSection {
@@ -26,7 +40,11 @@ interface NavSection {
   items: NavItem[];
 }
 
-export function SiKnessBurgerMenu() {
+interface SiKnessBurgerMenuClientProps {
+  pendingLoansCount?: number;
+}
+
+export function SiKnessBurgerMenuClient({ pendingLoansCount = 0 }: SiKnessBurgerMenuClientProps) {
   const [open, setOpen] = useState(false);
   const { user, isOwner, householdId } = useSiKness();
 
@@ -99,12 +117,17 @@ export function SiKnessBurgerMenu() {
               label: 'Categorías',
               href: '/sickness/configuracion/categorias',
             },
-            ...(isOwner ? [{
-              icon: FileCheck,
-              label: 'Préstamos Pendientes',
-              href: '/sickness/configuracion/prestamos-pendientes',
-              badge: 'Owner',
-            }] : []),
+            ...(isOwner
+              ? [
+                  {
+                    icon: FileCheck,
+                    label: 'Préstamos Pendientes',
+                    href: '/sickness/configuracion/prestamos-pendientes',
+                    badge: 'Owner',
+                    badgeCount: pendingLoansCount,
+                  },
+                ]
+              : []),
           ],
         },
       ];
@@ -161,11 +184,21 @@ export function SiKnessBurgerMenu() {
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </div>
-                    {item.badge && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                        {item.badge}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {item.badgeCount !== undefined && item.badgeCount > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="h-5 min-w-5 rounded-full px-1.5 text-xs"
+                        >
+                          {item.badgeCount}
+                        </Badge>
+                      )}
+                      {item.badge && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
                   </Link>
                 ))}
               </nav>
@@ -189,3 +222,6 @@ export function SiKnessBurgerMenu() {
     </Sheet>
   );
 }
+
+// Re-export para compatibilidad
+export { SiKnessBurgerMenuClient as SiKnessBurgerMenu };

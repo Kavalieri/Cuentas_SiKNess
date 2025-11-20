@@ -104,6 +104,27 @@ export async function getMemberBalances(householdId: string) {
     }
   }
 
+  // Obtener deuda de préstamos por miembro usando las categorías del sistema
+  const loanDebtRes = await query<{ profile_id: string; net_debt: string }>(
+    `
+      SELECT
+        t.performed_by_profile_id as profile_id,
+        COALESCE(SUM(CASE
+          WHEN c.name = 'Préstamo Personal' THEN t.amount
+          WHEN c.name = 'Pago Préstamo' THEN -t.amount
+          ELSE 0
+        END), 0) as net_debt
+      FROM transactions t
+      LEFT JOIN categories c ON c.id = t.category_id
+      WHERE t.household_id = $1
+        AND t.flow_type = 'common'
+        AND c.name IN ('Préstamo Personal', 'Pago Préstamo')
+      GROUP BY t.performed_by_profile_id
+    `,
+    [householdId],
+  );
+  const loanDebtMap = new Map(loanDebtRes.rows.map((r) => [r.profile_id, parseFloat(r.net_debt)]));
+
   // Obtener última fecha de transacción por miembro
   const lastTransactionRes = await query<{ profile_id: string; last_transaction: string }>(
     `
@@ -118,14 +139,17 @@ export async function getMemberBalances(householdId: string) {
     lastTransactionRes.rows.map((r) => [r.profile_id, r.last_transaction]),
   );
 
-  // Ensamblar respuesta con balance acumulado
+  // Ensamblar respuesta con balance acumulado (incluyendo deuda de préstamos)
+  // Balance final = balance_periodos - deuda_prestamos
+  // - Si tengo balance +50 pero debo 30 en préstamos → balance final = +20
+  // - Si tengo balance -10 y debo 20 en préstamos → balance final = -30
   return members.map((m) => ({
     profile_id: m.profile_id,
     display_name: m.display_name ?? m.email,
     email: m.email,
     avatar_url: m.avatar_url,
     role: (m.role === 'owner' ? 'owner' : 'member') as 'owner' | 'member',
-    current_balance: balances.get(m.profile_id) ?? 0,
+    current_balance: (balances.get(m.profile_id) ?? 0) - (loanDebtMap.get(m.profile_id) ?? 0),
     last_updated_at: lastTransactionMap.get(m.profile_id) || new Date().toISOString(),
   }));
 }

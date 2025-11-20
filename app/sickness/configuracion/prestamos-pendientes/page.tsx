@@ -1,10 +1,10 @@
-import { redirect } from 'next/navigation';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { isHouseholdOwner } from '@/lib/auth';
 import { getPendingLoanRequests } from '@/lib/loans/actions';
-import { PendingLoansList } from './_components/PendingLoansList';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
+import { redirect } from 'next/navigation';
+import { PendingLoansList } from './_components/PendingLoansList';
 
 export default async function PendingLoansPage() {
   // Verificar que el usuario es owner
@@ -28,8 +28,9 @@ export default async function PendingLoansPage() {
       <Alert>
         <InfoIcon className="h-4 w-4" />
         <AlertDescription>
-          Al aprobar un préstamo, se creará un gasto común que reducirá el saldo disponible del hogar
-          y aumentará la deuda del miembro solicitante. El miembro podrá devolver el préstamo en cualquier momento.
+          Al aprobar un préstamo, se creará un gasto común que reducirá el saldo disponible del
+          hogar y aumentará la deuda del miembro solicitante. El miembro podrá devolver el préstamo
+          en cualquier momento.
         </AlertDescription>
       </Alert>
 
