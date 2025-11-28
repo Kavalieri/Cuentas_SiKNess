@@ -7,6 +7,8 @@ import type { ColumnType } from "kysely";
 
 export type DualFlowStatus = "approved" | "auto_paired" | "completed" | "pending_review" | "rejected";
 
+export type DualFlowType = "common_fund" | "common_to_personal" | "personal_to_common";
+
 export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
@@ -30,6 +32,8 @@ export type Numeric = ColumnType<string, number | string, number | string>;
 export type PeriodPhaseEnum = "active" | "closed" | "closing" | "preparing" | "validation";
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
+
+export type TransactionTypeDualFlow = "gasto" | "gasto_directo" | "ingreso" | "ingreso_directo";
 
 export interface _LegacyMemberCredits {
   amount: Numeric | null;
@@ -158,6 +162,10 @@ export interface Categories {
    * Fecha de creación de la categoría.
    */
   created_at: Generated<Timestamp | null>;
+  /**
+   * ID del usuario que CREÓ esta categoría en el hogar.
+   */
+  created_by_profile_id: string | null;
   display_order: Generated<number | null>;
   household_id: string | null;
   icon: string | null;
@@ -177,6 +185,10 @@ export interface Categories {
    * Fecha de la última modificación de la categoría.
    */
   updated_at: Generated<Timestamp | null>;
+  /**
+   * ID del usuario que MODIFICÓ esta categoría por última vez.
+   */
+  updated_by_profile_id: string | null;
 }
 
 export interface CategoryParents {
@@ -244,15 +256,26 @@ export interface Contributions {
    * Suma absoluta de ajustes que tienen movimiento vinculado (prepagos ya realizados)
    */
   adjustments_paid_amount: Generated<Numeric | null>;
+  adjustments_total: Numeric | null;
+  calculation_method: string | null;
   created_at: Generated<Timestamp | null>;
+  /**
+   * ID del usuario que CALCULÓ/CREÓ este registro de contribución. Puede ser diferente de profile_id (a quien pertenece).
+   */
+  created_by_profile_id: string | null;
   expected_amount: Numeric | null;
   household_id: string | null;
   id: Generated<string>;
   month: number | null;
   paid_amount: Numeric | null;
+  paid_at: Timestamp | null;
   profile_id: string | null;
   status: string | null;
   updated_at: Timestamp | null;
+  /**
+   * ID del usuario que MODIFICÓ esta contribución por última vez.
+   */
+  updated_by_profile_id: string | null;
   year: number | null;
 }
 
@@ -446,6 +469,7 @@ export interface JournalTransactions {
   old_data: Json | null;
   performed_at: Generated<Timestamp | null>;
   performed_by: string | null;
+  reason: string | null;
   transaction_id: string | null;
 }
 
@@ -671,8 +695,16 @@ export interface Transactions {
    * Perfil que aprobó la transacción dual-flow
    */
   approved_by: string | null;
+  /**
+   * Marca si la transacción fue emparejada automáticamente
+   */
+  auto_paired: Generated<boolean>;
   category_id: string | null;
   created_at: Generated<Timestamp | null>;
+  /**
+   * Email del usuario que creó el registro en el sistema
+   */
+  created_by_email: string | null;
   /**
    * Miembro que creó la transacción (puede diferir de quien pagó)
    */
@@ -716,6 +748,10 @@ export interface Transactions {
    *    Deprecado: 02 November 2025
    */
   paid_by: string | null;
+  /**
+   * Umbral de importe para emparejamiento automático (diferencia aceptada)
+   */
+  pairing_threshold: Generated<Numeric | null>;
   /**
    * Fecha/hora real cuando se realizó la transacción (diferente de created_at que es cuando se registró en el sistema)
    */
@@ -778,6 +814,10 @@ export interface Transactions {
    */
   requires_approval: Generated<boolean>;
   /**
+   * Días límite para revisión antes de la auto-aprobación
+   */
+  review_days: Generated<number | null>;
+  /**
    * Optional detailed subcategory (migrated from description field)
    */
   subcategory_id: string | null;
@@ -817,6 +857,29 @@ export interface UserSettings {
   created_at: Timestamp | null;
   preferences: Json | null;
   profile_id: string;
+  updated_at: Timestamp | null;
+}
+
+export interface VDualFlowTransactionsUnified {
+  approved_at: Timestamp | null;
+  approved_by: string | null;
+  auto_paired: boolean | null;
+  categoria: string | null;
+  concepto: string | null;
+  creado_por: string | null;
+  created_at: Timestamp | null;
+  dias_revision: number | null;
+  estado: DualFlowStatus | null;
+  fecha: Timestamp | null;
+  household_id: string | null;
+  id: string | null;
+  importe: Numeric | null;
+  pagado_por: string | null;
+  requiere_aprobacion: boolean | null;
+  tipo: TransactionTypeDualFlow | null;
+  tipo_flujo: DualFlowType | null;
+  transaccion_pareja: string | null;
+  umbral_emparejamiento: Numeric | null;
   updated_at: Timestamp | null;
 }
 
@@ -892,6 +955,7 @@ export interface DB {
   transactions: Transactions;
   user_active_household: UserActiveHousehold;
   user_settings: UserSettings;
+  v_dual_flow_transactions_unified: VDualFlowTransactionsUnified;
   v_pending_refund_claims: VPendingRefundClaims;
   v_profile_primary_email: VProfilePrimaryEmail;
   v_transaction_pairs: VTransactionPairs;
