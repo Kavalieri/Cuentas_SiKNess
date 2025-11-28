@@ -40,7 +40,7 @@ const PHASE_LABELS: Record<string, string> = {
   closed: 'Cerrado',
 };
 
-const STATUS_LABELS: Record<string, string> = {
+const _STATUS_LABELS: Record<string, string> = {
   settled: 'Saldado',
   pending: 'Pendiente',
   overpaid: 'Sobrepago',

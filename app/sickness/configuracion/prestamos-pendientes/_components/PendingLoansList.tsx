@@ -53,7 +53,7 @@ function PendingLoanCard({ request }: { request: PendingLoan }) {
       } else {
         alert(`❌ Error: ${result.message}`);
       }
-    } catch (error) {
+    } catch {
       alert('❌ Error: Ocurrió un error al aprobar el préstamo');
     } finally {
       setIsLoading(false);
@@ -75,7 +75,7 @@ function PendingLoanCard({ request }: { request: PendingLoan }) {
       } else {
         alert(`❌ Error: ${result.message}`);
       }
-    } catch (error) {
+    } catch {
       alert('❌ Error: Ocurrió un error al rechazar el préstamo');
     } finally {
       setIsLoading(false);

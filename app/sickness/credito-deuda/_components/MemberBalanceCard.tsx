@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { CheckCircle, TrendingDown, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { LoanBreakdown } from './LoanBreakdown';
 
 interface MemberBalanceCardProps {
   member: {
@@ -27,7 +26,7 @@ export async function MemberBalanceCard({ member }: MemberBalanceCardProps) {
 
   // TODO: Implementar desglose de préstamos por miembro
   // Por ahora solo mostramos el balance sin desglose de préstamos
-  const loanData = null;
+  const _loanData = null;
 
   return (
     <Card
