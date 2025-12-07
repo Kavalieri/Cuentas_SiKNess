@@ -1,5 +1,166 @@
 # Changelog
 
+## [3.0.0](https://github.com/Kavalieri/Cuentas_SiKNess/compare/cuentas-sik-v2.0.0...cuentas-sik-v3.0.0) (2025-12-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **loans:** Complete redesign of loan system architecture
+* **database:** Renombrado conceptual en toda la app
+* **docs:** docs/TO-DO/ eliminado del repositorio
+* **database:** Sistema de roles simplificado y migraciones reseteadas
+
+### Features
+
+* **api:** agregar información completa de pagador en transacciones ([fd21082](https://github.com/Kavalieri/Cuentas_SiKNess/commit/fd21082e6d536f97524445f0d581265563345c57)), closes [#17](https://github.com/Kavalieri/Cuentas_SiKNess/issues/17)
+* **api:** añadir performed_by_display_name a endpoint global de transacciones - Phase 3 ([fdba4c3](https://github.com/Kavalieri/Cuentas_SiKNess/commit/fdba4c3fa7e27845c73d42bdbb709159e42e4868))
+* **backend:** implementar sistema dual-field en Server Actions - Phase 2 ([a193a7a](https://github.com/Kavalieri/Cuentas_SiKNess/commit/a193a7a1ecc806e7a132715ece96d09952b732a8))
+* **balance:** cargar categorías correctamente + selector pagador en gastos directos (Issue [#12](https://github.com/Kavalieri/Cuentas_SiKNess/issues/12)) ([2e3507d](https://github.com/Kavalieri/Cuentas_SiKNess/commit/2e3507dec5c35352f06d8bc71f2294f45c3ca6a6))
+* **balance:** crear página historial detallado por miembro ([c2134a6](https://github.com/Kavalieri/Cuentas_SiKNess/commit/c2134a66f9d6c7b65630960fcf229d7a92eb6603))
+* **balance:** implement 3-tier category hierarchy in edit forms ([c42aac3](https://github.com/Kavalieri/Cuentas_SiKNess/commit/c42aac3e7076d8d847c57e7d8a51ce346fa7f164))
+* **balance:** ocultar botones de edición/eliminación en ingresos compensatorios (Issue [#26](https://github.com/Kavalieri/Cuentas_SiKNess/issues/26)) ([f0ba413](https://github.com/Kavalieri/Cuentas_SiKNess/commit/f0ba41343909a6d560eda98f2f2de7f6f6e27d03))
+* **balance:** Phase 2 - Marcar categorías existentes como sistema ([9782bcf](https://github.com/Kavalieri/Cuentas_SiKNess/commit/9782bcfc6c2ed979ba22239f3ec7bf81b64edbca)), closes [#58](https://github.com/Kavalieri/Cuentas_SiKNess/issues/58)
+* **balance:** Phase 3 - Deprecar tablas legacy (sin datos) ([4ce4578](https://github.com/Kavalieri/Cuentas_SiKNess/commit/4ce4578c00b3d8ea6a4933395958f68734c48719)), closes [#59](https://github.com/Kavalieri/Cuentas_SiKNess/issues/59)
+* **balance:** Phase 4 - Backend integrado usando API existente ([e9e0fce](https://github.com/Kavalieri/Cuentas_SiKNess/commit/e9e0fce1664157fadd8eec25dd249d8f50792bb5)), closes [#60](https://github.com/Kavalieri/Cuentas_SiKNess/issues/60)
+* **charts:** añadir indicadores técnicos a gráfico de evolución ([b0e1349](https://github.com/Kavalieri/Cuentas_SiKNess/commit/b0e13493b10ea789851a7270a6e76e65c08d0c40))
+* **colors:** reforzar sistema de paletas con validación robusta ([55f72ce](https://github.com/Kavalieri/Cuentas_SiKNess/commit/55f72ce8c8e31f86830cd791d59e16c45c31d478)), closes [#48](https://github.com/Kavalieri/Cuentas_SiKNess/issues/48)
+* **database:** cambio concepto 'objetivo' → 'presupuesto' ([#25](https://github.com/Kavalieri/Cuentas_SiKNess/issues/25)) ([b6fa089](https://github.com/Kavalieri/Cuentas_SiKNess/commit/b6fa0897c17b6d13920b133cf33f5c23fcce6c19))
+* **database:** unify ownership to single cuentassik_owner role (v2.1.0) ([e74260c](https://github.com/Kavalieri/Cuentas_SiKNess/commit/e74260c2398a2a2a33e2feb32aa0a8b4499d82e3)), closes [#6](https://github.com/Kavalieri/Cuentas_SiKNess/issues/6)
+* **db:** añadir .archive/ a .gitignore para backups locales ([ed928d6](https://github.com/Kavalieri/Cuentas_SiKNess/commit/ed928d62e6994c68b9f1775726c718130314691f))
+* **db:** baseline v3.0.0 - esquema completo desde PROD post Issue [#47](https://github.com/Kavalieri/Cuentas_SiKNess/issues/47) ([5b3e1e0](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5b3e1e0d7c10f94f281f72da2f7b7dab0b40b660))
+* **db:** completar Issue [#16](https://github.com/Kavalieri/Cuentas_SiKNess/issues/16) - migración categorías y subcategorías ([48a30ae](https://github.com/Kavalieri/Cuentas_SiKNess/commit/48a30aeeaaa8471f75314a4d9cd9eaf508f0d625))
+* **db:** completar sistema de subcategorías (Issue [#44](https://github.com/Kavalieri/Cuentas_SiKNess/issues/44)) ([4d42806](https://github.com/Kavalieri/Cuentas_SiKNess/commit/4d42806ea88a00c6115cad1facba25ae9e80c2ff))
+* **db:** complete subcategories for all categories (Issue [#44](https://github.com/Kavalieri/Cuentas_SiKNess/issues/44)) ([4f9e3b1](https://github.com/Kavalieri/Cuentas_SiKNess/commit/4f9e3b103d60a88b46a400c917d0954e5ba88e10))
+* **db:** Fase 1.5 - Eliminar 12 columnas sin uso (Issue [#63](https://github.com/Kavalieri/Cuentas_SiKNess/issues/63)) ([befdf9c](https://github.com/Kavalieri/Cuentas_SiKNess/commit/befdf9ca31aec74036d301b26342c4982cc5094d))
+* **db:** implement Cuenta Común as system entity + fix migration workflow ([6415f14](https://github.com/Kavalieri/Cuentas_SiKNess/commit/6415f14523eb48a78a575aae2bb59f6812823a91))
+* **db:** inferir subcategorías desde descripciones de transacciones ([71d1859](https://github.com/Kavalieri/Cuentas_SiKNess/commit/71d1859f589381276e75fce3b9731a856648bceb))
+* **db:** Issue [#47](https://github.com/Kavalieri/Cuentas_SiKNess/issues/47) - consolidar funciones duplicadas de categorías + baseline v3.0.0 ([e610f0f](https://github.com/Kavalieri/Cuentas_SiKNess/commit/e610f0f5b0fc38dd05298d8e5795a7e51392c814))
+* **db:** migrar performed_by de email a UUID - Issue [#19](https://github.com/Kavalieri/Cuentas_SiKNess/issues/19), [#20](https://github.com/Kavalieri/Cuentas_SiKNess/issues/20) ([c671a0e](https://github.com/Kavalieri/Cuentas_SiKNess/commit/c671a0e1e2b5a82c33923b25393450a7afebef88))
+* **db:** sistema dual-field completo aplicado a PROD - Issue [#19](https://github.com/Kavalieri/Cuentas_SiKNess/issues/19), [#20](https://github.com/Kavalieri/Cuentas_SiKNess/issues/20) ([7c9d6a2](https://github.com/Kavalieri/Cuentas_SiKNess/commit/7c9d6a276bc7cd9fe280b6dd2c9e9b0d0dd75f02))
+* **edit-forms:** unificar formularios de edición con validación doble por fecha ([9e72266](https://github.com/Kavalieri/Cuentas_SiKNess/commit/9e72266d490e35d914d3e16e62ed48e8e16f6fda))
+* **estadisticas:** añadir indicadores técnicos al gráfico de balance ([95140b6](https://github.com/Kavalieri/Cuentas_SiKNess/commit/95140b60f73940c5bb0872c5ef5cc5cce1cffb33))
+* **estadisticas:** cambiar Pareto de grupos a categorías nivel 2 ([32d7567](https://github.com/Kavalieri/Cuentas_SiKNess/commit/32d75677bbb16a9f2e9632211776c0873504c0d7))
+* **estadisticas:** implementar sistema de colores jerárquico y gráficos Nivo mejorados ([6017342](https://github.com/Kavalieri/Cuentas_SiKNess/commit/60173428e709be09310a83e8623919e9c12a76f7))
+* **estadisticas:** implementar TradingView con múltiples escalas temporales ([e407302](https://github.com/Kavalieri/Cuentas_SiKNess/commit/e407302d4dff7ad73abd6fca77c537a227c0bf57))
+* **estadisticas:** implementar TradingView Pro con historial completo y features profesionales ([11d10c2](https://github.com/Kavalieri/Cuentas_SiKNess/commit/11d10c2700192850dce7a2740a21634b0bdd7f10))
+* **estadisticas:** implementar visualizaciones jerárquicas y Pareto funcionales ([56ba84c](https://github.com/Kavalieri/Cuentas_SiKNess/commit/56ba84c0583385f57787510e2b6ef3bd6895612a))
+* **estadisticas:** POC TradingView Lightweight Charts v5 con comparador A/B ([5f69160](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5f691602ed0c10f4f01428eca488720502d471ca))
+* **estadisticas:** sistema de colores por grupos + Nivo Pie Chart ([a1c7e1f](https://github.com/Kavalieri/Cuentas_SiKNess/commit/a1c7e1fd92108fd3fca3ce2fe62993d12d51a2f3))
+* **forms:** añadir selector "¿Quién realizó?" en NewMovementForm - Phase 4 ([51ea18b](https://github.com/Kavalieri/Cuentas_SiKNess/commit/51ea18b3c7742137e976e19f7de3d8b0a86305c2))
+* **forms:** encadenamiento con localStorage en formulario nuevo movimiento (Issue [#15](https://github.com/Kavalieri/Cuentas_SiKNess/issues/15)) ([1f65b8e](https://github.com/Kavalieri/Cuentas_SiKNess/commit/1f65b8eb813d0b2b374b6e8f7bc40d726f75541e))
+* **forms:** validación numérica mejorada en campos de importe (Issue [#14](https://github.com/Kavalieri/Cuentas_SiKNess/issues/14)) ([01df452](https://github.com/Kavalieri/Cuentas_SiKNess/commit/01df452e8db4a5dde4babdb305ad98ad08d4a898))
+* **Issue #63 Fase 1:** Remove 6 redundant empty database tables ([4faa845](https://github.com/Kavalieri/Cuentas_SiKNess/commit/4faa8453ff3e78f3d41fbd807aa9d851c4ba4835))
+* **issue-25:** migrar terminología "objetivo/meta" a "presupuesto" (fase 2-3 backend/frontend) ([5a5cb40](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5a5cb407a778efcaeb7114ed97b080cff5165983))
+* **loans:** add owner approval interface for household loans ([9cb9c56](https://github.com/Kavalieri/Cuentas_SiKNess/commit/9cb9c56004910871f672dbde7125e27347f3433e))
+* **loans:** implement household-to-member loan system with approval workflow ([5b3341f](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5b3341f22da531449f30fca767eaa9ab9bc6689b))
+* **loans:** implementar sistema de préstamos usando categorías de sistema ([ff64728](https://github.com/Kavalieri/Cuentas_SiKNess/commit/ff64728df207a2dc752e08f9c6e05725e514ab2b))
+* **migrations:** establecer baseline v3.0.0 y limpiar historial (Issue [#53](https://github.com/Kavalieri/Cuentas_SiKNess/issues/53) - FASE 3) ([bb66050](https://github.com/Kavalieri/Cuentas_SiKNess/commit/bb66050c082b888f6092a7d4f2600919f0fb5d12))
+* **migrations:** Integrar auto-regeneración de types en workflow (Issue [#10](https://github.com/Kavalieri/Cuentas_SiKNess/issues/10)) ([c63001e](https://github.com/Kavalieri/Cuentas_SiKNess/commit/c63001e225e68f7b50c2eb111ace850ec5b51011))
+* **Phase 40:** UX improvements and comprehensive documentation ([6e9fcfc](https://github.com/Kavalieri/Cuentas_SiKNess/commit/6e9fcfca42ab6025341357d991e5dc74486dbe06))
+* **scripts:** reorganizar estructura y crear scripts de gestión de migraciones ([#53](https://github.com/Kavalieri/Cuentas_SiKNess/issues/53)) ([4333eb9](https://github.com/Kavalieri/Cuentas_SiKNess/commit/4333eb9dc49d174f3cd2aee9624e94c17b6b9279))
+* **sickness:** add CategoryTreemap component with 3-level hierarchy visualization ([4b8f417](https://github.com/Kavalieri/Cuentas_SiKNess/commit/4b8f41737e0ac87656a6cbd9322afa81782c6a0e))
+* **sickness:** add ParetoChart component with 80/20 principle visualization ([01d36c2](https://github.com/Kavalieri/Cuentas_SiKNess/commit/01d36c26a66776482092787b17c72289bef96759))
+* **sickness:** add TrendLineChart component with temporal trend analysis ([65fb032](https://github.com/Kavalieri/Cuentas_SiKNess/commit/65fb032f5cabf2f52f3798593f581db0318d31c1))
+* **sickness:** display category hierarchy in transaction list ([08ac8db](https://github.com/Kavalieri/Cuentas_SiKNess/commit/08ac8db179247481cf317aad263d5f723f91dbba))
+* **sickness:** implement 3-level category hierarchy (Parent → Category → Subcategory) ([fb2359a](https://github.com/Kavalieri/Cuentas_SiKNess/commit/fb2359a5d88ea5a8acde109bce23d201a2a5a6bd))
+* **sickness:** integrate advanced visualizations into statistics page ([baed01d](https://github.com/Kavalieri/Cuentas_SiKNess/commit/baed01d7be10af7e6eab5a95c301e7030096cd90))
+* **stats:** añadir gráfico de evolución del balance histórico ([949cdb4](https://github.com/Kavalieri/Cuentas_SiKNess/commit/949cdb421b17da47ce20832b5f7cd54b7a64b7e3)), closes [#51](https://github.com/Kavalieri/Cuentas_SiKNess/issues/51)
+* **transactions:** sistema de numeración + botones solo icono (Issues [#27](https://github.com/Kavalieri/Cuentas_SiKNess/issues/27) [#28](https://github.com/Kavalieri/Cuentas_SiKNess/issues/28)) ([50e2905](https://github.com/Kavalieri/Cuentas_SiKNess/commit/50e2905e6e774020a39d3040a36a389557f6f46b))
+* **types:** Implementar auto-generación de types desde PostgreSQL (Issue [#8](https://github.com/Kavalieri/Cuentas_SiKNess/issues/8)) ([5e99b6b](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5e99b6bcacd3589cbb07d21490ee6b676a976283))
+* **ui:** add menu link to advanced analytics page ([430ce8e](https://github.com/Kavalieri/Cuentas_SiKNess/commit/430ce8e96d6ab74d86ee3a8d504e87a7d8a77ddc))
+* **ui:** implementar display dual-field en TransactionCard - Phase 5 ([32c2c2a](https://github.com/Kavalieri/Cuentas_SiKNess/commit/32c2c2a9abcad444e10688bdc80db214a1b52abd))
+* **ui:** Implementar Issues [#40](https://github.com/Kavalieri/Cuentas_SiKNess/issues/40) y [#42](https://github.com/Kavalieri/Cuentas_SiKNess/issues/42) - Collapsible + Analytics separado ([fb6e50a](https://github.com/Kavalieri/Cuentas_SiKNess/commit/fb6e50a3ec3cc195e3ffc8feb6ba9f88c6ce22a4))
+* **ui:** implementar TransactionCard responsive con expand/collapse (Issue [#13](https://github.com/Kavalieri/Cuentas_SiKNess/issues/13)) ([d40e14d](https://github.com/Kavalieri/Cuentas_SiKNess/commit/d40e14deb810968e5a5a87618e8eeff4c5b79f4e))
+* **ui:** mostrar jerarquía completa en TransactionCard (Grupo → Categoría → Subcategoría) ([ca1d942](https://github.com/Kavalieri/Cuentas_SiKNess/commit/ca1d9421d9bcc67f1ad7fdd2df7694ae0fc29cb6))
+* **ui:** Phase 5 - Dashboard Multi-Miembro de Balance ([33bdfc3](https://github.com/Kavalieri/Cuentas_SiKNess/commit/33bdfc3b02295b14907055653d7a48f451111330)), closes [#61](https://github.com/Kavalieri/Cuentas_SiKNess/issues/61)
+* **ui:** simplificar display "Gastado por" - Issue [#29](https://github.com/Kavalieri/Cuentas_SiKNess/issues/29) ([9b63e9e](https://github.com/Kavalieri/Cuentas_SiKNess/commit/9b63e9e471267457dc8d93f8b8524d9c1ff3bb0c))
+* **validación:** implementar validación de movimientos basada en fecha real (Issue [#37](https://github.com/Kavalieri/Cuentas_SiKNess/issues/37)) ([5cdab58](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5cdab58ba559e8f7cfdeb553c65da751d12e8ca1))
+* **vscode:** actualizar tasks.json con nueva estructura de scripts (Issue [#53](https://github.com/Kavalieri/Cuentas_SiKNess/issues/53) - FASE 2) ([4e00764](https://github.com/Kavalieri/Cuentas_SiKNess/commit/4e00764da5c779042cc1f8da9b7ae608eb345fd8))
+
+
+### Bug Fixes
+
+* **analytics:** corregir 5 queries con bugs de JOIN y lógica ([c70ee0c](https://github.com/Kavalieri/Cuentas_SiKNess/commit/c70ee0c3387bdda0e99e6092f98cbaadfc88e4e1)), closes [#46](https://github.com/Kavalieri/Cuentas_SiKNess/issues/46)
+* **api:** corregir JOINs para jerarquía completa de categorías ([26ac6d5](https://github.com/Kavalieri/Cuentas_SiKNess/commit/26ac6d54363ea916fd1bf00a05038dff9c758c91)), closes [#17](https://github.com/Kavalieri/Cuentas_SiKNess/issues/17)
+* **api:** ordenar transacciones por fecha del movimiento (occurred_at) ([44f23af](https://github.com/Kavalieri/Cuentas_SiKNess/commit/44f23afd3df7309341df6942a6fdef682daf032f))
+* **api:** restaurar archivo global/route.ts a estado funcional ([0e84d15](https://github.com/Kavalieri/Cuentas_SiKNess/commit/0e84d15f97dcee37e5d71b0586f9f1411c8ef6ab))
+* **api:** revertir cambios que rompieron categorías en transacciones ([28133c1](https://github.com/Kavalieri/Cuentas_SiKNess/commit/28133c183286316a884ca3bbf5170ee5a6a22ac9))
+* **balance:** corregir colores y fecha de referencia en dashboard ([a396778](https://github.com/Kavalieri/Cuentas_SiKNess/commit/a396778b85c7fe9285819fa1b36280a5270b73dc))
+* **balance:** corregir edición de gastos directos + nomenclatura ([ea41de7](https://github.com/Kavalieri/Cuentas_SiKNess/commit/ea41de7b492ae4e14b3267ad9286dac48778f54d))
+* **balance:** eliminar valores -0.00 en historial de balance ([cbd78f5](https://github.com/Kavalieri/Cuentas_SiKNess/commit/cbd78f5464fa5d0e9fbed4ca41b0ca434abe4a04))
+* **balance:** resolve initial category values in edit forms ([df11e07](https://github.com/Kavalieri/Cuentas_SiKNess/commit/df11e07c8b3c6617331a0e22b0ce2642fc2bbe26))
+* **categoryColors:** añadir non-null assertion a getLegacyColor ([e45cf0a](https://github.com/Kavalieri/Cuentas_SiKNess/commit/e45cf0ab38f48a8d35cf179004b0bc870ad21776))
+* **charts:** aplicar paletas consistentes en Pareto ([2eb6af0](https://github.com/Kavalieri/Cuentas_SiKNess/commit/2eb6af05b5e8f5385d6d786185a24128be5bd3a2)), closes [#48](https://github.com/Kavalieri/Cuentas_SiKNess/issues/48)
+* **charts:** aplicar paletas consistentes en Sunburst ([fc0f4c2](https://github.com/Kavalieri/Cuentas_SiKNess/commit/fc0f4c264ed667dc6bb7db619238b779da2a19d8)), closes [#48](https://github.com/Kavalieri/Cuentas_SiKNess/issues/48)
+* **charts:** aplicar paletas consistentes en TreeMap ([647fd88](https://github.com/Kavalieri/Cuentas_SiKNess/commit/647fd888a61f3b2d5e84fcf8629ce12732411885)), closes [#48](https://github.com/Kavalieri/Cuentas_SiKNess/issues/48)
+* **charts:** corregir herencia de colores y modo oscuro ([5ee284b](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5ee284b4285236f9be97ba9b323a134945c9d92d))
+* **charts:** eliminar debug logs y arreglar color del nodo root en TreeMap ([59ca36b](https://github.com/Kavalieri/Cuentas_SiKNess/commit/59ca36b26e2c69afaa4c7ecb0cc773283cf68def))
+* **charts:** normalizar keys de paletas de colores para matchear con lookup ([b252036](https://github.com/Kavalieri/Cuentas_SiKNess/commit/b252036189573195c66c887871f419387cf7d8be)), closes [#48](https://github.com/Kavalieri/Cuentas_SiKNess/issues/48)
+* **charts:** resolver warnings de React por keys duplicadas ([1a8b2de](https://github.com/Kavalieri/Cuentas_SiKNess/commit/1a8b2ded6d17822c0d705806c042e1aee5e01fd2)), closes [#48](https://github.com/Kavalieri/Cuentas_SiKNess/issues/48)
+* **contributions:** corregir cálculo en periodos cerrados ([d8e0480](https://github.com/Kavalieri/Cuentas_SiKNess/commit/d8e048061ee6e60936553d9ca73fb2092f37c2d1))
+* **database:** corregir queries para schema de categorías ([bc6d827](https://github.com/Kavalieri/Cuentas_SiKNess/commit/bc6d82747dc37309c5e63a95a8f42f7f40bcbb39))
+* **db:** baseline v3.0.0 funcional - corregir refresh MVs vacías ([ff1b9db](https://github.com/Kavalieri/Cuentas_SiKNess/commit/ff1b9dbd4353dd82810aa8d5a1d1956d579d7a47))
+* **db:** eliminar referencias a performed_by_email deprecado en unified.ts ([b5b5cc7](https://github.com/Kavalieri/Cuentas_SiKNess/commit/b5b5cc7b702b507cc0ee0cf1daf8a4a17b4a4b1e))
+* disable prefetch on configuración links to prevent production logout ([1fe746f](https://github.com/Kavalieri/Cuentas_SiKNess/commit/1fe746fb623bfcadc089c0705cda8a633f017edc))
+* **docs:** corregir versión baseline de v1.0.0 a v2.1.0 ([cd3790b](https://github.com/Kavalieri/Cuentas_SiKNess/commit/cd3790b0dd7a8d0b85dc1af756ddf0a3a65e5dd0))
+* **estadisticas:** corregir 3 bugs críticos en gráficos ([944dc6a](https://github.com/Kavalieri/Cuentas_SiKNess/commit/944dc6a919af47c009e0601f838ad8b235e4a68f))
+* **estadisticas:** corregir API trend para leer snapshots de periodos cerrados ([452e8b2](https://github.com/Kavalieri/Cuentas_SiKNess/commit/452e8b211fe96d577ba1e513311a87055f8ca01c))
+* **estadisticas:** corregir cálculos y visualización de los 3 gráficos ([44e242c](https://github.com/Kavalieri/Cuentas_SiKNess/commit/44e242cb71c42500b99a7da4b27364419d1f932d))
+* **estadisticas:** corregir filtros temporales y tipos en gráficos ([fee8391](https://github.com/Kavalieri/Cuentas_SiKNess/commit/fee83911c4288b47377be0fec0f642e82e887fc7))
+* **estadisticas:** corregir jerarquía de 3 niveles en CategoryTreemap ([3a8a40e](https://github.com/Kavalieri/Cuentas_SiKNess/commit/3a8a40e0db15cac925676e11be40c80b85856c16))
+* **estadisticas:** corregir paleta de colores y reorganizar TreeMaps ([3b87328](https://github.com/Kavalieri/Cuentas_SiKNess/commit/3b87328d4b927b2157f8809842a55097af0b3909))
+* **estadisticas:** corregir problemas críticos de visualización ([2e99177](https://github.com/Kavalieri/Cuentas_SiKNess/commit/2e99177bedf78373d4a596e3e904f09b60a04817))
+* **estadisticas:** eliminar placeholder obsoleto /statistics/ ([dadd1e4](https://github.com/Kavalieri/Cuentas_SiKNess/commit/dadd1e4cc6b5cfb76c7cb980db124045a5579b9b))
+* **estadisticas:** incluir todos los tipos de transacciones en gráfico de tendencia ([5ddaba3](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5ddaba3072cf5e833cf84f2497dd5f34e352b345))
+* **estadisticas:** prevent treemaps from overlapping next sections ([9166c1c](https://github.com/Kavalieri/Cuentas_SiKNess/commit/9166c1cbe95ccc06c5a41d8acf48ad5eab1f89ef))
+* **estadisticas:** remove AdvancedQueries component and add CTA to analytics ([bfd5411](https://github.com/Kavalieri/Cuentas_SiKNess/commit/bfd5411df7133d7bb63304b67e0f829e009f0777))
+* **estadisticas:** Sunburst - eliminar cálculo manual de valores ([08494ff](https://github.com/Kavalieri/Cuentas_SiKNess/commit/08494ff6fd2027b37e14194ed3d33e582c07bf08))
+* **filters:** corregir filtros y añadir jerarquía completa de categorías (Issue [#36](https://github.com/Kavalieri/Cuentas_SiKNess/issues/36)) ([b21886d](https://github.com/Kavalieri/Cuentas_SiKNess/commit/b21886daf5e0d9139a403a9a1e4b305757036025))
+* **forms:** eliminar opción de ingreso directo del formulario (son automáticos) ([49d1247](https://github.com/Kavalieri/Cuentas_SiKNess/commit/49d12476c97f363992bb00e1ee14b8f3a6e2e7de))
+* **forms:** eliminar validación incorrecta de subcategoría obligatoria (Issue [#38](https://github.com/Kavalieri/Cuentas_SiKNess/issues/38)) ([a381d4b](https://github.com/Kavalieri/Cuentas_SiKNess/commit/a381d4b51f0658b45ccf2e82cbcc5f277aed8f21))
+* guardar correctamente subcategory_id y eliminar campo fecha duplicado (Issue [#35](https://github.com/Kavalieri/Cuentas_SiKNess/issues/35)) ([d826a68](https://github.com/Kavalieri/Cuentas_SiKNess/commit/d826a6848d96aed32677fc8d987fd16a745e1b28))
+* **lib:** remove 'use server' from jointAccount.ts to allow const export ([dcfd33d](https://github.com/Kavalieri/Cuentas_SiKNess/commit/dcfd33dd5013b428c7d3fc0d7185455f137ae08b))
+* **lint:** arreglar errores de variables no usadas ([fbc8715](https://github.com/Kavalieri/Cuentas_SiKNess/commit/fbc87156d11b55715e97187592d4723654a9e176))
+* **lint:** eliminar variables no usadas (watch, jointAccountId) ([f9831d4](https://github.com/Kavalieri/Cuentas_SiKNess/commit/f9831d4ffeb53cc9f41c6c36f46cd06c6e7d4d19))
+* **lint:** resolver warnings de React Hooks exhaustive-deps ([3a3e787](https://github.com/Kavalieri/Cuentas_SiKNess/commit/3a3e78716b3c0a773c21be1e0102a783297ea3c8))
+* **loans:** corregir obtención del usuario actual usando getCurrentUser() ([3ac9847](https://github.com/Kavalieri/Cuentas_SiKNess/commit/3ac9847f2372de3c08784d48297392e4bcf9ba0c))
+* **middleware:** incluir /sickness en rutas protegidas que requieren auth ([04163b7](https://github.com/Kavalieri/Cuentas_SiKNess/commit/04163b7521dea3b2f47ad43766657005bf792931))
+* **middleware:** permitir acceso a subrutas de /sickness sin redirección forzada ([6f8f491](https://github.com/Kavalieri/Cuentas_SiKNess/commit/6f8f4919922d2d497980955c38990e70b3ad695b))
+* **scripts:** corregir rutas en build-and-deploy.sh y archivar baseline temporal (Issue [#53](https://github.com/Kavalieri/Cuentas_SiKNess/issues/53)) ([e750d6d](https://github.com/Kavalieri/Cuentas_SiKNess/commit/e750d6d3926bf736a2a15b326b66ef7a5766edac))
+* **security:** actualizar dependencias críticas (npm audit fix) ([45832dc](https://github.com/Kavalieri/Cuentas_SiKNess/commit/45832dcb7ad9fea207e53e99ce1c396c390b2675))
+* **security:** actualizar vitest y esbuild (0 vulnerabilidades) ([d15564d](https://github.com/Kavalieri/Cuentas_SiKNess/commit/d15564d04eded090734e87602998391a8c19328d))
+* separar builds DEV (.next-dev) y PROD (.next) ([e529d4e](https://github.com/Kavalieri/Cuentas_SiKNess/commit/e529d4e7945ce5ae287886989354c445da85d3e2))
+* **sickness:** corregir desplazamiento de fechas por zona horaria UTC ([d0dc38a](https://github.com/Kavalieri/Cuentas_SiKNess/commit/d0dc38a7eacccfc675d559ef4d9576ceff9d6858))
+* **sickness:** corregir fecha en gastos directos encadenados y actualización de perfil OAuth ([830fcd5](https://github.com/Kavalieri/Cuentas_SiKNess/commit/830fcd56f56ec32423ba4ab2d1408812068890aa))
+* **transactions:** corregir cambio de día al guardar transacciones con hora ([6e41555](https://github.com/Kavalieri/Cuentas_SiKNess/commit/6e41555677540941def6661d6297fea5feacae01))
+* **transactions:** corregir conversión de zona horaria en creación de movimientos ([1272e24](https://github.com/Kavalieri/Cuentas_SiKNess/commit/1272e2404d4be219a7e8090a2085ead07120af9b))
+* **transactions:** eliminar validación legacy de paid_by en ingresos comunes ([1d8d2ea](https://github.com/Kavalieri/Cuentas_SiKNess/commit/1d8d2ea0449e1f4460c3091939e6d596a02ca366))
+* **treemap:** mostrar solo nombre en etiquetas, no path completo ([ac8cab5](https://github.com/Kavalieri/Cuentas_SiKNess/commit/ac8cab5ee16abb56cd068d5886514dde8943a806))
+* **ui:** añadir símbolo € en campos de cantidad y corregir actualización de categoría ([12c2154](https://github.com/Kavalieri/Cuentas_SiKNess/commit/12c215420c9857c7124a43247a39da8e85417fb0))
+* **ui:** corregir visualización de jerarquía en TransactionCard ([f1ddd8b](https://github.com/Kavalieri/Cuentas_SiKNess/commit/f1ddd8b0544b6ce5b84928aceae22368d05184e5)), closes [#17](https://github.com/Kavalieri/Cuentas_SiKNess/issues/17)
+* **ui:** estandarizar orden de campos en todos los formularios (Issue [#35](https://github.com/Kavalieri/Cuentas_SiKNess/issues/35)) ([d7da5d8](https://github.com/Kavalieri/Cuentas_SiKNess/commit/d7da5d868507cf26c88c25c3050a0377c5e07fc2))
+* **ui:** mejorar labels de origen de fondos en TransactionCard ([b2e0213](https://github.com/Kavalieri/Cuentas_SiKNess/commit/b2e0213a250f2e5daf79a622ad497cd56afa07d0)), closes [#17](https://github.com/Kavalieri/Cuentas_SiKNess/issues/17)
+* **ui:** rediseño completo de TransactionCard con UX mejorada ([15350d6](https://github.com/Kavalieri/Cuentas_SiKNess/commit/15350d6cbc3890d62ea1a6aac180ad371529f91b)), closes [#17](https://github.com/Kavalieri/Cuentas_SiKNess/issues/17)
+* **ui:** unificar orden de campos en TODOS los formularios ([885f8da](https://github.com/Kavalieri/Cuentas_SiKNess/commit/885f8da154dd0c65fc7bc5b9441432bc7cd7707f))
+* **ui:** usar componentes shadcn/ui en diálogos de edición ([5d1d2a0](https://github.com/Kavalieri/Cuentas_SiKNess/commit/5d1d2a0c1d91ec58caa0e64e1bb2560c91608566))
+* **ui:** usar performed_by_profile_id en EditDirectExpenseButton ([16b3dfe](https://github.com/Kavalieri/Cuentas_SiKNess/commit/16b3dfe9f553ddcb9ed7d5efd98d030acd1298f0))
+* unificar campo performed_by en todos los formularios (Issue [#30](https://github.com/Kavalieri/Cuentas_SiKNess/issues/30), [#29](https://github.com/Kavalieri/Cuentas_SiKNess/issues/29), [#35](https://github.com/Kavalieri/Cuentas_SiKNess/issues/35)) ([8757a68](https://github.com/Kavalieri/Cuentas_SiKNess/commit/8757a6887369aeda94e1254f8c8190c9edf432c6))
+
+
+### Performance Improvements
+
+* **balance:** eliminar recargas repetidas de jerarquía en diálogos de edición (Issue [#22](https://github.com/Kavalieri/Cuentas_SiKNess/issues/22)) ([e9fa09a](https://github.com/Kavalieri/Cuentas_SiKNess/commit/e9fa09a82510ab2b9aad361e480b741af4df38b4))
+
+
+### Reverts
+
+* Rollback Fase 1.5 (Issue [#63](https://github.com/Kavalieri/Cuentas_SiKNess/issues/63)) ([a5f28e8](https://github.com/Kavalieri/Cuentas_SiKNess/commit/a5f28e8dcf2e96875c2229a920508ee629bde0fe))
+
+
+### Code Refactoring
+
+* **docs:** archivar docs/TO-DO/ y migrar a GitHub Issues ([940f24d](https://github.com/Kavalieri/Cuentas_SiKNess/commit/940f24d0d88492a85a85fd465eef4860d9580205))
+
 ## [2.0.0](https://github.com/Kavalieri/CuentasSiK/compare/cuentas-sik-v1.0.0...cuentas-sik-v2.0.0) (2025-10-29)
 
 
