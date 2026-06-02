@@ -37,6 +37,7 @@ const nextConfig = {
   allowedDevOrigins: [
     process.env.NEXT_PUBLIC_PROD_DOMAIN,
     process.env.NEXT_PUBLIC_DEV_DOMAIN,
+    'cuentasdev.sikwow.com',
   ].filter(Boolean),
   webpack: (config, { isServer }) => {
     if (!isServer) {
