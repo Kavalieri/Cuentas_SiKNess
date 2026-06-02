@@ -691,14 +691,16 @@ export async function isHouseholdOwner(): Promise<boolean> {
     const householdId = await getUserHouseholdId();
     if (!householdId) return false;
 
-    const result = await query<{ owner_profile_id: string }>(
-      `SELECT owner_profile_id FROM households WHERE id = $1`,
-      [householdId],
+    // Use household_members.is_owner instead of non-existent owner_profile_id
+    const result = await query<{ is_owner: boolean }>(
+      `SELECT is_owner FROM household_members 
+       WHERE profile_id = $1 AND household_id = $2`,
+      [currentUser.profile_id, householdId],
     );
 
     if (result.rows.length === 0 || !result.rows[0]) return false;
 
-    return result.rows[0].owner_profile_id === currentUser.profile_id;
+    return result.rows[0].is_owner;
   } catch (error) {
     console.error('Error checking household ownership:', error);
     return false;
