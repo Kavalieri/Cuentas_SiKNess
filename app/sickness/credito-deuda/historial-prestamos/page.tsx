@@ -202,10 +202,7 @@ export default async function LoanHistoryPage() {
                 )}
                 <div className="mt-2 text-xs text-muted-foreground">
                   {request.reviewed_at ? (
-                    <>
-                      Revisado el{' '}
-                      {new Date(request.reviewed_at).toLocaleDateString('es-ES')}
-                    </>
+                    <>Revisado el {new Date(request.reviewed_at).toLocaleDateString('es-ES')}</>
                   ) : (
                     'Pendiente de revisión'
                   )}

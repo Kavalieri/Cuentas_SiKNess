@@ -101,7 +101,7 @@ BEGIN
 
   -- Si alguna tabla tiene datos, abortar
   IF array_length(tabla_con_datos, 1) > 0 THEN
-    RAISE EXCEPTION 'ABORTADO: Las siguientes tablas tienen datos: %', 
+    RAISE EXCEPTION 'ABORTADO: Las siguientes tablas tienen datos: %',
       array_to_string(tabla_con_datos, ', ');
   END IF;
 
@@ -154,29 +154,29 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contribution_periods') THEN
     tabla_existente := array_append(tabla_existente, 'contribution_periods');
   END IF;
-  
+
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'dual_flow_config') THEN
     tabla_existente := array_append(tabla_existente, 'dual_flow_config');
   END IF;
-  
+
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'dual_flow_transactions') THEN
     tabla_existente := array_append(tabla_existente, 'dual_flow_transactions');
   END IF;
-  
+
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'journal_roles') THEN
     tabla_existente := array_append(tabla_existente, 'journal_roles');
   END IF;
-  
+
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'journal_invitations') THEN
     tabla_existente := array_append(tabla_existente, 'journal_invitations');
   END IF;
-  
+
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'journal_adjustments') THEN
     tabla_existente := array_append(tabla_existente, 'journal_adjustments');
   END IF;
 
   IF array_length(tabla_existente, 1) > 0 THEN
-    RAISE EXCEPTION 'ERROR: Las siguientes tablas NO fueron eliminadas: %', 
+    RAISE EXCEPTION 'ERROR: Las siguientes tablas NO fueron eliminadas: %',
       array_to_string(tabla_existente, ', ');
   END IF;
 
