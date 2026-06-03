@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/Kavalieri/Cuentas_SiKNess/compare/cuentas-sik-v3.0.0...cuentas-sik-v3.0.1) (2026-06-03)
+
+
+### Bug Fixes
+
+* **auth:** use household_members.is_owner en isHouseholdOwner ([8d05f87](https://github.com/Kavalieri/Cuentas_SiKNess/commit/8d05f8726ee86e1b0c5d01835df1ba0707956577))
+
 ## [3.0.0](https://github.com/Kavalieri/Cuentas_SiKNess/compare/cuentas-sik-v2.0.0...cuentas-sik-v3.0.0) (2026-06-02)
 
 
