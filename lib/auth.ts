@@ -693,7 +693,7 @@ export async function isHouseholdOwner(): Promise<boolean> {
 
     // Use household_members.is_owner instead of non-existent owner_profile_id
     const result = await query<{ is_owner: boolean }>(
-      `SELECT is_owner FROM household_members 
+      `SELECT is_owner FROM household_members
        WHERE profile_id = $1 AND household_id = $2`,
       [currentUser.profile_id, householdId],
     );
